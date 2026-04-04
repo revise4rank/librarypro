@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { DashboardShell } from "./dashboard-shell";
 
 type NavItem = {
   href: string;
@@ -16,6 +17,21 @@ type ShellProps = {
 };
 
 export function AppShell({ eyebrow, title, description, children, nav, actions }: ShellProps) {
+  if (nav && nav.length > 0) {
+    return (
+      <DashboardShell
+        productLabel="LibraryPro"
+        panelLabel={eyebrow}
+        title={title}
+        description={description}
+        nav={nav.map((item) => ({ ...item, shortLabel: item.label.slice(0, 3).toUpperCase() }))}
+        actions={actions}
+      >
+        {children}
+      </DashboardShell>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(236,173,132,0.18),transparent_24%),radial-gradient(circle_at_top_right,rgba(153,214,209,0.18),transparent_22%),linear-gradient(180deg,#fbf6ee_0%,#fffaf3_52%,#f6efe4_100%)] text-[var(--lp-text)]">
       <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col px-4 py-4 md:px-6 md:py-6">

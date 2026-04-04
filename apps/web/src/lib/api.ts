@@ -32,6 +32,7 @@ export type SessionUser = {
 export type SessionState = {
   user: SessionUser;
   csrfToken?: string;
+  accessToken?: string;
 };
 
 const SESSION_KEY = "librarypro_session";
@@ -84,6 +85,7 @@ export function saveSession(session: SessionState) {
     JSON.stringify({
       user: session.user,
       csrfToken: session.csrfToken,
+      accessToken: session.accessToken,
     } satisfies SessionState),
   );
   setCookie(COOKIE_ROLE, session.user.role);
@@ -106,9 +108,15 @@ export function clearClientSession() {
 
 export async function logoutSession() {
   try {
+    const session = readSession();
     await fetch(`${API_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
+      headers: session?.accessToken
+        ? {
+            Authorization: `Bearer ${session.accessToken}`,
+          }
+        : undefined,
     });
   } catch {
     // Best-effort server logout. Client cleanup still happens below.
@@ -154,6 +162,7 @@ export async function hydrateSessionFromServer() {
         libraryIds: result.data.libraryIds,
       },
       csrfToken: result.data.csrfToken ?? readCookie("lp_csrf") ?? undefined,
+      accessToken: undefined,
     } satisfies SessionState;
 
     saveSession(hydrated);
@@ -173,6 +182,9 @@ export async function apiFetch<T>(path: string, init?: RequestInit, auth = true)
   if (auth) {
     const session = readSession();
     const csrfToken = session?.csrfToken ?? readCookie("lp_csrf");
+    if (session?.accessToken) {
+      headers.set("Authorization", `Bearer ${session.accessToken}`);
+    }
     if (!["GET", "HEAD", "OPTIONS"].includes(method) && csrfToken) {
       headers.set("X-CSRF-Token", csrfToken);
     }

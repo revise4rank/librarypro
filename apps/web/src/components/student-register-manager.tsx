@@ -21,6 +21,7 @@ export function StudentRegisterManager() {
         success: boolean;
         data: {
           csrfToken?: string;
+          accessToken: string;
           user: {
             id: string;
             fullName: string;
