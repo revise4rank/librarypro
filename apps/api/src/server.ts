@@ -71,14 +71,6 @@ export function createServer() {
   app.use(requestLoggerMiddleware);
   app.use(["/v1/public", "/v1/offers"], publicReadRateLimitMiddleware);
   app.use(apiRateLimitMiddleware);
-  app.use("/v1/billing/razorpay/webhook", express.raw({ type: "application/json" }));
-  app.use(express.json());
-  app.use("/uploads", express.static(path.resolve(env.uploadsDir)));
-  app.use(authMiddleware);
-  app.use(csrfProtectionMiddleware);
-  app.use(tenantMiddleware);
-  app.use(subscriptionEnforcementMiddleware);
-  app.use("/v1/auth/login", authRateLimitMiddleware);
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
   });
@@ -127,6 +119,14 @@ export function createServer() {
       ts: new Date().toISOString(),
     });
   });
+  app.use("/v1/billing/razorpay/webhook", express.raw({ type: "application/json" }));
+  app.use(express.json());
+  app.use("/uploads", express.static(path.resolve(env.uploadsDir)));
+  app.use(authMiddleware);
+  app.use(csrfProtectionMiddleware);
+  app.use(tenantMiddleware);
+  app.use(subscriptionEnforcementMiddleware);
+  app.use("/v1/auth/login", authRateLimitMiddleware);
   app.use("/v1", router);
 
   app.use((error: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
