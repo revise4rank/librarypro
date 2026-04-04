@@ -5,7 +5,7 @@ import { getTenantBySlug } from "../lib/tenant-cache";
 
 const RESERVED_SUBDOMAINS = new Set(["www", "admin", "api"]);
 
-function extractTenantSlug(hostHeader?: string): string | null {
+function extractTenantSlug(hostHeader?: string, requestPath?: string): string | null {
   if (!hostHeader) return null;
 
   const host = hostHeader.split(":")[0].toLowerCase();
@@ -22,6 +22,9 @@ function extractTenantSlug(hostHeader?: string): string | null {
   }
 
   if (!host.endsWith(`.${baseDomain}`)) {
+    if (requestPath?.startsWith("/v1/")) {
+      return null;
+    }
     throw new AppError(400, "Untrusted host header", "UNTRUSTED_HOST");
   }
 
@@ -47,7 +50,7 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
     const slug =
       trustedSlug && internalTenantSecret && internalTenantSecret === env.internalTenantHeaderSecret
         ? trustedSlug
-        : extractTenantSlug(host);
+        : extractTenantSlug(host, req.path);
 
     if (!slug) {
       return next();
