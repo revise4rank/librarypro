@@ -1,0 +1,47 @@
+{
+  "name": "@librarypro/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "tsx src/server.ts",
+    "migrate": "tsx scripts/migrate.ts",
+    "search:refresh": "tsx scripts/refresh-marketplace-search.ts",
+    "seed": "tsx scripts/seed-demo.ts",
+    "remind:followups": "tsx scripts/remind-followups.ts",
+    "email:owner-reports": "tsx scripts/email-owner-reports.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.72.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.214.0",
+    "@opentelemetry/sdk-node": "^0.214.0",
+    "@sentry/node": "^10.47.0",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "@supabase/supabase-js": "^2.101.0",
+    "@types/pdfkit": "^0.17.5",
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.4",
+    "pdfkit": "^0.18.0",
+    "pg": "^8.20.0",
+    "redis": "^5.11.0",
+    "socket.io": "^4.8.3",
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "@types/pg": "^8.15.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

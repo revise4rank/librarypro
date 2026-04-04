@@ -1,0 +1,304 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api";
+import {
+  enqueueOwnerPaymentAction,
+  flushQueuedOwnerPaymentActions,
+  listQueuedOwnerPaymentActions,
+} from "../lib/offline-queue";
+import { getRealtimeSocket } from "../lib/realtime";
+import { DashboardCard } from "./dashboard-shell";
+
+type PaymentRow = {
+  id: string;
+  student_name: string;
+  amount: string;
+  method: string;
+  status: string;
+  reference_no: string | null;
+  paid_at: string | null;
+  due_date: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+type ListResponse = { success: boolean; data: PaymentRow[] };
+
+export function OwnerPaymentsManager() {
+  const [rows, setRows] = useState<PaymentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [liveStatus, setLiveStatus] = useState("Connecting");
+  const [isOffline, setIsOffline] = useState(false);
+  const [queuedPayments, setQueuedPayments] = useState(0);
+  const [form, setForm] = useState({
+    studentName: "",
+    amount: "",
+    method: "Cash",
+    status: "PAID",
+    dueDate: "",
+    paidAt: "",
+    referenceNo: "",
+    notes: "",
+  });
+
+  function showToast(nextMessage: string) {
+    setToast(nextMessage);
+    window.setTimeout(() => setToast(null), 2400);
+  }
+
+  async function loadQueuedPayments() {
+    try {
+      const queued = await listQueuedOwnerPaymentActions();
+      setQueuedPayments(queued.length);
+    } catch {
+      setQueuedPayments(0);
+    }
+  }
+
+  async function loadPayments() {
+    setLoading(true);
+    try {
+      const response = await apiFetch<ListResponse>("/owner/payments");
+      setRows(response.data);
+      setError(null);
+    } catch (loadError) {
+      setRows([]);
+      setError(loadError instanceof Error ? loadError.message : "Unable to load payments.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadPayments();
+    setIsOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
+    void loadQueuedPayments();
+  }, []);
+
+  useEffect(() => {
+    const socket = getRealtimeSocket();
+    if (!socket) {
+      setLiveStatus("Offline");
+      return;
+    }
+
+    const ready = () => setLiveStatus("Live");
+    const disconnected = () => setLiveStatus("Disconnected");
+    const onPaymentUpdate = () => {
+      setLiveStatus("Live");
+      showToast("Payment ledger updated live.");
+      void loadPayments();
+    };
+
+    socket.on("connect", ready);
+    socket.on("disconnect", disconnected);
+    socket.on("realtime.ready", ready);
+    socket.on("payment.updated", onPaymentUpdate);
+
+    if (socket.connected) {
+      setLiveStatus("Live");
+    }
+
+    return () => {
+      socket.off("connect", ready);
+      socket.off("disconnect", disconnected);
+      socket.off("realtime.ready", ready);
+      socket.off("payment.updated", onPaymentUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    const online = async () => {
+      setIsOffline(false);
+      try {
+        const synced = await flushQueuedOwnerPaymentActions();
+        if (synced > 0) {
+          setMessage(`${synced} offline payment action(s) synced successfully.`);
+          await loadPayments();
+        }
+      } catch (syncError) {
+        setError(syncError instanceof Error ? syncError.message : "Unable to sync offline owner payments.");
+      } finally {
+        await loadQueuedPayments();
+      }
+    };
+
+    const offline = async () => {
+      setIsOffline(true);
+      await loadQueuedPayments();
+    };
+
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, []);
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setError(null);
+
+    try {
+      if (!editingId && typeof navigator !== "undefined" && !navigator.onLine) {
+        await enqueueOwnerPaymentAction({
+          studentName: form.studentName,
+          amount: Number(form.amount || "0"),
+          method: form.method,
+          status: form.status,
+          dueDate: form.dueDate || undefined,
+          paidAt: form.paidAt || undefined,
+          referenceNo: form.referenceNo || undefined,
+          notes: form.notes || undefined,
+        });
+        await loadQueuedPayments();
+        setIsOffline(true);
+        setMessage("Offline mode: payment queued and will sync automatically when internet returns.");
+        setForm({
+          studentName: "",
+          amount: "",
+          method: "Cash",
+          status: "PAID",
+          dueDate: "",
+          paidAt: "",
+          referenceNo: "",
+          notes: "",
+        });
+        return;
+      }
+
+      await apiFetch(editingId ? `/owner/payments/${editingId}` : "/owner/payments", {
+        method: editingId ? "PATCH" : "POST",
+        body: JSON.stringify({
+          ...form,
+          amount: Number(form.amount || "0"),
+        }),
+      });
+      setMessage(editingId ? "Payment updated successfully." : "Payment saved successfully.");
+      showToast(editingId ? "Payment updated." : "Payment saved.");
+      setEditingId(null);
+      setForm({
+        studentName: "",
+        amount: "",
+        method: "Cash",
+        status: "PAID",
+        dueDate: "",
+        paidAt: "",
+        referenceNo: "",
+        notes: "",
+      });
+      await loadPayments();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Failed to save payment.");
+    }
+  }
+
+  function loadIntoForm(payment: PaymentRow) {
+    setEditingId(payment.id);
+    setForm({
+      studentName: payment.student_name,
+      amount: payment.amount,
+      method: payment.method,
+      status: payment.status,
+      dueDate: payment.due_date?.slice(0, 10) ?? "",
+      paidAt: payment.paid_at?.slice(0, 10) ?? "",
+      referenceNo: payment.reference_no ?? "",
+      notes: payment.notes ?? "",
+    });
+    setMessage(null);
+    setError(null);
+  }
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
+      {toast ? (
+        <div className="fixed bottom-5 right-5 z-50 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-2xl">
+          {toast}
+        </div>
+      ) : null}
+      <DashboardCard title="Record payment" subtitle={`Manual owner-side finance entry | Socket ${liveStatus}`}>
+        <form className="grid gap-4" onSubmit={onSubmit}>
+          <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+            {isOffline ? `Offline mode active. Queued owner payment actions: ${queuedPayments}` : `Online and ready. Queued owner payment actions: ${queuedPayments}`}
+          </div>
+          <input value={form.studentName} onChange={(e) => setForm((c) => ({ ...c, studentName: e.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Student name" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <input value={form.amount} onChange={(e) => setForm((c) => ({ ...c, amount: e.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Amount" />
+            <select value={form.method} onChange={(e) => setForm((c) => ({ ...c, method: e.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none">
+              <option>Cash</option>
+              <option>UPI</option>
+              <option>Bank Transfer</option>
+            </select>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <input value={form.referenceNo} onChange={(e) => setForm((c) => ({ ...c, referenceNo: e.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Reference number" />
+            <select value={form.status} onChange={(e) => setForm((c) => ({ ...c, status: e.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none">
+              <option value="PAID">Paid</option>
+              <option value="DUE">Due</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <input type="date" value={form.paidAt} onChange={(e) => setForm((c) => ({ ...c, paidAt: e.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" />
+            <input type="date" value={form.dueDate} onChange={(e) => setForm((c) => ({ ...c, dueDate: e.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" />
+          </div>
+          <textarea value={form.notes} onChange={(e) => setForm((c) => ({ ...c, notes: e.target.value }))} className="min-h-28 rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Notes" />
+          {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
+          {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+          <div className="flex flex-wrap gap-3">
+            <button type="submit" className="rounded-2xl bg-slate-950 px-5 py-4 text-sm font-bold text-white">{editingId ? "Update payment" : "Save payment"}</button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingId(null);
+                setForm({
+                  studentName: "",
+                  amount: "",
+                  method: "Cash",
+                  status: "PAID",
+                  dueDate: "",
+                  paidAt: "",
+                  referenceNo: "",
+                  notes: "",
+                });
+              }}
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-700"
+            >
+              Reset form
+            </button>
+          </div>
+        </form>
+      </DashboardCard>
+
+      <DashboardCard title="Payment ledger" subtitle="Recent collection activity">
+        {loading ? <p className="text-sm text-slate-500">Loading payments...</p> : null}
+        {!loading ? (
+          <div className="space-y-3">
+            {rows.map((payment) => (
+              <div key={payment.id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-bold text-slate-950">{payment.student_name}</p>
+                  <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.due_date ?? payment.created_at).slice(0, 10)}</p>
+                  <button type="button" onClick={() => loadIntoForm(payment)} className="mt-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Edit</button>
+                </div>
+                <div className="sm:text-right">
+                  <p className="font-black text-slate-950">Rs. {payment.amount}</p>
+                  <p className={`text-xs font-black ${payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{payment.status}</p>
+                </div>
+              </div>
+            ))}
+            {rows.length === 0 ? <p className="text-sm text-slate-500">No payments found yet.</p> : null}
+          </div>
+        ) : null}
+      </DashboardCard>
+    </div>
+  );
+}

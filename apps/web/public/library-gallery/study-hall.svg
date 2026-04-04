@@ -1,0 +1,15 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="40" fill="#E8F4EA"/>
+  <rect x="60" y="70" width="1080" height="580" rx="28" fill="#F8FCF8"/>
+  <rect x="120" y="130" width="300" height="430" rx="24" fill="#D5E9D8"/>
+  <rect x="460" y="130" width="280" height="430" rx="24" fill="#C5DFC9"/>
+  <rect x="780" y="130" width="300" height="430" rx="24" fill="#DDEEE0"/>
+  <rect x="170" y="190" width="200" height="28" rx="14" fill="#7BA985"/>
+  <rect x="505" y="190" width="190" height="28" rx="14" fill="#88B593"/>
+  <rect x="840" y="190" width="180" height="28" rx="14" fill="#7BA985"/>
+  <rect x="150" y="260" width="240" height="220" rx="18" fill="#F8FCF8"/>
+  <rect x="490" y="260" width="220" height="220" rx="18" fill="#F8FCF8"/>
+  <rect x="820" y="260" width="220" height="220" rx="18" fill="#F8FCF8"/>
+  <text x="120" y="610" fill="#355A3E" font-family="Arial, sans-serif" font-size="42" font-weight="700">Study Hall</text>
+  <text x="120" y="650" fill="#5B7762" font-family="Arial, sans-serif" font-size="22">Quiet, bright, spacious seating zone</text>
+</svg>

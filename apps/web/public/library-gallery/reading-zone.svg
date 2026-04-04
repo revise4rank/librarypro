@@ -1,0 +1,13 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="40" fill="#EDF7EF"/>
+  <rect x="80" y="80" width="1040" height="560" rx="30" fill="#F9FDF9"/>
+  <rect x="140" y="140" width="920" height="120" rx="24" fill="#D6EAD9"/>
+  <rect x="140" y="300" width="430" height="220" rx="24" fill="#C7E0CB"/>
+  <rect x="630" y="300" width="430" height="220" rx="24" fill="#DCEEE0"/>
+  <circle cx="250" cy="410" r="62" fill="#F9FDF9"/>
+  <circle cx="830" cy="410" r="62" fill="#F9FDF9"/>
+  <rect x="190" y="180" width="320" height="24" rx="12" fill="#7BA985"/>
+  <rect x="560" y="180" width="340" height="24" rx="12" fill="#7BA985"/>
+  <text x="140" y="600" fill="#355A3E" font-family="Arial, sans-serif" font-size="42" font-weight="700">Reading Zone</text>
+  <text x="140" y="640" fill="#5B7762" font-family="Arial, sans-serif" font-size="22">Focused tables with clean lighting and calm ambience</text>
+</svg>

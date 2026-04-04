@@ -1,0 +1,76 @@
+services:
+  - type: web
+    name: librarypro-api
+    runtime: node
+    rootDir: .
+    plan: free
+    buildCommand: npm install && npm run build -w @librarypro/api
+    startCommand: npm run start -w @librarypro/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: librarypro-db
+          property: connectionString
+      - key: BASE_DOMAIN
+        sync: false
+      - key: WEB_APP_URL
+        sync: false
+      - key: API_COMPRESSION_ENABLED
+        value: "true"
+      - key: DB_POOL_MAX
+        value: "20"
+      - key: DB_POOL_IDLE_TIMEOUT_MS
+        value: "30000"
+      - key: DB_POOL_CONNECTION_TIMEOUT_MS
+        value: "5000"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_TTL
+        value: 15m
+      - key: INTERNAL_TENANT_HEADER_SECRET
+        generateValue: true
+      - key: REDIS_URL
+        sync: false
+      - key: UPLOADS_PROVIDER
+        value: supabase
+      - key: UPLOADS_DIR
+        value: uploads
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: librarypro-assets
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: OTEL_SERVICE_NAME
+        value: librarypro-api
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        sync: false
+      - key: NOTIFICATION_WEBHOOK_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: REPORT_FROM_EMAIL
+        sync: false
+
+databases:
+  - name: librarypro-db
+    plan: free

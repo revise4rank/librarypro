@@ -1,0 +1,199 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { apiFetch, getApiBaseUrl } from "../lib/api";
+import { DashboardCard } from "./dashboard-shell";
+
+type JoinRequestsResponse = {
+  success: boolean;
+  data: Array<{
+    id: string;
+    student_user_id: string;
+    student_name: string;
+    student_code: string | null;
+    student_email: string | null;
+    student_phone: string | null;
+    seat_preference: string | null;
+    message: string | null;
+    requested_via: string;
+    status: string;
+    created_at: string;
+  }>;
+};
+
+type OwnerReceipt = {
+  receiptNo: string;
+  verificationId: string;
+  issuedAt: string;
+  studentName: string;
+  amount: string;
+  method: string;
+  status: string;
+  referenceNo: string | null;
+  dueDate?: string | null;
+  notes: string | null;
+};
+
+export function OwnerAdmissionsManager() {
+  const [requests, setRequests] = useState<JoinRequestsResponse["data"]>([]);
+  const [seatNumbers, setSeatNumbers] = useState<Record<string, string>>({});
+  const [planPrices, setPlanPrices] = useState<Record<string, string>>({});
+  const [resultMessage, setResultMessage] = useState<string | null>(null);
+  const [receipt, setReceipt] = useState<OwnerReceipt | null>(null);
+  const [receiptPaymentId, setReceiptPaymentId] = useState<string | null>(null);
+
+  async function load() {
+    const response = await apiFetch<JoinRequestsResponse>("/owner/join-requests");
+    setRequests(response.data);
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function approve(requestId: string) {
+    const today = new Date();
+    const end = new Date(today);
+    end.setMonth(end.getMonth() + 1);
+    const response = await apiFetch<{ success: boolean; data: { paymentId: string; assignmentId: string } }>(`/owner/join-requests/${requestId}/approve`, {
+      method: "POST",
+      body: JSON.stringify({
+        seatNumber: seatNumbers[requestId] || "",
+        planName: "Monthly Plan",
+        planPrice: Number(planPrices[requestId] || "999"),
+        durationMonths: 1,
+        startsAt: today.toISOString(),
+        endsAt: end.toISOString(),
+        paymentStatus: "DUE",
+      }),
+    });
+    const receiptResponse = await apiFetch<{ success: boolean; data: OwnerReceipt }>(`/owner/payments/${response.data.paymentId}/receipt`);
+    setReceipt(receiptResponse.data);
+    setReceiptPaymentId(response.data.paymentId);
+    setResultMessage(`Admission approved. Assignment ${response.data.assignmentId} created and payment ${response.data.paymentId} added to ledger.`);
+    await load();
+  }
+
+  async function downloadReceipt() {
+    if (!receiptPaymentId) return;
+    const download = await fetch(`${getApiBaseUrl()}/v1/owner/payments/${receiptPaymentId}/receipt/export`, {
+      credentials: "include",
+    });
+    const blob = await download.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${receipt?.receiptNo ?? "receipt"}.pdf`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function reject(requestId: string) {
+    await apiFetch(`/owner/join-requests/${requestId}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reason: "Not approved by library desk" }),
+    });
+    await load();
+  }
+
+  return (
+    <DashboardCard title="QR admissions queue" subtitle="Students can request admission from their app, then owner collects payment and allots a seat.">
+      <div className="grid gap-4">
+        {resultMessage ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{resultMessage}</div> : null}
+        {receipt ? (
+          <div className="rounded-[1.6rem] border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">Generated payment receipt</p>
+                <p className="mt-2 text-lg font-bold text-slate-950">{receipt.receiptNo}</p>
+                <p className="text-sm text-slate-600">{receipt.studentName}</p>
+              </div>
+              <div className="text-right text-sm text-slate-600">
+                <p>{new Date(receipt.issuedAt).toLocaleString()}</p>
+                <p className="mt-1 font-bold text-emerald-700">{receipt.status}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-4">
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Amount</p>
+                <p className="mt-2 text-base font-bold text-slate-950">Rs. {receipt.amount}</p>
+              </div>
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Method</p>
+                <p className="mt-2 text-base font-bold text-slate-950">{receipt.method}</p>
+              </div>
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Due date</p>
+                <p className="mt-2 text-base font-bold text-slate-950">{receipt.dueDate ? new Date(receipt.dueDate).toLocaleDateString() : "N/A"}</p>
+              </div>
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Reference</p>
+                <p className="mt-2 text-base font-bold text-slate-950">{receipt.referenceNo ?? "Desk entry"}</p>
+              </div>
+            </div>
+            <div className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">QR verification ID</p>
+              <p className="mt-2 font-bold text-slate-950">{receipt.verificationId}</p>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button type="button" onClick={() => window.print()} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-primary)]">
+                Print receipt
+              </button>
+              <button type="button" onClick={() => void downloadReceipt()} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white">
+                Download PDF
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {requests.map((request) => (
+          <div key={request.id} className="rounded-[1.6rem] border border-[var(--lp-border)] bg-white p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-base font-bold text-[var(--lp-text)]">{request.student_name}</p>
+                <p className="text-sm text-[var(--lp-muted)]">{request.student_code ?? request.student_email ?? request.student_phone ?? "Student app account"}</p>
+                <p className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">{request.requested_via} · {request.status}</p>
+              </div>
+              <p className="text-xs text-[var(--lp-muted)]">{new Date(request.created_at).toLocaleString()}</p>
+            </div>
+            {request.message ? <p className="mt-3 text-sm text-[var(--lp-muted)]">{request.message}</p> : null}
+            <div className="mt-4 grid gap-3">
+              <div className="grid gap-3 rounded-2xl bg-[#f9f5ee] p-4 text-sm text-[var(--lp-muted)] sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Student profile</p>
+                  <p className="mt-2 font-semibold text-[var(--lp-text)]">{request.student_name}</p>
+                  <p>{request.student_email ?? request.student_phone ?? request.student_code ?? "App-only profile"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Admission draft</p>
+                  <p className="mt-2">Plan: Monthly Plan</p>
+                  <p>Payment: pending desk collection</p>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[1fr_140px_auto_auto]">
+              <input
+                value={seatNumbers[request.id] ?? request.seat_preference ?? ""}
+                onChange={(event) => setSeatNumbers((current) => ({ ...current, [request.id]: event.target.value }))}
+                placeholder="Seat number"
+                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+              />
+              <input
+                value={planPrices[request.id] ?? "999"}
+                onChange={(event) => setPlanPrices((current) => ({ ...current, [request.id]: event.target.value }))}
+                placeholder="Plan amount"
+                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+              />
+              <button type="button" onClick={() => void approve(request.id)} disabled={request.status !== "PENDING"} className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
+                Approve
+              </button>
+              <button type="button" onClick={() => void reject(request.id)} disabled={request.status !== "PENDING"} className="rounded-2xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-600 disabled:opacity-50">
+                Reject
+              </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {requests.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No admission requests right now.</p> : null}
+      </div>
+    </DashboardCard>
+  );
+}
