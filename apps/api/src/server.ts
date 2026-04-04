@@ -3,6 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import { createClient } from "redis";
 import compression from "compression";
+import { ZodError } from "zod";
 import { env } from "./config/env";
 import { db } from "./lib/db";
 import { captureException, initializeMonitoring, shutdownMonitoring } from "./lib/monitoring";
@@ -130,7 +131,11 @@ export function createServer() {
   app.use("/v1", router);
 
   app.use((error: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    const statusCode = typeof error?.statusCode === "number" ? error.statusCode : 500;
+    const isZodError = error instanceof ZodError;
+    const statusCode = typeof error?.statusCode === "number" ? error.statusCode : isZodError ? 400 : 500;
+    const message = isZodError
+      ? error.issues.map((issue) => `${issue.path.join(".") || "field"}: ${issue.message}`).join(" | ")
+      : error?.message ?? "Unexpected error";
     if (statusCode >= 500) {
       captureException(error, {
         path: _req.originalUrl,
@@ -142,8 +147,8 @@ export function createServer() {
     res.status(statusCode).json({
       success: false,
       error: {
-        code: error?.code ?? "INTERNAL_SERVER_ERROR",
-        message: error?.message ?? "Unexpected error",
+        code: error?.code ?? (isZodError ? "VALIDATION_ERROR" : "INTERNAL_SERVER_ERROR"),
+        message,
       },
     });
   });
