@@ -47,6 +47,7 @@ export const env = {
   internalTenantHeaderSecret: process.env.INTERNAL_TENANT_HEADER_SECRET ?? process.env.JWT_SECRET ?? "",
   baseDomain: process.env.BASE_DOMAIN ?? "librarypro.com",
   webAppUrl: process.env.WEB_APP_URL ?? "http://127.0.0.1:3000",
+  apiPublicUrl: process.env.API_PUBLIC_URL ?? "",
   apiTrustedProxyCount: Number(process.env.API_TRUSTED_PROXY_COUNT ?? 1),
   dbPoolMax: Number(process.env.DB_POOL_MAX ?? 20),
   dbPoolIdleTimeoutMs: Number(process.env.DB_POOL_IDLE_TIMEOUT_MS ?? 30_000),

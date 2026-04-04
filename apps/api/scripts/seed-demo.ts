@@ -102,7 +102,13 @@ async function main() {
     throw new Error("DATABASE_URL is required");
   }
 
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({
+    connectionString,
+    ssl:
+      connectionString.includes("sslmode=") || connectionString.includes("render.com")
+        ? { rejectUnauthorized: false }
+        : undefined,
+  });
 
   try {
     await pool.query("BEGIN");

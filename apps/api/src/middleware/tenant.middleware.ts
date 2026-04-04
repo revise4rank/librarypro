@@ -11,8 +11,9 @@ function extractTenantSlug(hostHeader?: string): string | null {
   const host = hostHeader.split(":")[0].toLowerCase();
   const baseDomain = env.baseDomain.toLowerCase();
   const webAppHost = env.webAppUrl.replace(/^https?:\/\//, "").split(":")[0].toLowerCase();
+  const apiPublicHost = env.apiPublicUrl.replace(/^https?:\/\//, "").split(":")[0].toLowerCase();
 
-  if (host === "127.0.0.1" || host === "localhost" || host === webAppHost) {
+  if (host === "127.0.0.1" || host === "localhost" || host === webAppHost || (apiPublicHost && host === apiPublicHost)) {
     return null;
   }
 
