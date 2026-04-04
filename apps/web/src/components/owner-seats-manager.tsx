@@ -104,6 +104,36 @@ function getClusterType(col: number) {
   return "6 Seat Table";
 }
 
+function getPlannerColumnWidth(columns: number) {
+  if (columns >= 14) return 82;
+  if (columns >= 12) return 88;
+  if (columns >= 10) return 96;
+  return 120;
+}
+
+function buildNextSeatCode(existingSeatNumbers: string[], prefix: string) {
+  const cleanPrefix = prefix.trim().toUpperCase() || "S";
+  const seen = new Set(existingSeatNumbers.map((item) => item.trim().toUpperCase()));
+  let maxNumber = 0;
+
+  for (const seatNumber of seen) {
+    const normalized = seatNumber.trim().toUpperCase();
+    if (!normalized.startsWith(cleanPrefix)) continue;
+    const suffix = normalized.slice(cleanPrefix.length).replace(/[^0-9]/g, "");
+    const numeric = Number.parseInt(suffix || "0", 10);
+    if (Number.isFinite(numeric)) {
+      maxNumber = Math.max(maxNumber, numeric);
+    }
+  }
+
+  let candidate = maxNumber + 1;
+  while (seen.has(`${cleanPrefix}${candidate}`)) {
+    candidate += 1;
+  }
+
+  return `${cleanPrefix}${candidate}`;
+}
+
 function getZoneTone(zone: string) {
   if (zone === "Girls Zone") return "bg-fuchsia-100 text-fuchsia-700";
   if (zone === "Boys Zone") return "bg-sky-100 text-sky-700";
@@ -391,6 +421,7 @@ export function OwnerSeatsManager() {
   }, [selectedSeat]);
 
   const availableStudents = useMemo(() => students.filter((student) => student.assignment_id), [students]);
+  const existingSeatNumbers = useMemo(() => seats.map((seat) => seat.seat_number), [seats]);
 
   const sectionOptions = useMemo(() => {
     const seen = new Set<string>();
@@ -652,6 +683,36 @@ export function OwnerSeatsManager() {
       });
       setMessage(`Seat ${manualSeatCode} created successfully.`);
       setManualSeatCode("");
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Seat create failed.");
+    }
+  }
+
+  async function createSeatAtCell(floorId: string, posX: number, posY: number) {
+    if (!layoutMode) return;
+
+    const nextSeatCode = buildNextSeatCode(existingSeatNumbers, seatPrefix);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const result = await apiFetch<{ success: boolean; data: { createdCount: number; seatNumbers: string[] } }>("/owner/seats", {
+        method: "POST",
+        body: JSON.stringify({
+          floorId: floorId === "main-floor" ? undefined : floorId,
+          sectionName,
+          seatPrefix,
+          customSeatCode: nextSeatCode,
+          startNumber: 1,
+          seatCount: 1,
+          rowStart: posY,
+          colStart: posX,
+          columnsPerRow: 1,
+        }),
+      });
+      setManualSeatCode(result.data.seatNumbers[0] ?? nextSeatCode);
+      setMessage(`New seat ${result.data.seatNumbers[0] ?? nextSeatCode} created at X${posX} Y${posY}.`);
       await loadData();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Seat create failed.");
@@ -1268,8 +1329,8 @@ export function OwnerSeatsManager() {
                       ) : null}
 
                       <div
-                        className="grid gap-3 rounded-[1.5rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-4"
-                        style={{ gridTemplateColumns: `repeat(${item.columns}, minmax(120px, 1fr))` }}
+                        className="grid gap-2 rounded-[1.5rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-3"
+                        style={{ gridTemplateColumns: `repeat(${item.columns}, minmax(${getPlannerColumnWidth(item.columns)}px, 1fr))` }}
                       >
                         {cells.map((cell) => {
                           const seat = cell.seat;
@@ -1288,6 +1349,11 @@ export function OwnerSeatsManager() {
                               onClick={() => {
                                 if (plannerTool !== "aisle" && layoutMode && selectedSeat && !seat) {
                                   void moveSeatToPosition(selectedSeat.id, cell.x, cell.y);
+                                  return;
+                                }
+
+                                if (plannerTool !== "aisle" && layoutMode && !selectedSeat && !seat && !isAisleCell) {
+                                  void createSeatAtCell(item.floor.id, cell.x, cell.y);
                                 }
                               }}
                               onDragOver={(event) => {
@@ -1326,7 +1392,7 @@ export function OwnerSeatsManager() {
                                   void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
                                 }
                               }}
-                              className={`relative min-h-[9.75rem] rounded-[1.25rem] border border-dashed p-2 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${layoutMode && !seat ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                              className={`relative min-h-[8.5rem] rounded-[1.1rem] border border-dashed p-2 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${layoutMode && !seat ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
                             >
                               {seat ? (
                                 <button
@@ -1347,7 +1413,7 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`relative flex h-full w-full flex-col rounded-[1.25rem] border p-3 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`relative flex h-full w-full flex-col rounded-[1.1rem] border p-2.5 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
                                   <div className="mb-2 h-2 rounded-full bg-slate-900/10" />
@@ -1361,7 +1427,7 @@ export function OwnerSeatsManager() {
                                     </span>
                                   </div>
 
-                                  <div className="relative mt-1 rounded-[1rem] bg-white/70 px-3 py-3">
+                                  <div className="relative mt-1 rounded-[0.9rem] bg-white/70 px-2.5 py-2.5">
                                     <SeatSilhouette shape={seatShape} />
                                     <div className="mb-2 flex items-center gap-1">
                                       <div className="h-2 flex-1 rounded-full bg-slate-900/10" />
@@ -1374,7 +1440,7 @@ export function OwnerSeatsManager() {
                                         {formatStudentInitials(seat.student_name)}
                                       </span>
                                     </div>
-                                    <p className="text-sm font-semibold">{describeSeatState(seat)}</p>
+                                    <p className="text-[13px] font-semibold">{describeSeatState(seat)}</p>
                                     <p className="mt-1 text-xs opacity-75">{seat.plan_name ?? "No plan"} | {seat.payment_status ?? "NA"}</p>
                                     <div className="mt-2 flex flex-wrap gap-2">
                                       <span
@@ -1396,13 +1462,27 @@ export function OwnerSeatsManager() {
                                   <div className="mt-2 h-2 rounded-full bg-slate-900/10" />
                                 </button>
                               ) : (
-                                <div className={`flex h-full flex-col justify-between rounded-[1rem] p-3 text-[11px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
+                                <div className={`flex h-full flex-col justify-between rounded-[1rem] p-2.5 text-[11px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
                                   <div className="flex items-center justify-between">
                                     <span className="font-semibold uppercase tracking-[0.18em]">{isAisleCell ? "Aisle" : "Empty cell"}</span>
                                     <span>{cell.x},{cell.y}</span>
                                   </div>
-                                  <div className="rounded-full border border-dashed border-slate-300 px-3 py-2 text-center">
-                                    {isAisleCell ? "Walking path" : layoutMode ? "Drop seat here" : "Aisle / space"}
+                                  <div className="grid gap-2">
+                                    <div className="rounded-full border border-dashed border-slate-300 px-3 py-2 text-center">
+                                      {isAisleCell ? "Walking path" : layoutMode ? "Drop seat here" : "Aisle / space"}
+                                    </div>
+                                    {!isAisleCell ? (
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          void createSeatAtCell(item.floor.id, cell.x, cell.y);
+                                        }}
+                                        className="rounded-full border border-[var(--lp-primary)] bg-white px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.16em] text-[var(--lp-primary)]"
+                                      >
+                                        + Create seat here
+                                      </button>
+                                    ) : null}
                                   </div>
                                 </div>
                               )}
