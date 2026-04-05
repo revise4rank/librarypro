@@ -71,7 +71,17 @@ async function loginContext(browser, auth) {
   await page.getByPlaceholder(/password/i).fill(creds.password);
   await page.getByRole("button", { name: creds.button }).click();
   await page.waitForLoadState("networkidle");
-  await page.waitForFunction(() => document.cookie.includes("lp_session=1"));
+  await page.waitForFunction(() => {
+    if (window.location.pathname.includes("/login")) {
+      return false;
+    }
+
+    try {
+      return Boolean(window.localStorage.getItem("librarypro_session") || window.sessionStorage.getItem("librarypro_session"));
+    } catch {
+      return document.cookie.includes("lp_session=1");
+    }
+  });
   await page.close();
   return context;
 }
