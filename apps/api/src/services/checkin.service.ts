@@ -3,7 +3,6 @@ import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
 
 export type ScanCheckInInput = {
-  libraryId: string;
   studentUserId: string;
   qrRawPayload: string;
   clientEventId?: string;
@@ -265,6 +264,26 @@ function parseQrPayload(rawPayload: string): ParsedQrPayload {
   }
 }
 
+async function getLibraryQrConfig(libraryId: string) {
+  const pool = requireDb();
+  const result = await pool.query<{
+    id: string;
+    name: string;
+    active_qr_key_id: string;
+    qr_secret_hash: string;
+  }>(
+    `
+      SELECT id::text, name, active_qr_key_id::text, qr_secret_hash
+      FROM libraries
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [libraryId],
+  );
+
+  return result.rows[0] ?? null;
+}
+
 function verifyQrPayload(rawPayload: string, assignment: AssignmentRecord) {
   const parsed = parseQrPayload(rawPayload);
 
@@ -325,8 +344,23 @@ export async function getStudentEntryQr(libraryId: string, studentUserId: string
   };
 }
 
+export async function getLibraryEntryQr(libraryId: string) {
+  const library = await getLibraryQrConfig(libraryId);
+  if (!library) {
+    throw new AppError(404, "Library QR configuration not found", "LIBRARY_QR_NOT_FOUND");
+  }
+
+  return {
+    libraryId: library.id,
+    libraryName: library.name,
+    qrKeyId: library.active_qr_key_id,
+    qrPayload: buildQrPayload(library.id, library.active_qr_key_id, library.qr_secret_hash),
+  };
+}
+
 export async function scanCheckIn(input: ScanCheckInInput) {
-  const assignment = await getActiveAssignment(input.libraryId, input.studentUserId);
+  const parsed = parseQrPayload(input.qrRawPayload);
+  const assignment = await getActiveAssignment(parsed.libraryId, input.studentUserId);
   if (!assignment) {
     throw new AppError(404, "No active assignment found", "ASSIGNMENT_NOT_FOUND");
   }
@@ -346,13 +380,13 @@ export async function scanCheckIn(input: ScanCheckInInput) {
 
   verifyQrPayload(input.qrRawPayload, assignment);
 
-  const openVisit = await getOpenCheckin(input.libraryId, input.studentUserId);
+  const openVisit = await getOpenCheckin(parsed.libraryId, input.studentUserId);
   if (openVisit) {
     throw new AppError(409, "Student already checked in", "ALREADY_CHECKED_IN");
   }
 
   return insertCheckin({
-    libraryId: input.libraryId,
+    libraryId: parsed.libraryId,
     studentUserId: input.studentUserId,
     assignmentId: assignment.id,
     seatId: assignment.seatId,
@@ -364,20 +398,21 @@ export async function scanCheckIn(input: ScanCheckInInput) {
 }
 
 export async function scanCheckOut(input: ScanCheckInInput) {
-  const assignment = await getActiveAssignment(input.libraryId, input.studentUserId);
+  const parsed = parseQrPayload(input.qrRawPayload);
+  const assignment = await getActiveAssignment(parsed.libraryId, input.studentUserId);
   if (!assignment) {
     throw new AppError(404, "No active assignment found", "ASSIGNMENT_NOT_FOUND");
   }
 
   verifyQrPayload(input.qrRawPayload, assignment);
 
-  const openVisit = await getOpenCheckin(input.libraryId, input.studentUserId);
+  const openVisit = await getOpenCheckin(parsed.libraryId, input.studentUserId);
   if (!openVisit) {
     throw new AppError(409, "No active check-in to close", "CHECKOUT_NOT_ALLOWED");
   }
 
   const checkout = await checkoutOpenCheckin({
-    libraryId: input.libraryId,
+    libraryId: parsed.libraryId,
     studentUserId: input.studentUserId,
     scannedAtDevice: input.scannedAtDevice,
   });

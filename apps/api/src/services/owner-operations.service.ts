@@ -3,6 +3,7 @@ import { buildPdfBuffer, buildXlsxBuffer } from "../lib/report-exports";
 import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
 import { createOwnerNotificationCampaign } from "./owner-notifications.service";
+import { getLibraryEntryQr } from "./checkin.service";
 import { OwnerOperationsRepository } from "../repositories/owner-operations.repository";
 import crypto from "node:crypto";
 
@@ -1367,7 +1368,12 @@ export async function getOwnerSettings(input: { libraryId: string }) {
     throw new AppError(404, "Library settings not found", "LIBRARY_SETTINGS_NOT_FOUND");
   }
 
-  return settings;
+  const qr = await getLibraryEntryQr(input.libraryId);
+
+  return {
+    ...settings,
+    qr_payload: qr.qrPayload,
+  };
 }
 
 export async function updateOwnerSettings(input: {

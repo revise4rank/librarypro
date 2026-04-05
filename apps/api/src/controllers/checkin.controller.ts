@@ -19,6 +19,16 @@ function requireStudentCheckinContext(req: Request) {
   };
 }
 
+function requireStudentOnly(req: Request) {
+  if (!req.auth || req.auth.role !== "STUDENT") {
+    throw new AppError(401, "Student authentication required", "STUDENT_AUTH_REQUIRED");
+  }
+
+  return {
+    studentUserId: req.auth.userId,
+  };
+}
+
 export async function getStudentEntryQrController(req: Request, res: Response) {
   const { libraryId, studentUserId } = requireStudentCheckinContext(req);
   const result = await getStudentEntryQr(libraryId, studentUserId);
@@ -30,10 +40,9 @@ export async function getStudentEntryQrController(req: Request, res: Response) {
 }
 
 export async function scanCheckInController(req: Request, res: Response) {
-  const { libraryId, studentUserId } = requireStudentCheckinContext(req);
+  const { studentUserId } = requireStudentOnly(req);
   const parsed = studentQrActionBodySchema.parse(req.body);
   const result = await scanCheckIn({
-    libraryId,
     studentUserId,
     qrRawPayload: parsed.qrPayload,
     clientEventId: parsed.clientEventId || undefined,
@@ -47,10 +56,9 @@ export async function scanCheckInController(req: Request, res: Response) {
 }
 
 export async function scanCheckOutController(req: Request, res: Response) {
-  const { libraryId, studentUserId } = requireStudentCheckinContext(req);
+  const { studentUserId } = requireStudentOnly(req);
   const parsed = studentQrActionBodySchema.parse(req.body);
   const result = await scanCheckOut({
-    libraryId,
     studentUserId,
     qrRawPayload: parsed.qrPayload,
     clientEventId: parsed.clientEventId || undefined,

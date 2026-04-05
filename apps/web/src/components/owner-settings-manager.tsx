@@ -18,11 +18,16 @@ type SettingsResponse = {
     notice_message: string | null;
     allow_offline_checkin: boolean;
     qr_key_id: string;
+    qr_payload: string;
     subscription_plan: string | null;
     subscription_status: string | null;
     renewal_date: string | null;
   };
 };
+
+function buildQrImageUrl(payload: string) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data=${encodeURIComponent(payload)}`;
+}
 
 export function OwnerSettingsManager() {
   const [data, setData] = useState<SettingsResponse["data"] | null>(null);
@@ -130,9 +135,19 @@ export function OwnerSettingsManager() {
 
       <div className="grid gap-6">
         <Surface title="QR entry" subtitle="Library-level QR validation state">
-          <div className="space-y-3 text-sm text-slate-700">
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-[0_12px_24px_rgba(15,23,42,0.06)]">
+              <img
+                src={buildQrImageUrl(data.qr_payload)}
+                alt={`${data.library_name} library QR`}
+                className="mx-auto h-60 w-60 rounded-[1.25rem] bg-white object-cover"
+              />
+            </div>
             <p>Active QR key: <span className="font-black text-slate-950">{data.qr_key_id}</span></p>
             <p>Offline check-in: <span className="font-black text-slate-950">{data.allow_offline_checkin ? "Enabled" : "Disabled"}</span></p>
+            <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-600">
+              Is QR ko library gate, reception, ya desk par display karo. Student apne app ke camera scanner se isko scan karke direct check-in/check-out kar sakta hai.
+            </p>
             <button onClick={() => void regenerateQr()} className="rounded-2xl bg-slate-950 px-5 py-4 text-sm font-bold text-white">Regenerate QR key</button>
           </div>
         </Surface>

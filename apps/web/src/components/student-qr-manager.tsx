@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { enqueueQrAction, flushQueuedQrActions, listQueuedQrActions } from "../lib/offline-queue";
 import { DashboardCard } from "./dashboard-shell";
@@ -31,6 +31,16 @@ type CheckinActionResponse = {
   };
 };
 
+type ScanMode = "checkin" | "checkout";
+
+declare global {
+  interface Window {
+    BarcodeDetector?: new (options?: { formats?: string[] }) => {
+      detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>>;
+    };
+  }
+}
+
 function buildQrImageUrl(payload: string) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data=${encodeURIComponent(payload)}`;
 }
@@ -40,9 +50,23 @@ export function StudentQrManager() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState<"checkin" | "checkout" | null>(null);
+  const [submitting, setSubmitting] = useState<ScanMode | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [queuedCount, setQueuedCount] = useState(0);
+  const [scanMode, setScanMode] = useState<ScanMode>("checkin");
+  const [cameraActive, setCameraActive] = useState(false);
+  const [scannerStatus, setScannerStatus] = useState("Camera off");
+  const [manualQrPayload, setManualQrPayload] = useState("");
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<{ detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>> } | null>(null);
+  const lastScanRef = useRef<string>("");
+  const scanLoopRef = useRef<number | null>(null);
+
+  const cameraSupported = useMemo(() => {
+    return typeof window !== "undefined" && !!window.BarcodeDetector && !!navigator.mediaDevices?.getUserMedia;
+  }, []);
 
   async function loadQueueCount() {
     try {
@@ -66,8 +90,7 @@ export function StudentQrManager() {
     }
   }
 
-  async function runAction(action: "checkin" | "checkout") {
-    if (!data) return;
+  async function runAction(action: ScanMode, qrPayload: string) {
     setSubmitting(action);
     setMessage(null);
 
@@ -75,7 +98,7 @@ export function StudentQrManager() {
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         await enqueueQrAction({
           action,
-          qrPayload: data.qrPayload,
+          qrPayload,
           createdAt: new Date().toISOString(),
         });
         await loadQueueCount();
@@ -94,7 +117,7 @@ export function StudentQrManager() {
         {
           method: "POST",
           body: JSON.stringify({
-            qrPayload: data.qrPayload,
+            qrPayload,
             scannedAtDevice: new Date().toISOString(),
           }),
         },
@@ -106,6 +129,7 @@ export function StudentQrManager() {
           : `Check-out done at ${new Date(response.data.checkedOutAt ?? new Date().toISOString()).toLocaleString()}`,
       );
       setError(null);
+      await loadQr();
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : "Unable to process QR action.");
     } finally {
@@ -113,10 +137,82 @@ export function StudentQrManager() {
     }
   }
 
+  async function handleDetectedPayload(payload: string) {
+    if (!payload || payload === lastScanRef.current || submitting) return;
+    lastScanRef.current = payload;
+    await runAction(scanMode, payload);
+    window.setTimeout(() => {
+      if (lastScanRef.current === payload) {
+        lastScanRef.current = "";
+      }
+    }, 1800);
+  }
+
+  function stopCamera() {
+    if (scanLoopRef.current) {
+      window.clearInterval(scanLoopRef.current);
+      scanLoopRef.current = null;
+    }
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraActive(false);
+    setScannerStatus("Camera off");
+  }
+
+  async function startCamera() {
+    if (!cameraSupported) {
+      setError("Is browser me camera QR scan support available nahi hai. Paste scanner use karo.");
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+
+    try {
+      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+      detectorRef.current = detector;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      setCameraActive(true);
+      setScannerStatus("Camera live - library QR scan karo");
+
+      scanLoopRef.current = window.setInterval(async () => {
+        if (!videoRef.current || !detectorRef.current) return;
+        try {
+          const results = await detectorRef.current.detect(videoRef.current);
+          const match = results.find((item) => item.rawValue);
+          if (match?.rawValue) {
+            await handleDetectedPayload(match.rawValue);
+          }
+        } catch {
+          // Ignore transient detector errors during camera scan.
+        }
+      }, 900);
+    } catch (cameraError) {
+      stopCamera();
+      setError(cameraError instanceof Error ? cameraError.message : "Camera scanner start nahi ho paaya.");
+    }
+  }
+
   useEffect(() => {
     void loadQr();
     setIsOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
     void loadQueueCount();
+
+    return () => stopCamera();
   }, []);
 
   useEffect(() => {
@@ -147,68 +243,103 @@ export function StudentQrManager() {
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);
     };
-  }, [data?.qrPayload]);
+  }, []);
 
   if (loading && !data) {
-    return <p className="text-sm text-slate-500">{error ?? "Loading QR pass..."}</p>;
+    return <p className="text-sm text-slate-500">{error ?? "Loading QR scanner..."}</p>;
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
-      <DashboardCard title="Active QR pass" subtitle="Show this at entry or exit gate">
-        <div className="flex flex-col items-center gap-5">
-          <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-[0_16px_30px_rgba(15,23,42,0.08)]">
-            {data?.qrPayload ? (
-              <img
-                src={buildQrImageUrl(data.qrPayload)}
-                alt={`Live QR pass for ${data.seatNumber ?? "student seat"}`}
-                className="h-72 w-72 rounded-[1.5rem] bg-white object-cover"
-              />
-            ) : (
-              <div className="grid h-72 w-72 place-items-center rounded-[1.5rem] bg-slate-100 text-center text-sm font-bold text-slate-500">
-                QR pass unavailable
-              </div>
-            )}
+    <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
+      <DashboardCard title="Scan library QR" subtitle="Student app camera se library ka QR scan karo">
+        <div className="grid gap-5">
+          <div className="flex flex-wrap gap-2">
+            {(["checkin", "checkout"] as ScanMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setScanMode(mode)}
+                className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                  scanMode === mode ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                }`}
+              >
+                {mode === "checkin" ? "Check-in scan" : "Check-out scan"}
+              </button>
+            ))}
           </div>
-          <div className="grid w-full gap-2 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Live entry pass</p>
-            <p className="text-lg font-black text-slate-950">{data?.seatNumber ?? "No seat assigned"}</p>
-            <p className="text-xs text-slate-500">Gate par is QR ko show ya scan karo.</p>
+
+          <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-950 p-4 shadow-[0_16px_30px_rgba(15,23,42,0.12)]">
+            <div className="relative overflow-hidden rounded-[1.5rem] bg-black">
+              <video ref={videoRef} className="h-[22rem] w-full object-cover" playsInline muted />
+              {!cameraActive ? (
+                <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(15,23,42,0.88))] px-6 text-center">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">Library Scanner</p>
+                    <p className="mt-3 text-2xl font-black text-white">Student camera yahan se library QR scan karega</p>
+                    <p className="mt-3 text-sm leading-7 text-slate-200">
+                      Sirf wahi student check-in/check-out hoga jo scanned library me active assignment rakhta ho.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+              <div className="pointer-events-none absolute inset-[16%] rounded-[1.5rem] border-2 border-white/80 shadow-[0_0_0_999px_rgba(15,23,42,0.18)]" />
+            </div>
           </div>
-          <p className="rounded-full bg-slate-100 px-4 py-2 text-xs font-black tracking-[0.12em] text-slate-600">
-            {data?.qrPayload.slice(0, 36)}...
-          </p>
-          <div className="grid w-full gap-3 md:grid-cols-2">
+
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              disabled={!data || submitting !== null}
-              onClick={() => void runAction("checkin")}
-              className="rounded-[1.25rem] bg-[var(--lp-primary)] px-4 py-4 text-sm font-bold text-white disabled:opacity-60"
+              onClick={() => void startCamera()}
+              disabled={cameraActive}
+              className="rounded-[1.25rem] bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white disabled:opacity-60"
             >
-              {submitting === "checkin" ? "Checking in..." : "Check in now"}
+              Start camera scanner
             </button>
             <button
               type="button"
-              disabled={!data || submitting !== null}
-              onClick={() => void runAction("checkout")}
-              className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
+              onClick={stopCamera}
+              disabled={!cameraActive}
+              className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-5 py-4 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
             >
-              {submitting === "checkout" ? "Checking out..." : "Check out now"}
+              Stop camera
+            </button>
+          </div>
+
+          <div className="rounded-[1.4rem] bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">
+            {scannerStatus}
+          </div>
+
+          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Fallback scanner</p>
+            <textarea
+              value={manualQrPayload}
+              onChange={(event) => setManualQrPayload(event.target.value)}
+              placeholder="Agar camera support na ho to yahan scanned QR payload paste karo."
+              className="mt-3 min-h-28 w-full rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => void runAction(scanMode, manualQrPayload.trim())}
+              disabled={!manualQrPayload.trim() || submitting !== null}
+              className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
+            >
+              Run {scanMode === "checkin" ? "check-in" : "check-out"} from pasted QR
             </button>
           </div>
         </div>
       </DashboardCard>
 
-      <DashboardCard title="QR status and validity" subtitle="Live entry controls from your library subdomain">
+      <DashboardCard title="Library access status" subtitle="Current active assignment aur scan state">
         <div className="grid gap-4">
           <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {isOffline ? `Offline mode active. Queued QR actions: ${queuedCount}` : `Online and ready. Queued QR actions: ${queuedCount}`}
           </div>
           {message ? <div className="rounded-[1.4rem] bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-700">{message}</div> : null}
           {error ? <div className="rounded-[1.4rem] bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-600">{error}</div> : null}
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Seat</p>
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Current seat</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{data?.seatNumber ?? "-"}</p>
             </div>
             <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
@@ -216,6 +347,7 @@ export function StudentQrManager() {
               <p className="mt-3 text-sm font-black text-slate-950">{data?.qrKeyId ?? "-"}</p>
             </div>
           </div>
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Valid from</p>
@@ -230,18 +362,33 @@ export function StudentQrManager() {
               </p>
             </div>
           </div>
+
           <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
-            Owner ke library subdomain se hi student login, QR entry, payment status, notice board, aur study progress chalega. Yeh pass active assignment ke against live generate ho raha hai, static mock code nahi.
+            Ab student ko apna QR dikhane ki zarurat nahi hai. Library apna QR display karegi, aur student app camera se usko scan karke direct check-in/check-out karega.
           </div>
-          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
-            Offline-first mode me QR button press karne par action IndexedDB me queue hota hai. Internet aate hi app auto-sync karke real attendance register update kar deta hai.
-          </div>
+
+          {data?.qrPayload ? (
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Reference preview</p>
+              <div className="mt-3 flex items-center gap-4">
+                <img
+                  src={buildQrImageUrl(data.qrPayload)}
+                  alt="Reference QR preview"
+                  className="h-24 w-24 rounded-[1rem] border border-slate-200 bg-white"
+                />
+                <p className="text-xs leading-6 text-slate-500">
+                  Ye sirf preview hai. Actual use-case me student library ke displayed QR ko scan karega.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           <button
             type="button"
             onClick={() => void loadQr()}
             className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4 text-sm font-bold text-[var(--lp-text)]"
           >
-            Refresh QR pass
+            Refresh access status
           </button>
         </div>
       </DashboardCard>
