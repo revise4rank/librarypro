@@ -182,7 +182,7 @@ export function DashboardShell({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileMenuSide, setMobileMenuSide] = useState<"left" | "right">("right");
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(true);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const matchedGuide = dashboardGuides.find((item) => item.match.test(pathname))?.guide;
 
@@ -202,7 +202,7 @@ export function DashboardShell({
   }, [pathname]);
 
   useEffect(() => {
-    setGuideOpen(true);
+    setGuideOpen(false);
   }, [pathname]);
 
   function toggleMobileMenuSide() {
@@ -327,26 +327,25 @@ export function DashboardShell({
 
           {matchedGuide ? (
             <div className="px-4 pb-24 md:px-6 lg:px-8 lg:pb-8">
-              <section className="rounded-[1.75rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.9)] p-5 shadow-[0_16px_36px_rgba(111,95,74,0.08)]">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Section help</p>
-                    <h3 className="mt-2 text-lg font-extrabold text-[var(--lp-text)]">{matchedGuide.title}</h3>
-                    <p className="mt-2 text-sm text-[var(--lp-muted)]">Is page ko quickly use karne ke liye short guide.</p>
+              <section className="rounded-[1.35rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.78)] px-4 py-3 shadow-[0_10px_24px_rgba(111,95,74,0.06)]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Quick help</p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--lp-text)]">{matchedGuide.title}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setGuideOpen((current) => !current)}
                     className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--lp-primary)]"
                   >
-                    {guideOpen ? "Hide guide" : "Show guide"}
+                    {guideOpen ? "Hide steps" : "Show steps"}
                   </button>
                 </div>
                 {guideOpen ? (
-                  <ol className="mt-4 grid gap-3 text-sm text-[var(--lp-text)] md:grid-cols-3">
+                  <ol className="mt-3 grid gap-2 text-sm text-[var(--lp-text)] lg:grid-cols-3">
                     {matchedGuide.steps.map((step, index) => (
-                      <li key={`${matchedGuide.title}-${index}`} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-3 leading-6">
-                        <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--lp-primary)] text-xs font-black text-white">
+                      <li key={`${matchedGuide.title}-${index}`} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-3 leading-6">
+                        <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--lp-primary)] text-[10px] font-black text-white">
                           {index + 1}
                         </span>
                         {step}

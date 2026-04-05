@@ -232,39 +232,39 @@ export function OwnerDashboardManager() {
   return (
     <div className="grid gap-6">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
-      <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((item) => (
-          <div key={item.label} className="rounded-[1.75rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.96)] p-5 shadow-[0_14px_32px_rgba(111,95,74,0.06)]">
+          <div key={item.label} className="rounded-[1.4rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.96)] p-4 shadow-[0_12px_24px_rgba(111,95,74,0.05)]">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-muted)]">{item.label}</p>
-            <div className="mt-3 flex items-end justify-between gap-3">
-              <p className="text-3xl font-black text-[var(--lp-text)]">{item.value}</p>
-              <span className={`rounded-full px-3 py-2 text-xs font-black ${item.tone}`}>{item.change}</span>
+            <div className="mt-2 space-y-3">
+              <p className="text-2xl font-black text-[var(--lp-text)]">{item.value}</p>
+              <span className={`inline-flex rounded-full px-3 py-1.5 text-[11px] font-black ${item.tone}`}>{item.change}</span>
             </div>
           </div>
         ))}
       </section>
 
-      <section className="grid gap-6 2xl:grid-cols-[1.35fr_0.95fr]">
+      <section className="grid gap-4 2xl:grid-cols-[1.25fr_0.95fr]">
         <DashboardCard title="Priority center" subtitle="Real owner alerts from seats, plans, and payments">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             {alerts.map((alert) => (
-              <article key={alert.title} className={`rounded-[1.5rem] border p-5 ${alert.tone}`}>
-                <h4 className="text-base font-black">{alert.title}</h4>
-                <p className="mt-2 text-sm leading-6">{alert.detail}</p>
+              <article key={alert.title} className={`rounded-[1.15rem] border p-4 ${alert.tone}`}>
+                <h4 className="text-sm font-black">{alert.title}</h4>
+                <p className="mt-1 text-sm leading-6">{alert.detail}</p>
               </article>
             ))}
           </div>
         </DashboardCard>
 
         <DashboardCard title="Operator shortcuts" subtitle="Fastest paths owners actually use">
-          <div className="grid gap-3">
+          <div className="grid gap-2.5">
             {actionCards.map((card) => (
-              <Link key={card.title} href={card.href} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4 transition hover:border-slate-300 hover:bg-white">
+              <Link key={card.title} href={card.href} className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3.5 transition hover:border-slate-300 hover:bg-white">
                 <p className="font-black text-slate-950">{card.title}</p>
                 <p className="mt-1 text-sm text-slate-500">{card.detail}</p>
               </Link>
             ))}
-            <button type="button" onClick={() => void sendDueRecovery()} className="rounded-[1.25rem] bg-[var(--lp-primary)] px-4 py-4 text-left text-sm font-bold text-white">
+            <button type="button" onClick={() => void sendDueRecovery()} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3.5 text-left text-sm font-bold text-white">
               Send automatic due recovery reminders
             </button>
             {campaignMessage ? <p className="text-sm font-semibold text-slate-600">{campaignMessage}</p> : null}
