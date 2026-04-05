@@ -180,6 +180,16 @@ export const createJoinRequestBodySchema = z.object({
   message: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
+export const createLibraryJoinRequestBodySchema = z.object({
+  libraryId: z.string().uuid(),
+  seatPreference: z.string().trim().max(40).optional().or(z.literal("")),
+  message: z.string().trim().max(1000).optional().or(z.literal("")),
+});
+
+export const studentLibrarySearchQuerySchema = z.object({
+  q: z.string().trim().min(2).max(120),
+});
+
 export const createRejoinRequestBodySchema = z.object({
   seatPreference: z.string().trim().max(40).optional().or(z.literal("")),
   message: z.string().trim().max(1000).optional().or(z.literal("")),

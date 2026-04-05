@@ -63,6 +63,7 @@ import {
   createOwnerPaymentController,
   createOwnerSeatsController,
   createOwnerStudentController,
+  createStudentJoinRequestByLibraryController,
   createStudentJoinRequestController,
   getStudentRejoinOptionsController,
   reserveStudentRejoinSeatController,
@@ -97,6 +98,7 @@ import {
   payStudentPaymentController,
   regenerateOwnerQrController,
   rejectOwnerJoinRequestController,
+  searchStudentLibrariesController,
   sendDueRecoveryCampaignController,
   approveOwnerJoinRequestController,
   exportOwnerReportController,
@@ -199,12 +201,14 @@ router.get("/student/feed", requireRole(["STUDENT"]), asyncHandler(getStudentFee
 router.post("/student/feed/posts", requireRole(["STUDENT"]), asyncHandler(createStudentFeedPostController));
 router.patch("/student/feed/visibility", requireRole(["STUDENT"]), asyncHandler(updateStudentFeedVisibilityController));
 router.get("/student/libraries", requireRole(["STUDENT"]), asyncHandler(listStudentLibrariesController));
+router.get("/student/libraries/search", requireRole(["STUDENT"]), asyncHandler(searchStudentLibrariesController));
 router.patch("/student/libraries/:libraryId/active", requireRole(["STUDENT"]), asyncHandler(setActiveStudentLibraryController));
 router.post("/student/libraries/:libraryId/exit", requireRole(["STUDENT"]), asyncHandler(exitStudentLibraryController));
 router.get("/student/libraries/:libraryId/rejoin-options", requireRole(["STUDENT"]), asyncHandler(getStudentRejoinOptionsController));
 router.post("/student/libraries/:libraryId/rejoin-seats/:seatNumber/reserve", requireRole(["STUDENT"]), asyncHandler(reserveStudentRejoinSeatController));
 router.post("/student/libraries/:libraryId/rejoin", requireRole(["STUDENT"]), asyncHandler(createStudentRejoinRequestController));
 router.post("/student/libraries/:libraryId/reviews", requireRole(["STUDENT"]), asyncHandler(createStudentLibraryReviewController));
+router.post("/student/join-requests/library", requireRole(["STUDENT"]), asyncHandler(createStudentJoinRequestByLibraryController));
 router.post("/student/join-requests/scan", requireRole(["STUDENT"]), asyncHandler(createStudentJoinRequestController));
 router.get("/student/join-requests", requireRole(["STUDENT"]), asyncHandler(listStudentJoinRequestsController));
 router.get("/student/syllabus", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusController));

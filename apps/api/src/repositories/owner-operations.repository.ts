@@ -2473,6 +2473,53 @@ export class OwnerOperationsRepository {
     return result.rows[0];
   }
 
+  async findLibraryById(client: PoolClient, libraryId: string) {
+    const result = await client.query<{ id: string; name: string; city: string; area: string | null }>(
+      `
+      SELECT id::text, name, city, area
+      FROM libraries
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [libraryId],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async searchActiveLibrariesForJoin(query: string) {
+    const normalized = `%${query.trim().toLowerCase()}%`;
+    const result = await this.pool.query<{
+      library_id: string;
+      library_name: string;
+      city: string;
+      area: string | null;
+      subdomain: string | null;
+    }>(
+      `
+      SELECT
+        l.id::text AS library_id,
+        l.name AS library_name,
+        l.city,
+        l.area,
+        l.subdomain
+      FROM libraries l
+      WHERE l.is_active = TRUE
+        AND (
+          LOWER(l.name) LIKE $1
+          OR LOWER(l.city) LIKE $1
+          OR COALESCE(LOWER(l.area), '') LIKE $1
+          OR COALESCE(LOWER(l.subdomain), '') LIKE $1
+        )
+      ORDER BY l.name ASC
+      LIMIT 12
+      `,
+      [normalized],
+    );
+
+    return result.rows;
+  }
+
   async listJoinRequests(libraryId: string) {
     const result = await this.pool.query<JoinRequestRow>(
       `

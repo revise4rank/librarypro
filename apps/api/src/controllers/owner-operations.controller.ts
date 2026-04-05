@@ -11,6 +11,7 @@ import {
   createOwnerPayment,
   createOwnerSeats,
   createOwnerStudent,
+  createStudentJoinRequestByLibrary,
   createStudentJoinRequest,
   createStudentRejoinRequest,
   deleteOwnerStudent,
@@ -46,6 +47,7 @@ import {
   payStudentPayment,
   regenerateOwnerQr,
   rejectOwnerJoinRequest,
+  searchActiveLibrariesForJoin,
   sendDueRecoveryCampaign,
   approveOwnerJoinRequest,
   exportOwnerReport,
@@ -78,6 +80,7 @@ import {
   ownerStudentsQuerySchema,
   ownerReportExportQuerySchema,
   ownerReportsQuerySchema,
+  createLibraryJoinRequestBodySchema,
   createJoinRequestBodySchema,
   createRejoinRequestBodySchema,
   approveJoinRequestBodySchema,
@@ -87,6 +90,7 @@ import {
   ownerCheckinsQuerySchema,
   sendDueRecoveryBodySchema,
   studentNotificationsQuerySchema,
+  studentLibrarySearchQuerySchema,
   studentPaymentsQuerySchema,
   updateStudentFocusGoalsBodySchema,
   updateOwnerSettingsBodySchema,
@@ -1021,6 +1025,33 @@ export async function createStudentJoinRequestController(req: Request, res: Resp
     userAgent: req.header("user-agent") ?? null,
   });
   res.status(201).json({ success: true, data });
+}
+
+export async function createStudentJoinRequestByLibraryController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const parsed = createLibraryJoinRequestBodySchema.parse(req.body);
+  const data = await createStudentJoinRequestByLibrary({
+    studentUserId,
+    libraryId: parsed.libraryId,
+    seatPreference: parsed.seatPreference || undefined,
+    message: parsed.message || undefined,
+  });
+  await createAuditLog({
+    actorUserId: studentUserId,
+    libraryId: data.libraryId,
+    action: "student.join-request.create",
+    entityType: "join_request",
+    metadata: { via: "SEARCH" },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function searchStudentLibrariesController(req: Request, res: Response) {
+  const parsed = studentLibrarySearchQuerySchema.parse(req.query);
+  const data = await searchActiveLibrariesForJoin(parsed.q);
+  res.json({ success: true, data });
 }
 
 export async function createStudentRejoinRequestController(req: Request, res: Response) {

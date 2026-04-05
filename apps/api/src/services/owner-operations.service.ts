@@ -1585,6 +1585,45 @@ export async function createStudentJoinRequest(input: {
   }
 }
 
+export async function createStudentJoinRequestByLibrary(input: {
+  studentUserId: string;
+  libraryId: string;
+  seatPreference?: string;
+  message?: string;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    const library = await repo.findLibraryById(client, input.libraryId);
+    if (!library) {
+      throw new AppError(404, "Library not found", "LIBRARY_NOT_FOUND");
+    }
+
+    const created = await repo.createJoinRequest(client, {
+      libraryId: library.id,
+      studentUserId: input.studentUserId,
+      requestedVia: "SEARCH",
+      seatPreference: input.seatPreference ?? null,
+      message: input.message ?? null,
+    });
+
+    return {
+      id: created.id,
+      libraryId: library.id,
+      libraryName: library.name,
+      city: library.city,
+      area: library.area,
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export async function searchActiveLibrariesForJoin(query: string) {
+  return repository().searchActiveLibrariesForJoin(query);
+}
+
 export async function createStudentRejoinRequest(input: {
   studentUserId: string;
   libraryId: string;
