@@ -325,6 +325,7 @@ export function OwnerSeatsManager() {
   const [paintSectionColor, setPaintSectionColor] = useState("#f472b6");
   const [floorMetaDrafts, setFloorMetaDrafts] = useState<FloorMetaDrafts>({});
   const [activeAislePaint, setActiveAislePaint] = useState<{ floorId: string; mode: "add" | "remove" } | null>(null);
+  const [ribbonTab, setRibbonTab] = useState<"floor" | "bank" | "single">("floor");
 
   async function loadData() {
     setLoading(true);
@@ -1005,67 +1006,73 @@ export function OwnerSeatsManager() {
 
   return (
     <div className="grid gap-6">
-      <DashboardCard title="Quick guide" subtitle="Seat Control ko kaise use karein.">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Step 1</p>
-            <p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">Pehle floor banao</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--lp-muted)]">Floor name, floor number, rows aur columns set karo. Fir create floor dabao.</p>
+      <DashboardCard title="Seat Creation Ribbon" subtitle="MS Word jaisa top ribbon yahin se floor, seat bank, aur single seat create karo.">
+        <div className="grid gap-4">
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["floor", "Create Floor"],
+              ["bank", "Seat Bank"],
+              ["single", "Single Seat"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRibbonTab(value as typeof ribbonTab)}
+                className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                  ribbonTab === value
+                    ? "bg-[var(--lp-primary)] text-white shadow-[0_10px_22px_rgba(210,114,61,0.22)]"
+                    : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Step 2</p>
-            <p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">Seat bank create karo</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--lp-muted)]">Floor choose karke seat prefix, count, row/column start aur columns per row bharo.</p>
-          </div>
-          <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Step 3</p>
-            <p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">Planner mode on karo</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--lp-muted)]">Seat ko drag karke position change karo. Aisle/paint tools se hall zones set karo.</p>
-          </div>
-          <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Step 4</p>
-            <p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">Student allot karo</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--lp-muted)]">Right side se student select ya drag karo aur kisi seat par drop karke allotment save karo.</p>
-          </div>
-        </div>
-      </DashboardCard>
 
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_1fr_0.95fr]">
-        <DashboardCard title="Seat setup tools" subtitle="Create halls, rows, and seat banks quickly.">
-          <div className="grid gap-4">
-            {error ? (
-              <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
-                {error}
+          {error ? (
+            <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+              {error}
+            </div>
+          ) : null}
+          {message ? (
+            <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+              {message}
+            </div>
+          ) : null}
+
+          {ribbonTab === "floor" ? (
+            <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
+              <div className="lg:col-span-5 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+                Existing floors ke basis par next floor number auto-suggest hota hai. Duplicate hua to next available floor suggest hoga.
               </div>
-            ) : null}
-            {message ? (
-              <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                {message}
-              </div>
-            ) : null}
-            <form id="seat-create-floor" onSubmit={createFloor} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Create floor</p>
-              <div className="mb-3 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
-                Existing floors ke basis par next floor number auto-suggest hota hai. Agar duplicate number hua to system next available floor suggest karega.
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <input value={floorName} onChange={(event) => setFloorName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Floor name" />
-                <input value={floorNumber} onChange={(event) => setFloorNumber(Number(event.target.value) || 0)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Floor number" type="number" />
-                <input value={layoutRows} onChange={(event) => setLayoutRows(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Rows" type="number" />
-                <input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Columns" type="number" />
-              </div>
-              <button type="submit" className="mt-3 rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">Create floor</button>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Floor Name
+                <input value={floorName} onChange={(event) => setFloorName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Floor name" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Floor No.
+                <input value={floorNumber} onChange={(event) => setFloorNumber(Number(event.target.value) || 0)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Floor number" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Rows
+                <input value={layoutRows} onChange={(event) => setLayoutRows(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Rows" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Columns
+                <input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns" type="number" />
+              </label>
+              <button type="submit" className="rounded-[1rem] bg-[var(--lp-primary)] px-5 py-3 text-sm font-semibold text-white">Create floor</button>
             </form>
+          ) : null}
 
-            <form id="seat-create-bank" onSubmit={createSeats} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Create seat bank</p>
-              <div className="mb-3 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
-                {selectedFloorId
-                  ? "Selected floor par seats add hongi. Prefix, count aur start position bharke create seat bank dabao."
-                  : "Pehle upar se floor create/select karo. Floor ke bina seat bank create nahi hoga."}
+          {ribbonTab === "bank" ? (
+            <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
+              <div className="lg:col-span-9 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+                Floor choose karke bulk seat bank banao. Prefix, count, row/column start aur columns per row yahin se set karo.
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none">
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Floor
+                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none">
                   <option value="">Choose floor</option>
                   {floorCards.map((item) => (
                     <option key={item.floor.id} value={item.floor.id}>
@@ -1073,36 +1080,75 @@ export function OwnerSeatsManager() {
                     </option>
                   ))}
                 </select>
-                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} list="seat-sections" className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Room / section name" />
-                <datalist id="seat-sections">
-                  {sectionOptions.map((section) => (
-                    <option key={section} value={section} />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Section
+                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} list="seat-sections-ribbon" className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Prefix
+                <input value={seatPrefix} onChange={(event) => setSeatPrefix(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Seat prefix" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Start
+                <input value={startNumber} onChange={(event) => setStartNumber(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Start number" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Count
+                <input value={seatCount} onChange={(event) => setSeatCount(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Seat count" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Row
+                <input value={rowStart} onChange={(event) => setRowStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Row start" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Column
+                <input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Column start" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Per Row
+                <input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns per row" type="number" />
+              </label>
+              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-5 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
+              <datalist id="seat-sections-ribbon">
+                {sectionOptions.map((section) => (
+                  <option key={section} value={section} />
+                ))}
+              </datalist>
+            </form>
+          ) : null}
+
+          {ribbonTab === "single" ? (
+            <form id="seat-create-single" onSubmit={createSingleSeat} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+              <div className="lg:col-span-4 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+                Ek exact custom seat banana ho to yahin se code likho, floor choose rakho, aur direct create karo.
+              </div>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Seat Code
+                <input value={manualSeatCode} onChange={(event) => setManualSeatCode(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Exact seat code e.g. G-12" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Floor
+                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none">
+                  <option value="">Choose floor</option>
+                  {floorCards.map((item) => (
+                    <option key={item.floor.id} value={item.floor.id}>
+                      {item.floor.name}
+                    </option>
                   ))}
-                </datalist>
-                <input value={seatPrefix} onChange={(event) => setSeatPrefix(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Seat prefix" />
-                <input value={startNumber} onChange={(event) => setStartNumber(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Start number" type="number" />
-                <input value={seatCount} onChange={(event) => setSeatCount(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Seat count" type="number" />
-                <input value={rowStart} onChange={(event) => setRowStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Row start" type="number" />
-                <input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Column start" type="number" />
-                <input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Columns per row" type="number" />
-              </div>
-              <button type="submit" disabled={!selectedFloorId} className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
+                </select>
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Section
+                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
+              </label>
+              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
             </form>
+          ) : null}
+        </div>
+      </DashboardCard>
 
-            <form id="seat-create-single" onSubmit={createSingleSeat} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
-              <p className="text-sm font-semibold text-[var(--lp-text)]">Manual single seat</p>
-              <div className="mt-3 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
-                Ek custom seat banana ho to seat code likho, floor choose rakho, aur phir create one seat dabao.
-              </div>
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <input value={manualSeatCode} onChange={(event) => setManualSeatCode(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Exact seat code e.g. G-12" />
-                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Room / section name" />
-              </div>
-              <button type="submit" disabled={!selectedFloorId} className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
-            </form>
-          </div>
-        </DashboardCard>
-
+      <section className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
         <DashboardCard title="Planner controls" subtitle="Make the hall feel like a real reading floor.">
           <div className="grid gap-4">
             <div className="grid gap-3 md:grid-cols-2">
