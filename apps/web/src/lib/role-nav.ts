@@ -40,5 +40,4 @@ export const adminNav = [
   { href: "/superadmin/offers", label: "Offers", shortLabel: "OFF" },
   { href: "/superadmin/plans", label: "Plans", shortLabel: "PLN" },
   { href: "/superadmin/payments", label: "Payments", shortLabel: "PAY" },
-  { href: "/superadmin/login", label: "Login", shortLabel: "LOG" },
 ];

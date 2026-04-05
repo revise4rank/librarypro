@@ -77,7 +77,7 @@ function formatStudentInitials(value?: string | null) {
 
 function describeSeatState(seat: SeatRow) {
   if (seat.status === "OCCUPIED") return seat.student_name ?? "Occupied";
-  if (seat.status === "RESERVED") return `Reserved • ${formatReserveTimer(seat.reserved_until)}`;
+  if (seat.status === "RESERVED") return `Reserved - ${formatReserveTimer(seat.reserved_until)}`;
   if (seat.status === "DISABLED") return "Blocked";
   return "Free";
 }
@@ -1731,7 +1731,7 @@ export function OwnerSeatsManager() {
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-lg font-black text-[var(--lp-text)]">{selectedSeat.seat_number}</p>
-                        <p className="text-sm text-[var(--lp-muted)]">{selectedSeat.floor_name ?? "Main floor"} • {selectedSeat.section_name ?? "Main section"}</p>
+                        <p className="text-sm text-[var(--lp-muted)]">{selectedSeat.floor_name ?? "Main floor"} - {selectedSeat.section_name ?? "Main section"}</p>
                       </div>
                       <span className="rounded-full bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">
                         {selectedSeat.status}

@@ -75,6 +75,7 @@ export function RoleLoginForm({
         onChange={(event) => setLogin(event.target.value)}
         className="rounded-[1.35rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-4 py-4 text-[var(--lp-text)] outline-none transition focus:border-[var(--lp-primary)] focus:bg-white"
         placeholder={loginPlaceholder}
+        autoComplete={expectedRole === "STUDENT" ? "username" : "email"}
       />
       <input
         value={password}
@@ -82,6 +83,7 @@ export function RoleLoginForm({
         className="rounded-[1.35rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-4 py-4 text-[var(--lp-text)] outline-none transition focus:border-[var(--lp-primary)] focus:bg-white"
         placeholder={passwordPlaceholder}
         type="password"
+        autoComplete="current-password"
       />
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
       <div className="rounded-[1.2rem] bg-[#f5faf6] px-4 py-4 text-xs leading-6 text-[var(--lp-muted)]">

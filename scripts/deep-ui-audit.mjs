@@ -77,7 +77,7 @@ async function loginContext(browser, auth) {
     }
 
     try {
-      return Boolean(window.localStorage.getItem("librarypro_session") || window.sessionStorage.getItem("librarypro_session"));
+      return Boolean(window.localStorage.getItem("nextlib_session") || window.sessionStorage.getItem("nextlib_session"));
     } catch {
       return document.cookie.includes("lp_session=1");
     }
