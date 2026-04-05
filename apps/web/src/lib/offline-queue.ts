@@ -26,7 +26,7 @@ export type QueuedQrAction = {
   createdAt: string;
 };
 
-const DB_NAME = "librarypro-offline";
+const DB_NAME = "nextlib-offline";
 const STORE_NAME = "offline-actions";
 const DB_VERSION = 2;
 

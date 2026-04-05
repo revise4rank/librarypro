@@ -7,7 +7,7 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentJoinLibraryPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Join Library"
       title="Use the same student app across libraries and keep your progress with you."
       description="No need to create a new app every time. Scan the next library QR, send the request, and continue using your study system."

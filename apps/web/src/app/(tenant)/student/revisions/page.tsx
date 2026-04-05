@@ -6,7 +6,7 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentRevisionsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Revision Dashboard"
       title="Smart spaced revision that helps you remember, not just finish."
       description="Completed topics ke baad 1d, 3d, 7d, 15d revision queue banti hai. Weak topics ko surface rakho aur overdue recall ko clear karo."

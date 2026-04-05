@@ -20,8 +20,8 @@ export function buildXlsxBuffer(input: {
     bookType: "xlsx",
     Props: {
       Title: input.workbookTitle,
-      Author: "LibraryPro",
-      Company: "LibraryPro",
+      Author: "Nextlib",
+      Company: "Nextlib",
     },
   }) as Buffer;
 }

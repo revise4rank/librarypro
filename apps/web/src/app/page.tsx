@@ -70,10 +70,10 @@ export default function HomePage() {
         <div className="mx-auto flex w-full max-w-[1540px] items-center justify-between gap-4 px-4 py-4 md:px-8">
           <div className="flex items-center gap-4">
             <div className="grid h-14 w-14 place-items-center rounded-[1.35rem] bg-[linear-gradient(135deg,#df8757,#2f8f88)] text-lg font-black text-white shadow-[0_14px_30px_rgba(111,95,74,0.16)]">
-              LP
+              NL
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[var(--lp-accent)]">LibraryPro</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[var(--lp-accent)]">Nextlib</p>
               <h1 className="mt-1 text-lg font-bold tracking-tight md:text-2xl">Library Management SaaS + Marketplace</h1>
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function HomePage() {
               Run your library, sell seats online, and manage every student from one modern system.
             </h2>
             <p className="mt-7 max-w-3xl text-base leading-8 text-[var(--lp-muted)] md:text-lg">
-              LibraryPro combines a public library marketplace with premium owner websites, seat management, QR check-in,
+              Nextlib combines a public library marketplace with premium owner websites, seat management, QR check-in,
               student login, billing, reminders, and analytics. Students discover libraries on the main website. Premium libraries
               run admissions and daily operations on their own branded subdomain.
             </p>
@@ -221,7 +221,7 @@ export default function HomePage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Why it feels like a serious SaaS</p>
             <h3 className="mt-4 text-4xl font-black leading-tight">Not just a listing site. Not just a dashboard.</h3>
             <p className="mt-5 text-base leading-8 text-[var(--lp-muted)]">
-              LibraryPro connects public discovery, premium branded subdomain websites, owner operations, and student actions into one product. That means the owner does not maintain separate tools for listing, seat mapping, attendance, reminders, and admissions.
+              Nextlib connects public discovery, premium branded subdomain websites, owner operations, and student actions into one product. That means the owner does not maintain separate tools for listing, seat mapping, attendance, reminders, and admissions.
             </p>
             <div className="mt-8 grid gap-4">
               {proofStats.map((item) => (

@@ -20,7 +20,7 @@ export function AppShell({ eyebrow, title, description, children, nav, actions }
   if (nav && nav.length > 0) {
     return (
       <DashboardShell
-        productLabel="LibraryPro"
+        productLabel="Nextlib"
         panelLabel={eyebrow}
         title={title}
         description={description}

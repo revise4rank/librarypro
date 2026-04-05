@@ -6,7 +6,7 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentQrPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="QR Entry"
       title="QR entry pass with offline-first sync status."
       description="Students should be able to show their pass quickly and understand if offline check-in events are waiting to sync."

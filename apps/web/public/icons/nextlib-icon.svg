@@ -1,0 +1,11 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="nextlibGradient" x1="32" y1="24" x2="224" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DF8757"/>
+      <stop offset="1" stop-color="#2F8F88"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="56" fill="url(#nextlibGradient)"/>
+  <path d="M70 178V78H92L146 147V78H168V178H147L92 109V178H70Z" fill="white"/>
+  <path d="M186 78H164V178H186V78Z" fill="white" opacity="0.9"/>
+</svg>

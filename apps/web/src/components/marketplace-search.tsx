@@ -573,7 +573,7 @@ export function MarketplaceSearch() {
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Subdomain preview</p>
-                          <p className="mt-2 break-all text-base font-extrabold text-[var(--lp-text)] sm:text-lg">{library.subdomain}.librarypro.com</p>
+                          <p className="mt-2 break-all text-base font-extrabold text-[var(--lp-text)] sm:text-lg">{library.subdomain}.nextlib.in</p>
                         </div>
                         <div className="flex gap-2">
                           <button type="button" onClick={() => setCardSlide(cardKey, activeSlide === 0 ? gallery.length - 1 : activeSlide - 1)} className="rounded-full border border-[rgba(255,255,255,0.7)] bg-white/80 px-3 py-1 text-sm font-semibold text-[var(--lp-primary)]">

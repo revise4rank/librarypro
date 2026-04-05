@@ -6,7 +6,7 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentFeedPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Library Feed"
       title="Progress sharing with privacy control, motivation, and clean accountability."
       description="Yeh distraction nahi hai. Yeh ek minimal library feed hai jahan students apni progress responsibly share kar sakte hain."

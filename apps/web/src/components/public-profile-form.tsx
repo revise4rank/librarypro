@@ -175,7 +175,7 @@ export function PublicProfileForm({ initialValues }: PublicProfileFormProps) {
                 </button>
               </div>
               <p className="mt-3 text-sm text-slate-500">
-                Final URL: <span className="font-black text-slate-950">{values.subdomain}.librarypro.com</span>
+                Final URL: <span className="font-black text-slate-950">{values.subdomain}.nextlib.in</span>
               </p>
               <p className="mt-2 text-sm text-slate-500">Student login, QR entry, notices, and day-to-day student actions can run from this same subdomain.</p>
               {subdomainState !== "unknown" ? (

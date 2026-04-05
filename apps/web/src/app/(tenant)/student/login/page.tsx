@@ -41,8 +41,8 @@ export default async function StudentLoginPage({
   const params = await searchParams;
   const libraryKey = params?.library ?? "focuslibrary";
   const brand = await loadLibraryBrand(libraryKey);
-  const brandName = brand?.library_name ?? "Library Student Portal";
-  const brandOffer = brand?.offer_text ?? "Owner-issued student login ID for QR entry, payments, pomodoro study tracking, and daily library updates.";
+  const brandName = brand?.library_name ?? "Nextlib Student Portal";
+  const brandOffer = brand?.offer_text ?? "Owner-issued student login ID for QR entry, payments, pomodoro study tracking, and daily library updates on Nextlib.";
   const brandTagline = brand?.hero_tagline ?? "Login to your library website and continue all student actions from here.";
 
   return (

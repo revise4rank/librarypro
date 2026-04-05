@@ -43,8 +43,8 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
     const host = forwardedValue || req.headers.host;
     const trustedSlug = typeof req.headers["x-tenant-slug"] === "string" ? req.headers["x-tenant-slug"] : null;
     const internalTenantSecret =
-      typeof req.headers["x-librarypro-internal-tenant-secret"] === "string"
-        ? req.headers["x-librarypro-internal-tenant-secret"]
+      typeof req.headers["x-nextlib-internal-tenant-secret"] === "string"
+        ? req.headers["x-nextlib-internal-tenant-secret"]
         : null;
 
     const slug =

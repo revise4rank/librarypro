@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 const RESERVED = new Set(["www", "admin"]);
 const INTERNAL_TENANT_HEADER_SECRET =
-  process.env.INTERNAL_TENANT_HEADER_SECRET ?? process.env.JWT_SECRET ?? "librarypro-internal";
+  process.env.INTERNAL_TENANT_HEADER_SECRET ?? process.env.JWT_SECRET ?? "nextlib-internal";
 
 function getTenantSlug(host: string) {
   const hostname = host.split(":")[0].toLowerCase();
-  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "librarypro.com";
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "nextlib.in";
 
   if (hostname === baseDomain || hostname === `www.${baseDomain}` || hostname === `admin.${baseDomain}`) {
     return null;
@@ -52,7 +52,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (host === (process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "librarypro.com").toLowerCase() || host.startsWith("www.")) {
+  if (host === (process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "nextlib.in").toLowerCase() || host.startsWith("www.")) {
     if (url.pathname === "/") {
       url.pathname = "/marketplace";
       return NextResponse.rewrite(url);
@@ -64,7 +64,7 @@ export function middleware(request: NextRequest) {
   if (tenantSlug) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-tenant-slug", tenantSlug);
-    requestHeaders.set("x-librarypro-internal-tenant-secret", INTERNAL_TENANT_HEADER_SECRET);
+    requestHeaders.set("x-nextlib-internal-tenant-secret", INTERNAL_TENANT_HEADER_SECRET);
 
     if (url.pathname === "/") {
       url.pathname = "/library-site";

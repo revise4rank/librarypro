@@ -26,7 +26,7 @@ export default function Icon() {
           width: "100%",
         }}
       >
-        LP
+        NL
       </div>
     ),
     size,

@@ -4,8 +4,8 @@ import { PwaProvider } from "../components/pwa-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LibraryPro",
-  description: "Multi-tenant digital library SaaS for owners, students, and platform admins.",
+  title: "Nextlib",
+  description: "Nextlib is a multi-tenant library marketplace, owner workspace, and student productivity platform.",
   manifest: "/manifest.webmanifest",
 };
 

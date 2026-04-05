@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function OwnerSeatsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Seat Control"
       title="RedBus-style visual seat control with live assignment persistence."
       description="Seat clicks and student drops should save instantly, free old seats correctly, and keep marketplace availability honest."

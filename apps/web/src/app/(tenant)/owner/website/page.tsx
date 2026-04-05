@@ -6,7 +6,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerWebsiteBuilderPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Website Builder"
       title="Control your own premium library website, subdomain, and student entry point."
       description="Premium libraries get their own multipage subdomain website. Owner manages public pages, contact blocks, offers, amenities, and students continue login, QR check-in, notices, and library activity from that same website."

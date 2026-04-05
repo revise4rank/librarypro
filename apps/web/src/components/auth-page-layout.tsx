@@ -25,7 +25,7 @@ export function AuthPageLayout({
       <header className="border-b border-[var(--lp-border)] bg-[rgba(255,249,241,0.94)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-4 px-4 py-5 md:px-8">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[var(--lp-accent)]">LibraryPro</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[var(--lp-accent)]">Nextlib</p>
             <h1 className="mt-1 text-lg font-bold tracking-tight md:text-xl">{eyebrow}</h1>
           </div>
           <div className="flex flex-wrap gap-3">

@@ -805,7 +805,7 @@ export async function getStudentPaymentReceipt(input: {
   }
 
   return {
-    receiptNo: `LP-${payment.id.slice(0, 8).toUpperCase()}`,
+    receiptNo: `NL-${payment.id.slice(0, 8).toUpperCase()}`,
     verificationId: `VERIFY-${payment.id.slice(0, 12).toUpperCase()}`,
     issuedAt: payment.paid_at ?? payment.created_at,
     studentName: payment.student_name,
@@ -832,7 +832,7 @@ export async function getOwnerPaymentReceipt(input: {
     }
 
     return {
-      receiptNo: `LP-${payment.id.slice(0, 8).toUpperCase()}`,
+      receiptNo: `NL-${payment.id.slice(0, 8).toUpperCase()}`,
       verificationId: `VERIFY-${payment.id.slice(0, 12).toUpperCase()}`,
       issuedAt: payment.paid_at ?? payment.created_at,
       studentName: payment.student_name,
@@ -854,7 +854,7 @@ export async function exportOwnerPaymentReceipt(input: {
 }) {
   const receipt = await getOwnerPaymentReceipt(input);
   return buildPdfBuffer({
-    title: "LibraryPro Payment Receipt",
+    title: "Nextlib Payment Receipt",
     subtitle: receipt.receiptNo,
     summary: [
       { label: "Student", value: receipt.studentName },
@@ -1237,7 +1237,7 @@ export async function exportOwnerReport(input: {
   }
 
   const buffer = await buildPdfBuffer({
-    title: `${title} | LibraryPro`,
+    title: `${title} | Nextlib`,
     subtitle: `Range ${input.fromDate ?? "start"} to ${input.toDate ?? "today"}`,
     summary: [
       { label: "Paid revenue", value: formatCurrency(report.metrics.paidRevenue) },

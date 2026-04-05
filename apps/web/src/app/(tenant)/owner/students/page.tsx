@@ -5,7 +5,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerStudentsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Students"
       title="Manage student assignments, seats, plan validity, and due follow-up."
       description="This page should help owners add, assign, move, renew, and follow up with students, not just stare at a table."

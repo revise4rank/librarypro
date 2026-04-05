@@ -7,7 +7,7 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentSyllabusPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Syllabus Tracker"
       title="Build your own subject-wise syllabus map and track every topic to completion."
       description="This stays student-driven: create subjects, break them into topics, and keep each chapter moving from not-started to completed."

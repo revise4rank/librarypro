@@ -6,7 +6,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerSettingsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Owner Settings"
       title="Library settings, QR access, WiFi, and subscription state."
       description="Centralized live configuration for notices, WiFi credentials, QR entry, and tenant billing status."

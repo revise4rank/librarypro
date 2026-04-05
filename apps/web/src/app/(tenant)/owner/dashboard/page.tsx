@@ -6,7 +6,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerDashboardPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Owner Panel"
       title="Daily library operations, revenue, seat control, and public growth from one dashboard."
       description="Real owner control room for finance, occupancy, dues, and student operations. This page now pulls live backend data instead of mock stats."

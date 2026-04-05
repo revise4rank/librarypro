@@ -178,7 +178,7 @@ if (process.env.NODE_ENV !== "test") {
     });
 
     server.listen(env.port, () => {
-      console.info(`LibraryPro API running on http://127.0.0.1:${env.port}`);
+      console.info(`Nextlib API running on http://127.0.0.1:${env.port}`);
     });
   };
 

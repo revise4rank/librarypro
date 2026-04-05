@@ -18,7 +18,7 @@ export async function deliverLibraryNotificationCampaign(input: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        source: "librarypro",
+        source: "nextlib",
         libraryId: input.libraryId,
         title: input.title,
         type: input.type,
@@ -50,7 +50,7 @@ export async function deliverOwnerFollowUpReminder(input: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        source: "librarypro",
+        source: "nextlib",
         audience: "LIBRARY_OWNERS",
         category: "FOLLOW_UP_REMINDER",
         libraryId: input.libraryId,

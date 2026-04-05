@@ -183,7 +183,7 @@ export function OwnerCampaignsManager() {
           </div>
           <div className="mt-4 rounded-[1.25rem] border border-slate-200 bg-white p-4">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Subdomain</p>
-            <p className="mt-2 text-lg font-black text-slate-950">{profile.subdomain}.librarypro.com</p>
+            <p className="mt-2 text-lg font-black text-slate-950">{profile.subdomain}.nextlib.in</p>
             <p className="mt-2 text-sm text-slate-500">Students see this offer on marketplace and continue to your own website for login, QR, and daily actions.</p>
           </div>
         </div>

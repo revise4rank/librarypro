@@ -39,7 +39,7 @@ export type SessionState = {
   accessToken?: string;
 };
 
-const SESSION_KEY = "librarypro_session";
+const SESSION_KEY = "nextlib_session";
 const COOKIE_ROLE = "lp_role";
 const COOKIE_SESSION = "lp_session";
 const LEGACY_COOKIE_TOKEN = "lp_token";

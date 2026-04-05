@@ -5,7 +5,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerOffersPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Offers"
       title="Submit owner promotions and library discounts for admin moderation."
       description="Keep promotions clean and relevant. Student feed is optional and separate from productivity flow."

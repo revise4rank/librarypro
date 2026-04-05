@@ -39,7 +39,7 @@ export default function MarketplacePage() {
       <section className="border-b border-[var(--lp-border)] bg-[rgba(255,244,233,0.88)]">
         <div className="mx-auto flex max-w-[1540px] flex-wrap items-center gap-3 px-4 py-3 text-sm text-[var(--lp-muted)] md:px-8">
           <span className="rounded-full bg-[var(--lp-surface)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--lp-primary)]">
-            LibraryPro Marketplace
+            Nextlib Marketplace
           </span>
           <span className="hidden h-4 w-px bg-[var(--lp-border)] md:block" />
           <span>Search libraries by city, locality, amenities, live seat visibility, offers, and contact options.</span>
@@ -57,7 +57,7 @@ export default function MarketplacePage() {
         <div className="mx-auto flex max-w-[1540px] flex-wrap items-center justify-between gap-4 px-4 py-5 md:px-8">
           <div className="flex items-center gap-4">
             <div className="grid h-14 w-14 place-items-center rounded-[1.35rem] bg-[linear-gradient(135deg,#df8757,#2f8f88)] text-lg font-black text-white shadow-[0_14px_30px_rgba(111,95,74,0.16)]">
-              LP
+              NL
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[var(--lp-accent)]">Main discovery platform</p>

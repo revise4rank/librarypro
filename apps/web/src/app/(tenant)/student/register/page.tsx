@@ -7,7 +7,7 @@ export default function StudentRegisterPage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[var(--lp-accent)]">Student app signup</p>
         <h1 className="mt-3 text-3xl font-black">Create your student app first, then join any library later.</h1>
         <p className="mt-4 text-sm leading-7 text-[var(--lp-muted)]">
-          LibraryPro app bina library ke bhi useful rehna chahiye. Isliye student apna account bana kar focus, syllabus, revision, rewards, feed, aur offers use karta rahega.
+          Nextlib app bina library ke bhi useful rehna chahiye. Isliye student apna account bana kar focus, syllabus, revision, rewards, feed, aur offers use karta rahega.
         </p>
         <StudentRegisterManager />
       </div>

@@ -50,9 +50,9 @@ export function PublicLibraryPage({
   const isOfferActive = !profile.offer_expires_at || new Date(profile.offer_expires_at).getTime() >= Date.now();
   const visibleOffer = isOfferActive ? profile.offer_text ?? profile.highlight_offer : null;
   const pageStyle = {
-    "--lp-primary": profile.theme_primary ?? "#d2723d",
-    "--lp-accent": profile.theme_accent ?? "#2f8f88",
-    "--lp-surface": profile.theme_surface ?? "#fff9f0",
+    "--NL-primary": profile.theme_primary ?? "#d2723d",
+    "--NL-accent": profile.theme_accent ?? "#2f8f88",
+    "--NL-surface": profile.theme_surface ?? "#fff9f0",
   } as CSSProperties;
   const gallery = (profile.gallery_images?.length
     ? profile.gallery_images
@@ -98,7 +98,7 @@ export function PublicLibraryPage({
                   Published Library Website
                 </p>
                 <p className="mt-2 break-all text-sm text-[var(--lp-muted)]">
-                  {profile.custom_domain || `${profile.subdomain}.librarypro.com`}
+                  {profile.custom_domain || `${profile.subdomain}.nextlib.in`}
                 </p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--lp-accent)]">
                   Premium library subdomain website
@@ -221,7 +221,7 @@ export function PublicLibraryPage({
           <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
             <h2 className="text-3xl font-extrabold">About the library</h2>
             <p className="mt-5 max-w-4xl text-base leading-8 text-[var(--lp-muted)]">
-              {profile.about_text ?? "This library is listed on LibraryPro and managed through a dedicated subdomain website. Students can use the same library website for admission, login, QR check-in, notices, and daily updates."}
+              {profile.about_text ?? "This library is listed on Nextlib and managed through a dedicated subdomain website. Students can use the same library website for admission, login, QR check-in, notices, and daily updates."}
             </p>
             <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {(profile.amenities ?? []).map((amenity) => (

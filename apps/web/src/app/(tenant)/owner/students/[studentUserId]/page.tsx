@@ -16,7 +16,7 @@ export default async function OwnerStudentProductivityPage({
 
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="Nextlib"
       panelLabel="Student Productivity"
       title={studentName ? `${studentName} performance view` : "Student performance view"}
       description="Owners should be able to see attendance discipline, focus quality, and syllabus momentum in one place before deciding the next intervention."
