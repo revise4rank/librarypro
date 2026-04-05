@@ -514,6 +514,20 @@ export function OwnerSeatsManager() {
       .filter((item) => item.seats.length > 0 || item.floor.id === selectedFloorId);
   }, [floors, seats, seatFilter, selectedFloorId]);
 
+  const activeFloorCard = useMemo(() => {
+    if (floorCards.length === 0) {
+      return null;
+    }
+
+    if (selectedFloorId) {
+      return floorCards.find((item) => item.floor.id === selectedFloorId) ?? floorCards[0];
+    }
+
+    return floorCards[0];
+  }, [floorCards, selectedFloorId]);
+
+  const visibleFloorCards = useMemo(() => (activeFloorCard ? [activeFloorCard] : []), [activeFloorCard]);
+
   const totals = useMemo(() => {
     return seats.reduce(
       (acc, seat) => {
@@ -1437,8 +1451,35 @@ export function OwnerSeatsManager() {
       </div>
 
       <section id="seat-planner" className="grid gap-6 xl:grid-cols-[1.22fr_0.78fr]">
-        <div className="grid gap-6 xl:sticky xl:top-[156px] xl:self-start">
-          {floorCards.map((item) => {
+        <div className="grid gap-6">
+          {floorCards.length > 1 ? (
+            <DashboardCard title="Floor switcher" subtitle="Ek waqt par ek floor edit karo. Isse planner clean aur focused rahega.">
+              <div className="flex flex-wrap gap-2">
+                {floorCards.map((item) => {
+                  const active = activeFloorCard?.floor.id === item.floor.id;
+                  return (
+                    <button
+                      key={item.floor.id}
+                      type="button"
+                      onClick={() => setSelectedFloorId(item.floor.id)}
+                      className={`rounded-[1rem] border px-4 py-3 text-left transition ${
+                        active
+                          ? "border-[var(--lp-primary)] bg-[#fff1e6] text-[var(--lp-primary)]"
+                          : "border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                      }`}
+                    >
+                      <p className="text-sm font-black">{item.floor.name}</p>
+                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">
+                        {item.seats.length} seats | {item.columns} x {item.rows}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </DashboardCard>
+          ) : null}
+
+          {visibleFloorCards.map((item) => {
             const draft = floorDrafts[item.floor.id] ?? {
               name: item.floor.name,
               layoutRows: item.floor.layout_rows,
@@ -1712,7 +1753,7 @@ export function OwnerSeatsManager() {
           ) : null}
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-6 xl:sticky xl:top-[156px] xl:self-start">
           <DashboardCard title="Seat action drawer" subtitle="Fine tune position, reserve state, and seat identity.">
             <div className="grid gap-4">
               {selectedSeat ? (
