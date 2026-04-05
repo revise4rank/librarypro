@@ -367,24 +367,28 @@ export class ProductivityRepository {
         FROM student_focus_sessions
         WHERE student_user_id = $1
       ),
-      attendance AS (
-        SELECT
-          COUNT(DISTINCT checked_in_at::date) AS attendance_days,
-          GREATEST(0, 30 - COUNT(DISTINCT checked_in_at::date)) AS missed_days,
-          ROUND(AVG(EXTRACT(HOUR FROM checked_in_at)))::text AS avg_entry_hour
+        attendance AS (
+          SELECT
+            COUNT(DISTINCT checked_in_at::date) AS attendance_days,
+            GREATEST(0, 30 - COUNT(DISTINCT checked_in_at::date)) AS missed_days,
+            ROUND(AVG(EXTRACT(HOUR FROM checked_in_at)))::text AS avg_entry_hour
         FROM checkins
         WHERE student_user_id = $1
           AND ($2::uuid IS NULL OR library_id = $2::uuid)
           AND checked_in_at >= NOW() - INTERVAL '30 days'
-      ),
-      subject_totals AS (
-        SELECT s.subject_name, SUM(s.duration_minutes) AS total_minutes
-        FROM student_focus_sessions s
-        WHERE s.student_user_id = $1
-        GROUP BY s.subject_name
-        ORDER BY total_minutes DESC NULLS LAST
-        LIMIT 1
-      ),
+        ),
+        subject_totals AS (
+          SELECT
+            COALESCE(sfsb.subject_name, subj.title, 'General focus') AS subject_name,
+            SUM(sfs.duration_minutes) AS total_minutes
+          FROM student_focus_sessions sfs
+          LEFT JOIN student_focus_subjects sfsb ON sfsb.id = sfs.subject_id
+          LEFT JOIN subjects subj ON subj.id = sfs.subject_id
+          WHERE sfs.student_user_id = $1
+          GROUP BY COALESCE(sfsb.subject_name, subj.title, 'General focus')
+          ORDER BY total_minutes DESC NULLS LAST
+          LIMIT 1
+        ),
       streaks AS (
         SELECT COALESCE(MAX(streak_count), 0) AS longest_streak
         FROM (
