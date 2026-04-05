@@ -105,10 +105,10 @@ function getClusterType(col: number) {
 }
 
 function getPlannerColumnWidth(columns: number) {
-  if (columns >= 14) return 68;
-  if (columns >= 12) return 74;
-  if (columns >= 10) return 84;
-  return 102;
+  if (columns >= 14) return 56;
+  if (columns >= 12) return 62;
+  if (columns >= 10) return 72;
+  return 88;
 }
 
 function buildNextSeatCode(existingSeatNumbers: string[], prefix: string) {
@@ -236,7 +236,7 @@ function makeSeatDragPreview(label: string) {
 function SeatSilhouette({ shape }: { shape: string }) {
   if (shape === "Cabin") {
     return (
-      <svg viewBox="0 0 120 64" className="h-8 w-full text-slate-900/55" aria-hidden="true">
+      <svg viewBox="0 0 120 64" className="h-6 w-full text-slate-900/55" aria-hidden="true">
         <rect x="22" y="16" width="76" height="34" rx="10" fill="currentColor" opacity="0.14" />
         <rect x="30" y="22" width="60" height="22" rx="7" fill="currentColor" opacity="0.22" />
         <rect x="20" y="14" width="4" height="38" rx="2" fill="currentColor" />
@@ -248,7 +248,7 @@ function SeatSilhouette({ shape }: { shape: string }) {
 
   if (shape === "Wall Desk") {
     return (
-      <svg viewBox="0 0 120 64" className="h-8 w-full text-slate-900/55" aria-hidden="true">
+      <svg viewBox="0 0 120 64" className="h-6 w-full text-slate-900/55" aria-hidden="true">
         <rect x="12" y="10" width="7" height="44" rx="3" fill="currentColor" />
         <rect x="24" y="18" width="58" height="20" rx="8" fill="currentColor" opacity="0.18" />
         <rect x="36" y="42" width="10" height="10" rx="3" fill="currentColor" />
@@ -259,7 +259,7 @@ function SeatSilhouette({ shape }: { shape: string }) {
   }
 
   return (
-    <svg viewBox="0 0 120 64" className="h-8 w-full text-slate-900/55" aria-hidden="true">
+    <svg viewBox="0 0 120 64" className="h-6 w-full text-slate-900/55" aria-hidden="true">
       <rect x="28" y="18" width="64" height="20" rx="9" fill="currentColor" opacity="0.2" />
       <rect x="40" y="42" width="10" height="10" rx="3" fill="currentColor" />
       <rect x="70" y="42" width="10" height="10" rx="3" fill="currentColor" />
@@ -1730,7 +1730,7 @@ export function OwnerSeatsManager() {
                                   void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
                                 }
                               }}
-                              className={`relative min-h-[6.3rem] rounded-[0.95rem] border border-dashed p-1.5 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${layoutMode && !seat ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                            className={`relative min-h-[4.8rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${layoutMode && !seat ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
                             >
                               {seat ? (
                                 <button
@@ -1751,50 +1751,49 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`relative flex h-full w-full flex-col rounded-[0.95rem] border p-2 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`relative flex h-full w-full flex-col rounded-[0.9rem] border px-1.5 py-2 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
-                                  <div className="mb-1 flex items-start justify-between gap-2">
+                                  <div className="mb-1 flex items-start justify-between gap-1">
                                     <div>
-                                      <p className="text-xs font-black sm:text-sm">{seat.seat_number}</p>
-                                      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-60">{seat.section_name ?? "Main"}</p>
+                                      <p className="text-[11px] font-black leading-none sm:text-xs">{seat.seat_number}</p>
                                     </div>
-                                    <span className="rounded-full bg-white/85 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em]">
-                                      {seat.status.slice(0, 3)}
+                                    <span className="rounded-full bg-white/85 px-1.5 py-1 text-[8px] font-black uppercase tracking-[0.08em]">
+                                      {seat.status.slice(0, 1)}
                                     </span>
                                   </div>
 
-                                  <div className="relative rounded-[0.8rem] bg-white/72 px-2 py-2">
+                                  <div className="relative rounded-[0.75rem] bg-white/72 px-1.5 py-1.5">
                                     <SeatSilhouette shape={seatShape} />
                                     <div className="mt-1 flex items-center justify-between">
-                                      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-65">{seat.status === "AVAILABLE" ? "Free" : seat.status === "RESERVED" ? "Held" : seat.status === "DISABLED" ? "Blocked" : "Taken"}</span>
-                                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-950 text-[9px] font-black text-white">
+                                      <span className="h-1.5 w-7 rounded-full bg-slate-300/80" />
+                                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-950 text-[8px] font-black text-white">
                                         {formatStudentInitials(seat.student_name)}
                                       </span>
                                     </div>
-                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                    <div className="mt-1.5 flex justify-center">
                                       <span
-                                        className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] ${getZoneTone(inferZone(seat))}`}
+                                        className={`rounded-full px-1.5 py-1 text-[7px] font-bold uppercase tracking-[0.08em] ${getZoneTone(inferZone(seat))}`}
                                         style={sectionColors[seat.section_name ?? ""] ? { backgroundColor: sectionColors[seat.section_name ?? ""], color: "#fff" } : undefined}
                                       >
-                                        {inferZone(seat).replace(" Zone", "")}
+                                        {inferZone(seat).replace(" Zone", "").slice(0, 5)}
                                       </span>
                                     </div>
                                   </div>
 
-                                  <div className="mt-2 flex items-center justify-between text-[10px] opacity-75">
-                                    <span>X{seat.pos_x} | Y{seat.pos_y}</span>
+                                  <div className="mt-1.5 flex items-center justify-between text-[8px] font-semibold opacity-75">
+                                    <span>{seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Used" : seat.status === "RESERVED" ? "Hold" : "Off"}</span>
                                     <span>{seat.student_name ? formatStudentInitials(seat.student_name) : "--"}</span>
                                   </div>
                                 </button>
                               ) : (
-                                <div className={`flex h-full flex-col justify-between rounded-[0.9rem] p-2 text-[10px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
+                                <div className={`flex h-full flex-col justify-between rounded-[0.8rem] p-1.5 text-[9px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
                                   <div className="flex items-center justify-between">
-                                    <span className="font-semibold uppercase tracking-[0.18em]">{isAisleCell ? "Aisle" : "Empty cell"}</span>
-                                    <span>{cell.x},{cell.y}</span>
+                                    <span className="font-semibold uppercase tracking-[0.14em]">{isAisleCell ? "Aisle" : "Empty"}</span>
+                                    <span className="text-[8px]">{cell.x},{cell.y}</span>
                                   </div>
                                   <div className="grid gap-1.5">
-                                    <div className="rounded-full border border-dashed border-slate-300 px-3 py-2 text-center">
+                                    <div className="rounded-full border border-dashed border-slate-300 px-2 py-1.5 text-center text-[8px]">
                                       {isAisleCell ? "Walk" : workspaceMode === "assign" ? "Assign target" : workspaceMode === "layout" ? "Drop here" : "Add new"}
                                     </div>
                                     {!isAisleCell && workspaceMode !== "assign" ? (
@@ -1804,9 +1803,9 @@ export function OwnerSeatsManager() {
                                           event.stopPropagation();
                                           void createSeatAtCell(item.floor.id, cell.x, cell.y);
                                         }}
-                                        className="rounded-full border border-[var(--lp-primary)] bg-white px-3 py-2 text-center text-[9px] font-black uppercase tracking-[0.12em] text-[var(--lp-primary)]"
+                                        className="rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-center text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]"
                                       >
-                                        + Add seat
+                                        + Seat
                                       </button>
                                     ) : null}
                                   </div>
