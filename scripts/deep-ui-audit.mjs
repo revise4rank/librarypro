@@ -71,17 +71,34 @@ async function loginContext(browser, auth) {
   await page.getByPlaceholder(/password/i).fill(creds.password);
   await page.getByRole("button", { name: creds.button }).click();
   await page.waitForLoadState("networkidle");
-  await page.waitForFunction(() => {
-    if (window.location.pathname.includes("/login")) {
-      return false;
-    }
+  const loginOutcome = await page
+    .waitForFunction(() => {
+      const path = window.location.pathname;
+      const bodyText = document.body.innerText || "";
+      const hasSession = (() => {
+        try {
+          return Boolean(window.localStorage.getItem("nextlib_session") || window.sessionStorage.getItem("nextlib_session"));
+        } catch {
+          return document.cookie.includes("lp_session=1");
+        }
+      })();
 
-    try {
-      return Boolean(window.localStorage.getItem("nextlib_session") || window.sessionStorage.getItem("nextlib_session"));
-    } catch {
-      return document.cookie.includes("lp_session=1");
-    }
-  });
+      if (!path.includes("/login") && (hasSession || /dashboard|seat control|owner panel|student dashboard|admin guide/i.test(bodyText))) {
+        return { ok: true, reason: "authenticated" };
+      }
+
+      if (/invalid|network issue|too small|authentication required|request failed/i.test(bodyText)) {
+        return { ok: false, reason: bodyText.slice(0, 240) };
+      }
+
+      return null;
+    }, { timeout: 20000 })
+    .then((handle) => handle.jsonValue())
+    .catch(() => ({ ok: false, reason: "Timed out waiting for login completion" }));
+
+  if (!loginOutcome?.ok) {
+    throw new Error(`Login failed for ${auth}: ${loginOutcome?.reason ?? "unknown error"}`);
+  }
   await page.close();
   return context;
 }

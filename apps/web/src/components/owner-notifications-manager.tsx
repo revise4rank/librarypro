@@ -22,6 +22,7 @@ type NotificationRow = {
 type ListResponse = { success: boolean; data: NotificationRow[] };
 
 export function OwnerNotificationsManager() {
+  const TEMPLATE_KEY = "nextlib_owner_notification_template";
   const [rows, setRows] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [liveStatus, setLiveStatus] = useState("Connecting");
@@ -69,6 +70,14 @@ export function OwnerNotificationsManager() {
     void loadNotifications();
     setIsOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
     void loadQueuedNotifications();
+    try {
+      const raw = window.localStorage.getItem(TEMPLATE_KEY);
+      if (raw) {
+        setForm(JSON.parse(raw));
+      }
+    } catch {
+      // Ignore invalid saved template payloads.
+    }
   }, []);
 
   useEffect(() => {
@@ -171,6 +180,17 @@ export function OwnerNotificationsManager() {
     }
   }
 
+  function saveTemplate() {
+    try {
+      window.localStorage.setItem(TEMPLATE_KEY, JSON.stringify(form));
+      setMessage("Notification template saved on this device.");
+      setError(null);
+      showToast("Template saved.");
+    } catch {
+      setError("Template save nahi ho paya. Browser storage issue ho sakta hai.");
+    }
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
       {toast ? (
@@ -201,7 +221,7 @@ export function OwnerNotificationsManager() {
           {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
           <div className="flex flex-wrap gap-3">
             <button type="submit" className="rounded-2xl bg-slate-950 px-5 py-4 text-sm font-bold text-white">Send notification</button>
-            <button type="button" className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-700">Save template</button>
+            <button type="button" onClick={saveTemplate} className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-700">Save template</button>
           </div>
         </form>
       </DashboardCard>

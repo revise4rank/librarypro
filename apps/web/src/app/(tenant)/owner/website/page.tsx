@@ -1,9 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { DashboardShell } from "../../../../components/dashboard-shell";
 import { OwnerWebsiteBuilder } from "../../../../components/owner-website-builder";
 import { ownerNav } from "../../../../lib/role-nav";
 
 export default function OwnerWebsiteBuilderPage() {
+  function triggerWebsiteAction(action: "save-draft" | "publish") {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("nextlib:owner-website-action", { detail: action }));
+  }
+
   return (
     <DashboardShell
       productLabel="Nextlib"
@@ -19,8 +26,19 @@ export default function OwnerWebsiteBuilderPage() {
           >
             Preview Public Site
           </Link>
-          <button className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-3 text-sm font-bold text-[var(--lp-text)]">
+          <button
+            type="button"
+            onClick={() => triggerWebsiteAction("publish")}
+            className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-3 text-sm font-bold text-[var(--lp-text)]"
+          >
             Publish Changes
+          </button>
+          <button
+            type="button"
+            onClick={() => triggerWebsiteAction("save-draft")}
+            className="rounded-full border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-[var(--lp-primary)]"
+          >
+            Save Draft
           </button>
         </>
       }
