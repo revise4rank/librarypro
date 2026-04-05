@@ -21,6 +21,22 @@ type JoinRequestsResponse = {
   }>;
 };
 
+type OwnerSeatOption = {
+  id: string;
+  floor_name: string | null;
+  section_name?: string | null;
+  seat_number: string;
+  status: string;
+  assignment_id: string | null;
+  reserved_until?: string | null;
+};
+
+type OwnerFloorOption = {
+  id: string;
+  name: string;
+  floor_number: number;
+};
+
 type OwnerReceipt = {
   receiptNo: string;
   verificationId: string;
@@ -36,6 +52,9 @@ type OwnerReceipt = {
 
 export function OwnerAdmissionsManager() {
   const [requests, setRequests] = useState<JoinRequestsResponse["data"]>([]);
+  const [seats, setSeats] = useState<OwnerSeatOption[]>([]);
+  const [floors, setFloors] = useState<OwnerFloorOption[]>([]);
+  const [selectedFloorIds, setSelectedFloorIds] = useState<Record<string, string>>({});
   const [seatNumbers, setSeatNumbers] = useState<Record<string, string>>({});
   const [planPrices, setPlanPrices] = useState<Record<string, string>>({});
   const [resultMessage, setResultMessage] = useState<string | null>(null);
@@ -43,13 +62,40 @@ export function OwnerAdmissionsManager() {
   const [receiptPaymentId, setReceiptPaymentId] = useState<string | null>(null);
 
   async function load() {
-    const response = await apiFetch<JoinRequestsResponse>("/owner/join-requests");
-    setRequests(response.data);
+    const [joinResponse, seatResponse, floorResponse] = await Promise.all([
+      apiFetch<JoinRequestsResponse>("/owner/join-requests"),
+      apiFetch<{ success: boolean; data: OwnerSeatOption[] }>("/owner/seats"),
+      apiFetch<{ success: boolean; data: OwnerFloorOption[] }>("/owner/floors"),
+    ]);
+    setRequests(joinResponse.data);
+    setSeats(seatResponse.data);
+    setFloors(floorResponse.data);
   }
 
   useEffect(() => {
     void load();
   }, []);
+
+  function getAvailableSeats(requestId: string) {
+    const selectedFloorId = selectedFloorIds[requestId];
+    return seats.filter((seat) => {
+      if (seat.assignment_id) return false;
+      if (!["AVAILABLE", "RESERVED"].includes(seat.status)) return false;
+      if (selectedFloorId) {
+        return seat.floor_name === floors.find((floor) => floor.id === selectedFloorId)?.name;
+      }
+      return true;
+    });
+  }
+
+  function suggestedFloorId(requestId: string) {
+    const selectedFloorId = selectedFloorIds[requestId];
+    if (selectedFloorId) return selectedFloorId;
+
+    const seatPreference = requests.find((request) => request.id === requestId)?.seat_preference?.toLowerCase() ?? "";
+    const matchingFloor = floors.find((floor) => floor.name.toLowerCase().includes(seatPreference));
+    return matchingFloor?.id ?? floors[0]?.id ?? "";
+  }
 
   async function approve(requestId: string) {
     const today = new Date();
@@ -167,27 +213,48 @@ export function OwnerAdmissionsManager() {
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Admission draft</p>
                   <p className="mt-2">Plan: Monthly Plan</p>
                   <p>Payment: pending desk collection</p>
+                  {request.seat_preference ? <p>Student preference: {request.seat_preference}</p> : null}
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-[1fr_140px_auto_auto]">
-              <input
-                value={seatNumbers[request.id] ?? request.seat_preference ?? ""}
-                onChange={(event) => setSeatNumbers((current) => ({ ...current, [request.id]: event.target.value }))}
-                placeholder="Seat number"
+              <div className="grid gap-3 sm:grid-cols-[180px_1fr_140px_auto_auto]">
+              <select
+                value={selectedFloorIds[request.id] ?? suggestedFloorId(request.id)}
+                onChange={(event) => setSelectedFloorIds((current) => ({ ...current, [request.id]: event.target.value }))}
                 className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
-              />
+              >
+                {floors.map((floor) => (
+                  <option key={floor.id} value={floor.id}>
+                    Floor {floor.floor_number} · {floor.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={seatNumbers[request.id] ?? ""}
+                onChange={(event) => setSeatNumbers((current) => ({ ...current, [request.id]: event.target.value }))}
+                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+              >
+                <option value="">Choose seat</option>
+                {getAvailableSeats(request.id).map((seat) => (
+                  <option key={seat.id} value={seat.seat_number}>
+                    {seat.seat_number} · {seat.floor_name ?? "No floor"}{seat.section_name ? ` · ${seat.section_name}` : ""}{seat.status === "RESERVED" ? " · Reserved" : ""}
+                  </option>
+                ))}
+              </select>
               <input
                 value={planPrices[request.id] ?? "999"}
                 onChange={(event) => setPlanPrices((current) => ({ ...current, [request.id]: event.target.value }))}
                 placeholder="Plan amount"
                 className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
               />
-              <button type="button" onClick={() => void approve(request.id)} disabled={request.status !== "PENDING"} className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
+              <button type="button" onClick={() => void approve(request.id)} disabled={request.status !== "PENDING" || !seatNumbers[request.id]} className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
                 Approve
               </button>
               <button type="button" onClick={() => void reject(request.id)} disabled={request.status !== "PENDING"} className="rounded-2xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-600 disabled:opacity-50">
                 Reject
               </button>
+              </div>
+              <div className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-xs font-semibold text-[var(--lp-muted)]">
+                Owner yahin floor aur available seat select karke request approve karega. Seat control par alag jaane ki zarurat nahi.
               </div>
             </div>
           </div>
