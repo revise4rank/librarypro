@@ -180,6 +180,10 @@ export const createJoinRequestBodySchema = z.object({
   message: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
+export const resolveJoinQrBodySchema = z.object({
+  qrPayload: z.string().trim().min(20),
+});
+
 export const createLibraryJoinRequestBodySchema = z.object({
   libraryId: z.string().uuid(),
   seatPreference: z.string().trim().max(40).optional().or(z.literal("")),

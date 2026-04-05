@@ -1556,6 +1556,30 @@ function parseQrPayload(rawPayload: string) {
   }
 }
 
+export async function resolveStudentJoinQrPayload(input: { qrPayload: string }) {
+  const db = requireDb();
+  const repo = repository();
+  const parsed = parseQrPayload(input.qrPayload);
+  const client = await db.connect();
+  try {
+    const library = await repo.findLibraryByQrKey(client, parsed.qrKeyId);
+    if (!library || library.id !== parsed.libraryId) {
+      throw new AppError(404, "Library QR not recognized", "LIBRARY_QR_NOT_FOUND");
+    }
+
+    return {
+      libraryId: library.id,
+      libraryName: library.name,
+      city: library.city,
+      area: library.area,
+      subdomain: library.subdomain,
+      qrKeyId: library.active_qr_key_id,
+    };
+  } finally {
+    client.release();
+  }
+}
+
 export async function createStudentJoinRequest(input: {
   studentUserId: string;
   qrPayload: string;

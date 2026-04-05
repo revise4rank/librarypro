@@ -44,6 +44,14 @@ type SearchLibrary = {
 };
 
 type JoinMode = "search" | "scan";
+type QrLibraryPreview = {
+  libraryId: string;
+  libraryName: string;
+  city: string | null;
+  area: string | null;
+  subdomain: string | null;
+  qrKeyId: string;
+};
 
 declare global {
   interface Window {
@@ -74,6 +82,8 @@ export function StudentJoinLibraryManager() {
   const [submittingLibraryId, setSubmittingLibraryId] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [scannerStatus, setScannerStatus] = useState("Camera off");
+  const [qrPreview, setQrPreview] = useState<QrLibraryPreview | null>(null);
+  const [resolvingQr, setResolvingQr] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -146,9 +156,34 @@ export function StudentJoinLibraryManager() {
     });
     setStatus(`Join request sent to ${response.data.libraryName}. Owner can now collect payment and allot your seat.`);
     setQrPayload("");
+    setQrPreview(null);
     setSeatPreference("");
     setMessage("");
     await loadHistory();
+  }
+
+  async function resolveQrPreview(payload: string) {
+    const normalized = payload.trim();
+    if (!normalized) {
+      setQrPreview(null);
+      return;
+    }
+
+    setResolvingQr(true);
+    try {
+      const response = await apiFetch<{ success: boolean; data: QrLibraryPreview }>("/student/join-requests/resolve-qr", {
+        method: "POST",
+        body: JSON.stringify({ qrPayload: normalized }),
+      });
+      setQrPreview(response.data);
+      setStatus(null);
+      setScannerStatus(`QR ready for ${response.data.libraryName}`);
+    } catch (error) {
+      setQrPreview(null);
+      setStatus(error instanceof Error ? error.message : "Scanned QR verify nahi ho paaya.");
+    } finally {
+      setResolvingQr(false);
+    }
   }
 
   async function submitLibraryJoinRequest(libraryId: string) {
@@ -186,7 +221,7 @@ export function StudentJoinLibraryManager() {
     if (!payload || payload === lastScanRef.current) return;
     lastScanRef.current = payload;
     setQrPayload(payload);
-    setScannerStatus("QR scanned. Review and send request.");
+    await resolveQrPreview(payload);
     stopCamera();
     window.setTimeout(() => {
       if (lastScanRef.current === payload) {
@@ -416,17 +451,37 @@ export function StudentJoinLibraryManager() {
 
               <textarea
                 value={qrPayload}
-                onChange={(event) => setQrPayload(event.target.value)}
+                onChange={(event) => {
+                  setQrPayload(event.target.value);
+                  setQrPreview(null);
+                }}
                 placeholder="Paste scanned library QR payload"
                 className="min-h-32 rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
               />
               <button
                 type="button"
+                onClick={() => void resolveQrPreview(qrPayload)}
+                disabled={!qrPayload.trim() || resolvingQr}
+                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-primary)] disabled:opacity-60"
+              >
+                {resolvingQr ? "Verifying QR..." : "Verify scanned library"}
+              </button>
+              {qrPreview ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm">
+                  <p className="font-bold text-emerald-800">{qrPreview.libraryName}</p>
+                  <p className="mt-1 text-emerald-700">{[qrPreview.city, qrPreview.area].filter(Boolean).join(" · ") || "Library location"}</p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                    {(qrPreview.subdomain || "library")}.nextlib.in
+                  </p>
+                </div>
+              ) : null}
+              <button
+                type="button"
                 onClick={() => void submitQrJoinRequest()}
-                disabled={!qrPayload.trim()}
+                disabled={!qrPayload.trim() || !qrPreview}
                 className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
               >
-                Send join request via QR
+                {qrPreview ? `Send join request to ${qrPreview.libraryName}` : "Send join request via QR"}
               </button>
             </div>
           )}

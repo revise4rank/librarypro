@@ -2625,14 +2625,14 @@ export class OwnerOperationsRepository {
   }
 
   async findLibraryByQrKey(client: PoolClient, qrKeyId: string) {
-    const result = await client.query<{ id: string; name: string; active_qr_key_id: string }>(
-      `
-      SELECT id::text, name, active_qr_key_id::text
-      FROM libraries
-      WHERE active_qr_key_id = $1::uuid
-      LIMIT 1
-      `,
-      [qrKeyId],
+      const result = await client.query<{ id: string; name: string; active_qr_key_id: string; city: string; area: string | null; subdomain: string | null }>(
+        `
+        SELECT id::text, name, active_qr_key_id::text, city, area, subdomain
+        FROM libraries
+        WHERE active_qr_key_id = $1::uuid
+        LIMIT 1
+        `,
+        [qrKeyId],
     );
 
     return result.rows[0] ?? null;

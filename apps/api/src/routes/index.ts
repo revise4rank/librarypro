@@ -65,6 +65,7 @@ import {
   createOwnerStudentController,
   createStudentJoinRequestByLibraryController,
   createStudentJoinRequestController,
+  resolveStudentJoinQrController,
   getStudentRejoinOptionsController,
   reserveStudentRejoinSeatController,
   createStudentRejoinRequestController,
@@ -210,6 +211,7 @@ router.post("/student/libraries/:libraryId/rejoin", requireRole(["STUDENT"]), as
 router.post("/student/libraries/:libraryId/reviews", requireRole(["STUDENT"]), asyncHandler(createStudentLibraryReviewController));
 router.post("/student/join-requests/library", requireRole(["STUDENT"]), asyncHandler(createStudentJoinRequestByLibraryController));
 router.post("/student/join-requests/scan", requireRole(["STUDENT"]), asyncHandler(createStudentJoinRequestController));
+router.post("/student/join-requests/resolve-qr", requireRole(["STUDENT"]), asyncHandler(resolveStudentJoinQrController));
 router.get("/student/join-requests", requireRole(["STUDENT"]), asyncHandler(listStudentJoinRequestsController));
 router.get("/student/syllabus", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusController));
 router.get("/student/syllabus/analytics", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusAnalyticsController));

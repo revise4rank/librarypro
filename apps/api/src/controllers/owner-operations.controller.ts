@@ -13,6 +13,7 @@ import {
   createOwnerStudent,
   createStudentJoinRequestByLibrary,
   createStudentJoinRequest,
+  resolveStudentJoinQrPayload,
   createStudentRejoinRequest,
   deleteOwnerStudent,
   deleteOwnerAdmin,
@@ -82,6 +83,7 @@ import {
   ownerReportsQuerySchema,
   createLibraryJoinRequestBodySchema,
   createJoinRequestBodySchema,
+  resolveJoinQrBodySchema,
   createRejoinRequestBodySchema,
   approveJoinRequestBodySchema,
   rejectJoinRequestBodySchema,
@@ -903,6 +905,16 @@ function requireStudentContext(req: Request) {
   };
 }
 
+function requireStudentUser(req: Request) {
+  if (!req.auth || req.auth.role !== "STUDENT") {
+    throw new AppError(401, "Student authentication required", "STUDENT_AUTH_REQUIRED");
+  }
+
+  return {
+    studentUserId: req.auth.userId,
+  };
+}
+
 export async function listStudentPaymentsController(req: Request, res: Response) {
   const { libraryId, studentUserId } = requireStudentContext(req);
   const parsed = studentPaymentsQuerySchema.parse(req.query);
@@ -1007,7 +1019,7 @@ export async function payStudentPaymentController(req: Request, res: Response) {
 }
 
 export async function createStudentJoinRequestController(req: Request, res: Response) {
-  const { studentUserId } = requireStudentContext(req);
+  const { studentUserId } = requireStudentUser(req);
   const parsed = createJoinRequestBodySchema.parse(req.body);
   const data = await createStudentJoinRequest({
     studentUserId,
@@ -1028,7 +1040,7 @@ export async function createStudentJoinRequestController(req: Request, res: Resp
 }
 
 export async function createStudentJoinRequestByLibraryController(req: Request, res: Response) {
-  const { studentUserId } = requireStudentContext(req);
+  const { studentUserId } = requireStudentUser(req);
   const parsed = createLibraryJoinRequestBodySchema.parse(req.body);
   const data = await createStudentJoinRequestByLibrary({
     studentUserId,
@@ -1046,6 +1058,15 @@ export async function createStudentJoinRequestByLibraryController(req: Request, 
     userAgent: req.header("user-agent") ?? null,
   });
   res.status(201).json({ success: true, data });
+}
+
+export async function resolveStudentJoinQrController(req: Request, res: Response) {
+  requireStudentUser(req);
+  const parsed = resolveJoinQrBodySchema.parse(req.body);
+  const data = await resolveStudentJoinQrPayload({
+    qrPayload: parsed.qrPayload,
+  });
+  res.json({ success: true, data });
 }
 
 export async function searchStudentLibrariesController(req: Request, res: Response) {
@@ -1099,13 +1120,13 @@ export async function reserveStudentRejoinSeatController(req: Request, res: Resp
 }
 
 export async function listStudentJoinRequestsController(req: Request, res: Response) {
-  const { studentUserId } = requireStudentContext(req);
+  const { studentUserId } = requireStudentUser(req);
   const data = await listStudentJoinRequests(studentUserId);
   res.json({ success: true, data });
 }
 
 export async function exitStudentLibraryController(req: Request, res: Response) {
-  const { studentUserId } = requireStudentContext(req);
+  const { studentUserId } = requireStudentUser(req);
   const libraryId = paramValue(req.params.libraryId);
   const data = await exitStudentLibrary({ studentUserId, libraryId });
   await createAuditLog({
