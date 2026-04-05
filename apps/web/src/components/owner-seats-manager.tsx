@@ -326,6 +326,7 @@ export function OwnerSeatsManager() {
   const [floorMetaDrafts, setFloorMetaDrafts] = useState<FloorMetaDrafts>({});
   const [activeAislePaint, setActiveAislePaint] = useState<{ floorId: string; mode: "add" | "remove" } | null>(null);
   const [ribbonTab, setRibbonTab] = useState<"floor" | "bank" | "single">("floor");
+  const [plannerRibbonTab, setPlannerRibbonTab] = useState<"templates" | "layout" | "paint" | "students">("templates");
 
   async function loadData() {
     setLoading(true);
@@ -458,6 +459,10 @@ export function OwnerSeatsManager() {
     }
     return options;
   }, [seats]);
+  const activeRibbonSectionColors = useMemo(
+    () => (selectedFloorId ? floorMetaDrafts[selectedFloorId]?.sectionColors ?? {} : {}),
+    [floorMetaDrafts, selectedFloorId],
+  );
 
   const floorCards = useMemo(() => {
     const seatsByFloor = new Map<string, SeatRow[]>();
@@ -1006,6 +1011,7 @@ export function OwnerSeatsManager() {
 
   return (
     <div className="grid gap-6">
+      <div className="sticky top-[88px] z-10">
       <DashboardCard title="Seat Creation Ribbon" subtitle="MS Word jaisa top ribbon yahin se floor, seat bank, aur single seat create karo.">
         <div className="grid gap-4">
           <div className="flex flex-wrap gap-2">
@@ -1145,8 +1151,131 @@ export function OwnerSeatsManager() {
               <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
             </form>
           ) : null}
+
+          <div className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-[rgba(255,255,255,0.92)] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Mini Toolbar</p>
+                <p className="mt-1 text-sm text-[var(--lp-muted)]">Templates, layout, paint aur students ko top ribbon se handle karo.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["templates", "TP Templates"],
+                  ["layout", "LY Layout"],
+                  ["paint", "PT Paint"],
+                  ["students", "ST Students"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPlannerRibbonTab(value as typeof plannerRibbonTab)}
+                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                      plannerRibbonTab === value
+                        ? "bg-slate-900 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
+                        : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {plannerRibbonTab === "templates" ? (
+              <div className="grid gap-3 xl:grid-cols-[auto_1fr]">
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "2")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">2 Seat Desk</button>
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "4")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">4 Seat Table</button>
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "6")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">6 Seat Table</button>
+                </div>
+                <div className="grid gap-3 xl:grid-cols-3">
+                  {roomLayoutPresets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => selectedFloorId && void applyRoomLayoutPreset(selectedFloorId, preset)}
+                      disabled={!selectedFloorId}
+                      className="rounded-[1rem] border border-[var(--lp-border)] bg-white p-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-[var(--lp-text)]">{preset.title}</p>
+                          <p className="mt-1 text-xs text-[var(--lp-muted)]">{preset.subtitle}</p>
+                        </div>
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--lp-primary)] text-sm font-black text-white">+</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {plannerRibbonTab === "layout" ? (
+              <div className="grid gap-3 xl:grid-cols-[auto_auto_1fr]">
+                <button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-[1rem] px-4 py-3 text-sm font-black ${layoutMode ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
+                  {layoutMode ? "Planner Active" : "Enable Planner"}
+                </button>
+                <div className="rounded-[1rem] bg-[#f5faf6] px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Socket</p>
+                  <p className="mt-1 text-sm font-black text-[var(--lp-text)]">{liveStatus}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[["move", "Move"], ["aisle", "Aisle"], ["paint", "Paint"]].map(([value, label]) => (
+                    <button key={value} type="button" onClick={() => setPlannerTool(value as typeof plannerTool)} className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] ${plannerTool === value ? "bg-slate-900 text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>{label}</button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {plannerRibbonTab === "paint" ? (
+              <div className="grid gap-3 xl:grid-cols-[1fr_auto_1fr]">
+                <input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" />
+                <input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-20 rounded-[1rem] border border-[var(--lp-border)] bg-white p-1" />
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(activeRibbonSectionColors).length ? Object.entries(activeRibbonSectionColors).map(([section, color]) => (
+                    <button key={section} type="button" onClick={() => { setPaintSectionName(section); setPaintSectionColor(color); setPlannerTool("paint"); }} className="rounded-full px-3 py-2 text-[11px] font-bold text-white" style={{ backgroundColor: color }}>
+                      {section}
+                    </button>
+                  )) : <p className="text-sm text-[var(--lp-muted)]">Painted section colors yahan dikhenge.</p>}
+                </div>
+              </div>
+            ) : null}
+
+            {plannerRibbonTab === "students" ? (
+              <div className="grid gap-3">
+                <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none">
+                  <option value="">Select student assignment</option>
+                  {availableStudents.map((student) => (
+                    <option key={student.assignment_id} value={student.assignment_id}>
+                      {student.student_name} | {student.seat_number ?? "No seat"} | {student.plan_name}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {availableStudents.map((student) => (
+                    <div
+                      key={student.assignment_id}
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData("text/assignment-id", student.assignment_id);
+                        setSelectedAssignmentId(student.assignment_id);
+                        const preview = makeSeatDragPreview(student.student_name);
+                        event.dataTransfer.setDragImage(preview, 54, 36);
+                        window.setTimeout(() => preview.remove(), 0);
+                      }}
+                      className={`min-w-[240px] cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-primary)] bg-[#fff7ef]" : "border-slate-200 bg-white"}`}
+                    >
+                      <p className="font-black text-slate-950">{student.student_name}</p>
+                      <p className="text-sm text-slate-500">{student.seat_number ?? "No seat"} | {student.plan_name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </DashboardCard>
+      </div>
 
       <section className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
         <DashboardCard title="Planner controls" subtitle="Make the hall feel like a real reading floor.">
