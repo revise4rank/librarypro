@@ -13,8 +13,10 @@ type PublicLibraryProfileResponse = {
   };
 };
 
+const PRODUCTION_API_ORIGIN = "https://librarypro-api.onrender.com";
+
 function getApiBaseUrl() {
-  const raw = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:4000";
+  const raw = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || PRODUCTION_API_ORIGIN;
   return raw.endsWith("/v1") ? raw : `${raw}/v1`;
 }
 

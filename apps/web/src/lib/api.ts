@@ -1,5 +1,7 @@
 "use client";
 
+const PRODUCTION_API_ORIGIN = "https://librarypro-api.onrender.com";
+
 function getDefaultApiOrigin() {
   if (typeof window !== "undefined") {
     const { hostname, protocol } = window.location;
@@ -9,9 +11,11 @@ function getDefaultApiOrigin() {
     if (hostname === "127.0.0.1") {
       return `${protocol}//127.0.0.1:4000`;
     }
+
+    return PRODUCTION_API_ORIGIN;
   }
 
-  return "http://localhost:4000";
+  return process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || PRODUCTION_API_ORIGIN;
 }
 
 export const API_URL = (() => {
