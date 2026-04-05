@@ -785,8 +785,6 @@ export function OwnerSeatsManager() {
   }
 
   async function createSeatAtCell(floorId: string, posX: number, posY: number) {
-    if (!layoutMode) return;
-
     const nextSeatCode = buildNextSeatCode(existingSeatNumbers, seatPrefix);
     setMessage(null);
     setError(null);
@@ -1733,7 +1731,7 @@ export function OwnerSeatsManager() {
                                   return;
                                 }
 
-                                if (plannerTool !== "aisle" && layoutMode && !selectedSeat && !seat && !isAisleCell) {
+                                if (plannerTool !== "aisle" && !selectedSeat && !seat && !isAisleCell && workspaceMode !== "assign") {
                                   void createSeatAtCell(item.floor.id, cell.x, cell.y);
                                 }
                               }}
@@ -1763,6 +1761,12 @@ export function OwnerSeatsManager() {
                                   return;
                                 }
 
+                                if (assignmentId && !seat && !isAisleCell) {
+                                  setSelectedAssignmentId(assignmentId);
+                                  setError("Is empty spot par pehle + se seat banao, phir student assign karo.");
+                                  return;
+                                }
+
                                 if (sourceSeatId && seat) {
                                   setSelectedSeatId(seat.id);
                                   void swapSeatPositions(sourceSeatId, seat.id);
@@ -1773,7 +1777,7 @@ export function OwnerSeatsManager() {
                                   void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
                                 }
                               }}
-                            className={`relative min-h-[4rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${layoutMode && !seat ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                            className={`relative min-h-[4rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
                             >
                               {seat ? (
                                 <button
@@ -1814,18 +1818,27 @@ export function OwnerSeatsManager() {
                                 <div className={`flex h-full flex-col items-center justify-center rounded-[0.8rem] p-1.5 text-[9px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
                                   <span className="text-[8px] font-semibold uppercase tracking-[0.12em]">{isAisleCell ? "Aisle" : "Empty"}</span>
                                   {!isAisleCell && workspaceMode !== "assign" ? (
-                                    <button
-                                      type="button"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        void createSeatAtCell(item.floor.id, cell.x, cell.y);
-                                      }}
-                                      className="mt-1 rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-center text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]"
-                                    >
-                                      +
-                                    </button>
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          void createSeatAtCell(item.floor.id, cell.x, cell.y);
+                                        }}
+                                        className="mt-1 rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-center text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]"
+                                        aria-label={`Create seat at X${cell.x} Y${cell.y}`}
+                                      >
+                                        +
+                                      </button>
+                                      <span className="mt-1 text-[8px] font-semibold text-[var(--lp-primary)]">Create seat</span>
+                                    </>
                                   ) : (
-                                    <span className="mt-1 text-[8px]">{workspaceMode === "assign" ? "Drop" : "Walk"}</span>
+                                    <div className="mt-1 flex flex-col items-center gap-1">
+                                      <span className={`rounded-full px-2 py-1 text-[7px] font-black uppercase tracking-[0.12em] ${selectedAssignmentId ? "bg-[var(--lp-primary)] text-white" : "bg-slate-200 text-slate-600"}`}>
+                                        Student assign
+                                      </span>
+                                      <span className="text-[8px]">{selectedAssignmentId ? "Drop student" : "Select student"}</span>
+                                    </div>
                                   )}
                                 </div>
                               )}
