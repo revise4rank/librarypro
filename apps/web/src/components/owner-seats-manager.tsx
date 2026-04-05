@@ -105,10 +105,10 @@ function getClusterType(col: number) {
 }
 
 function getPlannerColumnWidth(columns: number) {
-  if (columns >= 14) return 56;
-  if (columns >= 12) return 62;
-  if (columns >= 10) return 72;
-  return 88;
+  if (columns >= 14) return 48;
+  if (columns >= 12) return 54;
+  if (columns >= 10) return 62;
+  return 74;
 }
 
 function buildNextSeatCode(existingSeatNumbers: string[], prefix: string) {
@@ -265,6 +265,29 @@ function SeatSilhouette({ shape }: { shape: string }) {
       <rect x="70" y="42" width="10" height="10" rx="3" fill="currentColor" />
       <rect x="18" y="20" width="14" height="24" rx="7" fill="currentColor" opacity="0.14" />
       <rect x="88" y="20" width="14" height="24" rx="7" fill="currentColor" opacity="0.14" />
+    </svg>
+  );
+}
+
+function SeatPodIcon({ status, occupied }: { status: string; occupied: boolean }) {
+  const tone =
+    status === "AVAILABLE"
+      ? "text-indigo-300"
+      : status === "OCCUPIED"
+        ? "text-pink-300"
+        : status === "RESERVED"
+          ? "text-amber-300"
+          : "text-slate-300";
+
+  return (
+    <svg viewBox="0 0 64 64" className={`h-9 w-9 ${tone}`} aria-hidden="true">
+      <rect x="18" y="14" width="28" height="18" rx="7" fill="currentColor" opacity="0.22" />
+      <rect x="22" y="18" width="20" height="10" rx="4" fill="currentColor" opacity="0.45" />
+      <rect x="14" y="20" width="6" height="20" rx="3" fill="currentColor" opacity="0.22" />
+      <rect x="44" y="20" width="6" height="20" rx="3" fill="currentColor" opacity="0.22" />
+      <rect x="24" y="34" width="6" height="8" rx="2" fill="currentColor" opacity="0.6" />
+      <rect x="34" y="34" width="6" height="8" rx="2" fill="currentColor" opacity="0.6" />
+      {occupied ? <circle cx="32" cy="24" r="5" fill="currentColor" opacity="0.9" /> : null}
     </svg>
   );
 }
@@ -1730,7 +1753,7 @@ export function OwnerSeatsManager() {
                                   void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
                                 }
                               }}
-                            className={`relative min-h-[4.8rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${layoutMode && !seat ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                            className={`relative min-h-[4rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${layoutMode && !seat ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
                             >
                               {seat ? (
                                 <button
@@ -1751,64 +1774,39 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`relative flex h-full w-full flex-col rounded-[0.9rem] border px-1.5 py-2 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`relative flex h-full w-full flex-col items-center rounded-[1rem] border px-1 py-1.5 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
-                                  <div className="mb-1 flex items-start justify-between gap-1">
-                                    <div>
-                                      <p className="text-[11px] font-black leading-none sm:text-xs">{seat.seat_number}</p>
-                                    </div>
-                                    <span className="rounded-full bg-white/85 px-1.5 py-1 text-[8px] font-black uppercase tracking-[0.08em]">
-                                      {seat.status.slice(0, 1)}
-                                    </span>
+                                  <span className="text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
+                                  <div className="mt-1 flex min-h-[2.6rem] items-center justify-center rounded-[0.9rem] bg-white/80 px-1 py-1">
+                                    <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
                                   </div>
-
-                                  <div className="relative rounded-[0.75rem] bg-white/72 px-1.5 py-1.5">
-                                    <SeatSilhouette shape={seatShape} />
-                                    <div className="mt-1 flex items-center justify-between">
-                                      <span className="h-1.5 w-7 rounded-full bg-slate-300/80" />
-                                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-950 text-[8px] font-black text-white">
-                                        {formatStudentInitials(seat.student_name)}
-                                      </span>
-                                    </div>
-                                    <div className="mt-1.5 flex justify-center">
-                                      <span
-                                        className={`rounded-full px-1.5 py-1 text-[7px] font-bold uppercase tracking-[0.08em] ${getZoneTone(inferZone(seat))}`}
-                                        style={sectionColors[seat.section_name ?? ""] ? { backgroundColor: sectionColors[seat.section_name ?? ""], color: "#fff" } : undefined}
-                                      >
-                                        {inferZone(seat).replace(" Zone", "").slice(0, 5)}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-1.5 flex items-center justify-between text-[8px] font-semibold opacity-75">
-                                    <span>{seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Used" : seat.status === "RESERVED" ? "Hold" : "Off"}</span>
-                                    <span>{seat.student_name ? formatStudentInitials(seat.student_name) : "--"}</span>
+                                  <div className="mt-1 text-center">
+                                    <p className="text-[8px] font-bold uppercase tracking-[0.1em] opacity-75">
+                                      {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Sold" : seat.status === "RESERVED" ? "Hold" : "Off"}
+                                    </p>
+                                    {seat.student_name ? (
+                                      <p className="mt-0.5 text-[8px] font-black text-slate-900">{formatStudentInitials(seat.student_name)}</p>
+                                    ) : null}
                                   </div>
                                 </button>
                               ) : (
-                                <div className={`flex h-full flex-col justify-between rounded-[0.8rem] p-1.5 text-[9px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
-                                  <div className="flex items-center justify-between">
-                                    <span className="font-semibold uppercase tracking-[0.14em]">{isAisleCell ? "Aisle" : "Empty"}</span>
-                                    <span className="text-[8px]">{cell.x},{cell.y}</span>
-                                  </div>
-                                  <div className="grid gap-1.5">
-                                    <div className="rounded-full border border-dashed border-slate-300 px-2 py-1.5 text-center text-[8px]">
-                                      {isAisleCell ? "Walk" : workspaceMode === "assign" ? "Assign target" : workspaceMode === "layout" ? "Drop here" : "Add new"}
-                                    </div>
-                                    {!isAisleCell && workspaceMode !== "assign" ? (
-                                      <button
-                                        type="button"
-                                        onClick={(event) => {
-                                          event.stopPropagation();
-                                          void createSeatAtCell(item.floor.id, cell.x, cell.y);
-                                        }}
-                                        className="rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-center text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]"
-                                      >
-                                        + Seat
-                                      </button>
-                                    ) : null}
-                                  </div>
+                                <div className={`flex h-full flex-col items-center justify-center rounded-[0.8rem] p-1.5 text-[9px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
+                                  <span className="text-[8px] font-semibold uppercase tracking-[0.12em]">{isAisleCell ? "Aisle" : "Empty"}</span>
+                                  {!isAisleCell && workspaceMode !== "assign" ? (
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        void createSeatAtCell(item.floor.id, cell.x, cell.y);
+                                      }}
+                                      className="mt-1 rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-center text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]"
+                                    >
+                                      +
+                                    </button>
+                                  ) : (
+                                    <span className="mt-1 text-[8px]">{workspaceMode === "assign" ? "Drop" : "Walk"}</span>
+                                  )}
                                 </div>
                               )}
                             </div>
