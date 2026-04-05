@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
 
@@ -45,6 +45,14 @@ type SearchLibrary = {
 
 type JoinMode = "search" | "scan";
 
+declare global {
+  interface Window {
+    BarcodeDetector?: new (options?: { formats?: string[] }) => {
+      detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>>;
+    };
+  }
+}
+
 export function StudentJoinLibraryManager() {
   const [joinMode, setJoinMode] = useState<JoinMode>("search");
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,6 +72,14 @@ export function StudentJoinLibraryManager() {
   const [rejoinOptions, setRejoinOptions] = useState<RejoinOptions | null>(null);
   const [reserveMessage, setReserveMessage] = useState<string | null>(null);
   const [submittingLibraryId, setSubmittingLibraryId] = useState<string | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [scannerStatus, setScannerStatus] = useState("Camera off");
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<{ detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>> } | null>(null);
+  const lastScanRef = useRef("");
+  const scanLoopRef = useRef<number | null>(null);
 
   async function loadHistory() {
     const response = await apiFetch<{ success: boolean; data: JoinHistoryItem[] }>("/student/join-requests");
@@ -79,12 +95,17 @@ export function StudentJoinLibraryManager() {
   useEffect(() => {
     void loadHistory();
     void loadLibraries();
+    return () => stopCamera();
   }, []);
 
   const searchableResults = useMemo(() => {
     const joinedIds = new Set(libraries.map((library) => library.library_id));
     return searchResults.filter((item) => !joinedIds.has(item.id));
   }, [libraries, searchResults]);
+
+  const cameraSupported = useMemo(() => {
+    return typeof window !== "undefined" && !!window.BarcodeDetector && !!navigator.mediaDevices?.getUserMedia;
+  }, []);
 
   async function searchLibraries() {
     const query = searchQuery.trim();
@@ -144,6 +165,75 @@ export function StudentJoinLibraryManager() {
       await searchLibraries();
     } finally {
       setSubmittingLibraryId(null);
+    }
+  }
+
+  function stopCamera() {
+    if (scanLoopRef.current) {
+      window.clearInterval(scanLoopRef.current);
+      scanLoopRef.current = null;
+    }
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraActive(false);
+    setScannerStatus("Camera off");
+  }
+
+  async function handleDetectedPayload(payload: string) {
+    if (!payload || payload === lastScanRef.current) return;
+    lastScanRef.current = payload;
+    setQrPayload(payload);
+    setScannerStatus("QR scanned. Review and send request.");
+    stopCamera();
+    window.setTimeout(() => {
+      if (lastScanRef.current === payload) {
+        lastScanRef.current = "";
+      }
+    }, 1500);
+  }
+
+  async function startCamera() {
+    if (!cameraSupported) {
+      setStatus("Is browser me camera QR scan support available nahi hai. Paste scanner use karo.");
+      return;
+    }
+
+    try {
+      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+      detectorRef.current = detector;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      setCameraActive(true);
+      setScannerStatus("Camera live - library QR scan karo");
+
+      scanLoopRef.current = window.setInterval(async () => {
+        if (!videoRef.current || !detectorRef.current) return;
+        try {
+          const results = await detectorRef.current.detect(videoRef.current);
+          const match = results.find((item) => item.rawValue);
+          if (match?.rawValue) {
+            await handleDetectedPayload(match.rawValue);
+          }
+        } catch {
+          // ignore transient scan issues
+        }
+      }, 900);
+    } catch (error) {
+      stopCamera();
+      setStatus(error instanceof Error ? error.message : "Camera scanner start nahi ho paaya.");
     }
   }
 
@@ -216,7 +306,7 @@ export function StudentJoinLibraryManager() {
           <div className="rounded-2xl border border-[var(--lp-border)] bg-[#fffdfa] p-4 text-sm text-[var(--lp-muted)]">
             {joinMode === "search"
               ? "Kisi bhi active library ko name, city, area ya subdomain se search karo. Result se direct join request bhejo."
-              : "Agar library reception ya gate par QR laga hai, uska payload scan ya paste karke direct request bhejo."}
+              : "Agar library reception ya gate par QR laga hai, student app ke camera se usko scan karo ya payload paste karo."}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
@@ -285,6 +375,45 @@ export function StudentJoinLibraryManager() {
             </div>
           ) : (
             <div className="grid gap-4">
+              <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-950 p-4 shadow-[0_16px_30px_rgba(15,23,42,0.12)]">
+                <div className="relative overflow-hidden rounded-[1.5rem] bg-black">
+                  <video ref={videoRef} className="h-[18rem] w-full object-cover" playsInline muted />
+                  {!cameraActive ? (
+                    <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(15,23,42,0.88))] px-6 text-center">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">Library Scanner</p>
+                        <p className="mt-3 text-xl font-black text-white">Student camera se library QR scan karo</p>
+                      </div>
+                    </div>
+                  ) : null}
+                  <div className="pointer-events-none absolute inset-[16%] rounded-[1.5rem] border-2 border-white/80 shadow-[0_0_0_999px_rgba(15,23,42,0.18)]" />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => void startCamera()}
+                  disabled={cameraActive}
+                  className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+                >
+                  Start camera scanner
+                </button>
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  disabled={!cameraActive}
+                  className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
+                >
+                  Stop camera
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-[var(--lp-border)] bg-[#fffdfa] px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">
+                {scannerStatus}
+                {!cameraSupported ? <span className="mt-1 block text-[var(--lp-muted)]">Is browser me camera QR scan support available nahi hai. Pasted payload use karo.</span> : null}
+              </div>
+
               <textarea
                 value={qrPayload}
                 onChange={(event) => setQrPayload(event.target.value)}

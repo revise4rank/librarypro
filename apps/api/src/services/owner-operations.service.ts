@@ -1621,7 +1621,16 @@ export async function createStudentJoinRequestByLibrary(input: {
 }
 
 export async function searchActiveLibrariesForJoin(query: string) {
-  return repository().searchActiveLibrariesForJoin(query);
+  const rows = await repository().searchActiveLibrariesForJoin(query);
+  return rows.map((row) => ({
+    id: row.library_id,
+    name: row.library_name,
+    slug: row.subdomain || row.library_name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+    subdomain: row.subdomain ?? "",
+    city: row.city,
+    area: row.area,
+    status: "ACTIVE",
+  }));
 }
 
 export async function createStudentRejoinRequest(input: {
