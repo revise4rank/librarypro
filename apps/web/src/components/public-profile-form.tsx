@@ -30,6 +30,8 @@ type PublicProfileFormProps = {
     galleryImages: string[];
     published: boolean;
   };
+  requestedAction?: "save-draft" | "publish" | null;
+  onActionHandled?: () => void;
 };
 
 type SaveResponse = {
@@ -53,7 +55,7 @@ function moveImage(images: string[], index: number, direction: -1 | 1) {
   return next;
 }
 
-export function PublicProfileForm({ initialValues }: PublicProfileFormProps) {
+export function PublicProfileForm({ initialValues, requestedAction = null, onActionHandled }: PublicProfileFormProps) {
   const [values, setValues] = useState(initialValues);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +69,16 @@ export function PublicProfileForm({ initialValues }: PublicProfileFormProps) {
   useEffect(() => {
     setValues(initialValues);
   }, [initialValues]);
+
+  useEffect(() => {
+    if (!requestedAction || saving) {
+      return;
+    }
+
+    void saveProfile(requestedAction === "publish").finally(() => {
+      onActionHandled?.();
+    });
+  }, [requestedAction]);
 
   function updateValue<Key extends keyof typeof values>(key: Key, value: (typeof values)[Key]) {
     setValues((current) => ({ ...current, [key]: value }));

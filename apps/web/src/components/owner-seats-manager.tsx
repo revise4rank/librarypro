@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { getRealtimeSocket } from "../lib/realtime";
@@ -312,6 +313,7 @@ function suggestNextFloor(floors: FloorRow[]) {
 }
 
 export function OwnerSeatsManager() {
+  const searchParams = useSearchParams();
   const [seats, setSeats] = useState<SeatRow[]>([]);
   const [floors, setFloors] = useState<FloorRow[]>([]);
   const [students, setStudents] = useState<StudentRow[]>([]);
@@ -412,6 +414,24 @@ export function OwnerSeatsManager() {
       return current;
     });
   }, [floors]);
+
+  useEffect(() => {
+    const workspace = searchParams.get("workspace");
+    const ribbon = searchParams.get("ribbon");
+    const planner = searchParams.get("planner");
+
+    if (workspace === "setup" || workspace === "layout" || workspace === "assign") {
+      setWorkspaceMode(workspace);
+    }
+
+    if (ribbon === "floor" || ribbon === "bank" || ribbon === "single") {
+      setRibbonTab(ribbon);
+    }
+
+    if (planner === "templates" || planner === "layout" || planner === "paint" || planner === "students") {
+      setPlannerRibbonTab(planner);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!activeAislePaint) return;

@@ -94,6 +94,7 @@ export function OwnerWebsiteBuilder({
 }) {
   const [values, setValues] = useState(initialValues);
   const [loadMessage, setLoadMessage] = useState<string | null>(null);
+  const [requestedAction, setRequestedAction] = useState<"save-draft" | "publish" | null>(null);
 
   useEffect(() => {
     hydrateSessionFromServer()
@@ -115,10 +116,22 @@ export function OwnerWebsiteBuilder({
       });
   }, []);
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const action = (event as CustomEvent<"save-draft" | "publish">).detail;
+      if (action === "publish" || action === "save-draft") {
+        setRequestedAction(action);
+      }
+    };
+
+    window.addEventListener("nextlib:owner-website-action", handler as EventListener);
+    return () => window.removeEventListener("nextlib:owner-website-action", handler as EventListener);
+  });
+
   return (
     <div className="grid gap-4">
       {loadMessage ? <p className="text-sm font-semibold text-slate-600">{loadMessage}</p> : null}
-      <PublicProfileForm initialValues={values} />
+      <PublicProfileForm initialValues={values} requestedAction={requestedAction} onActionHandled={() => setRequestedAction(null)} />
     </div>
   );
 }
