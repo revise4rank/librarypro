@@ -40,9 +40,22 @@ const COOKIE_ROLE = "lp_role";
 const COOKIE_SESSION = "lp_session";
 const LEGACY_COOKIE_TOKEN = "lp_token";
 
-function getStorage() {
+function getPrimaryStorage() {
   if (typeof window === "undefined") return null;
-  return window.sessionStorage;
+  try {
+    return window.localStorage;
+  } catch {
+    return window.sessionStorage;
+  }
+}
+
+function getSecondaryStorage() {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 }
 
 function setCookie(name: string, value: string, maxAgeSeconds?: number) {
@@ -78,25 +91,23 @@ export function getApiBaseUrl() {
 }
 
 export function saveSession(session: SessionState) {
-  const storage = getStorage();
-  if (!storage) return;
-  storage.setItem(
-    SESSION_KEY,
-    JSON.stringify({
-      user: session.user,
-      csrfToken: session.csrfToken,
-      accessToken: session.accessToken,
-    } satisfies SessionState),
-  );
+  const payload = JSON.stringify({
+    user: session.user,
+    csrfToken: session.csrfToken,
+    accessToken: session.accessToken,
+  } satisfies SessionState);
+  const storage = getPrimaryStorage();
+  const secondaryStorage = getSecondaryStorage();
+  storage?.setItem(SESSION_KEY, payload);
+  secondaryStorage?.setItem(SESSION_KEY, payload);
   setCookie(COOKIE_ROLE, session.user.role);
   setCookie(COOKIE_SESSION, "1");
   clearCookie(LEGACY_COOKIE_TOKEN);
 }
 
 export function clearSession() {
-  const storage = getStorage();
-  if (!storage) return;
-  storage.removeItem(SESSION_KEY);
+  getPrimaryStorage()?.removeItem(SESSION_KEY);
+  getSecondaryStorage()?.removeItem(SESSION_KEY);
   clearCookie(COOKIE_ROLE);
   clearCookie(COOKIE_SESSION);
   clearCookie(LEGACY_COOKIE_TOKEN);
@@ -126,14 +137,17 @@ export async function logoutSession() {
 }
 
 export function readSession(): SessionState | null {
-  const storage = getStorage();
-  if (!storage) return null;
-
-  const raw = storage.getItem(SESSION_KEY);
+  const storage = getPrimaryStorage();
+  const secondaryStorage = getSecondaryStorage();
+  const raw = storage?.getItem(SESSION_KEY) ?? secondaryStorage?.getItem(SESSION_KEY) ?? null;
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as SessionState;
+    const session = JSON.parse(raw) as SessionState;
+    if (storage && storage.getItem(SESSION_KEY) !== raw) {
+      storage.setItem(SESSION_KEY, raw);
+    }
+    return session;
   } catch {
     return null;
   }

@@ -279,6 +279,15 @@ function createMainFloor(columns: number, rows: number): FloorRow {
   };
 }
 
+function suggestNextFloor(floors: FloorRow[]) {
+  const maxFloorNumber = floors.reduce((max, floor) => Math.max(max, floor.floor_number), 0);
+  const nextFloorNumber = maxFloorNumber + 1;
+  return {
+    floorNumber: nextFloorNumber,
+    floorName: nextFloorNumber === 1 ? "First Floor" : `Floor ${nextFloorNumber}`,
+  };
+}
+
 export function OwnerSeatsManager() {
   const [seats, setSeats] = useState<SeatRow[]>([]);
   const [floors, setFloors] = useState<FloorRow[]>([]);
@@ -363,6 +372,20 @@ export function OwnerSeatsManager() {
       setSelectedFloorId(floors[0].id);
     }
   }, [floors, selectedFloorId]);
+
+  useEffect(() => {
+    const suggestion = suggestNextFloor(floors);
+    setFloorNumber((current) => {
+      const duplicate = floors.some((floor) => floor.floor_number === current);
+      return duplicate ? suggestion.floorNumber : current;
+    });
+    setFloorName((current) => {
+      if (!current.trim() || current === "First Floor" || /^Floor \d+$/i.test(current)) {
+        return suggestion.floorName;
+      }
+      return current;
+    });
+  }, [floors]);
 
   useEffect(() => {
     if (!activeAislePaint) return;
@@ -537,7 +560,15 @@ export function OwnerSeatsManager() {
       setMessage(`New floor created. "${result.data.name}" ab seat bank create ke liye selected hai.`);
       await loadData();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Floor create failed.");
+      const rawMessage = submitError instanceof Error ? submitError.message : "Floor create failed.";
+      if (rawMessage.includes("Floor number already exists")) {
+        const suggestion = suggestNextFloor(floors);
+        setFloorNumber(suggestion.floorNumber);
+        setFloorName(suggestion.floorName);
+        setError(`Ye floor number already use ho raha hai. Ab next available floor auto-fill kar diya gaya hai: ${suggestion.floorName}.`);
+        return;
+      }
+      setError(rawMessage);
     }
   }
 
@@ -1002,15 +1033,28 @@ export function OwnerSeatsManager() {
       <section className="grid gap-4 xl:grid-cols-[1.1fr_1fr_0.95fr]">
         <DashboardCard title="Seat setup tools" subtitle="Create halls, rows, and seat banks quickly.">
           <div className="grid gap-4">
+            {error ? (
+              <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+                {error}
+              </div>
+            ) : null}
+            {message ? (
+              <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                {message}
+              </div>
+            ) : null}
             <form id="seat-create-floor" onSubmit={createFloor} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
               <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Create floor</p>
+              <div className="mb-3 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+                Existing floors ke basis par next floor number auto-suggest hota hai. Agar duplicate number hua to system next available floor suggest karega.
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input value={floorName} onChange={(event) => setFloorName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Floor name" />
                 <input value={floorNumber} onChange={(event) => setFloorNumber(Number(event.target.value) || 0)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Floor number" type="number" />
                 <input value={layoutRows} onChange={(event) => setLayoutRows(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Rows" type="number" />
                 <input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Columns" type="number" />
               </div>
-              <button className="mt-3 rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">Create floor</button>
+              <button type="submit" className="mt-3 rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">Create floor</button>
             </form>
 
             <form id="seat-create-bank" onSubmit={createSeats} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
@@ -1042,7 +1086,7 @@ export function OwnerSeatsManager() {
                 <input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Column start" type="number" />
                 <input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Columns per row" type="number" />
               </div>
-              <button disabled={!selectedFloorId} className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
+              <button type="submit" disabled={!selectedFloorId} className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
             </form>
 
             <form id="seat-create-single" onSubmit={createSingleSeat} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
@@ -1054,7 +1098,7 @@ export function OwnerSeatsManager() {
                 <input value={manualSeatCode} onChange={(event) => setManualSeatCode(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Exact seat code e.g. G-12" />
                 <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Room / section name" />
               </div>
-              <button disabled={!selectedFloorId} className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
+              <button type="submit" disabled={!selectedFloorId} className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
             </form>
           </div>
         </DashboardCard>
