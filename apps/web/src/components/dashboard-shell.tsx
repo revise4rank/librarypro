@@ -180,22 +180,18 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileMenuSide, setMobileMenuSide] = useState<"left" | "right">("right");
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [mobileMenuSide, setMobileMenuSide] = useState<"left" | "right">(() => {
+    if (typeof window === "undefined") return "right";
+    const saved = window.localStorage.getItem("lp-mobile-menu-side");
+    return saved === "left" || saved === "right" ? saved : "right";
+  });
+  const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("lp-desktop-menu-collapsed") === "1";
+  });
   const [guideOpen, setGuideOpen] = useState(false);
 
   const matchedGuide = dashboardGuides.find((item) => item.match.test(pathname))?.guide;
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem("lp-mobile-menu-side");
-    if (saved === "left" || saved === "right") {
-      setMobileMenuSide(saved);
-    }
-    const collapsed = window.localStorage.getItem("lp-desktop-menu-collapsed");
-    if (collapsed === "1") {
-      setDesktopCollapsed(true);
-    }
-  }, []);
 
   useEffect(() => {
     setMobileMenuOpen(false);
