@@ -190,6 +190,7 @@ export function DashboardShell({
     return window.localStorage.getItem("lp-desktop-menu-collapsed") === "1";
   });
   const [guideOpen, setGuideOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
 
   const matchedGuide = dashboardGuides.find((item) => item.match.test(pathname))?.guide;
 
@@ -279,34 +280,45 @@ export function DashboardShell({
           </nav>
 
           {!desktopCollapsed ? (
-            <div className="mt-8 rounded-[1.75rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.92)] p-4">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-accent)]">System Status</p>
-              <div className="mt-4 space-y-3 text-sm text-[var(--lp-text)]">
-                <div className="flex items-center justify-between">
-                  <span>Subscription</span>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">Active</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>QR Check-in</span>
-                  <span className="rounded-full bg-lime-100 px-3 py-1 text-xs font-black text-lime-700">Online</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Seat Sync</span>
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">2 Pending</span>
-                </div>
+            <div className="mt-8 rounded-[1.5rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.82)] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[var(--lp-accent)]">System Status</p>
+                <button
+                  type="button"
+                  onClick={() => setStatusOpen((current) => !current)}
+                  className="rounded-full border border-[var(--lp-border)] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                >
+                  {statusOpen ? "Hide" : "Show"}
+                </button>
               </div>
+              {statusOpen ? (
+                <div className="mt-3 space-y-2.5 text-sm text-[var(--lp-text)]">
+                  <div className="flex items-center justify-between">
+                    <span>Subscription</span>
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">Active</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>QR Check-in</span>
+                    <span className="rounded-full bg-lime-100 px-3 py-1 text-xs font-black text-lime-700">Online</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Seat Sync</span>
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">2 Pending</span>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </aside>
 
         <div className="min-w-0">
           <header className="sticky top-0 z-20 border-b border-[var(--lp-border)] bg-[rgba(255,249,241,0.94)] backdrop-blur">
-            <div className="flex flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 px-4 py-3 md:px-6 lg:px-8">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--lp-accent)]">{panelLabel}</p>
-                  <h2 className="mt-2 text-xl font-extrabold tracking-tight sm:text-2xl md:text-3xl">{title}</h2>
-                  <p className="mt-2 max-w-4xl text-sm leading-6 text-[var(--lp-muted)] sm:leading-7">{description}</p>
+                  <h2 className="mt-1.5 text-xl font-extrabold tracking-tight sm:text-2xl md:text-[2rem]">{title}</h2>
+                  <p className="mt-1.5 max-w-4xl text-sm leading-6 text-[var(--lp-muted)]">{description}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   <Link
@@ -323,7 +335,7 @@ export function DashboardShell({
 
           {matchedGuide ? (
             <div className="px-4 pb-24 md:px-6 lg:px-8 lg:pb-8">
-              <section className="rounded-[1.35rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.78)] px-4 py-3 shadow-[0_10px_24px_rgba(111,95,74,0.06)]">
+              <section className="rounded-[1.2rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.72)] px-4 py-3 shadow-[0_8px_18px_rgba(111,95,74,0.05)]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Quick help</p>
@@ -340,7 +352,7 @@ export function DashboardShell({
                 {guideOpen ? (
                   <ol className="mt-3 grid gap-2 text-sm text-[var(--lp-text)] lg:grid-cols-3">
                     {matchedGuide.steps.map((step, index) => (
-                      <li key={`${matchedGuide.title}-${index}`} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-3 leading-6">
+                      <li key={`${matchedGuide.title}-${index}`} className="rounded-[0.95rem] border border-[var(--lp-border)] bg-white px-3 py-3 leading-6">
                         <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--lp-primary)] text-[10px] font-black text-white">
                           {index + 1}
                         </span>

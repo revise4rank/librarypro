@@ -104,6 +104,9 @@ export function OwnerDashboardManager() {
   const [trendWindow, setTrendWindow] = useState<"7d" | "30d">("7d");
   const [updatingNoteId, setUpdatingNoteId] = useState<string | null>(null);
   const [followUpFilter, setFollowUpFilter] = useState<"ALL" | "OVERDUE" | "TODAY" | "UPCOMING">("ALL");
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [playbookOpen, setPlaybookOpen] = useState(false);
+  const [trendsOpen, setTrendsOpen] = useState(false);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -257,16 +260,33 @@ export function OwnerDashboardManager() {
         </DashboardCard>
 
         <DashboardCard title="Operator shortcuts" subtitle="Fastest paths owners actually use">
-          <div className="grid gap-2.5">
-            {actionCards.map((card) => (
-              <Link key={card.title} href={card.href} className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3.5 transition hover:border-slate-300 hover:bg-white">
-                <p className="font-black text-slate-950">{card.title}</p>
-                <p className="mt-1 text-sm text-slate-500">{card.detail}</p>
-              </Link>
-            ))}
-            <button type="button" onClick={() => void sendDueRecovery()} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3.5 text-left text-sm font-bold text-white">
-              Send automatic due recovery reminders
-            </button>
+          <div className="grid gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-black text-slate-950">Quick actions</p>
+                <p className="mt-1 text-sm text-slate-500">Only the most-used owner shortcuts are shown when needed.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShortcutsOpen((current) => !current)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              >
+                {shortcutsOpen ? "Hide" : "Open"}
+              </button>
+            </div>
+            {shortcutsOpen ? (
+              <div className="grid gap-2.5">
+                {actionCards.map((card) => (
+                  <Link key={card.title} href={card.href} className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3.5 transition hover:border-slate-300 hover:bg-white">
+                    <p className="font-black text-slate-950">{card.title}</p>
+                    <p className="mt-1 text-sm text-slate-500">{card.detail}</p>
+                  </Link>
+                ))}
+                <button type="button" onClick={() => void sendDueRecovery()} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3.5 text-left text-sm font-bold text-white">
+                  Send automatic due recovery reminders
+                </button>
+              </div>
+            ) : null}
             {campaignMessage ? <p className="text-sm font-semibold text-slate-600">{campaignMessage}</p> : null}
           </div>
         </DashboardCard>
@@ -332,19 +352,36 @@ export function OwnerDashboardManager() {
         </DashboardCard>
 
         <DashboardCard title="What to act on first" subtitle="Suggested owner workflow">
-          <div className="grid gap-4">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Attendance notes</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">Prioritize students with missed-day patterns and open attendance notes before they become churn risk.</p>
+          <div className="grid gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-black text-slate-950">Operator playbook</p>
+                <p className="mt-1 text-sm text-slate-500">Keep this closed unless you want coaching prompts for the day.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPlaybookOpen((current) => !current)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              >
+                {playbookOpen ? "Hide" : "Open"}
+              </button>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Focus notes</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">Convert weak-focus cases into small daily targets instead of generic advice. Short recoverable plans work better.</p>
-            </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Payment plus discipline</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">When a due student also has weak attendance, combine billing follow-up with a study commitment conversation.</p>
-            </div>
+            {playbookOpen ? (
+              <div className="grid gap-4">
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Attendance notes</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">Prioritize students with missed-day patterns and open attendance notes before they become churn risk.</p>
+                </div>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Focus notes</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">Convert weak-focus cases into small daily targets instead of generic advice. Short recoverable plans work better.</p>
+                </div>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Payment plus discipline</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">When a due student also has weak attendance, combine billing follow-up with a study commitment conversation.</p>
+                </div>
+              </div>
+            ) : null}
           </div>
         </DashboardCard>
       </section>
@@ -409,63 +446,80 @@ export function OwnerDashboardManager() {
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Focus and attendance trends" subtitle="Last 14 days of owner-side discipline signals">
           <div className="grid gap-5">
-            <div className="flex flex-wrap gap-2">
-              {(["7d", "30d"] as const).map((window) => (
-                <button
-                  key={window}
-                  type="button"
-                  onClick={() => setTrendWindow(window)}
-                  className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.2em] ${
-                    trendWindow === window ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-600"
-                  }`}
-                >
-                  {window}
-                </button>
-              ))}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top focus day</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">{trends?.summary.topFocusMinutes ?? 0} min</p>
-                <p className="mt-2 text-sm text-slate-500">{trends?.summary.topFocusDay ?? "-"}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex flex-wrap gap-2">
+                {(["7d", "30d"] as const).map((window) => (
+                  <button
+                    key={window}
+                    type="button"
+                    onClick={() => setTrendWindow(window)}
+                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.2em] ${
+                      trendWindow === window ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-600"
+                    }`}
+                  >
+                    {window}
+                  </button>
+                ))}
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top attendance day</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">{trends?.summary.topAttendanceStudents ?? 0} students</p>
-                <p className="mt-2 text-sm text-slate-500">{trends?.summary.topAttendanceDay ?? "-"}</p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setTrendsOpen((current) => !current)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              >
+                {trendsOpen ? "Hide trends" : "Show trends"}
+              </button>
             </div>
-            <div className="grid gap-3">
-              {trendPoints.map((point) => (
-                <div key={point.date} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-black text-slate-950">{point.date}</p>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{point.focusSessions} sessions</p>
+            {trendsOpen ? (
+              <>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                    <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top focus day</p>
+                    <p className="mt-3 text-2xl font-black text-slate-950">{trends?.summary.topFocusMinutes ?? 0} min</p>
+                    <p className="mt-2 text-sm text-slate-500">{trends?.summary.topFocusDay ?? "-"}</p>
                   </div>
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <div>
-                      <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-                        <span>Focus</span>
-                        <span>{point.focusMinutes} min</span>
-                      </div>
-                      <div className="mt-2 rounded-full bg-slate-100 p-1">
-                        <div className="h-3 rounded-full bg-[var(--lp-primary)]" style={{ width: `${Math.max(8, Math.round((point.focusMinutes / maxFocusMinutes) * 100))}%` }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-                        <span>Attendance</span>
-                        <span>{point.attendanceStudents} students</span>
-                      </div>
-                      <div className="mt-2 rounded-full bg-slate-100 p-1">
-                        <div className="h-3 rounded-full bg-emerald-500" style={{ width: `${Math.max(8, Math.round((point.attendanceStudents / maxAttendance) * 100))}%` }} />
-                      </div>
-                    </div>
+                  <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                    <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top attendance day</p>
+                    <p className="mt-3 text-2xl font-black text-slate-950">{trends?.summary.topAttendanceStudents ?? 0} students</p>
+                    <p className="mt-2 text-sm text-slate-500">{trends?.summary.topAttendanceDay ?? "-"}</p>
                   </div>
                 </div>
-              ))}
-              {trendPoints.length === 0 ? <p className="text-sm text-slate-500">Trend data will appear after student focus and attendance activity is logged.</p> : null}
-            </div>
+                <div className="grid gap-3">
+                  {trendPoints.map((point) => (
+                    <div key={point.date} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-black text-slate-950">{point.date}</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{point.focusSessions} sessions</p>
+                      </div>
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <div>
+                          <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                            <span>Focus</span>
+                            <span>{point.focusMinutes} min</span>
+                          </div>
+                          <div className="mt-2 rounded-full bg-slate-100 p-1">
+                            <div className="h-3 rounded-full bg-[var(--lp-primary)]" style={{ width: `${Math.max(8, Math.round((point.focusMinutes / maxFocusMinutes) * 100))}%` }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                            <span>Attendance</span>
+                            <span>{point.attendanceStudents} students</span>
+                          </div>
+                          <div className="mt-2 rounded-full bg-slate-100 p-1">
+                            <div className="h-3 rounded-full bg-emerald-500" style={{ width: `${Math.max(8, Math.round((point.attendanceStudents / maxAttendance) * 100))}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {trendPoints.length === 0 ? <p className="text-sm text-slate-500">Trend data will appear after student focus and attendance activity is logged.</p> : null}
+                </div>
+              </>
+            ) : (
+              <div className="rounded-[1.25rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                Trends are tucked away by default so the dashboard stays lighter. Open this only when you want comparison data.
+              </div>
+            )}
           </div>
         </DashboardCard>
 
