@@ -1663,47 +1663,53 @@ export function OwnerSeatsManager() {
       <section id="seat-planner" className="grid gap-6 xl:grid-cols-[1.22fr_0.78fr]">
         <div className="grid gap-6">
           {floorCards.length > 1 ? (
-            <DashboardCard title="Floor switcher" subtitle="Ek waqt par ek floor edit karo. Isse planner clean aur focused rahega.">
-              <div className="grid gap-3">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div>
-                    <p className="text-sm font-black text-slate-950">Current floor</p>
-                    <p className="mt-1 text-sm text-slate-500">{activeFloorCard?.floor.name ?? "No floor selected"}</p>
+            <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Floor switcher</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-black text-slate-950">{activeFloorCard?.floor.name ?? "No floor selected"}</span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      {activeFloorCard ? `${activeFloorCard.seats.length} seats` : "0 seats"}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      {activeFloorCard ? `${activeFloorCard.columns} x ${activeFloorCard.rows}` : "--"}
+                    </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setFloorSwitcherOpen((current) => !current)}
-                    className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
-                  >
-                    {floorSwitcherOpen ? "Hide floors" : "Show floors"}
-                  </button>
                 </div>
-                {floorSwitcherOpen ? (
-                  <div className="flex flex-wrap gap-2">
-                    {floorCards.map((item) => {
-                      const active = activeFloorCard?.floor.id === item.floor.id;
-                      return (
-                        <button
-                          key={item.floor.id}
-                          type="button"
-                          onClick={() => setSelectedFloorId(item.floor.id)}
-                          className={`rounded-[1rem] border px-4 py-3 text-left transition ${
-                            active
-                              ? "border-[var(--lp-primary)] bg-[#fff1e6] text-[var(--lp-primary)]"
-                              : "border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-                          }`}
-                        >
-                          <p className="text-sm font-black">{item.floor.name}</p>
-                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">
-                            {item.seats.length} seats | {item.columns} x {item.rows}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setFloorSwitcherOpen((current) => !current)}
+                  className="rounded-full border border-[var(--lp-border)] bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                >
+                  {floorSwitcherOpen ? "Hide floors" : "Switch floor"}
+                </button>
               </div>
-            </DashboardCard>
+              {floorSwitcherOpen ? (
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--lp-border)] pt-3">
+                  {floorCards.map((item) => {
+                    const active = activeFloorCard?.floor.id === item.floor.id;
+                    return (
+                      <button
+                        key={item.floor.id}
+                        type="button"
+                        onClick={() => setSelectedFloorId(item.floor.id)}
+                        className={`rounded-full border px-3 py-2 text-left transition ${
+                          active
+                            ? "border-[var(--lp-primary)] bg-[#fff1e6] text-[var(--lp-primary)]"
+                            : "border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                        }`}
+                      >
+                        <span className="text-sm font-black">{item.floor.name}</span>
+                        <span className="ml-2 text-[10px] font-bold uppercase tracking-[0.12em] opacity-70">
+                          {item.seats.length} seats
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
           ) : null}
 
           {visibleFloorCards.map((item) => {
@@ -1723,12 +1729,16 @@ export function OwnerSeatsManager() {
             });
 
             return (
-              <DashboardCard key={item.floor.id} title={item.floor.name} subtitle="Compact reading hall view with live assignment and layout editing.">
+              <DashboardCard key={item.floor.id} title="Active floor workspace" subtitle="Only one floor stays open, so the planner feels lighter and easier to edit.">
                 <div className="grid gap-4">
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
-                    <div>
-                      <p className="text-sm font-black text-[var(--lp-text)]">Canvas controls</p>
-                      <p className="mt-1 text-sm text-slate-500">Keep floor settings and legends closed unless you are editing them.</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-[var(--lp-text)]">{item.floor.name}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                        <span className="rounded-full bg-white px-2.5 py-1">{item.columns} cols</span>
+                        <span className="rounded-full bg-white px-2.5 py-1">{item.rows} rows</span>
+                        <span className="rounded-full bg-white px-2.5 py-1">{item.seats.length} seats</span>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {item.floor.id !== "main-floor" ? (
@@ -1737,7 +1747,7 @@ export function OwnerSeatsManager() {
                           onClick={() => setHallSettingsOpen((current) => !current)}
                           className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
                         >
-                          {hallSettingsOpen ? "Hide hall settings" : "Hall settings"}
+                          {hallSettingsOpen ? "Hide hall" : "Hall settings"}
                         </button>
                       ) : null}
                       <button
@@ -1751,7 +1761,7 @@ export function OwnerSeatsManager() {
                   </div>
 
                   {item.floor.id !== "main-floor" ? (
-                    <div className={`grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 md:grid-cols-[1.2fr_0.7fr_0.7fr_auto] ${hallSettingsOpen ? "" : "hidden"}`}>
+                    <div className={`grid gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-white p-3 md:grid-cols-[1.2fr_0.7fr_0.7fr_auto] ${hallSettingsOpen ? "" : "hidden"}`}>
                       <input
                         value={draft.name}
                         onChange={(event) => updateFloorDraft(item.floor.id, { name: event.target.value })}
