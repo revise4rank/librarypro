@@ -355,6 +355,7 @@ export function OwnerSeatsManager() {
   const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("layout");
   const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
   const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
+  const [setupRibbonOpen, setSetupRibbonOpen] = useState(true);
   const [hallSettingsOpen, setHallSettingsOpen] = useState(false);
   const [plannerLegendOpen, setPlannerLegendOpen] = useState(false);
   const [inspectorControlsOpen, setInspectorControlsOpen] = useState(false);
@@ -1119,28 +1120,46 @@ export function OwnerSeatsManager() {
 
           {workspaceMode === "setup" ? (
             <>
-          <div className="flex flex-wrap gap-2">
-            {[
-              ["floor", "Create Floor"],
-              ["bank", "Seat Bank"],
-              ["single", "Single Seat"],
-            ].map(([value, label]) => (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-sm font-black text-[var(--lp-text)]">Setup tools</p>
+              <p className="mt-1 text-sm text-slate-500">Open only the floor, bank, or single-seat form you need right now.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["floor", "Create Floor"],
+                  ["bank", "Seat Bank"],
+                  ["single", "Single Seat"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setRibbonTab(value as typeof ribbonTab);
+                      setSetupRibbonOpen(true);
+                    }}
+                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                      ribbonTab === value
+                        ? "bg-[var(--lp-primary)] text-white shadow-[0_10px_22px_rgba(210,114,61,0.22)]"
+                        : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <button
-                key={value}
                 type="button"
-                onClick={() => setRibbonTab(value as typeof ribbonTab)}
-                className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
-                  ribbonTab === value
-                    ? "bg-[var(--lp-primary)] text-white shadow-[0_10px_22px_rgba(210,114,61,0.22)]"
-                    : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-                }`}
+                onClick={() => setSetupRibbonOpen((current) => !current)}
+                className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
               >
-                {label}
+                {setupRibbonOpen ? "Hide form" : "Open form"}
               </button>
-            ))}
+            </div>
           </div>
 
-          {ribbonTab === "floor" ? (
+          {setupRibbonOpen && ribbonTab === "floor" ? (
             <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
               <div className="lg:col-span-5 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
                 Existing floors ke basis par next floor number auto-suggest hota hai. Duplicate hua to next available floor suggest hoga.
@@ -1165,7 +1184,7 @@ export function OwnerSeatsManager() {
             </form>
           ) : null}
 
-          {ribbonTab === "bank" ? (
+          {setupRibbonOpen && ribbonTab === "bank" ? (
             <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
               <div className="lg:col-span-9 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
                 Floor choose karke bulk seat bank banao. Prefix, count, row/column start aur columns per row yahin se set karo.
@@ -1218,7 +1237,7 @@ export function OwnerSeatsManager() {
             </form>
           ) : null}
 
-          {ribbonTab === "single" ? (
+          {setupRibbonOpen && ribbonTab === "single" ? (
             <form id="seat-create-single" onSubmit={createSingleSeat} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
               <div className="lg:col-span-4 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
                 Ek exact custom seat banana ho to yahin se code likho, floor choose rakho, aur direct create karo.
@@ -1244,6 +1263,11 @@ export function OwnerSeatsManager() {
               </label>
               <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
             </form>
+          ) : null}
+          {!setupRibbonOpen ? (
+            <div className="rounded-[1.25rem] border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-[var(--lp-muted)]">
+              Setup form hidden hai. Jab naya floor, seat bank, ya single seat banana ho tab relevant tab open karo.
+            </div>
           ) : null}
             </>
           ) : null}
