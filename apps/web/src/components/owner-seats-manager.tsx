@@ -359,6 +359,8 @@ export function OwnerSeatsManager() {
   const [hallSettingsOpen, setHallSettingsOpen] = useState(false);
   const [plannerLegendOpen, setPlannerLegendOpen] = useState(false);
   const [inspectorControlsOpen, setInspectorControlsOpen] = useState(false);
+  const [floorSwitcherOpen, setFloorSwitcherOpen] = useState(false);
+  const [seatFiltersOpen, setSeatFiltersOpen] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -1073,26 +1075,31 @@ export function OwnerSeatsManager() {
 
   return (
     <div className="grid gap-6">
-      <DashboardCard title="Workspace mode" subtitle="Ek time par ek kaam karo: setup, layout edit, ya assignment.">
-        <div className="flex flex-wrap gap-2">
-          {([
-            ["setup", "Setup"],
-            ["layout", "Layout"],
-            ["assign", "Assign"],
-          ] as const).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setWorkspaceMode(value)}
-              className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
-                workspaceMode === value
-                  ? "bg-slate-950 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
-                  : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+      <DashboardCard title="Workspace mode" subtitle="Ek time par ek focused task. Secondary tools baad me kholo.">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {([
+              ["setup", "Setup"],
+              ["layout", "Layout"],
+              ["assign", "Assign"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setWorkspaceMode(value)}
+                className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                  workspaceMode === value
+                    ? "bg-slate-950 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
+                    : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="rounded-full border border-[var(--lp-border)] bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]">
+            Active: {workspaceMode}
+          </div>
         </div>
       </DashboardCard>
       <div className="sticky top-[88px] z-10">
@@ -1609,53 +1616,92 @@ export function OwnerSeatsManager() {
         )}
       </section>
 
-      <div className="flex flex-wrap gap-3">
-        {[
-          ["ALL", "All seats"],
-          ["AVAILABLE", "Free"],
-          ["OCCUPIED", "Occupied"],
-          ["RESERVED", "Reserved"],
-          ["DUE", "Due students"],
-          ["EXPIRING", "Expiring soon"],
-        ].map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setSeatFilter(value as typeof seatFilter)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold ${
-              seatFilter === value ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-[var(--lp-text)]">Seat filters</p>
+            <p className="mt-1 text-sm text-slate-500">Keep filters closed unless you need a narrower view.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-[#fff4eb] px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-primary)]">
+              {seatFilter}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSeatFiltersOpen((current) => !current)}
+              className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+            >
+              {seatFiltersOpen ? "Hide filters" : "Show filters"}
+            </button>
+          </div>
+        </div>
+        {seatFiltersOpen ? (
+          <div className="mt-4 flex flex-wrap gap-3">
+            {[
+              ["ALL", "All seats"],
+              ["AVAILABLE", "Free"],
+              ["OCCUPIED", "Occupied"],
+              ["RESERVED", "Reserved"],
+              ["DUE", "Due students"],
+              ["EXPIRING", "Expiring soon"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSeatFilter(value as typeof seatFilter)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                  seatFilter === value ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <section id="seat-planner" className="grid gap-6 xl:grid-cols-[1.22fr_0.78fr]">
         <div className="grid gap-6">
           {floorCards.length > 1 ? (
             <DashboardCard title="Floor switcher" subtitle="Ek waqt par ek floor edit karo. Isse planner clean aur focused rahega.">
-              <div className="flex flex-wrap gap-2">
-                {floorCards.map((item) => {
-                  const active = activeFloorCard?.floor.id === item.floor.id;
-                  return (
-                    <button
-                      key={item.floor.id}
-                      type="button"
-                      onClick={() => setSelectedFloorId(item.floor.id)}
-                      className={`rounded-[1rem] border px-4 py-3 text-left transition ${
-                        active
-                          ? "border-[var(--lp-primary)] bg-[#fff1e6] text-[var(--lp-primary)]"
-                          : "border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-                      }`}
-                    >
-                      <p className="text-sm font-black">{item.floor.name}</p>
-                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">
-                        {item.seats.length} seats | {item.columns} x {item.rows}
-                      </p>
-                    </button>
-                  );
-                })}
+              <div className="grid gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-950">Current floor</p>
+                    <p className="mt-1 text-sm text-slate-500">{activeFloorCard?.floor.name ?? "No floor selected"}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFloorSwitcherOpen((current) => !current)}
+                    className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                  >
+                    {floorSwitcherOpen ? "Hide floors" : "Show floors"}
+                  </button>
+                </div>
+                {floorSwitcherOpen ? (
+                  <div className="flex flex-wrap gap-2">
+                    {floorCards.map((item) => {
+                      const active = activeFloorCard?.floor.id === item.floor.id;
+                      return (
+                        <button
+                          key={item.floor.id}
+                          type="button"
+                          onClick={() => setSelectedFloorId(item.floor.id)}
+                          className={`rounded-[1rem] border px-4 py-3 text-left transition ${
+                            active
+                              ? "border-[var(--lp-primary)] bg-[#fff1e6] text-[var(--lp-primary)]"
+                              : "border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                          }`}
+                        >
+                          <p className="text-sm font-black">{item.floor.name}</p>
+                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">
+                            {item.seats.length} seats | {item.columns} x {item.rows}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
             </DashboardCard>
           ) : null}
