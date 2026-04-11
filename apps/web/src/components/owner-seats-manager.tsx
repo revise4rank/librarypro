@@ -355,6 +355,9 @@ export function OwnerSeatsManager() {
   const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("layout");
   const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
   const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
+  const [hallSettingsOpen, setHallSettingsOpen] = useState(false);
+  const [plannerLegendOpen, setPlannerLegendOpen] = useState(false);
+  const [inspectorControlsOpen, setInspectorControlsOpen] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -1652,8 +1655,33 @@ export function OwnerSeatsManager() {
             return (
               <DashboardCard key={item.floor.id} title={item.floor.name} subtitle="Compact reading hall view with live assignment and layout editing.">
                 <div className="grid gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-black text-[var(--lp-text)]">Canvas controls</p>
+                      <p className="mt-1 text-sm text-slate-500">Keep floor settings and legends closed unless you are editing them.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {item.floor.id !== "main-floor" ? (
+                        <button
+                          type="button"
+                          onClick={() => setHallSettingsOpen((current) => !current)}
+                          className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                        >
+                          {hallSettingsOpen ? "Hide hall settings" : "Hall settings"}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setPlannerLegendOpen((current) => !current)}
+                        className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                      >
+                        {plannerLegendOpen ? "Hide legend" : "Show legend"}
+                      </button>
+                    </div>
+                  </div>
+
                   {item.floor.id !== "main-floor" ? (
-                    <div className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 md:grid-cols-[1.2fr_0.7fr_0.7fr_auto]">
+                    <div className={`grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 md:grid-cols-[1.2fr_0.7fr_0.7fr_auto] ${hallSettingsOpen ? "" : "hidden"}`}>
                       <input
                         value={draft.name}
                         onChange={(event) => updateFloorDraft(item.floor.id, { name: event.target.value })}
@@ -1692,54 +1720,58 @@ export function OwnerSeatsManager() {
                         </button>
                       </div>
 
-                      <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
-                        <span className="rounded-full bg-emerald-100 px-3 py-2 text-emerald-700">Free desk</span>
-                        <span className="rounded-full bg-rose-100 px-3 py-2 text-rose-700">Occupied desk</span>
-                        <span className="rounded-full bg-amber-100 px-3 py-2 text-amber-700">Reserved desk</span>
-                        <span className="rounded-full bg-slate-200 px-3 py-2 text-slate-600">Aisle / empty tile</span>
-                        {message ? <span className="rounded-full bg-[#fff4eb] px-3 py-2 text-[var(--lp-primary)]">Saved: {message}</span> : null}
-                      </div>
-
-                      <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
-                        {zones.map((zone) => (
-                          <span key={zone} className={`rounded-full px-3 py-2 ${getZoneTone(zone)}`}>
-                            {zone}
-                          </span>
-                        ))}
-                      </div>
-
-                      {Object.keys(sectionColors).length > 0 ? (
-                        <div className="mb-4 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
-                          <div className="mb-2 flex items-center justify-between">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Section Legend</p>
-                            <span className="text-[11px] text-slate-500">Tap chip to load color</span>
+                      {plannerLegendOpen ? (
+                        <>
+                          <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                            <span className="rounded-full bg-emerald-100 px-3 py-2 text-emerald-700">Free desk</span>
+                            <span className="rounded-full bg-rose-100 px-3 py-2 text-rose-700">Occupied desk</span>
+                            <span className="rounded-full bg-amber-100 px-3 py-2 text-amber-700">Reserved desk</span>
+                            <span className="rounded-full bg-slate-200 px-3 py-2 text-slate-600">Aisle / empty tile</span>
+                            {message ? <span className="rounded-full bg-[#fff4eb] px-3 py-2 text-[var(--lp-primary)]">Saved: {message}</span> : null}
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {Object.entries(sectionColors).map(([section, color]) => (
-                              <div key={section} className="flex items-center gap-2 rounded-full border border-[var(--lp-border)] bg-[#fffaf4] px-2 py-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setPaintSectionName(section);
-                                    setPaintSectionColor(color);
-                                    setPlannerTool("paint");
-                                  }}
-                                  className="rounded-full px-3 py-1 text-[11px] font-bold text-white"
-                                  style={{ backgroundColor: color }}
-                                >
-                                  {section}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => deleteSectionColor(item.floor.id, section)}
-                                  className="rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-rose-600"
-                                >
-                                  Delete
-                                </button>
-                              </div>
+
+                          <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                            {zones.map((zone) => (
+                              <span key={zone} className={`rounded-full px-3 py-2 ${getZoneTone(zone)}`}>
+                                {zone}
+                              </span>
                             ))}
                           </div>
-                        </div>
+
+                          {Object.keys(sectionColors).length > 0 ? (
+                            <div className="mb-4 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                              <div className="mb-2 flex items-center justify-between">
+                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Section Legend</p>
+                                <span className="text-[11px] text-slate-500">Tap chip to load color</span>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {Object.entries(sectionColors).map(([section, color]) => (
+                                  <div key={section} className="flex items-center gap-2 rounded-full border border-[var(--lp-border)] bg-[#fffaf4] px-2 py-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPaintSectionName(section);
+                                        setPaintSectionColor(color);
+                                        setPlannerTool("paint");
+                                      }}
+                                      className="rounded-full px-3 py-1 text-[11px] font-bold text-white"
+                                      style={{ backgroundColor: color }}
+                                    >
+                                      {section}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteSectionColor(item.floor.id, section)}
+                                      className="rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-rose-600"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </>
                       ) : null}
 
                       <div
@@ -1912,43 +1944,61 @@ export function OwnerSeatsManager() {
                     <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">{formatReserveTimer(selectedSeat.reserved_until)}</p>
                   </div>
 
-                  <input value={drawerSeatCode} onChange={(event) => setDrawerSeatCode(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Seat code" />
-                  <input value={drawerSectionName} onChange={(event) => setDrawerSectionName(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Room / section" />
-                  {(workspaceMode === "layout" || selectedSeat.status === "RESERVED") ? (
-                    <input type="datetime-local" value={drawerReservedUntil} onChange={(event) => setDrawerReservedUntil(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" />
-                  ) : null}
-
-                  {workspaceMode !== "setup" ? (
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <input value={selectedSeat.pos_x} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" placeholder="Pos X" />
-                    <input value={selectedSeat.pos_y} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" placeholder="Pos Y" />
-                  </div>
-                  ) : null}
-
-                  {workspaceMode === "layout" ? (
-                  <div className="grid grid-cols-3 gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
-                    <div />
-                    <button type="button" onClick={() => void nudgeSelectedSeat(0, -1)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Up</button>
-                    <div />
-                    <button type="button" onClick={() => void nudgeSelectedSeat(-1, 0)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Left</button>
-                    <button type="button" onClick={() => void moveSeatToPosition(selectedSeat.id, selectedSeat.pos_x, selectedSeat.pos_y)} className="rounded-[1rem] bg-[#eff7f0] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">Center</button>
-                    <button type="button" onClick={() => void nudgeSelectedSeat(1, 0)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Right</button>
-                    <div />
-                    <button type="button" onClick={() => void nudgeSelectedSeat(0, 1)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Down</button>
-                    <div />
-                  </div>
-                  ) : null}
-
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <button type="button" onClick={() => void updateSeatAction("RESERVED")} className="rounded-[1rem] bg-amber-500 px-4 py-3 text-sm font-semibold text-white">Reserve till</button>
-                    <button type="button" onClick={() => void updateSeatAction("DISABLED")} className="rounded-[1rem] bg-slate-900 px-4 py-3 text-sm font-semibold text-white">Block seat</button>
-                    <button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">Mark free</button>
-                    <button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)]">Save edits</button>
-                  </div>
-                  {selectedAssignmentId ? (
-                    <button type="button" onClick={() => void assignSeat(selectedSeat.id)} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">
-                      Allot selected student to this seat
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-black text-slate-950">Advanced seat controls</p>
+                      <p className="mt-1 text-sm text-slate-500">Hidden by default so the inspector stays lighter.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setInspectorControlsOpen((current) => !current)}
+                      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                    >
+                      {inspectorControlsOpen ? "Hide controls" : "Open controls"}
                     </button>
+                  </div>
+
+                  {inspectorControlsOpen ? (
+                    <>
+                      <input value={drawerSeatCode} onChange={(event) => setDrawerSeatCode(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Seat code" />
+                      <input value={drawerSectionName} onChange={(event) => setDrawerSectionName(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Room / section" />
+                      {(workspaceMode === "layout" || selectedSeat.status === "RESERVED") ? (
+                        <input type="datetime-local" value={drawerReservedUntil} onChange={(event) => setDrawerReservedUntil(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" />
+                      ) : null}
+
+                      {workspaceMode !== "setup" ? (
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <input value={selectedSeat.pos_x} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" placeholder="Pos X" />
+                        <input value={selectedSeat.pos_y} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" placeholder="Pos Y" />
+                      </div>
+                      ) : null}
+
+                      {workspaceMode === "layout" ? (
+                      <div className="grid grid-cols-3 gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                        <div />
+                        <button type="button" onClick={() => void nudgeSelectedSeat(0, -1)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Up</button>
+                        <div />
+                        <button type="button" onClick={() => void nudgeSelectedSeat(-1, 0)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Left</button>
+                        <button type="button" onClick={() => void moveSeatToPosition(selectedSeat.id, selectedSeat.pos_x, selectedSeat.pos_y)} className="rounded-[1rem] bg-[#eff7f0] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">Center</button>
+                        <button type="button" onClick={() => void nudgeSelectedSeat(1, 0)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Right</button>
+                        <div />
+                        <button type="button" onClick={() => void nudgeSelectedSeat(0, 1)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Down</button>
+                        <div />
+                      </div>
+                      ) : null}
+
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <button type="button" onClick={() => void updateSeatAction("RESERVED")} className="rounded-[1rem] bg-amber-500 px-4 py-3 text-sm font-semibold text-white">Reserve till</button>
+                        <button type="button" onClick={() => void updateSeatAction("DISABLED")} className="rounded-[1rem] bg-slate-900 px-4 py-3 text-sm font-semibold text-white">Block seat</button>
+                        <button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">Mark free</button>
+                        <button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)]">Save edits</button>
+                      </div>
+                      {selectedAssignmentId ? (
+                        <button type="button" onClick={() => void assignSeat(selectedSeat.id)} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">
+                          Allot selected student to this seat
+                        </button>
+                      ) : null}
+                    </>
                   ) : null}
 
                   <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 text-sm leading-7 text-slate-600">
