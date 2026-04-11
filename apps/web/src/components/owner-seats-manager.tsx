@@ -1935,20 +1935,30 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`relative flex h-full w-full flex-col items-center rounded-[1rem] border px-1 py-1.5 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`relative flex h-full w-full flex-col items-center rounded-[0.95rem] border px-1 py-1 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
-                                  <span className="text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
-                                  <div className="mt-1 flex min-h-[2.6rem] items-center justify-center rounded-[0.9rem] bg-white/80 px-1 py-1">
+                                  <div className="flex w-full items-center justify-between gap-1">
+                                    <span className="text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
+                                    <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] ${
+                                      seat.status === "AVAILABLE"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : seat.status === "OCCUPIED"
+                                          ? "bg-rose-100 text-rose-700"
+                                          : seat.status === "RESERVED"
+                                            ? "bg-amber-100 text-amber-700"
+                                            : "bg-slate-200 text-slate-600"
+                                    }`}>
+                                      {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Sold" : seat.status === "RESERVED" ? "Hold" : "Off"}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 flex min-h-[2.4rem] w-full items-center justify-center rounded-[0.8rem] bg-white/80 px-1 py-1">
                                     <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
                                   </div>
                                   <div className="mt-1 text-center">
-                                    <p className="text-[8px] font-bold uppercase tracking-[0.1em] opacity-75">
-                                      {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Sold" : seat.status === "RESERVED" ? "Hold" : "Off"}
-                                    </p>
                                     {seat.student_name ? (
-                                      <p className="mt-0.5 text-[8px] font-black text-slate-900">{formatStudentInitials(seat.student_name)}</p>
-                                    ) : null}
+                                      <p className="rounded-full bg-slate-900 px-2 py-0.5 text-[7px] font-black text-white">{formatStudentInitials(seat.student_name)}</p>
+                                    ) : <p className="text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400">{seatShape}</p>}
                                   </div>
                                 </button>
                               ) : (
@@ -1967,7 +1977,7 @@ export function OwnerSeatsManager() {
                                       >
                                         +
                                       </button>
-                                      <span className="mt-1 text-[8px] font-semibold text-[var(--lp-primary)]">Create seat</span>
+                                      <span className="mt-1 text-[7px] font-semibold text-[var(--lp-primary)]">Create</span>
                                     </>
                                   ) : (
                                     <div className="mt-1 flex flex-col items-center gap-1">
@@ -1997,7 +2007,7 @@ export function OwnerSeatsManager() {
         </div>
 
         <div className="grid gap-6 xl:sticky xl:top-[156px] xl:self-start">
-          <DashboardCard title="Seat inspector" subtitle="Selected seat ki details aur primary actions.">
+          <DashboardCard title="Seat drawer" subtitle="Selected seat details aur actions, but calmer by default.">
             <div className="grid gap-4">
               {selectedSeat ? (
                 <>
@@ -2012,6 +2022,21 @@ export function OwnerSeatsManager() {
                       </span>
                     </div>
                     <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">{formatReserveTimer(selectedSeat.reserved_until)}</p>
+                  </div>
+
+                  <div className="grid gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-4 text-sm text-slate-600">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Occupant</span>
+                      <span className="text-sm font-bold text-slate-950">{selectedSeat.student_name ?? "Not assigned"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Plan</span>
+                      <span className="text-sm font-bold text-slate-950">{selectedSeat.plan_name ?? "Not allotted"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Payment</span>
+                      <span className="text-sm font-bold text-slate-950">{selectedSeat.payment_status ?? "-"}</span>
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
@@ -2072,9 +2097,6 @@ export function OwnerSeatsManager() {
                   ) : null}
 
                   <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 text-sm leading-7 text-slate-600">
-                    <p>Student: {selectedSeat.student_name ?? "Not assigned"}</p>
-                    <p>Plan: {selectedSeat.plan_name ?? "Not allotted"}</p>
-                    <p>Payment: {selectedSeat.payment_status ?? "-"}</p>
                     <p>Valid till: {selectedSeat.ends_at ?? "-"}</p>
                     <p>Last check-in: {selectedSeat.last_check_in_at ? new Date(selectedSeat.last_check_in_at).toLocaleString() : "No entry yet"}</p>
                   </div>
