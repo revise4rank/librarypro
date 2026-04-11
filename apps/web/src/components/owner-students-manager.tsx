@@ -93,6 +93,9 @@ export function OwnerStudentsManager() {
   const [selectedStudentName, setSelectedStudentName] = useState<string | null>(null);
   const [productivity, setProductivity] = useState<ProductivityDetailResponse["data"] | null>(null);
   const [productivityLoading, setProductivityLoading] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [rosterOpen, setRosterOpen] = useState(true);
+  const [productivityOpen, setProductivityOpen] = useState(true);
 
   async function loadStudents() {
     setLoading(true);
@@ -182,6 +185,7 @@ export function OwnerStudentsManager() {
 
   async function loadProductivity(studentUserId: string, studentName: string) {
     setSelectedStudentName(studentName);
+    setProductivityOpen(true);
     setProductivityLoading(true);
     setMessage(null);
     setError(null);
@@ -198,6 +202,7 @@ export function OwnerStudentsManager() {
 
   function loadIntoForm(student: StudentRow) {
     setEditingId(student.assignment_id);
+    setFormOpen(true);
     setForm({
       fullName: student.student_name,
       fatherName: student.father_name ?? "",
@@ -256,9 +261,53 @@ export function OwnerStudentsManager() {
     setForm((current) => ({ ...current, durationMonths: value, endsAt: nextEndDate }));
   }
 
+  const summary = rows.reduce(
+    (acc, student) => {
+      acc.total += 1;
+      if (student.payment_status === "PAID") acc.paid += 1;
+      if (student.payment_status === "DUE") acc.due += 1;
+      if (student.seat_number) acc.seated += 1;
+      return acc;
+    },
+    { total: 0, paid: 0, due: 0, seated: 0 },
+  );
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-      <DashboardCard title="New student / update assignment" subtitle="Basic CRUD form owners expect">
+      <DashboardCard title="Student desk" subtitle="Create or update assignment only when needed">
+        <div className="grid gap-4">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Students</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{summary.total}</p>
+            </div>
+            <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Seated</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{summary.seated}</p>
+            </div>
+            <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Paid</p>
+              <p className="mt-2 text-2xl font-black text-emerald-700">{summary.paid}</p>
+            </div>
+            <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Due</p>
+              <p className="mt-2 text-2xl font-black text-amber-700">{summary.due}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-sm font-black text-slate-950">{editingId ? "Edit student" : "New student"}</p>
+              <p className="mt-1 text-sm text-slate-500">Form ko hidden rakho, roster ko primary rehne do.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormOpen((current) => !current)}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+            >
+              {formOpen ? "Hide form" : editingId ? "Open edit form" : "Add student"}
+            </button>
+          </div>
+          {formOpen ? (
         <form className="grid gap-4" onSubmit={onSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <input value={form.fullName} onChange={(e) => setForm((c) => ({ ...c, fullName: e.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Student name" />
@@ -300,6 +349,12 @@ export function OwnerStudentsManager() {
             </button>
           </div>
         </form>
+          ) : (
+            <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+              Student form hidden hai. Naye admission ya edit ke time isko open karo.
+            </div>
+          )}
+        </div>
       </DashboardCard>
 
       <div className="grid gap-6">
@@ -322,96 +377,182 @@ export function OwnerStudentsManager() {
 
         {selectedStudentName ? (
           <DashboardCard title={`Productivity: ${selectedStudentName}`} subtitle="Owner visibility into discipline, focus, and syllabus coverage">
-            {productivityLoading ? <p className="text-sm text-slate-500">Loading productivity snapshot...</p> : null}
-            {!productivityLoading && productivity ? (
-              <div className="grid gap-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Weekly study</p>
-                    <p className="mt-3 text-2xl font-black text-slate-950">{productivity.summary.weeklyStudyHours} hrs</p>
-                  </div>
-                  <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Attendance</p>
-                    <p className="mt-3 text-2xl font-black text-slate-950">{productivity.summary.attendanceDays} days</p>
-                  </div>
-                  <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Syllabus</p>
-                    <p className="mt-3 text-2xl font-black text-slate-950">{productivity.summary.completedTopics}/{productivity.summary.totalTopics}</p>
-                  </div>
-                </div>
-                <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-slate-700">
-                    Longest streak {productivity.summary.longestStreak} days | Deep work {productivity.summary.deepWorkHours} hrs | Missed days {productivity.summary.missedDays} | Most studied {productivity.summary.mostStudiedSubject ?? "-"}
-                  </p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="grid gap-3">
-                    {productivity.focusSubjects.map((subject) => (
-                      <div key={subject.subjectLabel} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-                        <p className="font-black text-slate-950">{subject.subjectLabel}</p>
-                        <p className="mt-2 text-sm text-slate-500">{subject.totalSessions} sessions</p>
-                        <p className="mt-1 text-sm font-semibold text-[var(--lp-primary)]">{subject.totalMinutes} min</p>
-                      </div>
-                    ))}
-                    {productivity.focusSubjects.length === 0 ? <p className="text-sm text-slate-500">No focus subject data yet.</p> : null}
-                  </div>
-                  <div className="grid gap-3">
-                    {productivity.recentSessions.map((session, index) => (
-                      <div key={`${session.completedAt}-${index}`} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-                        <p className="font-black text-slate-950">{session.topicTitle ?? "Focus session"}</p>
-                        <p className="mt-1 text-sm text-slate-500">{session.completedAt.slice(0, 16).replace("T", " ")}</p>
-                        <p className="mt-1 text-sm font-semibold text-[var(--lp-primary)]">{session.durationMinutes} min | {session.sessionType}</p>
-                      </div>
-                    ))}
-                    {productivity.recentSessions.length === 0 ? <p className="text-sm text-slate-500">No recent session data yet.</p> : null}
-                  </div>
-                </div>
+            <div className="grid gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-sm font-black text-slate-950">Student productivity</p>
+              <p className="mt-1 text-sm text-slate-500">Open only when you need coaching visibility.</p>
+            </div>
+                <button
+                  type="button"
+                  onClick={() => setProductivityOpen((current) => !current)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                >
+                  {productivityOpen ? "Hide panel" : "Open panel"}
+                </button>
               </div>
-            ) : null}
+              {productivityLoading ? <p className="text-sm text-slate-500">Loading productivity snapshot...</p> : null}
+              {productivityOpen && !productivityLoading && productivity ? (
+                <div className="grid gap-4">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Weekly study</p>
+                      <p className="mt-3 text-2xl font-black text-slate-950">{productivity.summary.weeklyStudyHours} hrs</p>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Attendance</p>
+                      <p className="mt-3 text-2xl font-black text-slate-950">{productivity.summary.attendanceDays} days</p>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Syllabus</p>
+                      <p className="mt-3 text-2xl font-black text-slate-950">
+                        {productivity.summary.completedTopics}/{productivity.summary.totalTopics}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                    <p className="text-sm font-semibold text-slate-700">
+                      Longest streak {productivity.summary.longestStreak} days | Deep work {productivity.summary.deepWorkHours} hrs | Missed days{" "}
+                      {productivity.summary.missedDays} | Most studied {productivity.summary.mostStudiedSubject ?? "-"}
+                    </p>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-3">
+                      {productivity.focusSubjects.map((subject) => (
+                        <div key={subject.subjectLabel} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                          <p className="font-black text-slate-950">{subject.subjectLabel}</p>
+                          <p className="mt-2 text-sm text-slate-500">{subject.totalSessions} sessions</p>
+                          <p className="mt-1 text-sm font-semibold text-[var(--lp-primary)]">{subject.totalMinutes} min</p>
+                        </div>
+                      ))}
+                      {productivity.focusSubjects.length === 0 ? <p className="text-sm text-slate-500">No focus subject data yet.</p> : null}
+                    </div>
+                    <div className="grid gap-3">
+                      {productivity.recentSessions.map((session, index) => (
+                        <div key={`${session.completedAt}-${index}`} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                          <p className="font-black text-slate-950">{session.topicTitle ?? "Focus session"}</p>
+                          <p className="mt-1 text-sm text-slate-500">{session.completedAt.slice(0, 16).replace("T", " ")}</p>
+                          <p className="mt-1 text-sm font-semibold text-[var(--lp-primary)]">
+                            {session.durationMinutes} min | {session.sessionType}
+                          </p>
+                        </div>
+                      ))}
+                      {productivity.recentSessions.length === 0 ? <p className="text-sm text-slate-500">No recent session data yet.</p> : null}
+                    </div>
+                  </div>
+                </div>
+              ) : !productivityLoading ? (
+                <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                  Productivity panel hidden hai.
+                </div>
+              ) : null}
+            </div>
           </DashboardCard>
         ) : null}
 
-      <DashboardCard title="Active roster" subtitle="Current assignments and due tracking">
-        {loading ? <p className="text-sm text-slate-500">Loading student roster...</p> : null}
-        {!loading ? (
-          <div className="overflow-hidden rounded-[1.5rem] border border-slate-200">
-            <div className="hidden grid-cols-[1.3fr_0.7fr_1fr_0.85fr_0.75fr_0.8fr] gap-3 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500 md:grid">
-              <span>Student</span>
-              <span>Seat</span>
-              <span>Plan</span>
-              <span>Validity</span>
-              <span>Status</span>
-              <span>Due</span>
-            </div>
-            {rows.map((student) => (
-              <div key={student.assignment_id} className="border-t border-slate-200 bg-white px-4 py-4 text-sm">
-                <div className="grid gap-3 md:grid-cols-[1.3fr_0.7fr_1fr_0.85fr_0.75fr_0.8fr]">
-                <div className="min-w-0">
-                  <p className="font-bold text-slate-950">{student.student_name}</p>
-                  <p className="text-slate-500">{student.student_phone ?? student.student_email ?? "-"}</p>
-                  <p className="text-xs text-[var(--lp-primary)]">Login ID: {student.student_code ?? student.student_phone ?? student.student_email ?? "-"}</p>
-                  <p className="text-xs text-slate-400">Father: {student.father_name ?? "-"}</p>
-                  <div className="mt-3 flex gap-2">
-                    <button type="button" onClick={() => loadIntoForm(student)} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Edit</button>
-                    <button type="button" onClick={() => void loadProductivity(student.student_user_id, student.student_name)} className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-700">Focus</button>
-                    <Link href={`/owner/students/${student.student_user_id}?name=${encodeURIComponent(student.student_name)}`} className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">Open page</Link>
-                    <button type="button" onClick={() => void onDelete(student.assignment_id)} className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">Delete</button>
-                  </div>
-                </div>
-                <span className="font-semibold text-slate-700"><span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Seat</span>{student.seat_number ?? "-"}</span>
-                <span className="font-semibold text-slate-700"><span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Plan</span>{student.plan_name}</span>
-                <span className="font-semibold text-slate-700"><span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Validity</span>{student.ends_at}<br /><span className="text-xs text-slate-400">Due {student.next_due_date ?? "-"}</span></span>
-                <span className={`rounded-full px-3 py-2 text-center text-xs font-black ${student.payment_status === "PAID" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                  {student.payment_status}
-                </span>
-                <span className="font-bold text-slate-950"><span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Due</span>Rs. {student.due_amount}</span>
-                </div>
+        <DashboardCard title="Active roster" subtitle="Current assignments and due tracking">
+          <div className="grid gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-black text-slate-950">Roster view</p>
+                <p className="mt-1 text-sm text-slate-500">Roster ko primary rakho, bulk details demand par dekho.</p>
               </div>
-            ))}
-            {rows.length === 0 ? <div className="border-t border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">No active students found.</div> : null}
+              <button
+                type="button"
+                onClick={() => setRosterOpen((current) => !current)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              >
+                {rosterOpen ? "Hide roster" : "Show roster"}
+              </button>
+            </div>
+            {rosterOpen ? (
+              <>
+                {loading ? <p className="text-sm text-slate-500">Loading student roster...</p> : null}
+                {!loading ? (
+                  <div className="overflow-hidden rounded-[1.5rem] border border-slate-200">
+                    <div className="hidden grid-cols-[1.3fr_0.7fr_1fr_0.85fr_0.75fr_0.8fr] gap-3 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500 md:grid">
+                      <span>Student</span>
+                      <span>Seat</span>
+                      <span>Plan</span>
+                      <span>Validity</span>
+                      <span>Status</span>
+                      <span>Due</span>
+                    </div>
+                    {rows.map((student) => (
+                      <div key={student.assignment_id} className="border-t border-slate-200 bg-white px-4 py-4 text-sm">
+                        <div className="grid gap-3 md:grid-cols-[1.3fr_0.7fr_1fr_0.85fr_0.75fr_0.8fr]">
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-950">{student.student_name}</p>
+                            <p className="text-slate-500">{student.student_phone ?? student.student_email ?? "-"}</p>
+                            <p className="text-xs text-[var(--lp-primary)]">
+                              Login ID: {student.student_code ?? student.student_phone ?? student.student_email ?? "-"}
+                            </p>
+                            <p className="text-xs text-slate-400">Father: {student.father_name ?? "-"}</p>
+                            <div className="mt-3 flex gap-2">
+                              <button type="button" onClick={() => loadIntoForm(student)} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void loadProductivity(student.student_user_id, student.student_name)}
+                                className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-700"
+                              >
+                                Focus
+                              </button>
+                              <Link
+                                href={`/owner/students/${student.student_user_id}?name=${encodeURIComponent(student.student_name)}`}
+                                className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700"
+                              >
+                                Open page
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => void onDelete(student.assignment_id)}
+                                className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                          <span className="font-semibold text-slate-700">
+                            <span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Seat</span>
+                            {student.seat_number ?? "-"}
+                          </span>
+                          <span className="font-semibold text-slate-700">
+                            <span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Plan</span>
+                            {student.plan_name}
+                          </span>
+                          <span className="font-semibold text-slate-700">
+                            <span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Validity</span>
+                            {student.ends_at}
+                            <br />
+                            <span className="text-xs text-slate-400">Due {student.next_due_date ?? "-"}</span>
+                          </span>
+                          <span
+                            className={`rounded-full px-3 py-2 text-center text-xs font-black ${
+                              student.payment_status === "PAID" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {student.payment_status}
+                          </span>
+                          <span className="font-bold text-slate-950">
+                            <span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Due</span>
+                            Rs. {student.due_amount}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {rows.length === 0 ? <div className="border-t border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">No active students found.</div> : null}
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                Roster hidden hai. Jab student list review karni ho tab open karo.
+              </div>
+            )}
           </div>
-        ) : null}
-      </DashboardCard>
+        </DashboardCard>
       </div>
     </div>
   );

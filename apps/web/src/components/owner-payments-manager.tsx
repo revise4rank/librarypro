@@ -35,6 +35,7 @@ export function OwnerPaymentsManager() {
   const [liveStatus, setLiveStatus] = useState("Connecting");
   const [isOffline, setIsOffline] = useState(false);
   const [queuedPayments, setQueuedPayments] = useState(0);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [form, setForm] = useState({
     studentName: "",
     amount: "",
@@ -203,6 +204,7 @@ export function OwnerPaymentsManager() {
 
   function loadIntoForm(payment: PaymentRow) {
     setEditingId(payment.id);
+    setComposerOpen(true);
     setForm({
       studentName: payment.student_name,
       amount: payment.amount,
@@ -217,6 +219,17 @@ export function OwnerPaymentsManager() {
     setError(null);
   }
 
+  const summary = rows.reduce(
+    (acc, row) => {
+      acc.total += Number(row.amount || "0");
+      if (row.status === "PAID") acc.paid += Number(row.amount || "0");
+      if (row.status === "DUE") acc.due += Number(row.amount || "0");
+      if (row.status === "PENDING") acc.pending += 1;
+      return acc;
+    },
+    { total: 0, paid: 0, due: 0, pending: 0 },
+  );
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
       {toast ? (
@@ -224,7 +237,41 @@ export function OwnerPaymentsManager() {
           {toast}
         </div>
       ) : null}
-      <DashboardCard title="Record payment" subtitle={`Manual owner-side finance entry | Socket ${liveStatus}`}>
+      <DashboardCard title="Collections desk" subtitle={`Socket ${liveStatus} | keep entry form hidden until needed`}>
+        <div className="grid gap-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            <div className={`rounded-[1.2rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+              {isOffline ? `Offline mode active. Queued actions: ${queuedPayments}` : `Online and ready. Queued actions: ${queuedPayments}`}
+            </div>
+            <div className="grid grid-cols-3 gap-3 rounded-[1.2rem] border border-slate-200 bg-white px-4 py-4 text-center">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Paid</p>
+                <p className="mt-2 text-lg font-black text-emerald-700">Rs. {summary.paid.toLocaleString("en-IN")}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Due</p>
+                <p className="mt-2 text-lg font-black text-amber-700">Rs. {summary.due.toLocaleString("en-IN")}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Pending</p>
+                <p className="mt-2 text-lg font-black text-slate-950">{summary.pending}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-sm font-black text-slate-950">{editingId ? "Edit payment" : "New payment entry"}</p>
+              <p className="mt-1 text-sm text-slate-500">Form hidden rakho jab tak actual entry nahi karni.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setComposerOpen((current) => !current)}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+            >
+              {composerOpen ? "Hide form" : editingId ? "Open edit form" : "New payment"}
+            </button>
+          </div>
+          {composerOpen ? (
         <form className="grid gap-4" onSubmit={onSubmit}>
           <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {isOffline ? `Offline mode active. Queued owner payment actions: ${queuedPayments}` : `Online and ready. Queued owner payment actions: ${queuedPayments}`}
@@ -259,6 +306,7 @@ export function OwnerPaymentsManager() {
               type="button"
               onClick={() => {
                 setEditingId(null);
+                setComposerOpen(false);
                 setForm({
                   studentName: "",
                   amount: "",
@@ -276,6 +324,12 @@ export function OwnerPaymentsManager() {
             </button>
           </div>
         </form>
+          ) : (
+            <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+              Entry form hidden hai. New collection ya payment update ke time isko open karo.
+            </div>
+          )}
+        </div>
       </DashboardCard>
 
       <DashboardCard title="Payment ledger" subtitle="Recent collection activity">

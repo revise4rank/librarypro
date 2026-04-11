@@ -95,6 +95,7 @@ export function OwnerWebsiteBuilder({
   const [values, setValues] = useState(initialValues);
   const [loadMessage, setLoadMessage] = useState<string | null>(null);
   const [requestedAction, setRequestedAction] = useState<"save-draft" | "publish" | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   useEffect(() => {
     hydrateSessionFromServer()
@@ -130,8 +131,31 @@ export function OwnerWebsiteBuilder({
 
   return (
     <div className="grid gap-4">
+      <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-slate-950">Website editor</p>
+            <p className="mt-1 text-sm text-slate-500">
+              {values.subdomain ? `${values.subdomain}.nextlib.in` : "Subdomain pending"} | {values.published ? "Published" : "Draft"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setEditorOpen((current) => !current)}
+            className="rounded-full border border-[var(--lp-border)] bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+          >
+            {editorOpen ? "Hide editor" : "Open editor"}
+          </button>
+        </div>
+      </div>
       {loadMessage ? <p className="text-sm font-semibold text-slate-600">{loadMessage}</p> : null}
-      <PublicProfileForm initialValues={values} requestedAction={requestedAction} onActionHandled={() => setRequestedAction(null)} />
+      {editorOpen ? (
+        <PublicProfileForm initialValues={values} requestedAction={requestedAction} onActionHandled={() => setRequestedAction(null)} />
+      ) : (
+        <div className="rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-slate-500">
+          Website editor hidden hai. Jab content edit ya publish karna ho tab isko open karo.
+        </div>
+      )}
     </div>
   );
 }

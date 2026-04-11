@@ -99,6 +99,9 @@ export function OwnerReportsManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingKey, setExportingKey] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [exportsOpen, setExportsOpen] = useState(false);
+  const [previewsOpen, setPreviewsOpen] = useState(false);
 
   async function loadReports(nextFrom = fromDate, nextTo = toDate) {
     setLoading(true);
@@ -187,33 +190,50 @@ export function OwnerReportsManager() {
     <div className="grid gap-6">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
-      <DashboardCard title="Custom report window" subtitle="Pick a date range, refresh live summaries, then export true XLSX or PDF">
-        <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
-          <label className="grid gap-2 text-sm font-semibold text-slate-600">
-            From date
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(event) => setFromDate(event.target.value)}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-semibold text-slate-600">
-            To date
-            <input
-              type="date"
-              value={toDate}
-              onChange={(event) => setToDate(event.target.value)}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => void loadReports(fromDate, toDate)}
-            className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white md:self-end"
-          >
-            Refresh report
-          </button>
+      <DashboardCard title="Custom report window" subtitle="Date range aur exports ko compact rakho, insights ko primary rakho">
+        <div className="grid gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-sm font-black text-slate-950">Report filters</p>
+              <p className="mt-1 text-sm text-slate-500">{fromDate} to {toDate}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((current) => !current)}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+            >
+              {filtersOpen ? "Hide filters" : "Show filters"}
+            </button>
+          </div>
+          {filtersOpen ? (
+            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+              <label className="grid gap-2 text-sm font-semibold text-slate-600">
+                From date
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(event) => setFromDate(event.target.value)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-semibold text-slate-600">
+                To date
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(event) => setToDate(event.target.value)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => void loadReports(fromDate, toDate)}
+                className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white md:self-end"
+              >
+                Refresh report
+              </button>
+            </div>
+          ) : null}
         </div>
       </DashboardCard>
 
@@ -227,36 +247,55 @@ export function OwnerReportsManager() {
         ))}
       </section>
 
-      <DashboardCard title="Server exports" subtitle="Owner can download true XLSX and PDF reports without browser hacks">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {[
-            ["students", "Student list"],
-            ["payments", "All payments"],
-            ["dues", "Due payments"],
-            ["paid", "Paid payments"],
-            ["expenses", "Expenses"],
-            ["attendance", "Attendance"],
-          ].map(([reportType, label]) => (
-            <div key={reportType} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-              <p className="font-black text-slate-950">{label}</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => void exportReport(reportType as ReportType, "xlsx")}
-                  className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white"
-                >
-                  {exportingKey === `${reportType}:xlsx` ? "Preparing..." : "Download XLSX"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void exportReport(reportType as ReportType, "pdf")}
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700"
-                >
-                  {exportingKey === `${reportType}:pdf` ? "Preparing..." : "Download PDF"}
-                </button>
-              </div>
+      <DashboardCard title="Server exports" subtitle="Keep exports tucked away until you actually need a file">
+        <div className="grid gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-sm font-black text-slate-950">Export center</p>
+              <p className="mt-1 text-sm text-slate-500">True XLSX/PDF download actions.</p>
             </div>
-          ))}
+            <button
+              type="button"
+              onClick={() => setExportsOpen((current) => !current)}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+            >
+              {exportsOpen ? "Hide exports" : "Show exports"}
+            </button>
+          </div>
+          {exportsOpen ? (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {[
+                ["students", "Student list"],
+                ["payments", "All payments"],
+                ["dues", "Due payments"],
+                ["paid", "Paid payments"],
+                ["expenses", "Expenses"],
+                ["attendance", "Attendance"],
+              ].map(([reportType, label]) => (
+                <div key={reportType} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                  <p className="font-black text-slate-950">{label}</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => void exportReport(reportType as ReportType, "xlsx")}
+                      className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white"
+                    >
+                      {exportingKey === `${reportType}:xlsx` ? "Preparing..." : "Download XLSX"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void exportReport(reportType as ReportType, "pdf")}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700"
+                    >
+                      {exportingKey === `${reportType}:pdf` ? "Preparing..." : "Download PDF"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Export buttons hidden hain. Download ke time open karo.</div>
+          )}
         </div>
       </DashboardCard>
 
@@ -339,24 +378,45 @@ export function OwnerReportsManager() {
 
       <section className="grid gap-6 xl:grid-cols-2">
         <DashboardCard title="Student report preview" subtitle="Roster, dues, and validity at a glance">
-          <div className="space-y-3">
-            {reports.students.slice(0, 8).map((row) => (
-              <div key={row.assignment_id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-bold text-slate-950">{row.student_name}</p>
-                  <p className="text-sm text-slate-500">{row.student_code ?? "-"} | Seat {row.seat_number ?? "-"}</p>
-                </div>
-                <div className="sm:text-right">
-                  <p className="font-black text-slate-950">Rs. {Number(row.due_amount).toLocaleString("en-IN")}</p>
-                  <p className={`text-xs font-black ${row.payment_status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{row.payment_status}</p>
-                </div>
+          <div className="grid gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-black text-slate-950">Preview panels</p>
+                <p className="mt-1 text-sm text-slate-500">Detailed rows ko demand par kholo.</p>
               </div>
-            ))}
+              <button
+                type="button"
+                onClick={() => setPreviewsOpen((current) => !current)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              >
+                {previewsOpen ? "Hide previews" : "Show previews"}
+              </button>
+            </div>
+            {previewsOpen ? (
+              <div className="space-y-3">
+                {reports.students.slice(0, 8).map((row) => (
+                  <div key={row.assignment_id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-bold text-slate-950">{row.student_name}</p>
+                      <p className="text-sm text-slate-500">
+                        {row.student_code ?? "-"} | Seat {row.seat_number ?? "-"}
+                      </p>
+                    </div>
+                    <div className="sm:text-right">
+                      <p className="font-black text-slate-950">Rs. {Number(row.due_amount).toLocaleString("en-IN")}</p>
+                      <p className={`text-xs font-black ${row.payment_status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{row.payment_status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Preview rows hidden hain. Review ke time open karo.</div>
+            )}
           </div>
         </DashboardCard>
 
         <DashboardCard title="Operational preview" subtitle="Payments, expenses, and attendance in one owner view">
-          <div className="space-y-3">
+          {previewsOpen ? <div className="space-y-3">
             {reports.payments.slice(0, 4).map((row) => (
               <div key={row.id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -380,7 +440,7 @@ export function OwnerReportsManager() {
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Attendance signal</p>
               <p className="mt-2 text-lg font-black text-slate-950">{reports.metrics.checkins} check-ins in selected range</p>
             </div>
-          </div>
+          </div> : <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Operational previews hidden hain.</div>}
         </DashboardCard>
       </section>
     </div>
