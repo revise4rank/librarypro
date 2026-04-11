@@ -60,6 +60,7 @@ export function OwnerAdmissionsManager() {
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<OwnerReceipt | null>(null);
   const [receiptPaymentId, setReceiptPaymentId] = useState<string | null>(null);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
 
   async function load() {
     const [joinResponse, seatResponse, floorResponse] = await Promise.all([
@@ -75,6 +76,18 @@ export function OwnerAdmissionsManager() {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => {
+    if (!requests.length) {
+      setActiveRequestId(null);
+      return;
+    }
+
+    setActiveRequestId((current) => {
+      if (current && requests.some((request) => request.id === current)) return current;
+      return requests[0]?.id ?? null;
+    });
+  }, [requests]);
 
   function getAvailableSeats(requestId: string) {
     const selectedFloorId = selectedFloorIds[requestId];
@@ -143,7 +156,7 @@ export function OwnerAdmissionsManager() {
   }
 
   return (
-    <DashboardCard title="QR admissions queue" subtitle="Students can request admission from their app, then owner collects payment and allots a seat.">
+    <DashboardCard title="QR admissions queue" subtitle="Review requests in a lighter queue, then open only the one you want to approve.">
       <div className="grid gap-4">
         {resultMessage ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{resultMessage}</div> : null}
         {receipt ? (
@@ -191,74 +204,105 @@ export function OwnerAdmissionsManager() {
             </div>
           </div>
         ) : null}
-        {requests.map((request) => (
-          <div key={request.id} className="rounded-[1.6rem] border border-[var(--lp-border)] bg-white p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-base font-bold text-[var(--lp-text)]">{request.student_name}</p>
-                <p className="text-sm text-[var(--lp-muted)]">{request.student_code ?? request.student_email ?? request.student_phone ?? "Student app account"}</p>
-                <p className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">{request.requested_via} · {request.status}</p>
-              </div>
-              <p className="text-xs text-[var(--lp-muted)]">{new Date(request.created_at).toLocaleString()}</p>
-            </div>
-            {request.message ? <p className="mt-3 text-sm text-[var(--lp-muted)]">{request.message}</p> : null}
-            <div className="mt-4 grid gap-3">
-              <div className="grid gap-3 rounded-2xl bg-[#f9f5ee] p-4 text-sm text-[var(--lp-muted)] sm:grid-cols-2">
+        {requests.map((request) => {
+          const isOpen = activeRequestId === request.id;
+          return (
+            <div key={request.id} className="rounded-[1.6rem] border border-[var(--lp-border)] bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Student profile</p>
-                  <p className="mt-2 font-semibold text-[var(--lp-text)]">{request.student_name}</p>
-                  <p>{request.student_email ?? request.student_phone ?? request.student_code ?? "App-only profile"}</p>
+                  <p className="text-base font-bold text-[var(--lp-text)]">{request.student_name}</p>
+                  <p className="text-sm text-[var(--lp-muted)]">{request.student_code ?? request.student_email ?? request.student_phone ?? "Student app account"}</p>
+                  <p className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">{request.requested_via} - {request.status}</p>
                 </div>
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Admission draft</p>
-                  <p className="mt-2">Plan: Monthly Plan</p>
-                  <p>Payment: pending desk collection</p>
-                  {request.seat_preference ? <p>Student preference: {request.seat_preference}</p> : null}
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-xs text-[var(--lp-muted)]">{new Date(request.created_at).toLocaleString()}</p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveRequestId((current) => (current === request.id ? null : request.id))}
+                    className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                  >
+                    {isOpen ? "Hide review" : "Review request"}
+                  </button>
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-[180px_1fr_140px_auto_auto]">
-              <select
-                value={selectedFloorIds[request.id] ?? suggestedFloorId(request.id)}
-                onChange={(event) => setSelectedFloorIds((current) => ({ ...current, [request.id]: event.target.value }))}
-                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
-              >
-                {floors.map((floor) => (
-                  <option key={floor.id} value={floor.id}>
-                    Floor {floor.floor_number} · {floor.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={seatNumbers[request.id] ?? ""}
-                onChange={(event) => setSeatNumbers((current) => ({ ...current, [request.id]: event.target.value }))}
-                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
-              >
-                <option value="">Choose seat</option>
-                {getAvailableSeats(request.id).map((seat) => (
-                  <option key={seat.id} value={seat.seat_number}>
-                    {seat.seat_number} · {seat.floor_name ?? "No floor"}{seat.section_name ? ` · ${seat.section_name}` : ""}{seat.status === "RESERVED" ? " · Reserved" : ""}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={planPrices[request.id] ?? "999"}
-                onChange={(event) => setPlanPrices((current) => ({ ...current, [request.id]: event.target.value }))}
-                placeholder="Plan amount"
-                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
-              />
-              <button type="button" onClick={() => void approve(request.id)} disabled={request.status !== "PENDING" || !seatNumbers[request.id]} className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
-                Approve
-              </button>
-              <button type="button" onClick={() => void reject(request.id)} disabled={request.status !== "PENDING"} className="rounded-2xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-600 disabled:opacity-50">
-                Reject
-              </button>
+              {request.message ? <p className="mt-3 text-sm text-[var(--lp-muted)]">{request.message}</p> : null}
+
+              <div className="mt-4 grid gap-3 rounded-2xl bg-[#f9f5ee] p-4 text-sm text-[var(--lp-muted)] sm:grid-cols-4">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Plan</p>
+                  <p className="mt-2 font-semibold text-[var(--lp-text)]">Monthly Plan</p>
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Payment</p>
+                  <p className="mt-2 font-semibold text-[var(--lp-text)]">Pending desk collection</p>
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Seat preference</p>
+                  <p className="mt-2 font-semibold text-[var(--lp-text)]">{request.seat_preference ?? "No preference"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Review mode</p>
+                  <p className="mt-2 font-semibold text-[var(--lp-text)]">{isOpen ? "Open now" : "Collapsed"}</p>
+                </div>
               </div>
-              <div className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-xs font-semibold text-[var(--lp-muted)]">
-                Owner yahin floor aur available seat select karke request approve karega. Seat control par alag jaane ki zarurat nahi.
-              </div>
+
+              {isOpen ? (
+                <div className="mt-4 grid gap-3">
+                  <div className="grid gap-3 rounded-2xl bg-[#f9f5ee] p-4 text-sm text-[var(--lp-muted)] sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Student profile</p>
+                      <p className="mt-2 font-semibold text-[var(--lp-text)]">{request.student_name}</p>
+                      <p>{request.student_email ?? request.student_phone ?? request.student_code ?? "App-only profile"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--lp-accent)]">Approval checklist</p>
+                      <p className="mt-2">Choose floor, then available seat, then approve with desk amount.</p>
+                      <p>Seat control par alag jaane ki zarurat nahi.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-[180px_1fr_140px_auto_auto]">
+                    <select
+                      value={selectedFloorIds[request.id] ?? suggestedFloorId(request.id)}
+                      onChange={(event) => setSelectedFloorIds((current) => ({ ...current, [request.id]: event.target.value }))}
+                      className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+                    >
+                      {floors.map((floor) => (
+                        <option key={floor.id} value={floor.id}>
+                          Floor {floor.floor_number} - {floor.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={seatNumbers[request.id] ?? ""}
+                      onChange={(event) => setSeatNumbers((current) => ({ ...current, [request.id]: event.target.value }))}
+                      className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+                    >
+                      <option value="">Choose seat</option>
+                      {getAvailableSeats(request.id).map((seat) => (
+                        <option key={seat.id} value={seat.seat_number}>
+                          {seat.seat_number} - {seat.floor_name ?? "No floor"}{seat.section_name ? ` - ${seat.section_name}` : ""}{seat.status === "RESERVED" ? " - Reserved" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={planPrices[request.id] ?? "999"}
+                      onChange={(event) => setPlanPrices((current) => ({ ...current, [request.id]: event.target.value }))}
+                      placeholder="Plan amount"
+                      className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+                    />
+                    <button type="button" onClick={() => void approve(request.id)} disabled={request.status !== "PENDING" || !seatNumbers[request.id]} className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
+                      Approve
+                    </button>
+                    <button type="button" onClick={() => void reject(request.id)} disabled={request.status !== "PENDING"} className="rounded-2xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-600 disabled:opacity-50">
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
-          </div>
-        ))}
+          );
+        })}
         {requests.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No admission requests right now.</p> : null}
       </div>
     </DashboardCard>

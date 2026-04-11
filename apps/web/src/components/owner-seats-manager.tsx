@@ -353,6 +353,8 @@ export function OwnerSeatsManager() {
   const [ribbonTab, setRibbonTab] = useState<"floor" | "bank" | "single">("floor");
   const [plannerRibbonTab, setPlannerRibbonTab] = useState<"templates" | "layout" | "paint" | "students">("templates");
   const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("layout");
+  const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
+  const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
 
   async function loadData() {
     setLoading(true);
@@ -1250,30 +1252,42 @@ export function OwnerSeatsManager() {
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Mini Toolbar</p>
                 <p className="mt-1 text-sm text-[var(--lp-muted)]">Templates, layout, paint aur students ko top ribbon se handle karo.</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  ["templates", "TP Templates"],
-                  ["layout", "LY Layout"],
-                  ["paint", "PT Paint"],
-                  ["students", "ST Students"],
-                ].map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setPlannerRibbonTab(value as typeof plannerRibbonTab)}
-                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
-                      plannerRibbonTab === value
-                        ? "bg-slate-900 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
-                        : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    ["templates", "TP Templates"],
+                    ["layout", "LY Layout"],
+                    ["paint", "PT Paint"],
+                    ["students", "ST Students"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setPlannerRibbonTab(value as typeof plannerRibbonTab);
+                        setPlannerToolbarOpen(true);
+                      }}
+                      className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                        plannerRibbonTab === value
+                          ? "bg-slate-900 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
+                          : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPlannerToolbarOpen((current) => !current)}
+                  className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                >
+                  {plannerToolbarOpen ? "Hide panel" : "Open panel"}
+                </button>
               </div>
             </div>
 
-            {plannerRibbonTab === "templates" ? (
+            {plannerToolbarOpen && plannerRibbonTab === "templates" ? (
               <div className="grid gap-3 xl:grid-cols-[auto_1fr]">
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "2")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">2 Seat Desk</button>
@@ -1302,7 +1316,7 @@ export function OwnerSeatsManager() {
               </div>
             ) : null}
 
-            {plannerRibbonTab === "layout" ? (
+            {plannerToolbarOpen && plannerRibbonTab === "layout" ? (
               <div className="grid gap-3 xl:grid-cols-[auto_auto_1fr]">
                 <button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-[1rem] px-4 py-3 text-sm font-black ${layoutMode ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
                   {layoutMode ? "Planner Active" : "Enable Planner"}
@@ -1319,7 +1333,7 @@ export function OwnerSeatsManager() {
               </div>
             ) : null}
 
-            {plannerRibbonTab === "paint" ? (
+            {plannerToolbarOpen && plannerRibbonTab === "paint" ? (
               <div className="grid gap-3 xl:grid-cols-[1fr_auto_1fr]">
                 <input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" />
                 <input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-20 rounded-[1rem] border border-[var(--lp-border)] bg-white p-1" />
@@ -1333,7 +1347,7 @@ export function OwnerSeatsManager() {
               </div>
             ) : null}
 
-            {plannerRibbonTab === "students" ? (
+            {plannerToolbarOpen && plannerRibbonTab === "students" ? (
               <div className="grid gap-3">
                 <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none">
                   <option value="">Select student assignment</option>
@@ -1490,43 +1504,64 @@ export function OwnerSeatsManager() {
         {workspaceMode === "assign" ? (
         <DashboardCard title="Assignment tray" subtitle="Searchless, direct student tray for seat allotment.">
           <div className="grid gap-3">
-            <select
-              value={selectedAssignmentId}
-              onChange={(event) => setSelectedAssignmentId(event.target.value)}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-            >
-              <option value="">Select student assignment</option>
-              {availableStudents.map((student) => (
-                <option key={student.assignment_id} value={student.assignment_id}>
-                  {student.student_name} | {student.seat_number ?? "No seat"} | {student.plan_name}
-                </option>
-              ))}
-            </select>
-
-            <div className="max-h-[24rem] overflow-auto rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
-              <div className="space-y-3">
-                {availableStudents.map((student) => (
-                  <div
-                    key={student.assignment_id}
-                    draggable
-                    onDragStart={(event) => {
-                      event.dataTransfer.setData("text/assignment-id", student.assignment_id);
-                      setSelectedAssignmentId(student.assignment_id);
-                      const preview = makeSeatDragPreview(student.student_name);
-                      event.dataTransfer.setDragImage(preview, 54, 36);
-                      window.setTimeout(() => preview.remove(), 0);
-                    }}
-                    className={`cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-primary)] bg-[#fff7ef]" : "border-slate-200 bg-white"}`}
-                  >
-                    <p className="font-black text-slate-950">{student.student_name}</p>
-                    <p className="text-sm text-slate-500">
-                      {student.seat_number ?? "No seat"} | {student.plan_name}
-                    </p>
-                    <p className="text-xs text-slate-400">{student.payment_status} • Valid till {student.ends_at}</p>
-                  </div>
-                ))}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-black text-slate-950">Student tray</p>
+                <p className="mt-1 text-sm text-slate-500">Keep this closed unless you are actively allotting seats.</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setAssignmentTrayOpen((current) => !current)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              >
+                {assignmentTrayOpen ? "Hide tray" : "Open tray"}
+              </button>
             </div>
+            {assignmentTrayOpen ? (
+              <>
+                <select
+                  value={selectedAssignmentId}
+                  onChange={(event) => setSelectedAssignmentId(event.target.value)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                >
+                  <option value="">Select student assignment</option>
+                  {availableStudents.map((student) => (
+                    <option key={student.assignment_id} value={student.assignment_id}>
+                      {student.student_name} | {student.seat_number ?? "No seat"} | {student.plan_name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="max-h-[24rem] overflow-auto rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                  <div className="space-y-3">
+                    {availableStudents.map((student) => (
+                      <div
+                        key={student.assignment_id}
+                        draggable
+                        onDragStart={(event) => {
+                          event.dataTransfer.setData("text/assignment-id", student.assignment_id);
+                          setSelectedAssignmentId(student.assignment_id);
+                          const preview = makeSeatDragPreview(student.student_name);
+                          event.dataTransfer.setDragImage(preview, 54, 36);
+                          window.setTimeout(() => preview.remove(), 0);
+                        }}
+                        className={`cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-primary)] bg-[#fff7ef]" : "border-slate-200 bg-white"}`}
+                      >
+                        <p className="font-black text-slate-950">{student.student_name}</p>
+                        <p className="text-sm text-slate-500">
+                          {student.seat_number ?? "No seat"} | {student.plan_name}
+                        </p>
+                        <p className="text-xs text-slate-400">{student.payment_status} - Valid till {student.ends_at}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-[1.25rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                Assignment mode cleaner rakhne ke liye tray hidden hai. Jab actual student allot karna ho tab isko open karo.
+              </div>
+            )}
           </div>
         </DashboardCard>
         ) : (
