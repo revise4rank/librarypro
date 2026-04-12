@@ -389,18 +389,25 @@ export class ProductivityRepository {
           ORDER BY total_minutes DESC NULLS LAST
           LIMIT 1
         ),
-      streaks AS (
-        SELECT COALESCE(MAX(streak_count), 0) AS longest_streak
-        FROM (
-          SELECT COUNT(*) AS streak_count
+        distinct_focus_days AS (
+          SELECT DISTINCT completed_at::date AS day_value
+          FROM student_focus_sessions
+          WHERE student_user_id = $1
+        ),
+        streak_groups AS (
+          SELECT
+            day_value,
+            (day_value - (ROW_NUMBER() OVER (ORDER BY day_value))::int) AS streak_key
+          FROM distinct_focus_days
+        ),
+        streaks AS (
+          SELECT COALESCE(MAX(streak_count), 0) AS longest_streak
           FROM (
-            SELECT DISTINCT completed_at::date AS day_value
-            FROM student_focus_sessions
-            WHERE student_user_id = $1
-          ) d
-          GROUP BY (day_value - (ROW_NUMBER() OVER (ORDER BY day_value))::int)
-        ) grouped
-      )
+            SELECT COUNT(*) AS streak_count
+            FROM streak_groups
+            GROUP BY streak_key
+          ) grouped
+        )
       SELECT
         ft.total_focus_minutes::text,
         ft.weekly_focus_minutes::text,
