@@ -62,9 +62,24 @@ function getApiBaseUrl() {
   return raw.endsWith("/v1") ? raw : `${raw}/v1`;
 }
 
+function getApiOrigin() {
+  const base = getApiBaseUrl();
+  return base.endsWith("/v1") ? base.slice(0, -3) : base;
+}
+
+export function resolvePublicAssetUrl(value: string | null | undefined) {
+  if (!value) return null;
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  if (value.startsWith("/uploads/")) {
+    return `${getApiOrigin()}${value}`;
+  }
+  return value;
+}
+
 export function getGalleryUrl(value: string, index: number) {
-  if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/")) {
-    return value;
+  const resolved = resolvePublicAssetUrl(value);
+  if (resolved && (resolved.startsWith("http://") || resolved.startsWith("https://") || resolved.startsWith("/"))) {
+    return resolved;
   }
 
   const normalized = value.toLowerCase();

@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { ContactActions } from "./contact-actions";
-import { PublicLibraryProfile, PublicLibraryReview, getGalleryUrl } from "../lib/public-library";
+import { PublicLibraryProfile, PublicLibraryReview, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
 import { LibraryReviewsPanel } from "./library-reviews-panel";
 
 type PublicLibraryPageProps = {
@@ -59,6 +59,8 @@ export function PublicLibraryPage({
     : ["/library-gallery/study-hall.svg", "/library-gallery/reading-zone.svg", "/library-gallery/reception.svg"]).map(
     getGalleryUrl,
   );
+  const heroBannerUrl = resolvePublicAssetUrl(profile.hero_banner_url);
+  const brandLogoUrl = resolvePublicAssetUrl(profile.brand_logo_url);
 
   const highlights = [
     { label: "Available seats", value: String(profile.available_seats) },
@@ -76,7 +78,7 @@ export function PublicLibraryPage({
         className="text-[var(--lp-text)]"
         style={{
           backgroundImage: profile.hero_banner_url
-            ? `linear-gradient(rgba(255,241,227,0.82), rgba(255,248,239,0.88), rgba(229,242,239,0.9)), url(${profile.hero_banner_url})`
+            ? `linear-gradient(rgba(255,241,227,0.82), rgba(255,248,239,0.88), rgba(229,242,239,0.9)), url(${heroBannerUrl})`
             : "linear-gradient(135deg,#fff1e3,#fff8ef 45%,#e5f2ef)",
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -85,9 +87,9 @@ export function PublicLibraryPage({
         <div className="mx-auto max-w-[1480px] px-4 py-6 md:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-4">
-              {profile.brand_logo_url ? (
+              {brandLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.brand_logo_url} alt={profile.library_name} className="h-14 w-14 rounded-[1.2rem] object-cover shadow-[0_10px_30px_rgba(111,95,74,0.16)]" />
+                <img src={brandLogoUrl} alt={profile.library_name} className="h-14 w-14 rounded-[1.2rem] object-cover shadow-[0_10px_30px_rgba(111,95,74,0.16)]" />
               ) : (
                 <div className="grid h-14 w-14 place-items-center rounded-[1.2rem] bg-[linear-gradient(135deg,#e8a27d,#2f8f88)] text-lg font-black text-white">
                   {profile.library_name.slice(0, 2).toUpperCase()}
