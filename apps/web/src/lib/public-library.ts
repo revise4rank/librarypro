@@ -56,6 +56,11 @@ type PublicLibraryReviewsResponse = {
 };
 
 const PRODUCTION_API_ORIGIN = "https://librarypro-api.onrender.com";
+const demoAssetFallbacks: Record<string, string> = {
+  "/uploads/public-profiles/demo-1.jpg": "/library-gallery/study-hall.svg",
+  "/uploads/public-profiles/demo-2.jpg": "/library-gallery/reading-zone.svg",
+  "/uploads/public-profiles/demo-3.jpg": "/library-gallery/reception.svg",
+};
 
 function getApiBaseUrl() {
   const raw = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || PRODUCTION_API_ORIGIN;
@@ -70,6 +75,9 @@ function getApiOrigin() {
 export function resolvePublicAssetUrl(value: string | null | undefined) {
   if (!value) return null;
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  if (demoAssetFallbacks[value]) {
+    return demoAssetFallbacks[value];
+  }
   if (value.startsWith("/uploads/")) {
     return `${getApiOrigin()}${value}`;
   }
