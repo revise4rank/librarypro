@@ -52,6 +52,7 @@ export function StudentPaymentsManager() {
   const [liveStatus, setLiveStatus] = useState("Connecting");
   const [isOffline, setIsOffline] = useState(false);
   const [queuedPayments, setQueuedPayments] = useState(0);
+  const [showHistory, setShowHistory] = useState(false);
 
   async function loadQueuedPayments() {
     try {
@@ -214,32 +215,46 @@ export function StudentPaymentsManager() {
       </DashboardCard>
 
       <DashboardCard title="Receipts and dues" subtitle="Payment actions students actually need">
-        <div className="space-y-3">
-          {rows.map((payment) => (
-            <div key={payment.id} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-bold text-slate-950">{payment.student_name}</p>
-                  <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.due_date ?? payment.created_at).slice(0, 10)}</p>
+        <div className="grid gap-4">
+          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            {rows.filter((payment) => payment.status !== "PAID").length} payment item(s) still need action. Old receipts can stay tucked away.
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowHistory((current) => !current)}
+            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+          >
+            {showHistory ? "Hide receipt history" : `Show receipt history (${rows.length})`}
+          </button>
+          {showHistory ? (
+            <div className="space-y-3">
+              {rows.map((payment) => (
+                <div key={payment.id} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-slate-950">{payment.student_name}</p>
+                      <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.due_date ?? payment.created_at).slice(0, 10)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-slate-950">Rs. {payment.amount}</p>
+                      <p className={`text-xs font-black ${payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{payment.status}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {payment.status !== "PAID" ? (
+                      <button onClick={() => void payNow(payment.id)} className="rounded-[1.1rem] bg-slate-950 px-4 py-3 text-sm font-bold text-white">
+                        Pay now
+                      </button>
+                    ) : null}
+                    <button onClick={() => void downloadReceipt(payment.id)} className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                      Get receipt
+                    </button>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-black text-slate-950">Rs. {payment.amount}</p>
-                  <p className={`text-xs font-black ${payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{payment.status}</p>
-                </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {payment.status !== "PAID" ? (
-                  <button onClick={() => void payNow(payment.id)} className="rounded-[1.1rem] bg-slate-950 px-4 py-3 text-sm font-bold text-white">
-                    Pay now
-                  </button>
-                ) : null}
-                <button onClick={() => void downloadReceipt(payment.id)} className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
-                  Get receipt
-                </button>
-              </div>
+              ))}
+              {!loading && rows.length === 0 ? <p className="text-sm text-slate-500">No student payments found yet.</p> : null}
             </div>
-          ))}
-          {!loading && rows.length === 0 ? <p className="text-sm text-slate-500">No student payments found yet.</p> : null}
+          ) : null}
         </div>
       </DashboardCard>
     </div>

@@ -26,6 +26,7 @@ type DashboardResponse = {
 export function StudentSeatManager() {
   const [data, setData] = useState<DashboardResponse["data"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showLibraryInfo, setShowLibraryInfo] = useState(false);
 
   useEffect(() => {
     apiFetch<DashboardResponse>("/student/dashboard")
@@ -66,12 +67,26 @@ export function StudentSeatManager() {
       </DashboardCard>
 
       <DashboardCard title="Library details" subtitle="Useful when arriving or contacting owner">
-        <div className="space-y-4 text-sm leading-7 text-slate-700">
-          <p><span className="font-black text-slate-950">Library:</span> {data.library?.library_name ?? "-"}</p>
-          <p><span className="font-black text-slate-950">WiFi:</span> {data.library?.wifi_name ?? "-"}</p>
-          <p><span className="font-black text-slate-950">Password:</span> {data.library?.wifi_password ?? "-"}</p>
-          <p><span className="font-black text-slate-950">Current notice:</span> {data.library?.notice_message ?? "No notice available right now."}</p>
-          <p><span className="font-black text-slate-950">Payment status:</span> {data.assignment?.payment_status ?? "-"}</p>
+        <div className="grid gap-4">
+          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            {data.library?.library_name ?? "No library linked"} | Payment status {data.assignment?.payment_status ?? "-"}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowLibraryInfo((current) => !current)}
+            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+          >
+            {showLibraryInfo ? "Hide library details" : "Show library details"}
+          </button>
+          {showLibraryInfo ? (
+            <div className="space-y-4 text-sm leading-7 text-slate-700">
+              <p><span className="font-black text-slate-950">Library:</span> {data.library?.library_name ?? "-"}</p>
+              <p><span className="font-black text-slate-950">WiFi:</span> {data.library?.wifi_name ?? "-"}</p>
+              <p><span className="font-black text-slate-950">Password:</span> {data.library?.wifi_password ?? "-"}</p>
+              <p><span className="font-black text-slate-950">Current notice:</span> {data.library?.notice_message ?? "No notice available right now."}</p>
+              <p><span className="font-black text-slate-950">Payment status:</span> {data.assignment?.payment_status ?? "-"}</p>
+            </div>
+          ) : null}
         </div>
       </DashboardCard>
     </div>
