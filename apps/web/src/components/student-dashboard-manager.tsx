@@ -118,6 +118,13 @@ export function StudentDashboardManager() {
   const [libraries, setLibraries] = useState<LibrariesResponse["data"]>([]);
   const [error, setError] = useState<string | null>(null);
   const [liveStatus, setLiveStatus] = useState("Connecting");
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    analytics: false,
+    revisions: false,
+    calendar: false,
+    rewards: false,
+    notices: false,
+  });
 
   async function loadDashboard() {
     try {
@@ -194,6 +201,11 @@ export function StudentDashboardManager() {
   const activeLibrary = libraries.find((library) => library.is_active) ?? null;
   const rewards = analytics.badges;
   const recoveryMinutesPerDay = analytics.missedDays > 0 ? Math.max(30, Math.ceil((analytics.missedDays * 45) / 7)) : 0;
+  const previewNotifications = data.notifications.slice(0, expandedSections.notices ? data.notifications.length : 2);
+
+  function toggleSection(section: keyof typeof expandedSections) {
+    setExpandedSections((current) => ({ ...current, [section]: !current[section] }));
+  }
 
   function getBadgeTheme(badgeCode: string) {
     if (badgeCode.includes("14") || badgeCode.includes("50")) {
@@ -267,7 +279,7 @@ export function StudentDashboardManager() {
         </DashboardCard>
 
         <DashboardCard title="Quick actions" subtitle="Student actions should be obvious and immediate">
-          <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Link href="/student/focus" className="rounded-[1.25rem] bg-slate-950 px-4 py-4 text-sm font-bold text-white">
               Open focus tracker
             </Link>
@@ -295,33 +307,46 @@ export function StudentDashboardManager() {
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <DashboardCard title="Study analytics" subtitle="This app should stay useful even outside the library">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Total study</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{analytics.totalStudyHours} hrs</p>
-              <p className="mt-2 text-sm text-slate-500">{analytics.focusSessionsCount} sessions recorded</p>
+          <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Total study</p>
+                <p className="mt-3 text-2xl font-black text-slate-950">{analytics.totalStudyHours} hrs</p>
+                <p className="mt-2 text-sm text-slate-500">{analytics.focusSessionsCount} sessions recorded</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Most studied</p>
+                <p className="mt-3 text-2xl font-black text-slate-950">{analytics.mostStudiedSubject ?? "-"}</p>
+                <p className="mt-2 text-sm text-slate-500">Monthly {analytics.monthlyStudyHours} hrs</p>
+              </div>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Most studied</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{analytics.mostStudiedSubject ?? "-"}</p>
-              <p className="mt-2 text-sm text-slate-500">Monthly {analytics.monthlyStudyHours} hrs</p>
-            </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Deep work</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{analytics.deepWorkHours} hrs</p>
-              <p className="mt-2 text-sm text-slate-500">Longer sessions above 50 min</p>
-            </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Entry pattern</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{analytics.avgEntryHour ?? "-"}</p>
-              <p className="mt-2 text-sm text-slate-500">{analytics.missedDays} missed days in active window</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => toggleSection("analytics")}
+              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            >
+              {expandedSections.analytics ? "Hide deeper analytics" : "Show deeper analytics"}
+            </button>
+            {expandedSections.analytics ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Deep work</p>
+                  <p className="mt-3 text-2xl font-black text-slate-950">{analytics.deepWorkHours} hrs</p>
+                  <p className="mt-2 text-sm text-slate-500">Longer sessions above 50 min</p>
+                </div>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Entry pattern</p>
+                  <p className="mt-3 text-2xl font-black text-slate-950">{analytics.avgEntryHour ?? "-"}</p>
+                  <p className="mt-2 text-sm text-slate-500">{analytics.missedDays} missed days in active window</p>
+                </div>
+              </div>
+            ) : null}
           </div>
         </DashboardCard>
 
         <DashboardCard title="Latest alerts" subtitle="Payment reminders, expiry alerts, and operational updates">
           <div className="space-y-3">
-            {data.notifications.map((notification) => (
+            {previewNotifications.map((notification) => (
               <article key={notification.id} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-black text-slate-950">{notification.title}</p>
@@ -330,52 +355,91 @@ export function StudentDashboardManager() {
                 <p className="mt-2 text-sm leading-7 text-slate-600">{notification.message}</p>
               </article>
             ))}
+            {data.notifications.length > 2 ? (
+              <button
+                type="button"
+                onClick={() => toggleSection("notices")}
+                className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              >
+                {expandedSections.notices ? "Show fewer alerts" : `Show all ${data.notifications.length} alerts`}
+              </button>
+            ) : null}
           </div>
         </DashboardCard>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <DashboardCard title="Revision engine" subtitle="The system should help you remember what you finished">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-700">Pending revisions</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.pendingCount}</p>
-              <p className="mt-2 text-sm text-slate-600">{revisionAnalytics.overdueCount} overdue reminders</p>
+          <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-700">Pending revisions</p>
+                <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.pendingCount}</p>
+                <p className="mt-2 text-sm text-slate-600">{revisionAnalytics.overdueCount} overdue reminders</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Revision consistency</p>
+                <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.revisionConsistencyDays} days</p>
+                <p className="mt-2 text-sm text-slate-600">{revisionAnalytics.revisionCompletionPercent}% completion rate</p>
+              </div>
             </div>
-            <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Revision consistency</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.revisionConsistencyDays} days</p>
-              <p className="mt-2 text-sm text-slate-600">{revisionAnalytics.revisionCompletionPercent}% completion rate</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => toggleSection("revisions")}
+              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            >
+              {expandedSections.revisions ? "Hide accountability details" : "Show accountability details"}
+            </button>
           </div>
         </DashboardCard>
 
         <DashboardCard title="Accountability loop" subtitle="Share progress only when you want, and keep the pressure healthy">
-          <div className="grid gap-4">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-sm leading-7 text-slate-600">
-                Library feed is separate from study widgets. Share completed topics, focus hours, and streak wins without popups or distractions.
-              </p>
+          {expandedSections.revisions ? (
+            <div className="grid gap-4">
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-sm leading-7 text-slate-600">
+                  Library feed is separate from study widgets. Share completed topics, focus hours, and streak wins without popups or distractions.
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Weak topics</p>
+                <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.weakTopics}</p>
+                <p className="mt-2 text-sm text-slate-500">Use custom reminders to revisit the hardest topics faster.</p>
+              </div>
             </div>
+          ) : (
             <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Weak topics</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.weakTopics}</p>
-              <p className="mt-2 text-sm text-slate-500">Use custom reminders to revisit the hardest topics faster.</p>
+              <p className="text-sm text-slate-600">Progress sharing aur weak-topic reminders ready hain. Zarurat ho tab details kholo.</p>
             </div>
-          </div>
+          )}
         </DashboardCard>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <DashboardCard title="Focus calendar" subtitle="Study regularity over the last visible days">
-          <div className="grid grid-cols-4 gap-3 md:grid-cols-7">
-            {calendarDays.map((day) => (
-              <div key={day.date} className={`rounded-[1.25rem] border p-3 ${day.sessions > 0 ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{day.date.slice(5)}</p>
-                <p className="mt-2 text-lg font-black text-slate-950">{day.sessions}</p>
-                <p className="text-xs text-slate-500">{day.minutes} min</p>
+          <div className="grid gap-4">
+            <button
+              type="button"
+              onClick={() => toggleSection("calendar")}
+              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            >
+              {expandedSections.calendar ? "Hide study calendar" : "Show study calendar"}
+            </button>
+            {expandedSections.calendar ? (
+              <div className="grid grid-cols-4 gap-3 md:grid-cols-7">
+                {calendarDays.map((day) => (
+                  <div key={day.date} className={`rounded-[1.25rem] border p-3 ${day.sessions > 0 ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{day.date.slice(5)}</p>
+                    <p className="mt-2 text-lg font-black text-slate-950">{day.sessions}</p>
+                    <p className="text-xs text-slate-500">{day.minutes} min</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-sm text-slate-600">Recent consistency aur session pattern ko tab kholkar dekho jab weekly review karna ho.</p>
+              </div>
+            )}
           </div>
         </DashboardCard>
 
@@ -400,25 +464,41 @@ export function StudentDashboardManager() {
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <DashboardCard title="Streak rewards" subtitle="Discipline compounds, so the app should celebrate consistency">
-          <div className="grid gap-3 md:grid-cols-2">
-            {rewards.map((reward) => {
-              const fallbackTheme = getBadgeTheme(reward.badgeCode);
-              const theme = {
-                ...fallbackTheme,
-                tier: reward.metadata?.tier ?? fallbackTheme.tier,
-                icon: reward.metadata?.icon ?? fallbackTheme.icon,
-              };
-              return (
-              <div key={reward.badgeCode} className={`rounded-[1.25rem] border p-4 ${theme.card}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-black text-slate-950">{reward.badgeLabel}</p>
-                  <span className={`rounded-full bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] ${theme.text}`}>{theme.tier}</span>
-                </div>
-                <p className={`mt-2 text-xs font-black uppercase tracking-[0.22em] ${theme.text}`}>{theme.icon}</p>
-                <p className="mt-2 text-sm text-slate-500">Unlocked {reward.awardedAt.slice(0, 10)}</p>
+          <div className="grid gap-4">
+            <button
+              type="button"
+              onClick={() => toggleSection("rewards")}
+              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            >
+              {expandedSections.rewards ? "Hide badge cabinet" : "Show badge cabinet"}
+            </button>
+            {expandedSections.rewards ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {rewards.map((reward) => {
+                  const fallbackTheme = getBadgeTheme(reward.badgeCode);
+                  const theme = {
+                    ...fallbackTheme,
+                    tier: reward.metadata?.tier ?? fallbackTheme.tier,
+                    icon: reward.metadata?.icon ?? fallbackTheme.icon,
+                  };
+                  return (
+                    <div key={reward.badgeCode} className={`rounded-[1.25rem] border p-4 ${theme.card}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-black text-slate-950">{reward.badgeLabel}</p>
+                        <span className={`rounded-full bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] ${theme.text}`}>{theme.tier}</span>
+                      </div>
+                      <p className={`mt-2 text-xs font-black uppercase tracking-[0.22em] ${theme.text}`}>{theme.icon}</p>
+                      <p className="mt-2 text-sm text-slate-500">Unlocked {reward.awardedAt.slice(0, 10)}</p>
+                    </div>
+                  );
+                })}
+                {rewards.length === 0 ? <p className="text-sm text-slate-500">Keep building consistency to unlock your first badge.</p> : null}
               </div>
-            );})}
-            {rewards.length === 0 ? <p className="text-sm text-slate-500">Keep building consistency to unlock your first badge.</p> : null}
+            ) : (
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-sm text-slate-600">{rewards.length > 0 ? `${rewards.length} reward badges unlocked so far.` : "No badges yet. Consistency unlocks the first one."}</p>
+              </div>
+            )}
           </div>
         </DashboardCard>
 
@@ -444,19 +524,40 @@ export function StudentDashboardManager() {
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <DashboardCard title="Library notice board" subtitle="Everything owner wants students to see right now">
-          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-            <p className="text-sm leading-8 text-slate-700">{data.library?.notice_message ?? "No notice available right now."}</p>
-          </div>
+          {expandedSections.notices ? (
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <p className="text-sm leading-8 text-slate-700">{data.library?.notice_message ?? "No notice available right now."}</p>
+            </div>
+          ) : (
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <p className="text-sm text-slate-600">Notice board aur library history ko tab kholo jab operational update dekhna ho.</p>
+            </div>
+          )}
         </DashboardCard>
 
         <DashboardCard title="Connected libraries" subtitle="Your study engine can continue even if one library changes">
-          <div className="grid gap-3">
-            {libraries.map((library) => (
-              <div key={library.library_id} className={`rounded-[1.25rem] border p-4 ${library.is_active ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
-                <p className="font-black text-slate-950">{library.library_name}</p>
-                <p className="mt-1 text-sm text-slate-500">{library.city} | Login ID {library.login_id} | Seat {library.seat_number ?? "-"}</p>
+          <div className="grid gap-4">
+            <button
+              type="button"
+              onClick={() => toggleSection("notices")}
+              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            >
+              {expandedSections.notices ? "Hide library context" : "Show library context"}
+            </button>
+            {expandedSections.notices ? (
+              <div className="grid gap-3">
+                {libraries.map((library) => (
+                  <div key={library.library_id} className={`rounded-[1.25rem] border p-4 ${library.is_active ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+                    <p className="font-black text-slate-950">{library.library_name}</p>
+                    <p className="mt-1 text-sm text-slate-500">{library.city} | Login ID {library.login_id} | Seat {library.seat_number ?? "-"}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-sm text-slate-600">{libraries.length} connected libraries on this account. Active library context is shown at the top.</p>
+              </div>
+            )}
           </div>
         </DashboardCard>
       </section>
