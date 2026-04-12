@@ -133,6 +133,10 @@ export function StudentJoinLibraryManager() {
         `/student/libraries/search?q=${encodeURIComponent(query)}`,
       );
       setSearchResults(response.data);
+      setStatus(null);
+    } catch (error) {
+      setSearchResults([]);
+      setStatus(error instanceof Error ? error.message : "Libraries search abhi load nahi ho paayi.");
     } finally {
       setSearching(false);
     }
@@ -451,6 +455,7 @@ export function StudentJoinLibraryManager() {
               <div className="rounded-2xl border border-[var(--lp-border)] bg-[#fffdfa] px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">
                 {scannerStatus}
                 {!cameraSupported ? <span className="mt-1 block text-[var(--lp-muted)]">Is browser me camera QR scan support available nahi hai. Pasted payload use karo.</span> : null}
+                {cameraSupported && !cameraActive ? <span className="mt-1 block text-[var(--lp-muted)]">Start camera scanner dabate hi live preview khul jayega.</span> : null}
               </div>
 
               <textarea
@@ -477,6 +482,11 @@ export function StudentJoinLibraryManager() {
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
                     {(qrPreview.subdomain || "library")}.nextlib.in
                   </p>
+                </div>
+              ) : null}
+              {!qrPreview && qrPayload.trim().length >= 20 && !resolvingQr ? (
+                <div className="rounded-2xl border border-dashed border-[var(--lp-border)] bg-[#fffdfa] px-4 py-3 text-sm text-[var(--lp-muted)]">
+                  QR payload ready hai. Pehle verify karo, phir library preview card ke saath request bhejo.
                 </div>
               ) : null}
               <button

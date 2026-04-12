@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch, getApiBaseUrl } from "../lib/api";
+import { apiFetch, getApiBaseUrl, getAuthHeaders } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
 
 type JoinRequestsResponse = {
@@ -63,14 +63,18 @@ export function OwnerAdmissionsManager() {
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
 
   async function load() {
-    const [joinResponse, seatResponse, floorResponse] = await Promise.all([
-      apiFetch<JoinRequestsResponse>("/owner/join-requests"),
-      apiFetch<{ success: boolean; data: OwnerSeatOption[] }>("/owner/seats"),
-      apiFetch<{ success: boolean; data: OwnerFloorOption[] }>("/owner/floors"),
-    ]);
-    setRequests(joinResponse.data);
-    setSeats(seatResponse.data);
-    setFloors(floorResponse.data);
+    try {
+      const [joinResponse, seatResponse, floorResponse] = await Promise.all([
+        apiFetch<JoinRequestsResponse>("/owner/join-requests"),
+        apiFetch<{ success: boolean; data: OwnerSeatOption[] }>("/owner/seats"),
+        apiFetch<{ success: boolean; data: OwnerFloorOption[] }>("/owner/floors"),
+      ]);
+      setRequests(joinResponse.data);
+      setSeats(seatResponse.data);
+      setFloors(floorResponse.data);
+    } catch (error) {
+      setResultMessage(error instanceof Error ? error.message : "Admissions queue abhi load nahi ho paayi.");
+    }
   }
 
   useEffect(() => {
@@ -111,48 +115,71 @@ export function OwnerAdmissionsManager() {
   }
 
   async function approve(requestId: string) {
-    const today = new Date();
-    const end = new Date(today);
-    end.setMonth(end.getMonth() + 1);
-    const response = await apiFetch<{ success: boolean; data: { paymentId: string; assignmentId: string } }>(`/owner/join-requests/${requestId}/approve`, {
-      method: "POST",
-      body: JSON.stringify({
-        seatNumber: seatNumbers[requestId] || "",
-        planName: "Monthly Plan",
-        planPrice: Number(planPrices[requestId] || "999"),
-        durationMonths: 1,
-        startsAt: today.toISOString(),
-        endsAt: end.toISOString(),
-        paymentStatus: "DUE",
-      }),
-    });
-    const receiptResponse = await apiFetch<{ success: boolean; data: OwnerReceipt }>(`/owner/payments/${response.data.paymentId}/receipt`);
-    setReceipt(receiptResponse.data);
-    setReceiptPaymentId(response.data.paymentId);
-    setResultMessage(`Admission approved. Assignment ${response.data.assignmentId} created and payment ${response.data.paymentId} added to ledger.`);
-    await load();
+    try {
+      const today = new Date();
+      const end = new Date(today);
+      end.setMonth(end.getMonth() + 1);
+      const response = await apiFetch<{ success: boolean; data: { paymentId: string; assignmentId: string } }>(`/owner/join-requests/${requestId}/approve`, {
+        method: "POST",
+        body: JSON.stringify({
+          seatNumber: seatNumbers[requestId] || "",
+          planName: "Monthly Plan",
+          planPrice: Number(planPrices[requestId] || "999"),
+          durationMonths: 1,
+          startsAt: today.toISOString(),
+          endsAt: end.toISOString(),
+          paymentStatus: "DUE",
+        }),
+      });
+      const receiptResponse = await apiFetch<{ success: boolean; data: OwnerReceipt }>(`/owner/payments/${response.data.paymentId}/receipt`);
+      setReceipt(receiptResponse.data);
+      setReceiptPaymentId(response.data.paymentId);
+      setResultMessage(`Admission approved. Assignment ${response.data.assignmentId} created and payment ${response.data.paymentId} added to ledger.`);
+      await load();
+    } catch (error) {
+      setResultMessage(error instanceof Error ? error.message : "Admission approve nahi ho paaya.");
+    }
   }
 
   async function downloadReceipt() {
     if (!receiptPaymentId) return;
-    const download = await fetch(`${getApiBaseUrl()}/v1/owner/payments/${receiptPaymentId}/receipt/export`, {
-      credentials: "include",
-    });
-    const blob = await download.blob();
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `${receipt?.receiptNo ?? "receipt"}.pdf`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    try {
+      const download = await fetch(`${getApiBaseUrl()}/v1/owner/payments/${receiptPaymentId}/receipt/export`, {
+        method: "GET",
+        credentials: "include",
+        headers: getAuthHeaders("GET"),
+      });
+      if (!download.ok) {
+        throw new Error("Receipt export abhi download nahi ho paaya.");
+      }
+      const blob = await download.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${receipt?.receiptNo ?? "receipt"}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setResultMessage(error instanceof Error ? error.message : "Receipt export abhi download nahi ho paaya.");
+    }
   }
 
   async function reject(requestId: string) {
-    await apiFetch(`/owner/join-requests/${requestId}/reject`, {
-      method: "POST",
-      body: JSON.stringify({ reason: "Not approved by library desk" }),
-    });
-    await load();
+    try {
+      await apiFetch(`/owner/join-requests/${requestId}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ reason: "Not approved by library desk" }),
+      });
+      setResultMessage("Admission request rejected.");
+      await load();
+    } catch (error) {
+      setResultMessage(error instanceof Error ? error.message : "Admission reject nahi ho paaya.");
+    }
+  }
+
+  function handleFloorChange(requestId: string, floorId: string) {
+    setSelectedFloorIds((current) => ({ ...current, [requestId]: floorId }));
+    setSeatNumbers((current) => ({ ...current, [requestId]: "" }));
   }
 
   return (
@@ -264,9 +291,10 @@ export function OwnerAdmissionsManager() {
                   <div className="grid gap-3 sm:grid-cols-[180px_1fr_140px_auto_auto]">
                     <select
                       value={selectedFloorIds[request.id] ?? suggestedFloorId(request.id)}
-                      onChange={(event) => setSelectedFloorIds((current) => ({ ...current, [request.id]: event.target.value }))}
+                      onChange={(event) => handleFloorChange(request.id, event.target.value)}
                       className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
                     >
+                      {floors.length === 0 ? <option value="">Create a floor first</option> : null}
                       {floors.map((floor) => (
                         <option key={floor.id} value={floor.id}>
                           Floor {floor.floor_number} - {floor.name}
@@ -277,8 +305,9 @@ export function OwnerAdmissionsManager() {
                       value={seatNumbers[request.id] ?? ""}
                       onChange={(event) => setSeatNumbers((current) => ({ ...current, [request.id]: event.target.value }))}
                       className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+                      disabled={floors.length === 0}
                     >
-                      <option value="">Choose seat</option>
+                      <option value="">{floors.length === 0 ? "Create floor and seats first" : "Choose seat"}</option>
                       {getAvailableSeats(request.id).map((seat) => (
                         <option key={seat.id} value={seat.seat_number}>
                           {seat.seat_number} - {seat.floor_name ?? "No floor"}{seat.section_name ? ` - ${seat.section_name}` : ""}{seat.status === "RESERVED" ? " - Reserved" : ""}
@@ -298,6 +327,12 @@ export function OwnerAdmissionsManager() {
                       Reject
                     </button>
                   </div>
+                  {floors.length === 0 ? (
+                    <p className="text-sm text-[var(--lp-muted)]">Seat allotment ke liye pehle Seat Control me kam se kam ek floor aur seat bank create hona chahiye.</p>
+                  ) : null}
+                  {floors.length > 0 && getAvailableSeats(request.id).length === 0 ? (
+                    <p className="text-sm text-[var(--lp-muted)]">Is floor par abhi koi available seat nahi dikh rahi. Dusra floor select karo ya Seat Control me seat free/create karo.</p>
+                  ) : null}
                 </div>
               ) : null}
             </div>

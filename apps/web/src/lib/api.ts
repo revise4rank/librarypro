@@ -94,6 +94,23 @@ export function getApiBaseUrl() {
   return raw.endsWith("/v1") ? raw.slice(0, -3) : raw;
 }
 
+export function getAuthHeaders(method = "GET", initHeaders?: HeadersInit) {
+  const headers = new Headers(initHeaders ?? {});
+  const normalizedMethod = method.toUpperCase();
+  const session = readSession();
+  const csrfToken = session?.csrfToken ?? readCookie("lp_csrf");
+
+  if (session?.accessToken) {
+    headers.set("Authorization", `Bearer ${session.accessToken}`);
+  }
+
+  if (!["GET", "HEAD", "OPTIONS"].includes(normalizedMethod) && csrfToken) {
+    headers.set("X-CSRF-Token", csrfToken);
+  }
+
+  return headers;
+}
+
 export function saveSession(session: SessionState) {
   const payload = JSON.stringify({
     user: session.user,
@@ -191,21 +208,10 @@ export async function hydrateSessionFromServer() {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit, auth = true): Promise<T> {
-  const headers = new Headers(init?.headers ?? {});
   const method = (init?.method ?? "GET").toUpperCase();
+  const headers = auth ? getAuthHeaders(method, init?.headers) : new Headers(init?.headers ?? {});
   if (!(init?.body instanceof FormData)) {
     headers.set("Content-Type", headers.get("Content-Type") ?? "application/json");
-  }
-
-  if (auth) {
-    const session = readSession();
-    const csrfToken = session?.csrfToken ?? readCookie("lp_csrf");
-    if (session?.accessToken) {
-      headers.set("Authorization", `Bearer ${session.accessToken}`);
-    }
-    if (!["GET", "HEAD", "OPTIONS"].includes(method) && csrfToken) {
-      headers.set("X-CSRF-Token", csrfToken);
-    }
   }
 
   let response: Response;

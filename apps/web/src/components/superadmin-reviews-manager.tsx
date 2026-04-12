@@ -65,7 +65,7 @@ export function SuperadminReviewsManager() {
               <div>
                 <p className="text-base font-bold text-[var(--lp-text)]">{row.library_name}</p>
                 <p className="text-sm text-[var(--lp-muted)]">
-                  Review by {row.student_name} · Reported by {row.reporter_name}
+                  Review by {row.student_name} {"\u00b7"} Reported by {row.reporter_name}
                 </p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">{row.status}</span>
