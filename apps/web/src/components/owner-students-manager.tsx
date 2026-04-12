@@ -96,6 +96,7 @@ export function OwnerStudentsManager() {
   const [formOpen, setFormOpen] = useState(false);
   const [rosterOpen, setRosterOpen] = useState(true);
   const [productivityOpen, setProductivityOpen] = useState(true);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
 
   async function loadStudents() {
     setLoading(true);
@@ -203,6 +204,7 @@ export function OwnerStudentsManager() {
   function loadIntoForm(student: StudentRow) {
     setEditingId(student.assignment_id);
     setFormOpen(true);
+    setSelectedAssignmentId(student.assignment_id);
     setForm({
       fullName: student.student_name,
       fatherName: student.father_name ?? "",
@@ -271,6 +273,7 @@ export function OwnerStudentsManager() {
     },
     { total: 0, paid: 0, due: 0, seated: 0 },
   );
+  const selectedStudent = rows.find((row) => row.assignment_id === selectedAssignmentId) ?? null;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
@@ -358,6 +361,64 @@ export function OwnerStudentsManager() {
       </DashboardCard>
 
       <div className="grid gap-6">
+        {selectedStudent ? (
+          <DashboardCard title="Selected student" subtitle="Use this compact card before editing or coaching">
+            <div className="grid gap-4">
+              <div className="flex flex-wrap items-start justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                <div>
+                  <p className="text-lg font-black text-slate-950">{selectedStudent.student_name}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {selectedStudent.student_phone ?? selectedStudent.student_email ?? "-"} | Seat {selectedStudent.seat_number ?? "-"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAssignmentId(null)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="grid gap-3 md:grid-cols-4">
+                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Plan</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{selectedStudent.plan_name}</p>
+                </div>
+                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Validity</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{selectedStudent.ends_at}</p>
+                </div>
+                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Payment</p>
+                  <p className={`mt-2 text-sm font-black ${selectedStudent.payment_status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>
+                    {selectedStudent.payment_status}
+                  </p>
+                </div>
+                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Due</p>
+                  <p className="mt-2 text-sm font-black text-slate-950">Rs. {selectedStudent.due_amount}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => loadIntoForm(selectedStudent)}
+                  className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+                >
+                  Edit selected student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void loadProductivity(selectedStudent.student_user_id, selectedStudent.student_name)}
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700"
+                >
+                  Open productivity
+                </button>
+              </div>
+            </div>
+          </DashboardCard>
+        ) : null}
+
         {credentialSlip ? (
           <DashboardCard title="Printable credential slip" subtitle="Give this to the student for first login and QR entry">
             <div className="rounded-[1.5rem] border border-dashed border-[var(--lp-border)] bg-white p-5">
@@ -479,68 +540,101 @@ export function OwnerStudentsManager() {
                       <span>Due</span>
                     </div>
                     {rows.map((student) => (
-                      <div key={student.assignment_id} className="border-t border-slate-200 bg-white px-4 py-4 text-sm">
+                      <button
+                        key={student.assignment_id}
+                        type="button"
+                        onClick={() => setSelectedAssignmentId(student.assignment_id)}
+                        className={`block w-full border-t px-4 py-4 text-left text-sm ${
+                          selectedAssignmentId === student.assignment_id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white"
+                        }`}
+                      >
                         <div className="grid gap-3 md:grid-cols-[1.3fr_0.7fr_1fr_0.85fr_0.75fr_0.8fr]">
                           <div className="min-w-0">
-                            <p className="font-bold text-slate-950">{student.student_name}</p>
-                            <p className="text-slate-500">{student.student_phone ?? student.student_email ?? "-"}</p>
-                            <p className="text-xs text-[var(--lp-primary)]">
+                            <p className={`font-bold ${selectedAssignmentId === student.assignment_id ? "text-white" : "text-slate-950"}`}>{student.student_name}</p>
+                            <p className={selectedAssignmentId === student.assignment_id ? "text-slate-300" : "text-slate-500"}>{student.student_phone ?? student.student_email ?? "-"}</p>
+                            <p className={`text-xs ${selectedAssignmentId === student.assignment_id ? "text-cyan-200" : "text-[var(--lp-primary)]"}`}>
                               Login ID: {student.student_code ?? student.student_phone ?? student.student_email ?? "-"}
                             </p>
-                            <p className="text-xs text-slate-400">Father: {student.father_name ?? "-"}</p>
+                            <p className={`text-xs ${selectedAssignmentId === student.assignment_id ? "text-slate-400" : "text-slate-400"}`}>Father: {student.father_name ?? "-"}</p>
                             <div className="mt-3 flex gap-2">
-                              <button type="button" onClick={() => loadIntoForm(student)} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  loadIntoForm(student);
+                                }}
+                                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                  selectedAssignmentId === student.assignment_id ? "bg-white/10 text-white" : "bg-slate-100 text-slate-700"
+                                }`}
+                              >
                                 Edit
                               </button>
                               <button
                                 type="button"
-                                onClick={() => void loadProductivity(student.student_user_id, student.student_name)}
-                                className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-700"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void loadProductivity(student.student_user_id, student.student_name);
+                                }}
+                                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                  selectedAssignmentId === student.assignment_id ? "bg-cyan-500/20 text-cyan-100" : "bg-cyan-100 text-cyan-700"
+                                }`}
                               >
                                 Focus
                               </button>
                               <Link
                                 href={`/owner/students/${student.student_user_id}?name=${encodeURIComponent(student.student_name)}`}
-                                className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700"
+                                onClick={(event) => event.stopPropagation()}
+                                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                  selectedAssignmentId === student.assignment_id ? "bg-indigo-500/20 text-indigo-100" : "bg-indigo-100 text-indigo-700"
+                                }`}
                               >
                                 Open page
                               </Link>
                               <button
                                 type="button"
-                                onClick={() => void onDelete(student.assignment_id)}
-                                className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void onDelete(student.assignment_id);
+                                }}
+                                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                  selectedAssignmentId === student.assignment_id ? "bg-rose-500/20 text-rose-100" : "bg-rose-100 text-rose-700"
+                                }`}
                               >
                                 Delete
                               </button>
                             </div>
                           </div>
-                          <span className="font-semibold text-slate-700">
-                            <span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Seat</span>
+                          <span className={`font-semibold ${selectedAssignmentId === student.assignment_id ? "text-white" : "text-slate-700"}`}>
+                            <span className={`mr-2 text-xs font-black uppercase tracking-[0.18em] md:hidden ${selectedAssignmentId === student.assignment_id ? "text-slate-300" : "text-slate-400"}`}>Seat</span>
                             {student.seat_number ?? "-"}
                           </span>
-                          <span className="font-semibold text-slate-700">
-                            <span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Plan</span>
+                          <span className={`font-semibold ${selectedAssignmentId === student.assignment_id ? "text-white" : "text-slate-700"}`}>
+                            <span className={`mr-2 text-xs font-black uppercase tracking-[0.18em] md:hidden ${selectedAssignmentId === student.assignment_id ? "text-slate-300" : "text-slate-400"}`}>Plan</span>
                             {student.plan_name}
                           </span>
-                          <span className="font-semibold text-slate-700">
-                            <span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Validity</span>
+                          <span className={`font-semibold ${selectedAssignmentId === student.assignment_id ? "text-white" : "text-slate-700"}`}>
+                            <span className={`mr-2 text-xs font-black uppercase tracking-[0.18em] md:hidden ${selectedAssignmentId === student.assignment_id ? "text-slate-300" : "text-slate-400"}`}>Validity</span>
                             {student.ends_at}
                             <br />
-                            <span className="text-xs text-slate-400">Due {student.next_due_date ?? "-"}</span>
+                            <span className={`text-xs ${selectedAssignmentId === student.assignment_id ? "text-slate-300" : "text-slate-400"}`}>Due {student.next_due_date ?? "-"}</span>
                           </span>
                           <span
                             className={`rounded-full px-3 py-2 text-center text-xs font-black ${
-                              student.payment_status === "PAID" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                              selectedAssignmentId === student.assignment_id
+                                ? "bg-white/10 text-white"
+                                : student.payment_status === "PAID"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-700"
                             }`}
                           >
                             {student.payment_status}
                           </span>
-                          <span className="font-bold text-slate-950">
-                            <span className="mr-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400 md:hidden">Due</span>
+                          <span className={`font-bold ${selectedAssignmentId === student.assignment_id ? "text-white" : "text-slate-950"}`}>
+                            <span className={`mr-2 text-xs font-black uppercase tracking-[0.18em] md:hidden ${selectedAssignmentId === student.assignment_id ? "text-slate-300" : "text-slate-400"}`}>Due</span>
                             Rs. {student.due_amount}
                           </span>
                         </div>
-                      </div>
+                      </button>
                     ))}
                     {rows.length === 0 ? <div className="border-t border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">No active students found.</div> : null}
                   </div>

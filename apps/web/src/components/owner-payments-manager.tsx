@@ -36,6 +36,7 @@ export function OwnerPaymentsManager() {
   const [isOffline, setIsOffline] = useState(false);
   const [queuedPayments, setQueuedPayments] = useState(0);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [form, setForm] = useState({
     studentName: "",
     amount: "",
@@ -205,6 +206,7 @@ export function OwnerPaymentsManager() {
   function loadIntoForm(payment: PaymentRow) {
     setEditingId(payment.id);
     setComposerOpen(true);
+    setSelectedPaymentId(payment.id);
     setForm({
       studentName: payment.student_name,
       amount: payment.amount,
@@ -229,6 +231,7 @@ export function OwnerPaymentsManager() {
     },
     { total: 0, paid: 0, due: 0, pending: 0 },
   );
+  const selectedPayment = rows.find((row) => row.id === selectedPaymentId) ?? null;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
@@ -332,27 +335,109 @@ export function OwnerPaymentsManager() {
         </div>
       </DashboardCard>
 
-      <DashboardCard title="Payment ledger" subtitle="Recent collection activity">
-        {loading ? <p className="text-sm text-slate-500">Loading payments...</p> : null}
-        {!loading ? (
-          <div className="space-y-3">
-            {rows.map((payment) => (
-              <div key={payment.id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid gap-6">
+        {selectedPayment ? (
+          <DashboardCard title="Selected payment" subtitle="Quick detail before edit or follow-up">
+            <div className="grid gap-4">
+              <div className="flex flex-wrap items-start justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-4">
                 <div>
-                  <p className="font-bold text-slate-950">{payment.student_name}</p>
-                  <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.due_date ?? payment.created_at).slice(0, 10)}</p>
-                  <button type="button" onClick={() => loadIntoForm(payment)} className="mt-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Edit</button>
+                  <p className="text-lg font-black text-slate-950">{selectedPayment.student_name}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {selectedPayment.method} | {(selectedPayment.paid_at ?? selectedPayment.due_date ?? selectedPayment.created_at).slice(0, 10)}
+                  </p>
                 </div>
-                <div className="sm:text-right">
-                  <p className="font-black text-slate-950">Rs. {payment.amount}</p>
-                  <p className={`text-xs font-black ${payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{payment.status}</p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPaymentId(null)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="grid gap-3 md:grid-cols-4">
+                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Amount</p>
+                  <p className="mt-2 text-lg font-black text-slate-950">Rs. {Number(selectedPayment.amount).toLocaleString("en-IN")}</p>
+                </div>
+                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
+                  <p className={`mt-2 text-lg font-black ${selectedPayment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>
+                    {selectedPayment.status}
+                  </p>
+                </div>
+                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Reference</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{selectedPayment.reference_no ?? "-"}</p>
+                </div>
+                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Due date</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{selectedPayment.due_date?.slice(0, 10) ?? "-"}</p>
                 </div>
               </div>
-            ))}
-            {rows.length === 0 ? <p className="text-sm text-slate-500">No payments found yet.</p> : null}
-          </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => loadIntoForm(selectedPayment)}
+                  className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+                >
+                  Edit selected payment
+                </button>
+              </div>
+            </div>
+          </DashboardCard>
         ) : null}
-      </DashboardCard>
+
+        <DashboardCard title="Payment ledger" subtitle="Recent collection activity">
+          {loading ? <p className="text-sm text-slate-500">Loading payments...</p> : null}
+          {!loading ? (
+            <div className="space-y-3">
+              {rows.map((payment) => (
+                <button
+                  key={payment.id}
+                  type="button"
+                  onClick={() => setSelectedPaymentId(payment.id)}
+                  className={`flex w-full flex-col gap-3 rounded-[1.25rem] border px-4 py-4 text-left transition sm:flex-row sm:items-center sm:justify-between ${
+                    selectedPaymentId === payment.id
+                      ? "border-slate-950 bg-slate-950 text-white"
+                      : "border-slate-200 bg-white"
+                  }`}
+                >
+                  <div>
+                    <p className={`font-bold ${selectedPaymentId === payment.id ? "text-white" : "text-slate-950"}`}>{payment.student_name}</p>
+                    <p className={`text-sm ${selectedPaymentId === payment.id ? "text-slate-300" : "text-slate-500"}`}>
+                      {payment.method} | {(payment.paid_at ?? payment.due_date ?? payment.created_at).slice(0, 10)}
+                    </p>
+                    <span
+                      className={`mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${
+                        selectedPaymentId === payment.id ? "bg-white/10 text-white" : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      Select
+                    </span>
+                  </div>
+                  <div className="sm:text-right">
+                    <p className={`font-black ${selectedPaymentId === payment.id ? "text-white" : "text-slate-950"}`}>
+                      Rs. {payment.amount}
+                    </p>
+                    <p
+                      className={`text-xs font-black ${
+                        selectedPaymentId === payment.id
+                          ? "text-slate-200"
+                          : payment.status === "PAID"
+                            ? "text-emerald-700"
+                            : "text-amber-700"
+                      }`}
+                    >
+                      {payment.status}
+                    </p>
+                  </div>
+                </button>
+              ))}
+              {rows.length === 0 ? <p className="text-sm text-slate-500">No payments found yet.</p> : null}
+            </div>
+          ) : null}
+        </DashboardCard>
+      </div>
     </div>
   );
 }

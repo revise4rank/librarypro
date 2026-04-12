@@ -102,6 +102,7 @@ export function OwnerReportsManager() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [exportsOpen, setExportsOpen] = useState(false);
   const [previewsOpen, setPreviewsOpen] = useState(false);
+  const [previewTab, setPreviewTab] = useState<"students" | "payments" | "expenses" | "attendance">("students");
 
   async function loadReports(nextFrom = fromDate, nextTo = toDate) {
     setLoading(true);
@@ -376,8 +377,8 @@ export function OwnerReportsManager() {
         </DashboardCard>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <DashboardCard title="Student report preview" subtitle="Roster, dues, and validity at a glance">
+      <section className="grid gap-6">
+        <DashboardCard title="Preview workspace" subtitle="Open one operational slice at a time instead of reading everything together">
           <div className="grid gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
@@ -392,55 +393,84 @@ export function OwnerReportsManager() {
                 {previewsOpen ? "Hide previews" : "Show previews"}
               </button>
             </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                ["students", "Students"],
+                ["payments", "Payments"],
+                ["expenses", "Expenses"],
+                ["attendance", "Attendance"],
+              ].map(([tab, label]) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setPreviewTab(tab as "students" | "payments" | "expenses" | "attendance")}
+                  className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                    previewTab === tab ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             {previewsOpen ? (
               <div className="space-y-3">
-                {reports.students.slice(0, 8).map((row) => (
-                  <div key={row.assignment_id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-bold text-slate-950">{row.student_name}</p>
-                      <p className="text-sm text-slate-500">
-                        {row.student_code ?? "-"} | Seat {row.seat_number ?? "-"}
-                      </p>
-                    </div>
-                    <div className="sm:text-right">
-                      <p className="font-black text-slate-950">Rs. {Number(row.due_amount).toLocaleString("en-IN")}</p>
-                      <p className={`text-xs font-black ${row.payment_status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{row.payment_status}</p>
-                    </div>
-                  </div>
-                ))}
+                {previewTab === "students"
+                  ? reports.students.slice(0, 8).map((row) => (
+                      <div key={row.assignment_id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-bold text-slate-950">{row.student_name}</p>
+                          <p className="text-sm text-slate-500">
+                            {row.student_code ?? "-"} | Seat {row.seat_number ?? "-"}
+                          </p>
+                        </div>
+                        <div className="sm:text-right">
+                          <p className="font-black text-slate-950">Rs. {Number(row.due_amount).toLocaleString("en-IN")}</p>
+                          <p className={`text-xs font-black ${row.payment_status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{row.payment_status}</p>
+                        </div>
+                      </div>
+                    ))
+                  : null}
+                {previewTab === "payments"
+                  ? reports.payments.slice(0, 8).map((row) => (
+                      <div key={row.id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-bold text-slate-950">{row.student_name}</p>
+                          <p className="text-sm text-slate-500">{row.method} | {(row.paid_at ?? row.created_at).slice(0, 10)}</p>
+                        </div>
+                        <div className="sm:text-right">
+                          <p className="font-black text-slate-950">Rs. {Number(row.amount).toLocaleString("en-IN")}</p>
+                          <p className={`text-xs font-black ${row.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{row.status}</p>
+                        </div>
+                      </div>
+                    ))
+                  : null}
+                {previewTab === "expenses"
+                  ? reports.expenses.slice(0, 8).map((row) => (
+                      <div key={row.id} className="rounded-[1.25rem] border border-rose-200 bg-rose-50 px-4 py-4">
+                        <p className="font-bold text-slate-950">{row.title}</p>
+                        <p className="mt-1 text-sm text-slate-500">{row.category} | {row.spent_on.slice(0, 10)}</p>
+                        <p className="mt-2 text-sm font-black text-rose-700">Rs. {Number(row.amount).toLocaleString("en-IN")}</p>
+                      </div>
+                    ))
+                  : null}
+                {previewTab === "attendance"
+                  ? reports.checkins.slice(0, 8).map((row) => (
+                      <div key={row.id} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="font-bold text-slate-950">{row.student_name}</p>
+                            <p className="text-sm text-slate-500">Seat {row.seat_number ?? "-"} | {row.checked_in_at.slice(0, 16).replace("T", " ")}</p>
+                          </div>
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">{row.status}</p>
+                        </div>
+                      </div>
+                    ))
+                  : null}
               </div>
             ) : (
               <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Preview rows hidden hain. Review ke time open karo.</div>
             )}
           </div>
-        </DashboardCard>
-
-        <DashboardCard title="Operational preview" subtitle="Payments, expenses, and attendance in one owner view">
-          {previewsOpen ? <div className="space-y-3">
-            {reports.payments.slice(0, 4).map((row) => (
-              <div key={row.id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-bold text-slate-950">{row.student_name}</p>
-                  <p className="text-sm text-slate-500">{row.method} | {(row.paid_at ?? row.created_at).slice(0, 10)}</p>
-                </div>
-                <div className="sm:text-right">
-                  <p className="font-black text-slate-950">Rs. {Number(row.amount).toLocaleString("en-IN")}</p>
-                  <p className={`text-xs font-black ${row.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{row.status}</p>
-                </div>
-              </div>
-            ))}
-            {reports.expenses.slice(0, 3).map((row) => (
-              <div key={row.id} className="rounded-[1.25rem] border border-rose-200 bg-rose-50 px-4 py-4">
-                <p className="font-bold text-slate-950">{row.title}</p>
-                <p className="mt-1 text-sm text-slate-500">{row.category} | {row.spent_on.slice(0, 10)}</p>
-                <p className="mt-2 text-sm font-black text-rose-700">Rs. {Number(row.amount).toLocaleString("en-IN")}</p>
-              </div>
-            ))}
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Attendance signal</p>
-              <p className="mt-2 text-lg font-black text-slate-950">{reports.metrics.checkins} check-ins in selected range</p>
-            </div>
-          </div> : <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Operational previews hidden hain.</div>}
         </DashboardCard>
       </section>
     </div>
