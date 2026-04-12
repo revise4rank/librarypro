@@ -39,6 +39,7 @@ function getTheme(code: string, metadata?: { tier?: string; icon?: string; famil
 export function StudentRewardsManager() {
   const [data, setData] = useState<AnalyticsResponse["data"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showTimeline, setShowTimeline] = useState(false);
 
   useEffect(() => {
     apiFetch<AnalyticsResponse>("/student/analytics")
@@ -80,27 +81,42 @@ export function StudentRewardsManager() {
 
       <DashboardCard title="Badge timeline" subtitle="A visible reward history helps students stay attached to the app">
         <div className="grid gap-4">
-          {data.badges.map((badge, index) => {
-            const theme = getTheme(badge.badgeCode, badge.metadata);
-            return (
-              <div key={badge.badgeCode} className={`rounded-[1.5rem] border p-5 ${theme.card}`}>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Milestone {String(index + 1).padStart(2, "0")}</p>
-                    <p className="mt-2 text-2xl font-black text-slate-950">{badge.badgeLabel}</p>
-                    <p className={`mt-2 text-xs font-black uppercase tracking-[0.22em] ${theme.text}`}>{theme.icon} | {theme.tier}</p>
+          <button
+            type="button"
+            onClick={() => setShowTimeline((current) => !current)}
+            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+          >
+            {showTimeline ? "Hide badge timeline" : `Show badge timeline (${data.badges.length})`}
+          </button>
+          {showTimeline ? (
+            <>
+              {data.badges.map((badge, index) => {
+                const theme = getTheme(badge.badgeCode, badge.metadata);
+                return (
+                  <div key={badge.badgeCode} className={`rounded-[1.5rem] border p-5 ${theme.card}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Milestone {String(index + 1).padStart(2, "0")}</p>
+                        <p className="mt-2 text-2xl font-black text-slate-950">{badge.badgeLabel}</p>
+                        <p className={`mt-2 text-xs font-black uppercase tracking-[0.22em] ${theme.text}`}>{theme.icon} | {theme.tier}</p>
+                      </div>
+                      <div className="rounded-full bg-white/80 px-4 py-2 text-xs font-black text-slate-700">
+                        {badge.awardedAt.slice(0, 10)}
+                      </div>
+                    </div>
+                    <p className="mt-4 text-sm leading-7 text-slate-600">
+                      {badge.metadata?.family ?? "CONSISTENCY"} milestone unlocked. Keep stacking streaks, attendance, and deep work blocks.
+                    </p>
                   </div>
-                  <div className="rounded-full bg-white/80 px-4 py-2 text-xs font-black text-slate-700">
-                    {badge.awardedAt.slice(0, 10)}
-                  </div>
-                </div>
-                <p className="mt-4 text-sm leading-7 text-slate-600">
-                  {badge.metadata?.family ?? "CONSISTENCY"} milestone unlocked. Keep stacking streaks, attendance, and deep work blocks.
-                </p>
-              </div>
-            );
-          })}
-          {data.badges.length === 0 ? <p className="text-sm text-slate-500">No badges yet. Start with a short streak and one focused week.</p> : null}
+                );
+              })}
+              {data.badges.length === 0 ? <p className="text-sm text-slate-500">No badges yet. Start with a short streak and one focused week.</p> : null}
+            </>
+          ) : (
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <p className="text-sm text-slate-600">{data.badges.length > 0 ? `${data.badges.length} badges unlocked so far.` : "No badges yet. Start with a short streak and one focused week."}</p>
+            </div>
+          )}
         </div>
       </DashboardCard>
     </div>

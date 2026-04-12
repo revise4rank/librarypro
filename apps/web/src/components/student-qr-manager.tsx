@@ -57,6 +57,8 @@ export function StudentQrManager() {
   const [cameraActive, setCameraActive] = useState(false);
   const [scannerStatus, setScannerStatus] = useState("Camera off");
   const [manualQrPayload, setManualQrPayload] = useState("");
+  const [showManualFallback, setShowManualFallback] = useState(false);
+  const [showPassDetails, setShowPassDetails] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -309,23 +311,32 @@ export function StudentQrManager() {
             {scannerStatus}
           </div>
 
-          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Fallback scanner</p>
-            <textarea
-              value={manualQrPayload}
-              onChange={(event) => setManualQrPayload(event.target.value)}
-              placeholder="Agar camera support na ho to yahan scanned QR payload paste karo."
-              className="mt-3 min-h-28 w-full rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => void runAction(scanMode, manualQrPayload.trim())}
-              disabled={!manualQrPayload.trim() || submitting !== null}
-              className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
-            >
-              Run {scanMode === "checkin" ? "check-in" : "check-out"} from pasted QR
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowManualFallback((current) => !current)}
+            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+          >
+            {showManualFallback ? "Hide manual fallback" : "Use manual fallback scanner"}
+          </button>
+          {showManualFallback ? (
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Fallback scanner</p>
+              <textarea
+                value={manualQrPayload}
+                onChange={(event) => setManualQrPayload(event.target.value)}
+                placeholder="Agar camera support na ho to yahan scanned QR payload paste karo."
+                className="mt-3 min-h-28 w-full rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => void runAction(scanMode, manualQrPayload.trim())}
+                disabled={!manualQrPayload.trim() || submitting !== null}
+                className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
+              >
+                Run {scanMode === "checkin" ? "check-in" : "check-out"} from pasted QR
+              </button>
+            </div>
+          ) : null}
         </div>
       </DashboardCard>
 
@@ -342,26 +353,36 @@ export function StudentQrManager() {
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Current seat</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{data?.seatNumber ?? "-"}</p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">QR key</p>
-              <p className="mt-3 text-sm font-black text-slate-950">{data?.qrKeyId ?? "-"}</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowPassDetails((current) => !current)}
+              className="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-left"
+            >
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Pass details</p>
+              <p className="mt-3 text-base font-black text-slate-950">{showPassDetails ? "Hide technical pass info" : "Show technical pass info"}</p>
+            </button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Valid from</p>
-              <p className="mt-3 text-sm font-semibold text-slate-800">
-                {data?.validFrom ? new Date(data.validFrom).toLocaleString() : "-"}
-              </p>
+          {showPassDetails ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">QR key</p>
+                <p className="mt-3 text-sm font-black text-slate-950">{data?.qrKeyId ?? "-"}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Valid from</p>
+                <p className="mt-3 text-sm font-semibold text-slate-800">
+                  {data?.validFrom ? new Date(data.validFrom).toLocaleString() : "-"}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 md:col-span-2">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Valid until</p>
+                <p className="mt-3 text-sm font-semibold text-slate-800">
+                  {data?.validUntil ? new Date(data.validUntil).toLocaleString() : "-"}
+                </p>
+              </div>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Valid until</p>
-              <p className="mt-3 text-sm font-semibold text-slate-800">
-                {data?.validUntil ? new Date(data.validUntil).toLocaleString() : "-"}
-              </p>
-            </div>
-          </div>
+          ) : null}
 
           <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
             Ab student ko apna QR dikhane ki zarurat nahi hai. Library apna QR display karegi, aur student app camera se usko scan karke direct check-in/check-out karega.

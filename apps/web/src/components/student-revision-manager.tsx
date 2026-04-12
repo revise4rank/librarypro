@@ -55,6 +55,12 @@ export function StudentRevisionManager() {
   });
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [showManualReminder, setShowManualReminder] = useState(false);
+  const [visibleQueues, setVisibleQueues] = useState<Record<string, boolean>>({
+    overdue: true,
+    pending: true,
+    completed: false,
+  });
 
   async function loadData() {
     try {
@@ -156,38 +162,53 @@ export function StudentRevisionManager() {
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <DashboardCard title="Manual reminder" subtitle="Add custom revisions for weak or high-risk topics">
           <div className="grid gap-4">
-            <select
-              value={manualForm.topicId}
-              onChange={(event) => setManualForm((current) => ({ ...current, topicId: event.target.value }))}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+            <button
+              type="button"
+              onClick={() => setShowManualReminder((current) => !current)}
+              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
             >
-              <option value="">Choose topic</option>
-              {syllabus.subjects.flatMap((subject) =>
-                subject.topics.map((topic) => (
-                  <option key={topic.id} value={topic.id}>
-                    {subject.title} | {topic.title}
-                  </option>
-                )),
-              )}
-            </select>
-            <div className="grid gap-4 md:grid-cols-2">
-              <input
-                type="datetime-local"
-                value={manualForm.scheduledFor}
-                onChange={(event) => setManualForm((current) => ({ ...current, scheduledFor: event.target.value }))}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-              />
-              <input
-                type="number"
-                min="10"
-                value={manualForm.minutesTarget}
-                onChange={(event) => setManualForm((current) => ({ ...current, minutesTarget: event.target.value }))}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-              />
-            </div>
-            <button type="button" onClick={() => void createManualRevision()} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
-              Schedule revision
+              {showManualReminder ? "Hide manual reminder form" : "Add manual reminder"}
             </button>
+            {showManualReminder ? (
+              <>
+                <select
+                  value={manualForm.topicId}
+                  onChange={(event) => setManualForm((current) => ({ ...current, topicId: event.target.value }))}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                >
+                  <option value="">Choose topic</option>
+                  {syllabus.subjects.flatMap((subject) =>
+                    subject.topics.map((topic) => (
+                      <option key={topic.id} value={topic.id}>
+                        {subject.title} | {topic.title}
+                      </option>
+                    )),
+                  )}
+                </select>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <input
+                    type="datetime-local"
+                    value={manualForm.scheduledFor}
+                    onChange={(event) => setManualForm((current) => ({ ...current, scheduledFor: event.target.value }))}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                  />
+                  <input
+                    type="number"
+                    min="10"
+                    value={manualForm.minutesTarget}
+                    onChange={(event) => setManualForm((current) => ({ ...current, minutesTarget: event.target.value }))}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                  />
+                </div>
+                <button type="button" onClick={() => void createManualRevision()} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
+                  Schedule revision
+                </button>
+              </>
+            ) : (
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <p className="text-sm text-slate-600">Weak topic ya exam-near chapter ke liye custom reminder yahin se add karo.</p>
+              </div>
+            )}
           </div>
         </DashboardCard>
 
@@ -217,20 +238,31 @@ export function StudentRevisionManager() {
         ].map((column) => (
           <DashboardCard key={column.key} title={column.title} subtitle="Minimal queue, high signal">
             <div className="grid gap-3">
-              {grouped[column.key].map((item) => (
-                <div key={item.id} className={`rounded-[1.25rem] border p-4 ${column.tone}`}>
-                  <p className="font-black text-slate-950">{item.topicTitle}</p>
-                  <p className="mt-1 text-sm text-slate-500">{item.subjectTitle ?? "General"} | Stage {item.revisionStage}</p>
-                  <p className="mt-2 text-sm text-slate-600">Scheduled {item.scheduledFor.slice(0, 10)}</p>
-                  <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Priority {item.priorityScore}</p>
-                  {item.status !== "COMPLETED" ? (
-                    <button type="button" onClick={() => void completeRevision(item.id)} className="mt-4 rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white">
-                      Mark done
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-              {grouped[column.key].length === 0 ? <p className="text-sm text-slate-500">No items here right now.</p> : null}
+              <button
+                type="button"
+                onClick={() => setVisibleQueues((current) => ({ ...current, [column.key]: !current[column.key] }))}
+                className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              >
+                {visibleQueues[column.key] ? `Hide ${column.title.toLowerCase()}` : `Show ${column.title.toLowerCase()} (${grouped[column.key].length})`}
+              </button>
+              {visibleQueues[column.key] ? (
+                <>
+                  {grouped[column.key].map((item) => (
+                    <div key={item.id} className={`rounded-[1.25rem] border p-4 ${column.tone}`}>
+                      <p className="font-black text-slate-950">{item.topicTitle}</p>
+                      <p className="mt-1 text-sm text-slate-500">{item.subjectTitle ?? "General"} | Stage {item.revisionStage}</p>
+                      <p className="mt-2 text-sm text-slate-600">Scheduled {item.scheduledFor.slice(0, 10)}</p>
+                      <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Priority {item.priorityScore}</p>
+                      {item.status !== "COMPLETED" ? (
+                        <button type="button" onClick={() => void completeRevision(item.id)} className="mt-4 rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white">
+                          Mark done
+                        </button>
+                      ) : null}
+                    </div>
+                  ))}
+                  {grouped[column.key].length === 0 ? <p className="text-sm text-slate-500">No items here right now.</p> : null}
+                </>
+              ) : null}
             </div>
           </DashboardCard>
         ))}

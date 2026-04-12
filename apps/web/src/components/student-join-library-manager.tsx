@@ -84,6 +84,9 @@ export function StudentJoinLibraryManager() {
   const [scannerStatus, setScannerStatus] = useState("Camera off");
   const [qrPreview, setQrPreview] = useState<QrLibraryPreview | null>(null);
   const [resolvingQr, setResolvingQr] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [showReviewPanel, setShowReviewPanel] = useState(false);
+  const [showRequestHistory, setShowRequestHistory] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -290,6 +293,7 @@ export function StudentJoinLibraryManager() {
     );
     setRejoinLibraryId(libraryId);
     setRejoinOptions(response.data);
+    setShowTimeline(true);
   }
 
   async function submitReview() {
@@ -341,7 +345,7 @@ export function StudentJoinLibraryManager() {
           <div className="rounded-2xl border border-[var(--lp-border)] bg-[#fffdfa] p-4 text-sm text-[var(--lp-muted)]">
             {joinMode === "search"
               ? "Kisi bhi active library ko name, city, area ya subdomain se search karo. Result se direct join request bhejo."
-              : "Agar library reception ya gate par QR laga hai, student app ke camera se usko scan karo ya payload paste karo."}
+              : "Library reception ya gate par lage QR ko student app camera se scan karo, verify card dekho, phir request bhejo."}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
@@ -384,7 +388,7 @@ export function StudentJoinLibraryManager() {
                       <div className="space-y-1">
                         <p className="font-bold text-[var(--lp-text)]">{library.name}</p>
                         <p className="text-[var(--lp-muted)]">
-                          {[library.city, library.area].filter(Boolean).join(" · ") || "Location updating"}
+                          {[library.city, library.area].filter(Boolean).join(" | ") || "Location updating"}
                         </p>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">
                           {library.subdomain}.nextlib.in
@@ -469,7 +473,7 @@ export function StudentJoinLibraryManager() {
               {qrPreview ? (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm">
                   <p className="font-bold text-emerald-800">{qrPreview.libraryName}</p>
-                  <p className="mt-1 text-emerald-700">{[qrPreview.city, qrPreview.area].filter(Boolean).join(" · ") || "Library location"}</p>
+                  <p className="mt-1 text-emerald-700">{[qrPreview.city, qrPreview.area].filter(Boolean).join(" | ") || "Library location"}</p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
                     {(qrPreview.subdomain || "library")}.nextlib.in
                   </p>
@@ -500,129 +504,156 @@ export function StudentJoinLibraryManager() {
             </Link>
           </div>
 
-          <div className="grid gap-3">
-            {libraries.map((library) => (
-              <div key={library.library_id} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-4 text-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-bold text-[var(--lp-text)]">{library.library_name}</p>
-                    <p className="text-[var(--lp-muted)]">{library.city} · Joined {new Date(library.joined_at).toLocaleDateString()}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">
-                      {library.status} {library.seat_number ? `· Seat ${library.seat_number}` : ""}
-                    </p>
+          <button
+            type="button"
+            onClick={() => setShowTimeline((current) => !current)}
+            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+          >
+            {showTimeline ? "Hide library timeline" : `Show library timeline (${libraries.length})`}
+          </button>
+          {showTimeline ? (
+            <div className="grid gap-3">
+              {libraries.map((library) => (
+                <div key={library.library_id} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-4 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-[var(--lp-text)]">{library.library_name}</p>
+                      <p className="text-[var(--lp-muted)]">{library.city} | Joined {new Date(library.joined_at).toLocaleDateString()}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">
+                        {library.status} {library.seat_number ? ` | Seat ${library.seat_number}` : ""}
+                      </p>
+                    </div>
+                    {library.status === "LEFT" ? (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void loadRejoinOptions(library.library_id)}
+                          className="rounded-full border border-[var(--lp-border)] bg-[#f4faf5] px-3 py-2 text-xs font-bold text-[var(--lp-primary)]"
+                        >
+                          Seat suggestions
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void rejoinLibrary(library.library_id)}
+                          className="rounded-full border border-[var(--lp-border)] bg-[#f4faf5] px-3 py-2 text-xs font-bold text-[var(--lp-primary)]"
+                        >
+                          Rejoin
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
-                  {library.status === "LEFT" ? (
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void loadRejoinOptions(library.library_id)}
-                        className="rounded-full border border-[var(--lp-border)] bg-[#f4faf5] px-3 py-2 text-xs font-bold text-[var(--lp-primary)]"
-                      >
-                        Seat suggestions
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void rejoinLibrary(library.library_id)}
-                        className="rounded-full border border-[var(--lp-border)] bg-[#f4faf5] px-3 py-2 text-xs font-bold text-[var(--lp-primary)]"
-                      >
-                        Rejoin
-                      </button>
+                  {library.left_at ? <p className="mt-2 text-[var(--lp-muted)]">Exited on {new Date(library.left_at).toLocaleDateString()}</p> : null}
+                  {rejoinLibraryId === library.library_id && rejoinOptions ? (
+                    <div className="mt-3 rounded-2xl bg-[#f9f5ee] p-4 text-sm">
+                      <p className="font-bold text-[var(--lp-text)]">Rejoin suggestions</p>
+                      <p className="mt-1 text-[var(--lp-muted)]">Suggested monthly plan: Rs. {rejoinOptions.suggestedPlanPrice ?? "N/A"}</p>
+                      {reserveMessage ? <p className="mt-2 font-semibold text-emerald-700">{reserveMessage}</p> : null}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {rejoinOptions.availableSeats.map((seat) => (
+                          <div key={seat.seat_number} className="flex items-center gap-2 rounded-full border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-bold text-[var(--lp-primary)]">
+                            <button type="button" onClick={() => setSeatPreference(seat.seat_number)}>
+                              {seat.seat_number}{seat.label ? ` | ${seat.label}` : ""}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void reserveSuggestedSeat(library.library_id, seat.seat_number)}
+                              className="rounded-full bg-[var(--lp-primary)] px-2 py-1 text-[10px] text-white"
+                            >
+                              Reserve 30m
+                            </button>
+                          </div>
+                        ))}
+                        {rejoinOptions.availableSeats.length === 0 ? <span className="text-[var(--lp-muted)]">No seats visible right now.</span> : null}
+                      </div>
                     </div>
                   ) : null}
                 </div>
-                {library.left_at ? <p className="mt-2 text-[var(--lp-muted)]">Exited on {new Date(library.left_at).toLocaleDateString()}</p> : null}
-                {rejoinLibraryId === library.library_id && rejoinOptions ? (
-                  <div className="mt-3 rounded-2xl bg-[#f9f5ee] p-4 text-sm">
-                    <p className="font-bold text-[var(--lp-text)]">Rejoin suggestions</p>
-                    <p className="mt-1 text-[var(--lp-muted)]">Suggested monthly plan: Rs. {rejoinOptions.suggestedPlanPrice ?? "N/A"}</p>
-                    {reserveMessage ? <p className="mt-2 font-semibold text-emerald-700">{reserveMessage}</p> : null}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {rejoinOptions.availableSeats.map((seat) => (
-                        <div key={seat.seat_number} className="flex items-center gap-2 rounded-full border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-bold text-[var(--lp-primary)]">
-                          <button type="button" onClick={() => setSeatPreference(seat.seat_number)}>
-                            {seat.seat_number}{seat.label ? ` · ${seat.label}` : ""}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void reserveSuggestedSeat(library.library_id, seat.seat_number)}
-                            className="rounded-full bg-[var(--lp-primary)] px-2 py-1 text-[10px] text-white"
-                          >
-                            Reserve 30m
-                          </button>
-                        </div>
-                      ))}
-                      {rejoinOptions.availableSeats.length === 0 ? <span className="text-[var(--lp-muted)]">No seats visible right now.</span> : null}
+              ))}
+              {libraries.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No library history yet.</p> : null}
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => setShowReviewPanel((current) => !current)}
+            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+          >
+            {showReviewPanel ? "Hide review form" : "Write marketplace review"}
+          </button>
+          {showReviewPanel ? (
+            <div className="grid gap-3 rounded-2xl border border-[var(--lp-border)] bg-white p-4">
+              <div>
+                <p className="text-sm font-bold text-[var(--lp-text)]">Review a joined library</p>
+                <p className="mt-1 text-sm text-[var(--lp-muted)]">
+                  Review marketplace par tabhi show hoga jab student ne library actually join ki ho.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+                <select
+                  value={selectedReviewLibraryId}
+                  onChange={(event) => setSelectedReviewLibraryId(event.target.value)}
+                  className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+                >
+                  {libraries.map((library) => (
+                    <option key={library.library_id} value={library.library_id}>
+                      {library.library_name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={reviewRating}
+                  onChange={(event) => setReviewRating(event.target.value)}
+                  className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+                >
+                  {[5, 4, 3, 2, 1].map((item) => (
+                    <option key={item} value={String(item)}>
+                      {item}/5
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <textarea
+                value={reviewText}
+                onChange={(event) => setReviewText(event.target.value)}
+                placeholder="Write an honest review about seats, discipline, environment, and management"
+                className="min-h-24 rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+              />
+              <button
+                type="button"
+                onClick={() => void submitReview()}
+                disabled={!selectedReviewLibraryId || reviewText.trim().length < 8}
+                className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+              >
+                Publish review
+              </button>
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => setShowRequestHistory((current) => !current)}
+            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+          >
+            {showRequestHistory ? "Hide join request history" : `Show join request history (${history.length})`}
+          </button>
+          {showRequestHistory ? (
+            <div className="grid gap-3">
+              {history.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-4 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-[var(--lp-text)]">{item.library_name}</p>
+                      <p className="text-[var(--lp-muted)]">{new Date(item.created_at).toLocaleString()}</p>
                     </div>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">{item.status}</span>
                   </div>
-                ) : null}
-              </div>
-            ))}
-            {libraries.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No library history yet.</p> : null}
-          </div>
-
-          <div className="grid gap-3 rounded-2xl border border-[var(--lp-border)] bg-white p-4">
-            <div>
-              <p className="text-sm font-bold text-[var(--lp-text)]">Review a joined library</p>
-              <p className="mt-1 text-sm text-[var(--lp-muted)]">
-                Review marketplace par tabhi show hoga jab student ne library actually join ki ho.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
-              <select
-                value={selectedReviewLibraryId}
-                onChange={(event) => setSelectedReviewLibraryId(event.target.value)}
-                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
-              >
-                {libraries.map((library) => (
-                  <option key={library.library_id} value={library.library_id}>
-                    {library.library_name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={reviewRating}
-                onChange={(event) => setReviewRating(event.target.value)}
-                className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
-              >
-                {[5, 4, 3, 2, 1].map((item) => (
-                  <option key={item} value={String(item)}>
-                    {item}/5
-                  </option>
-                ))}
-              </select>
-            </div>
-            <textarea
-              value={reviewText}
-              onChange={(event) => setReviewText(event.target.value)}
-              placeholder="Write an honest review about seats, discipline, environment, and management"
-              className="min-h-24 rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
-            />
-            <button
-              type="button"
-              onClick={() => void submitReview()}
-              disabled={!selectedReviewLibraryId || reviewText.trim().length < 8}
-              className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
-            >
-              Publish review
-            </button>
-          </div>
-
-          <div className="grid gap-3">
-            {history.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-4 text-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-bold text-[var(--lp-text)]">{item.library_name}</p>
-                    <p className="text-[var(--lp-muted)]">{new Date(item.created_at).toLocaleString()}</p>
-                  </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">{item.status}</span>
+                  {item.review_reason ? <p className="mt-2 text-[var(--lp-muted)]">Reason: {item.review_reason}</p> : null}
+                  {item.linked_assignment_id ? <p className="mt-2 font-semibold text-emerald-700">Seat admission activated</p> : null}
                 </div>
-                {item.review_reason ? <p className="mt-2 text-[var(--lp-muted)]">Reason: {item.review_reason}</p> : null}
-                {item.linked_assignment_id ? <p className="mt-2 font-semibold text-emerald-700">Seat admission activated</p> : null}
-              </div>
-            ))}
-            {history.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No join requests yet.</p> : null}
-          </div>
+              ))}
+              {history.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No join requests yet.</p> : null}
+            </div>
+          ) : null}
         </div>
       </DashboardCard>
     </div>
