@@ -34,6 +34,8 @@ export function StudentFeedManager() {
   const [feed, setFeed] = useState<FeedResponse["data"] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [postForm, setPostForm] = useState({
     eventType: "CUSTOM_PROGRESS",
     title: "",
@@ -96,93 +98,115 @@ export function StudentFeedManager() {
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardCard title="Share progress" subtitle="Healthy accountability inside the library ecosystem">
+        <DashboardCard title="Share progress" subtitle="Post only when you want healthy accountability">
           <div className="grid gap-4">
-            <input
-              value={postForm.title}
-              onChange={(event) => setPostForm((current) => ({ ...current, title: event.target.value }))}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-              placeholder="Completed 5 thermodynamics questions today"
-            />
-            <textarea
-              value={postForm.body}
-              onChange={(event) => setPostForm((current) => ({ ...current, body: event.target.value }))}
-              className="min-h-[140px] rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 outline-none"
-              placeholder="Keep it short and motivating. Example: Finished revision block 2 and stayed consistent."
-            />
-            <div className="grid gap-4 md:grid-cols-2">
-              <select
-                value={postForm.eventType}
-                onChange={(event) => setPostForm((current) => ({ ...current, eventType: event.target.value }))}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-              >
-                <option value="CUSTOM_PROGRESS">Custom progress</option>
-                <option value="TOPIC_COMPLETED">Topic completed</option>
-                <option value="FOCUS_MILESTONE">Focus milestone</option>
-                <option value="STREAK_MILESTONE">Streak milestone</option>
-              </select>
-              <select
-                value={postForm.visibility}
-                onChange={(event) => setPostForm((current) => ({
-                  ...current,
-                  visibility: event.target.value as FeedResponse["data"]["visibility"]["defaultVisibility"],
-                }))}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-              >
-                <option value="PUBLIC">Public</option>
-                <option value="LIBRARY_MEMBERS">Library members</option>
-                <option value="PRIVATE">Private</option>
-              </select>
-            </div>
-            <button type="button" onClick={() => void createPost()} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
-              Share update
+            <button type="button" onClick={() => setShowComposer((current) => !current)} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+              {showComposer ? "Hide composer" : "Create progress update"}
             </button>
+            {showComposer ? (
+              <>
+                <input
+                  value={postForm.title}
+                  onChange={(event) => setPostForm((current) => ({ ...current, title: event.target.value }))}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                  placeholder="Completed 5 thermodynamics questions today"
+                />
+                <textarea
+                  value={postForm.body}
+                  onChange={(event) => setPostForm((current) => ({ ...current, body: event.target.value }))}
+                  className="min-h-[140px] rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 outline-none"
+                  placeholder="Keep it short and motivating."
+                />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <select
+                    value={postForm.eventType}
+                    onChange={(event) => setPostForm((current) => ({ ...current, eventType: event.target.value }))}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                  >
+                    <option value="CUSTOM_PROGRESS">Custom progress</option>
+                    <option value="TOPIC_COMPLETED">Topic completed</option>
+                    <option value="FOCUS_MILESTONE">Focus milestone</option>
+                    <option value="STREAK_MILESTONE">Streak milestone</option>
+                  </select>
+                  <select
+                    value={postForm.visibility}
+                    onChange={(event) => setPostForm((current) => ({
+                      ...current,
+                      visibility: event.target.value as FeedResponse["data"]["visibility"]["defaultVisibility"],
+                    }))}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                  >
+                    <option value="PUBLIC">Public</option>
+                    <option value="LIBRARY_MEMBERS">Library members</option>
+                    <option value="PRIVATE">Private</option>
+                  </select>
+                </div>
+                <button type="button" onClick={() => void createPost()} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
+                  Share update
+                </button>
+              </>
+            ) : (
+              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                Post composer stays closed by default so the feed feels calm, not noisy.
+              </div>
+            )}
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Privacy control" subtitle="Students should control what gets shared automatically">
+        <DashboardCard title="Privacy control" subtitle="Sharing rules should be visible, but not always expanded">
           <div className="grid gap-4">
-            <label className="grid gap-2 text-sm font-semibold text-slate-600">
-              Default visibility
-              <select
-                value={feed.visibility.defaultVisibility}
-                onChange={(event) =>
-                  void saveVisibility({
-                    ...feed.visibility,
-                    defaultVisibility: event.target.value as FeedResponse["data"]["visibility"]["defaultVisibility"],
-                  })
-                }
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-              >
-                <option value="PUBLIC">Public</option>
-                <option value="LIBRARY_MEMBERS">Library members</option>
-                <option value="PRIVATE">Private</option>
-              </select>
-            </label>
-            {[
-              ["allowSubjectCompletionPosts", "Share subject completion posts"],
-              ["allowFocusPosts", "Share focus milestones"],
-              ["allowStreakPosts", "Share streak updates"],
-            ].map(([key, label]) => (
-              <label key={key} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
-                <span className="text-sm font-semibold text-slate-700">{label}</span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(feed.visibility[key as keyof typeof feed.visibility])}
-                  onChange={(event) =>
-                    void saveVisibility({
-                      ...feed.visibility,
-                      [key]: event.target.checked,
-                    })
-                  }
-                />
-              </label>
-            ))}
+            <button type="button" onClick={() => setShowPrivacy((current) => !current)} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+              {showPrivacy ? "Hide privacy controls" : "Show privacy controls"}
+            </button>
+            {showPrivacy ? (
+              <>
+                <label className="grid gap-2 text-sm font-semibold text-slate-600">
+                  Default visibility
+                  <select
+                    value={feed.visibility.defaultVisibility}
+                    onChange={(event) =>
+                      void saveVisibility({
+                        ...feed.visibility,
+                        defaultVisibility: event.target.value as FeedResponse["data"]["visibility"]["defaultVisibility"],
+                      })
+                    }
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                  >
+                    <option value="PUBLIC">Public</option>
+                    <option value="LIBRARY_MEMBERS">Library members</option>
+                    <option value="PRIVATE">Private</option>
+                  </select>
+                </label>
+                {[
+                  ["allowSubjectCompletionPosts", "Share subject completion posts"],
+                  ["allowFocusPosts", "Share focus milestones"],
+                  ["allowStreakPosts", "Share streak updates"],
+                ].map(([key, label]) => (
+                  <label key={key} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+                    <span className="text-sm font-semibold text-slate-700">{label}</span>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(feed.visibility[key as keyof typeof feed.visibility])}
+                      onChange={(event) =>
+                        void saveVisibility({
+                          ...feed.visibility,
+                          [key]: event.target.checked,
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </>
+            ) : (
+              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                Default visibility is {feed.visibility.defaultVisibility}. Open privacy only when you want to adjust automatic sharing.
+              </div>
+            )}
           </div>
         </DashboardCard>
       </section>
 
-      <DashboardCard title="Library feed" subtitle="Minimal, motivational, and clean. No distraction patterns.">
+      <DashboardCard title="Library feed" subtitle="Minimal, motivational, and clean.">
         <div className="grid gap-4">
           {feed.items.map((item) => (
             <article key={item.id} className="rounded-[1.5rem] border border-slate-200 bg-white p-5">

@@ -56,6 +56,7 @@ export function StudentOffersManager() {
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<OffersResponse["meta"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCategories, setShowCategories] = useState(false);
 
   async function loadCategories() {
     const response = await apiFetch<CategoriesResponse>("/offers/categories", undefined, false);
@@ -90,42 +91,53 @@ export function StudentOffersManager() {
   return (
     <div className="grid gap-6">
       <DashboardCard
-        title="Explore Opportunities"
-        subtitle="Completely separate from study flow. No popups, no interruption, just an optional discovery feed."
+        title="Explore opportunities"
+        subtitle="Optional discovery section. Study flow se intentionally separate."
       >
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setCategory("");
-              setPage(1);
-              void loadOffers("", 1);
-            }}
-            className={`rounded-full px-4 py-2 text-sm font-semibold ${category === "" ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
-          >
-            All
+        <div className="grid gap-4">
+          <button type="button" onClick={() => setShowCategories((current) => !current)} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+            {showCategories ? "Hide category filters" : "Show category filters"}
           </button>
-          {categories.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setCategory(item.slug);
-                setPage(1);
-                void loadOffers(item.slug, 1);
-              }}
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${category === item.slug ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
-            >
-              {item.name}
-            </button>
-          ))}
+          {showCategories ? (
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setCategory("");
+                  setPage(1);
+                  void loadOffers("", 1);
+                }}
+                className={`rounded-full px-4 py-2 text-sm font-semibold ${category === "" ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+              >
+                All
+              </button>
+              {categories.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setCategory(item.slug);
+                    setPage(1);
+                    void loadOffers(item.slug, 1);
+                  }}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold ${category === item.slug ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              Filters stay hidden unless you want to narrow down coaching, courses, colleges, or discounts.
+            </div>
+          )}
+          {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
         </div>
-        {error ? <p className="mt-4 text-sm font-semibold text-amber-700">{error}</p> : null}
       </DashboardCard>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr_1fr]">
         {offers.map((offer) => (
-          <DashboardCard key={offer.id} title={offer.title} subtitle={`${offer.category_name} • ${offer.city ?? "India"}${offer.area ? ` • ${offer.area}` : ""}`}>
+          <DashboardCard key={offer.id} title={offer.title} subtitle={`${offer.category_name} | ${offer.city ?? "India"}${offer.area ? ` | ${offer.area}` : ""}`}>
             <div className="grid gap-4">
               <div className="aspect-[16/10] overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#f7e6d8,#fff8ef_50%,#dff1ec)]">
                 {offer.image_url ? (
@@ -145,7 +157,7 @@ export function StudentOffersManager() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={() => void trackAction(offer.id, "VIEW_DETAILS")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]">
-                  View Details
+                  View details
                 </button>
                 <button type="button" onClick={() => void trackAction(offer.id, "CONTACT")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]">
                   Contact
