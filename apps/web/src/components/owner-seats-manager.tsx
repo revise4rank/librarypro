@@ -154,6 +154,59 @@ function getZoneTone(zone: string) {
   return "bg-emerald-100 text-emerald-700";
 }
 
+function getZoneAccent(zone: string) {
+  if (zone === "Girls Zone") return "#ec4899";
+  if (zone === "Boys Zone") return "#0ea5e9";
+  if (zone === "Quiet Zone") return "#8b5cf6";
+  return "#10b981";
+}
+
+function SeatStatusGlyph({ status }: { status: string }) {
+  const tone =
+    status === "AVAILABLE"
+      ? "text-emerald-300"
+      : status === "OCCUPIED"
+        ? "text-rose-300"
+        : status === "RESERVED"
+          ? "text-amber-300"
+          : "text-slate-300";
+
+  if (status === "AVAILABLE") {
+    return (
+      <svg viewBox="0 0 20 20" className={`h-4 w-4 ${tone}`} aria-hidden="true">
+        <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.18" />
+        <path d="m6.2 10.4 2.3 2.2 5.3-5.4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+
+  if (status === "OCCUPIED") {
+    return (
+      <svg viewBox="0 0 20 20" className={`h-4 w-4 ${tone}`} aria-hidden="true">
+        <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.18" />
+        <circle cx="10" cy="7.5" r="2.2" fill="currentColor" />
+        <path d="M6.5 14c.8-2.1 2-3.2 3.5-3.2S12.7 11.9 13.5 14" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+      </svg>
+    );
+  }
+
+  if (status === "RESERVED") {
+    return (
+      <svg viewBox="0 0 20 20" className={`h-4 w-4 ${tone}`} aria-hidden="true">
+        <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.18" />
+        <path d="M10 5.8v4.5l2.8 1.8" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.9" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 20 20" className={`h-4 w-4 ${tone}`} aria-hidden="true">
+      <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.18" />
+      <path d="M7 7l6 6M13 7l-6 6" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.9" />
+    </svg>
+  );
+}
+
 const roomLayoutPresets = [
   {
     id: "reading-hall",
@@ -1998,14 +2051,28 @@ export function OwnerSeatsManager() {
                                       <p className="rounded-full bg-slate-900 px-2 py-0.5 text-[7px] font-black text-white shadow-[0_6px_12px_rgba(15,23,42,0.16)]">{formatStudentInitials(seat.student_name)}</p>
                                     ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Open</p>}
                                   </div>
-                                  <div className="pointer-events-none absolute left-1/2 top-[calc(100%+10px)] z-30 hidden w-56 -translate-x-1/2 rounded-[1rem] border border-slate-200 bg-[rgba(15,23,42,0.96)] p-3 text-left text-white shadow-[0_20px_40px_rgba(15,23,42,0.28)] group-hover:block">
+                                  <div className="pointer-events-none absolute left-1/2 top-[calc(100%+12px)] z-30 hidden w-60 -translate-x-1/2 overflow-hidden rounded-[1.1rem] border border-white/15 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0.92))] p-0 text-left text-white shadow-[0_22px_44px_rgba(15,23,42,0.34)] backdrop-blur-xl group-hover:block">
+                                    <div className="h-1.5 w-full" style={{ backgroundColor: getZoneAccent(inferZone(seat)) }} />
+                                    <div className="p-3">
                                     <div className="flex items-center justify-between gap-2">
                                       <div>
                                         <p className="text-sm font-black">{seat.seat_number}</p>
                                         <p className="text-[11px] uppercase tracking-[0.14em] text-slate-300">{describeSeatState(seat)}</p>
                                       </div>
-                                      <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white backdrop-blur-sm">
+                                        <SeatStatusGlyph status={seat.status} />
                                         {seat.status}
+                                      </span>
+                                    </div>
+                                    <div className="mt-3 flex items-center gap-2">
+                                      <span
+                                        className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/95"
+                                        style={{ backgroundColor: `${getZoneAccent(inferZone(seat))}55` }}
+                                      >
+                                        {inferZone(seat)}
+                                      </span>
+                                      <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/90">
+                                        {seatShape}
                                       </span>
                                     </div>
                                     <div className="mt-3 grid gap-2 text-[11px] leading-5 text-slate-200">
@@ -2037,6 +2104,7 @@ export function OwnerSeatsManager() {
                                         <span className="uppercase tracking-[0.14em] text-slate-400">Check-in</span>
                                         <span className="font-semibold text-white">{formatSeatDateTime(seat.last_check_in_at)}</span>
                                       </div>
+                                    </div>
                                     </div>
                                     <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-l border-t border-slate-200 bg-[rgba(15,23,42,0.96)]" />
                                   </div>
