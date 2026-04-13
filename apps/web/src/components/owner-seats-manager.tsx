@@ -83,6 +83,18 @@ function describeSeatState(seat: SeatRow) {
   return "Free";
 }
 
+function formatSeatDateTime(value?: string | null) {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function inferZone(seat: SeatRow) {
   const value = `${seat.section_name ?? ""} ${seat.seat_number}`.toLowerCase();
   if (value.includes("girl") || value.includes("female")) return "Girls Zone";
@@ -273,22 +285,35 @@ function SeatSilhouette({ shape }: { shape: string }) {
 function SeatPodIcon({ status, occupied }: { status: string; occupied: boolean }) {
   const tone =
     status === "AVAILABLE"
-      ? "text-indigo-300"
+      ? "text-emerald-400"
       : status === "OCCUPIED"
-        ? "text-pink-300"
+        ? "text-rose-400"
         : status === "RESERVED"
-          ? "text-amber-300"
-          : "text-slate-300";
+          ? "text-amber-400"
+          : "text-slate-400";
 
   return (
-    <svg viewBox="0 0 64 64" className={`h-9 w-9 ${tone}`} aria-hidden="true">
-      <rect x="18" y="14" width="28" height="18" rx="7" fill="currentColor" opacity="0.22" />
-      <rect x="22" y="18" width="20" height="10" rx="4" fill="currentColor" opacity="0.45" />
-      <rect x="14" y="20" width="6" height="20" rx="3" fill="currentColor" opacity="0.22" />
-      <rect x="44" y="20" width="6" height="20" rx="3" fill="currentColor" opacity="0.22" />
-      <rect x="24" y="34" width="6" height="8" rx="2" fill="currentColor" opacity="0.6" />
-      <rect x="34" y="34" width="6" height="8" rx="2" fill="currentColor" opacity="0.6" />
-      {occupied ? <circle cx="32" cy="24" r="5" fill="currentColor" opacity="0.9" /> : null}
+    <svg viewBox="0 0 72 72" className={`h-10 w-10 drop-shadow-[0_6px_12px_rgba(15,23,42,0.08)] ${tone}`} aria-hidden="true">
+      <defs>
+        <linearGradient id={`seat-shell-${status}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0.38" />
+        </linearGradient>
+      </defs>
+      <rect x="18" y="10" width="36" height="22" rx="10" fill={`url(#seat-shell-${status})`} />
+      <rect x="22" y="15" width="28" height="12" rx="6" fill="currentColor" opacity="0.22" />
+      <rect x="11" y="18" width="8" height="24" rx="4" fill="currentColor" opacity="0.18" />
+      <rect x="53" y="18" width="8" height="24" rx="4" fill="currentColor" opacity="0.18" />
+      <rect x="23" y="35" width="26" height="12" rx="6" fill="currentColor" opacity="0.26" />
+      <rect x="21" y="46" width="7" height="11" rx="3.5" fill="currentColor" opacity="0.65" />
+      <rect x="44" y="46" width="7" height="11" rx="3.5" fill="currentColor" opacity="0.65" />
+      <rect x="15" y="58" width="42" height="4" rx="2" fill="currentColor" opacity="0.14" />
+      {occupied ? (
+        <>
+          <circle cx="36" cy="22" r="4.5" fill="currentColor" opacity="0.92" />
+          <path d="M31 29c1.2-2 2.9-3 5-3s3.8 1 5 3l1.8 3.4H29.2L31 29Z" fill="currentColor" opacity="0.9" />
+        </>
+      ) : null}
     </svg>
   );
 }
@@ -1945,7 +1970,7 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`relative flex h-full w-full flex-col items-center rounded-[0.95rem] border px-1 py-1 text-left transition hover:-translate-y-0.5 ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`group relative flex h-full w-full flex-col items-center overflow-visible rounded-[1.1rem] border px-1.5 py-1.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.12)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
                                   <div className="flex w-full items-center justify-between gap-1">
@@ -1957,18 +1982,63 @@ export function OwnerSeatsManager() {
                                           ? "bg-rose-100 text-rose-700"
                                           : seat.status === "RESERVED"
                                             ? "bg-amber-100 text-amber-700"
-                                            : "bg-slate-200 text-slate-600"
+                                          : "bg-slate-200 text-slate-600"
                                     }`}>
                                       {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Sold" : seat.status === "RESERVED" ? "Hold" : "Off"}
                                     </span>
                                   </div>
-                                  <div className="mt-1 flex min-h-[2.4rem] w-full items-center justify-center rounded-[0.8rem] bg-white/80 px-1 py-1">
+                                  <div className="mt-1 flex min-h-[2.8rem] w-full items-center justify-center rounded-[0.95rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
                                     <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
                                   </div>
-                                  <div className="mt-1 text-center">
+                                  <div className="mt-1 flex w-full items-center justify-between gap-1">
+                                    <span className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.12em] text-slate-500 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">
+                                      {seatShape === "Study Desk" ? "Desk" : seatShape === "Wall Desk" ? "Wall" : "Cabin"}
+                                    </span>
                                     {seat.student_name ? (
-                                      <p className="rounded-full bg-slate-900 px-2 py-0.5 text-[7px] font-black text-white">{formatStudentInitials(seat.student_name)}</p>
-                                    ) : <p className="text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400">{seatShape}</p>}
+                                      <p className="rounded-full bg-slate-900 px-2 py-0.5 text-[7px] font-black text-white shadow-[0_6px_12px_rgba(15,23,42,0.16)]">{formatStudentInitials(seat.student_name)}</p>
+                                    ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Open</p>}
+                                  </div>
+                                  <div className="pointer-events-none absolute left-1/2 top-[calc(100%+10px)] z-30 hidden w-56 -translate-x-1/2 rounded-[1rem] border border-slate-200 bg-[rgba(15,23,42,0.96)] p-3 text-left text-white shadow-[0_20px_40px_rgba(15,23,42,0.28)] group-hover:block">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div>
+                                        <p className="text-sm font-black">{seat.seat_number}</p>
+                                        <p className="text-[11px] uppercase tracking-[0.14em] text-slate-300">{describeSeatState(seat)}</p>
+                                      </div>
+                                      <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
+                                        {seat.status}
+                                      </span>
+                                    </div>
+                                    <div className="mt-3 grid gap-2 text-[11px] leading-5 text-slate-200">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Floor</span>
+                                        <span className="font-semibold text-white">{seat.floor_name ?? "Main floor"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Section</span>
+                                        <span className="font-semibold text-white">{seat.section_name ?? "Main section"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Student</span>
+                                        <span className="font-semibold text-white">{seat.student_name ?? "Not assigned"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Plan</span>
+                                        <span className="font-semibold text-white">{seat.plan_name ?? "Not allotted"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Payment</span>
+                                        <span className="font-semibold text-white">{seat.payment_status ?? "-"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Valid till</span>
+                                        <span className="font-semibold text-white">{formatSeatDateTime(seat.ends_at)}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Check-in</span>
+                                        <span className="font-semibold text-white">{formatSeatDateTime(seat.last_check_in_at)}</span>
+                                      </div>
+                                    </div>
+                                    <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-l border-t border-slate-200 bg-[rgba(15,23,42,0.96)]" />
                                   </div>
                                 </button>
                               ) : (
