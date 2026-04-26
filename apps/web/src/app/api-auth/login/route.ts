@@ -8,7 +8,6 @@ const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 15;
 type UpstreamLoginResponse = {
   success: boolean;
   data?: {
-    accessToken?: string;
     csrfToken?: string;
     user?: {
       id: string;
@@ -24,6 +23,31 @@ type UpstreamLoginResponse = {
     message?: string;
   };
 };
+
+function getUpstreamSetCookies(response: Response) {
+  const headers = response.headers as Headers & { getSetCookie?: () => string[] };
+  const rawSetCookie = response.headers.get("set-cookie");
+  return (
+    headers.getSetCookie?.() ??
+    (rawSetCookie
+      ? rawSetCookie
+          .split(/,(?=[^;,\s]+=)/)
+          .map((cookie) => cookie.trim())
+          .filter(Boolean)
+      : [])
+  );
+}
+
+function readCookieValue(cookies: string[], name: string) {
+  for (const cookie of cookies) {
+    const match = cookie.match(new RegExp(`${name}=([^;]+)`));
+    if (match?.[1]) {
+      return decodeURIComponent(match[1]);
+    }
+  }
+
+  return null;
+}
 
 function isSecure(request: NextRequest) {
   return request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
@@ -51,8 +75,9 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
-  const accessToken = payload.data?.accessToken;
-  const csrfToken = payload.data?.csrfToken;
+  const upstreamCookies = getUpstreamSetCookies(upstreamResponse);
+  const accessToken = readCookieValue(upstreamCookies, ACCESS_COOKIE_NAME);
+  const csrfToken = readCookieValue(upstreamCookies, CSRF_COOKIE_NAME) ?? payload.data?.csrfToken ?? null;
   const secure = isSecure(request);
 
   if (accessToken) {
