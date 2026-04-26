@@ -47,11 +47,21 @@ export default async function StudentLoginPage({
           <p className="mt-2 text-sm leading-7 text-slate-600">
             Use your student app email, phone, or owner-issued student ID to continue QR access, payments, notices, and daily study actions.
           </p>
+          <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+            <p className="text-sm font-bold text-emerald-900">Owner-issued credentials</p>
+            <p className="mt-1 text-sm leading-6 text-emerald-800">
+              Use the Login ID and temporary password printed after admission. Your login ID may be a student code,
+              mobile number, or email saved by the library.
+            </p>
+          </div>
           <div className="mt-6">
             <RoleLoginForm
               expectedRole="STUDENT"
+              loginLabel="Login ID from library"
               loginPlaceholder="Student ID, mobile, or email"
-              passwordPlaceholder="Password"
+              passwordLabel="Temporary password or your password"
+              passwordPlaceholder="Enter temporary password"
+              helperText="After first login, use Account settings to change this password."
               submitLabel="Open student portal"
             />
           </div>

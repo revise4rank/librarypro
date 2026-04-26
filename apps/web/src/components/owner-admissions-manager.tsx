@@ -442,7 +442,24 @@ export function OwnerAdmissionsManager() {
             <div className="rounded-[0.75rem] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
               <p className="font-semibold">Assignment {result.assignmentId} created. Payment {result.paymentId} added.</p>
               <p className="mt-1">Plan: {result.planName} • Final amount Rs. {result.finalAmount.toLocaleString("en-IN")}</p>
-              {result.temporaryPassword ? <p className="mt-1">Login ID: {result.loginId ?? "student code"} • Temporary password: {result.temporaryPassword}</p> : null}
+              {result.temporaryPassword ? (
+                <div className="mt-3 rounded-[0.5rem] border border-emerald-200 bg-white/75 p-3">
+                  <p className="font-semibold text-emerald-950">Student portal credentials</p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-[0.5rem] bg-emerald-50 px-3 py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Login ID</p>
+                      <p className="mt-1 font-mono text-sm font-bold text-emerald-950">{result.loginId ?? "student code"}</p>
+                    </div>
+                    <div className="rounded-[0.5rem] bg-emerald-50 px-3 py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Temporary password</p>
+                      <p className="mt-1 font-mono text-sm font-bold text-emerald-950">{result.temporaryPassword}</p>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-emerald-800">
+                    Student opens Student Login, selects this library, then enters these credentials.
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
