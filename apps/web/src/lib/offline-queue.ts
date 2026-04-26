@@ -185,7 +185,7 @@ export async function flushQueuedStudentPaymentActions() {
 }
 
 export async function enqueueOwnerPaymentAction(input: {
-  studentName: string;
+  assignmentId: string;
   amount: number;
   method: string;
   status: string;

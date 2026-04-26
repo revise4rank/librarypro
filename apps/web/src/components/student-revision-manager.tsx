@@ -200,14 +200,14 @@ export function StudentRevisionManager() {
                     className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
                   />
                 </div>
-                <button type="button" onClick={() => void createManualRevision()} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
+                <button type="button" onClick={() => void createManualRevision()} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
                   Schedule revision
                 </button>
               </>
             ) : (
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-sm text-slate-600">Weak topic ya exam-near chapter ke liye custom reminder yahin se add karo.</p>
-              </div>
+                  <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                    <p className="text-sm text-slate-600">Add a custom reminder here for weak topics or chapters that need a short-notice revision push.</p>
+                  </div>
             )}
           </div>
         </DashboardCard>
@@ -254,7 +254,7 @@ export function StudentRevisionManager() {
                       <p className="mt-2 text-sm text-slate-600">Scheduled {item.scheduledFor.slice(0, 10)}</p>
                       <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Priority {item.priorityScore}</p>
                       {item.status !== "COMPLETED" ? (
-                        <button type="button" onClick={() => void completeRevision(item.id)} className="mt-4 rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white">
+                        <button type="button" onClick={() => void completeRevision(item.id)} className="mt-4 rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-2 text-xs font-black text-[var(--lp-accent-strong)]">
                           Mark done
                         </button>
                       ) : null}

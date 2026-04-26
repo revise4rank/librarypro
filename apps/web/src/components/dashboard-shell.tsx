@@ -1,8 +1,29 @@
 "use client";
 
+import {
+  Armchair,
+  BarChart3,
+  Bell,
+  CalendarCheck,
+  ChevronDown,
+  CreditCard,
+  IndianRupee,
+  LayoutDashboard,
+  LockKeyhole,
+  LogOut,
+  Megaphone,
+  Send,
+  Settings as SettingsIcon,
+  UserPlus,
+  Users,
+  UserRound,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { dashboardPathForRole, hydrateSessionFromServer, logoutSession, type SessionUser } from "../lib/api";
 
 type NavItem = {
   href: string;
@@ -10,162 +31,65 @@ type NavItem = {
   shortLabel?: string;
 };
 
-type GuideSection = {
-  title: string;
-  steps: string[];
+const navIconMap: Record<string, LucideIcon> = {
+  "/owner/dashboard": LayoutDashboard,
+  "/owner/students": Users,
+  "/owner/seats": Armchair,
+  "/owner/checkins": CalendarCheck,
+  "/owner/payments": IndianRupee,
+  "/owner/reports": BarChart3,
+  "/owner/admissions": UserPlus,
+  "/owner/expenses": Wallet,
+  "/owner/marketing": Megaphone,
+  "/owner/notifications": Send,
+  "/owner/billing": CreditCard,
+  "/owner/settings": SettingsIcon,
+  "/student/dashboard": LayoutDashboard,
+  "/student/seat": Armchair,
+  "/student/payments": IndianRupee,
+  "/student/notifications": Send,
+  "/student/focus": BarChart3,
 };
 
-const dashboardGuides: Array<{ match: RegExp; guide: GuideSection }> = [
-  {
-    match: /^\/owner\/dashboard$/,
-    guide: {
-      title: "Overview guide",
-      steps: [
-        "Top cards se occupancy, revenue, due payments aur alerts pehle check karo.",
-        "Follow-up queue ya alerts me jo red items hain unko same din close karo.",
-        "Trend chart ko use karke 7d ya 30d performance compare karo.",
-      ],
-    },
-  },
-  {
-    match: /^\/owner\/seats/,
-    guide: {
-      title: "Seat Control guide",
-      steps: [
-        "Pehle floor banao, phir seat bank ya single seat create karo.",
-        "Planner mode on karke seats ko drag/drop, aisle paint, aur section color set karo.",
-        "Right panel se student select karke seat par drag/drop karo ya seat action drawer se status update karo.",
-      ],
-    },
-  },
-  {
-    match: /^\/owner\/students/,
-    guide: {
-      title: "Students guide",
-      steps: [
-        "Roster me student list, plan, seat aur dues quickly verify karo.",
-        "Student row open karke productivity, attendance aur intervention notes dekho.",
-        "New student ko admissions ya direct enroll flow se onboard karo.",
-      ],
-    },
-  },
-  {
-    match: /^\/owner\/payments/,
-    guide: {
-      title: "Payments guide",
-      steps: [
-        "Paid, due aur pending payments ko filter se alag dekho.",
-        "Due students ko collect action se mark karo aur reminder flows chalao.",
-        "Report export se ledger ko Excel/PDF me nikaalo.",
-      ],
-    },
-  },
-  {
-    match: /^\/owner\/reports/,
-    guide: {
-      title: "Reports guide",
-      steps: [
-        "Date range select karke required business report generate karo.",
-        "Monthly comparison aur category split se trend samjho.",
-        "Server-generated XLSX/PDF download karke share ya archive karo.",
-      ],
-    },
-  },
-  {
-    match: /^\/owner\/website/,
-    guide: {
-      title: "Website Builder guide",
-      steps: [
-        "Theme, banner, logo aur public sections ko update karo.",
-        "Save ke baad public library site aur marketplace card dono verify karo.",
-        "Campaigns aur offers ko website messaging ke saath sync rakho.",
-      ],
-    },
-  },
-  {
-    match: /^\/student\/dashboard$/,
-    guide: {
-      title: "Student dashboard guide",
-      steps: [
-        "Aaj ka focus time, streak aur revision queue se day plan banao.",
-        "Joined libraries ke context switcher se correct library choose karo.",
-        "Rewards, feed aur revisions se motivation aur retention maintain karo.",
-      ],
-    },
-  },
-  {
-    match: /^\/student\/syllabus/,
-    guide: {
-      title: "Syllabus guide",
-      steps: [
-        "Subject banao, phir topics add karke unki status update karo.",
-        "Completed topics par system revision schedule bhi create karega.",
-        "Analytics section se weak aur pending topics pe focus karo.",
-      ],
-    },
-  },
-  {
-    match: /^\/student\/revisions/,
-    guide: {
-      title: "Revision guide",
-      steps: [
-        "Pending, overdue aur completed revisions ko alag buckets me dekho.",
-        "Topic revise karke done mark karo aur time log karo.",
-        "Manual reminder se custom revision dates bhi add kar sakte ho.",
-      ],
-    },
-  },
-  {
-    match: /^\/student\/focus/,
-    guide: {
-      title: "Focus guide",
-      steps: [
-        "Pomodoro ya custom session start karo aur subject/topic select karo.",
-        "Focus mode tab use karo jab distraction-free deep work chahiye ho.",
-        "Leaderboard aur analytics se consistency track karo.",
-      ],
-    },
-  },
-  {
-    match: /^\/student\/join-library/,
-    guide: {
-      title: "Join library guide",
-      steps: [
-        "QR scan ya join request flow se nayi library ko request bhejo.",
-        "Timeline me pending, approved aur past library history dekho.",
-        "Rejoin action se previous library me fast admission request bhejo.",
-      ],
-    },
-  },
-  {
-    match: /^\/student\/offers/,
-    guide: {
-      title: "Offers guide",
-      steps: [
-        "Offers tab completely optional discovery section hai.",
-        "Category filters se coaching, course, college ya library discount dekho.",
-        "Dashboard ya focus mode me offers nahi aayenge, sirf yahin milenge.",
-      ],
-    },
-  },
-  {
-    match: /^\/superadmin\//,
-    guide: {
-      title: "Admin guide",
-      steps: [
-        "Libraries, payments, reviews aur offers ko moderation queue se manage karo.",
-        "Approvals aur suspensions karte waqt audit trail aur status impact check karo.",
-        "Marketplace trust aur SaaS billing dono ko yahin se monitor karo.",
-      ],
-    },
-  },
-];
+function navIconFor(item: NavItem) {
+  return navIconMap[item.href] ?? LayoutDashboard;
+}
+
+function initialsFromName(value?: string | null) {
+  if (!value) return "U";
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "U";
+}
+
+function settingsPathForRole(role?: string, tab?: string) {
+  if (role === "LIBRARY_OWNER") return `/owner/settings${tab ? `?tab=${tab}` : ""}`;
+  if (role === "STUDENT") return `/student/dashboard`;
+  if (role === "SUPER_ADMIN") return "/superadmin/dashboard";
+  return "/owner/login";
+}
+
+function notificationsPathForRole(role?: string) {
+  if (role === "LIBRARY_OWNER") return "/owner/notifications";
+  if (role === "STUDENT") return "/student/notifications";
+  if (role === "SUPER_ADMIN") return "/superadmin/dashboard";
+  return "/owner/login";
+}
+
+function loginPathForRole(role?: string) {
+  if (role === "STUDENT") return "/student/login";
+  if (role === "SUPER_ADMIN") return "/superadmin/login";
+  return "/owner/login";
+}
 
 export function DashboardShell({
   productLabel,
   panelLabel,
   title,
-  description,
+  description: _description,
   nav,
   actions,
   children,
@@ -180,191 +104,214 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileMenuSide, setMobileMenuSide] = useState<"left" | "right">(() => {
-    if (typeof window === "undefined") return "right";
-    const saved = window.localStorage.getItem("lp-mobile-menu-side");
-    return saved === "left" || saved === "right" ? saved : "right";
-  });
-  const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
+  const [desktopPinnedOpen, setDesktopPinnedOpen] = useState(() => {
     if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("lp-desktop-menu-collapsed") === "1";
+    return window.localStorage.getItem("lp-desktop-rail-open") === "1";
   });
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
+  const [desktopHovered, setDesktopHovered] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const notificationMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const matchedGuide = dashboardGuides.find((item) => item.match.test(pathname))?.guide;
+  const primaryMobileNav = nav.slice(0, 5);
+  const sidebarExpanded = desktopPinnedOpen || desktopHovered;
+  const userInitials = useMemo(() => initialsFromName(sessionUser?.fullName), [sessionUser?.fullName]);
+  const notificationsHref = notificationsPathForRole(sessionUser?.role);
+  const accountHref = settingsPathForRole(sessionUser?.role, "account");
+  const securityHref = settingsPathForRole(sessionUser?.role, "account");
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    setGuideOpen(false);
-  }, [pathname]);
-
-  function toggleMobileMenuSide() {
-    setMobileMenuSide((current) => {
-      const next = current === "left" ? "right" : "left";
-      window.localStorage.setItem("lp-mobile-menu-side", next);
-      return next;
+    hydrateSessionFromServer().then((session) => {
+      if (session?.user) {
+        setSessionUser(session.user);
+      }
     });
-  }
+  }, []);
 
-  function toggleDesktopSidebar() {
-    setDesktopCollapsed((current) => {
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target as Node | null;
+      if (profileMenuRef.current && target && !profileMenuRef.current.contains(target)) {
+        setProfileMenuOpen(false);
+      }
+      if (notificationMenuRef.current && target && !notificationMenuRef.current.contains(target)) {
+        setNotificationMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    return () => document.removeEventListener("mousedown", handleDocumentClick);
+  }, []);
+
+  function toggleDesktopRail() {
+    setDesktopPinnedOpen((current) => {
       const next = !current;
-      window.localStorage.setItem("lp-desktop-menu-collapsed", next ? "1" : "0");
+      window.localStorage.setItem("lp-desktop-rail-open", next ? "1" : "0");
       return next;
     });
   }
-
-  const primaryMobileNav = nav.slice(0, 4);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(236,173,132,0.18),transparent_24%),radial-gradient(circle_at_top_right,rgba(153,214,209,0.18),transparent_22%),linear-gradient(180deg,#fbf6ee_0%,#fffaf3_52%,#f6efe4_100%)] text-[var(--lp-text)]">
-      <div className={`grid min-h-screen ${desktopCollapsed ? "lg:grid-cols-[92px_minmax(0,1fr)]" : "lg:grid-cols-[280px_minmax(0,1fr)]"}`}>
-        <aside className={`hidden border-r border-[var(--lp-border)] bg-[rgba(255,249,240,0.92)] py-6 text-[var(--lp-text)] transition-[width,padding] duration-200 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col ${desktopCollapsed ? "lg:px-3" : "lg:px-5"}`}>
-          <div>
-            <div>
-              <div className={`flex ${desktopCollapsed ? "justify-center" : "justify-between"} items-start gap-3`}>
-                <div className={desktopCollapsed ? "hidden" : "block"}>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-[var(--lp-primary)]">{productLabel}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={toggleDesktopSidebar}
-                  className="rounded-full border border-[var(--lp-border)] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
-                >
-                  {desktopCollapsed ? "Open" : "Collapse"}
-                </button>
-              </div>
-              {desktopCollapsed ? (
-                <p className="mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.35em] text-[var(--lp-primary)]">{productLabel.slice(0, 3)}</p>
+    <main className="lp-page-frame text-[var(--lp-text)]">
+      <div className={`grid min-h-screen ${sidebarExpanded ? "lg:grid-cols-[192px_minmax(0,1fr)]" : "lg:grid-cols-[64px_minmax(0,1fr)]"}`}>
+        <aside
+          onMouseEnter={() => setDesktopHovered(true)}
+          onMouseLeave={() => setDesktopHovered(false)}
+          className="hidden border-r border-[var(--lp-border)] bg-[rgba(255,255,255,0.9)] transition-[width] duration-200 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col"
+        >
+          <div className="flex h-[50px] items-center border-b border-[var(--lp-border)] px-2">
+            <div className={`flex w-full items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
+              {sidebarExpanded ? (
+                <span className="truncate text-sm font-semibold tracking-tight text-[var(--lp-primary)]">{productLabel}</span>
               ) : null}
-            </div>
-            <div className={desktopCollapsed ? "mt-4 text-center" : "mt-3"}>
-              <h1 className={`font-extrabold ${desktopCollapsed ? "text-xs uppercase tracking-[0.2em]" : "mt-3 text-xl sm:text-2xl"}`}>{desktopCollapsed ? "Panel" : panelLabel}</h1>
-              {!desktopCollapsed ? (
-                <p className="mt-2 max-w-xs text-sm leading-6 text-[var(--lp-muted)]">
-                  Clean ops dashboard for day-to-day library management.
-                </p>
-              ) : null}
+              <button
+                type="button"
+                onClick={toggleDesktopRail}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-xs font-bold text-[var(--lp-primary)]"
+                aria-label={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                {sidebarExpanded ? "<" : ">"}
+              </button>
             </div>
           </div>
 
-          <nav className="mt-8 space-y-2 overflow-auto pr-1">
+          <nav className="flex-1 space-y-1 overflow-auto px-2 py-3">
             {nav.map((item) => {
               const active = pathname === item.href;
+              const Icon = navIconFor(item);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center ${desktopCollapsed ? "justify-center" : "justify-between"} rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                    active
-                      ? "bg-[var(--lp-primary)] text-white shadow-[0_10px_22px_rgba(210,114,61,0.22)]"
-                      : "text-[var(--lp-muted)] hover:bg-[#f5ede3] hover:text-[var(--lp-text)]"
-                  }`}
                   title={item.label}
+                  className={`group flex h-10 items-center rounded-lg px-2 transition ${
+                    active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "text-slate-500 hover:bg-white hover:text-[var(--lp-text)]"
+                  }`}
                 >
-                  {!desktopCollapsed ? <span>{item.label}</span> : null}
-                  <span
-                    className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] ${
-                      active ? "bg-[#fff4eb] text-[var(--lp-primary)]" : "bg-[#ecf3f1] text-[var(--lp-accent)]"
-                    }`}
-                  >
-                    {item.shortLabel ?? item.label.slice(0, 3)}
+                  <span className={`flex w-6 shrink-0 items-center justify-center ${sidebarExpanded ? "" : "mx-auto"}`}>
+                    <Icon className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
                   </span>
+                  {sidebarExpanded ? <span className="ml-3 truncate text-sm font-medium">{item.label}</span> : null}
                 </Link>
               );
             })}
           </nav>
-
-          {!desktopCollapsed ? (
-            <div className="mt-8 rounded-[1.5rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.82)] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[var(--lp-accent)]">System Status</p>
-                <button
-                  type="button"
-                  onClick={() => setStatusOpen((current) => !current)}
-                  className="rounded-full border border-[var(--lp-border)] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
-                >
-                  {statusOpen ? "Hide" : "Show"}
-                </button>
-              </div>
-              {statusOpen ? (
-                <div className="mt-3 space-y-2.5 text-sm text-[var(--lp-text)]">
-                  <div className="flex items-center justify-between">
-                    <span>Subscription</span>
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">Active</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>QR Check-in</span>
-                    <span className="rounded-full bg-lime-100 px-3 py-1 text-xs font-black text-lime-700">Online</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Seat Sync</span>
-                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">2 Pending</span>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
         </aside>
 
         <div className="min-w-0">
-          <header className="sticky top-0 z-20 border-b border-[var(--lp-border)] bg-[rgba(255,249,241,0.94)] backdrop-blur">
-            <div className="flex flex-col gap-3 px-4 py-3 md:px-6 lg:px-8">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--lp-accent)]">{panelLabel}</p>
-                  <h2 className="mt-1.5 text-xl font-extrabold tracking-tight sm:text-2xl md:text-[2rem]">{title}</h2>
-                  <p className="mt-1.5 max-w-4xl text-sm leading-6 text-[var(--lp-muted)]">{description}</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                  <Link
-                    href="/marketplace"
-                    className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-2 text-xs font-medium text-[var(--lp-primary)] lg:hidden"
+          <header className="sticky top-0 z-20 h-[50px] border-b border-[var(--lp-border)] bg-[rgba(255,255,255,0.94)] backdrop-blur">
+            <div className="lp-shell-container flex h-full items-center justify-between gap-3 px-3 sm:px-4">
+              <div className="flex min-w-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen((current) => !current)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-sm font-bold text-[var(--lp-text)] lg:hidden"
+                  aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                >
+                  {mobileMenuOpen ? "X" : "="}
+                </button>
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--lp-primary)] sm:hidden">
+                  {productLabel}
+                </span>
+                <h1 className="max-w-[44rem] truncate text-[1.15rem] font-semibold tracking-tight text-[var(--lp-text)]">
+                  {title}
+                </h1>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                {actions ? <div className="lp-header-actions hidden items-center md:flex">{actions}</div> : null}
+                <div className="relative" ref={notificationMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNotificationMenuOpen((current) => !current);
+                      setProfileMenuOpen(false);
+                    }}
+                    className="relative flex h-8 w-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                    aria-label="Open notifications"
                   >
-                    Marketplace
-                  </Link>
-                  {actions}
+                    <Bell className="h-4 w-4" />
+                    <span className="absolute -right-0.5 -top-0.5 inline-flex h-2.5 w-2.5 rounded-full bg-[#ff6d6d]" />
+                  </button>
+                  {notificationMenuOpen ? (
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-64 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-2 shadow-[0_18px_34px_rgba(15,23,42,0.10)]">
+                      <p className="px-2 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--lp-muted)]">Notifications</p>
+                      <Link href={notificationsHref} className="mt-1 flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                        <Bell className="h-4 w-4 text-[var(--lp-accent)]" />
+                        Open alert center
+                      </Link>
+                      <Link href={settingsPathForRole(sessionUser?.role)} className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                        <SettingsIcon className="h-4 w-4 text-[var(--lp-accent)]" />
+                        Open settings
+                      </Link>
+                    </div>
+                  ) : null}
+                </div>
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileMenuOpen((current) => !current);
+                      setNotificationMenuOpen(false);
+                    }}
+                    className="flex h-8 items-center gap-2 rounded-full border border-[var(--lp-border)] bg-white pl-1 pr-2 text-xs font-semibold text-[var(--lp-text)]"
+                    aria-label={`Open ${panelLabel} profile`}
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fde68a,#fcd34d)] text-[10px] font-bold text-[var(--lp-text)]">
+                      {userInitials}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-[var(--lp-muted)]" />
+                  </button>
+                  {profileMenuOpen ? (
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-72 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-2 shadow-[0_18px_34px_rgba(15,23,42,0.10)]">
+                      <div className="flex items-center gap-3 rounded-[0.5rem] bg-[var(--lp-surface-muted)] px-3 py-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fde68a,#fcd34d)] text-sm font-bold text-[var(--lp-text)]">
+                          {userInitials}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-[var(--lp-text)]">{sessionUser?.fullName ?? "Library user"}</p>
+                          <p className="truncate text-xs text-[var(--lp-muted)]">{sessionUser?.email ?? sessionUser?.phone ?? sessionUser?.role ?? "Session active"}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 grid gap-1">
+                        <Link href={accountHref} className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                          <UserRound className="h-4 w-4 text-[var(--lp-accent)]" />
+                          Account settings
+                        </Link>
+                        <Link href={securityHref} className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                          <LockKeyhole className="h-4 w-4 text-[var(--lp-accent)]" />
+                          Password & security
+                        </Link>
+                        <Link href={dashboardPathForRole(sessionUser?.role ?? "LIBRARY_OWNER")} className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                          <LayoutDashboard className="h-4 w-4 text-[var(--lp-accent)]" />
+                          Dashboard
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await logoutSession();
+                            window.location.href = loginPathForRole(sessionUser?.role);
+                          }}
+                          className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-rose-700 hover:bg-rose-50"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
           </header>
 
-          {matchedGuide ? (
-            <div className="px-4 pb-24 md:px-6 lg:px-8 lg:pb-8">
-              <section className="rounded-[1.2rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.72)] px-4 py-3 shadow-[0_8px_18px_rgba(111,95,74,0.05)]">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Quick help</p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--lp-text)]">{matchedGuide.title}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setGuideOpen((current) => !current)}
-                    className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--lp-primary)]"
-                  >
-                    {guideOpen ? "Hide steps" : "Show steps"}
-                  </button>
-                </div>
-                {guideOpen ? (
-                  <ol className="mt-3 grid gap-2 text-sm text-[var(--lp-text)] lg:grid-cols-3">
-                    {matchedGuide.steps.map((step, index) => (
-                      <li key={`${matchedGuide.title}-${index}`} className="rounded-[0.95rem] border border-[var(--lp-border)] bg-white px-3 py-3 leading-6">
-                        <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--lp-primary)] text-[10px] font-black text-white">
-                          {index + 1}
-                        </span>
-                        {step}
-                      </li>
-                    ))}
-                  </ol>
-                ) : null}
-              </section>
-            </div>
-          ) : null}
-          <section className="px-4 py-5 pb-28 md:px-6 lg:px-8 lg:py-8 lg:pb-8">{children}</section>
+          <section className="lp-shell-container px-3 py-3 pb-24 sm:px-4 lg:py-4 lg:pb-6">{children}</section>
         </div>
       </div>
 
@@ -379,71 +326,52 @@ export function DashboardShell({
         ) : null}
 
         <div
-          className={`fixed bottom-24 z-40 w-[min(22rem,calc(100vw-1.5rem))] rounded-[1.75rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.98)] p-4 shadow-[0_24px_44px_rgba(15,23,42,0.20)] backdrop-blur transition ${
+          className={`fixed bottom-16 left-3 right-3 z-40 rounded-lg border border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] p-3 shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur transition ${
             mobileMenuOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
-          } ${mobileMenuSide === "left" ? "left-3" : "right-3"}`}
+          }`}
         >
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--lp-accent)]">{panelLabel}</p>
-              <p className="text-sm text-[var(--lp-muted)]">Quick navigation</p>
-            </div>
-            <button
-              type="button"
-              onClick={toggleMobileMenuSide}
-              className="rounded-full border border-[var(--lp-border)] bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--lp-primary)]"
-            >
-              Dock {mobileMenuSide === "left" ? "Right" : "Left"}
-            </button>
-          </div>
           <div className="grid gap-2">
-            {nav.map((item) => {
+            {nav.slice(5).map((item) => {
               const active = pathname === item.href;
+              const Icon = navIconFor(item);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center justify-between rounded-[1rem] px-4 py-3 text-sm font-semibold ${
-                    active ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                  className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
+                    active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                   }`}
                 >
-                  <span>{item.label}</span>
-                  <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${active ? "bg-[#fff4eb] text-[var(--lp-primary)]" : "bg-[#ecf3f1] text-[var(--lp-accent)]"}`}>
-                    {item.shortLabel ?? item.label.slice(0, 3)}
+                  <span className="flex w-6 shrink-0 items-center justify-center">
+                    <Icon className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
                   </span>
+                  <span className="truncate">{item.label}</span>
                 </Link>
               );
             })}
           </div>
         </div>
 
-        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,249,241,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur">
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur">
           <div className="grid grid-cols-5 gap-2">
             {primaryMobileNav.map((item) => {
               const active = pathname === item.href;
+              const Icon = navIconFor(item);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center rounded-[1rem] px-2 py-2 text-center text-[11px] font-bold ${
-                    active ? "bg-[var(--lp-primary)] text-white" : "bg-white text-[var(--lp-text)]"
+                  className={`flex flex-col items-center justify-center rounded-lg px-2 py-2 text-center text-[10px] font-medium ${
+                    active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "bg-white text-[var(--lp-text)]"
                   }`}
                 >
-                  <span className="text-[10px] uppercase tracking-[0.18em] opacity-80">{item.shortLabel ?? item.label.slice(0, 3)}</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/80">
+                    <Icon className="h-4 w-4" />
+                  </span>
                   <span className="mt-1 truncate">{item.label}</span>
                 </Link>
               );
             })}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((current) => !current)}
-              className={`flex flex-col items-center justify-center rounded-[1rem] px-2 py-2 text-center text-[11px] font-bold ${
-                mobileMenuOpen ? "bg-slate-900 text-white" : "bg-white text-[var(--lp-text)]"
-              }`}
-            >
-              <span className="text-[10px] uppercase tracking-[0.18em] opacity-80">Menu</span>
-              <span className="mt-1">{mobileMenuOpen ? "Close" : "More"}</span>
-            </button>
           </div>
         </nav>
       </div>
@@ -462,13 +390,33 @@ export function DashboardCard({
   children: ReactNode;
   tone?: string;
 }) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   return (
-    <section className={`rounded-[1.75rem] border border-[var(--lp-border)] p-5 shadow-[0_16px_36px_rgba(111,95,74,0.08)] ${tone}`}>
-      <div className="flex flex-col gap-1">
-        <h3 className="text-lg font-extrabold text-[var(--lp-text)]">{title}</h3>
-        {subtitle ? <p className="text-sm text-[var(--lp-muted)]">{subtitle}</p> : null}
+    <section className={`rounded-[0.5rem] border border-[var(--lp-border)] p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)] ${tone}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-[var(--lp-text)]">{title}</h3>
+        </div>
+        {subtitle ? (
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setDetailsOpen((current) => !current)}
+              aria-label={detailsOpen ? "Hide card help" : "Show card help"}
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-xs font-bold text-[var(--lp-primary)]"
+            >
+              ?
+            </button>
+            {detailsOpen ? (
+              <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-72 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-3 text-sm leading-6 text-[var(--lp-muted)] shadow-[0_18px_34px_rgba(15,23,42,0.10)]">
+                {subtitle}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
-      <div className="mt-5">{children}</div>
+      <div className="mt-3">{children}</div>
     </section>
   );
 }

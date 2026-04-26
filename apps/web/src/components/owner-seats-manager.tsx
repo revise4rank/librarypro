@@ -34,6 +34,7 @@ type StudentRow = {
   plan_name: string;
   payment_status: string;
   ends_at: string;
+  admission_status?: "SEAT_UNALLOTTED" | "SEAT_ALLOTTED";
 };
 
 type FloorRow = {
@@ -122,6 +123,33 @@ function getPlannerColumnWidth(columns: number) {
   if (columns >= 12) return 54;
   if (columns >= 10) return 62;
   return 74;
+}
+
+function InlineHelp({ title, points }: { title: string; points: string[] }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--lp-border)] bg-white text-sm font-black text-[var(--lp-accent)] shadow-[0_8px_18px_rgba(210,114,61,0.08)]"
+        aria-label={`${title} help`}
+      >
+        ?
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-[calc(100%+10px)] z-[120] w-72 rounded-[1rem] border border-[var(--lp-border)] bg-white p-3 shadow-[0_20px_44px_rgba(15,23,42,0.14)]">
+          <p className="text-sm font-black text-[var(--lp-text)]">{title}</p>
+          <div className="mt-2 grid gap-2 text-sm leading-6 text-[var(--lp-muted)]">
+            {points.map((point) => (
+              <p key={point}>{point}</p>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function buildNextSeatCode(existingSeatNumbers: string[], prefix: string) {
@@ -430,15 +458,16 @@ export function OwnerSeatsManager() {
   const [activeAislePaint, setActiveAislePaint] = useState<{ floorId: string; mode: "add" | "remove" } | null>(null);
   const [ribbonTab, setRibbonTab] = useState<"floor" | "bank" | "single">("floor");
   const [plannerRibbonTab, setPlannerRibbonTab] = useState<"templates" | "layout" | "paint" | "students">("templates");
-  const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("layout");
+  const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("assign");
   const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
   const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
-  const [setupRibbonOpen, setSetupRibbonOpen] = useState(true);
+  const [setupRibbonOpen, setSetupRibbonOpen] = useState(false);
   const [hallSettingsOpen, setHallSettingsOpen] = useState(false);
   const [plannerLegendOpen, setPlannerLegendOpen] = useState(false);
   const [inspectorControlsOpen, setInspectorControlsOpen] = useState(false);
   const [floorSwitcherOpen, setFloorSwitcherOpen] = useState(false);
   const [seatFiltersOpen, setSeatFiltersOpen] = useState(false);
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -508,20 +537,40 @@ export function OwnerSeatsManager() {
 
     if (workspace === "setup" || workspace === "layout" || workspace === "assign") {
       setWorkspaceMode(workspace);
+      if (workspace === "setup") {
+        setSetupRibbonOpen(true);
+      }
+      if (workspace === "layout") {
+        setPlannerToolbarOpen(true);
+        setLayoutMode(true);
+      }
     }
 
     if (ribbon === "floor" || ribbon === "bank" || ribbon === "single") {
       setRibbonTab(ribbon);
+      setSetupRibbonOpen(true);
     }
 
     if (planner === "templates" || planner === "layout" || planner === "paint" || planner === "students") {
       setPlannerRibbonTab(planner);
+      setPlannerToolbarOpen(true);
+      if (planner === "layout") {
+        setLayoutMode(true);
+      }
     }
   }, [searchParams]);
 
   useEffect(() => {
+    if (workspaceMode === "layout") {
+      setLayoutMode(true);
+      return;
+    }
+    setLayoutMode(false);
+  }, [workspaceMode]);
+
+  useEffect(() => {
     if (!activeAislePaint) return;
-    const handleMouseUp = () => {
+    const finishAislePaint = () => {
       const draft = floorMetaDrafts[activeAislePaint.floorId];
       void saveFloorMeta(activeAislePaint.floorId, {
         aisleCells: draft?.aisleCells ?? [],
@@ -529,8 +578,18 @@ export function OwnerSeatsManager() {
       });
       setActiveAislePaint(null);
     };
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => window.removeEventListener("mouseup", handleMouseUp);
+
+    window.addEventListener("mouseup", finishAislePaint);
+    window.addEventListener("pointerup", finishAislePaint);
+    window.addEventListener("pointercancel", finishAislePaint);
+    window.addEventListener("touchend", finishAislePaint);
+
+    return () => {
+      window.removeEventListener("mouseup", finishAislePaint);
+      window.removeEventListener("pointerup", finishAislePaint);
+      window.removeEventListener("pointercancel", finishAislePaint);
+      window.removeEventListener("touchend", finishAislePaint);
+    };
   }, [activeAislePaint, floorMetaDrafts]);
 
   useEffect(() => {
@@ -569,13 +628,24 @@ export function OwnerSeatsManager() {
   const selectedSeat = useMemo(() => seats.find((seat) => seat.id === selectedSeatId) ?? null, [seats, selectedSeatId]);
 
   useEffect(() => {
-    if (!selectedSeat) return;
+    if (!selectedSeat) {
+      setActionSheetOpen(false);
+      return;
+    }
     setDrawerSeatCode(selectedSeat.seat_number);
     setDrawerSectionName(selectedSeat.section_name ?? "");
     setDrawerReservedUntil(selectedSeat.reserved_until ? selectedSeat.reserved_until.slice(0, 16) : "");
+    setActionSheetOpen(true);
   }, [selectedSeat]);
 
-  const availableStudents = useMemo(() => students.filter((student) => student.assignment_id), [students]);
+  const unallottedStudents = useMemo(
+    () => students.filter((student) => student.assignment_id && (student.admission_status ? student.admission_status === "SEAT_UNALLOTTED" : !student.seat_number)),
+    [students],
+  );
+  const selectedAssignmentStudent = useMemo(
+    () => students.find((student) => student.assignment_id === selectedAssignmentId) ?? null,
+    [students, selectedAssignmentId],
+  );
   const existingSeatNumbers = useMemo(() => seats.map((seat) => seat.seat_number), [seats]);
 
   const sectionOptions = useMemo(() => {
@@ -658,6 +728,11 @@ export function OwnerSeatsManager() {
 
   const visibleFloorCards = useMemo(() => (activeFloorCard ? [activeFloorCard] : []), [activeFloorCard]);
 
+  const selectedSeatFloor = useMemo(() => {
+    if (!selectedSeat) return null;
+    return floorCards.find((item) => item.floor.id === (selectedSeat.floor_id ?? "main-floor")) ?? activeFloorCard ?? null;
+  }, [activeFloorCard, floorCards, selectedSeat]);
+
   const totals = useMemo(() => {
     return seats.reduce(
       (acc, seat) => {
@@ -670,7 +745,7 @@ export function OwnerSeatsManager() {
 
   async function assignSeat(seatId: string) {
     if (!selectedAssignmentId) {
-      setError("Pehle student select karo, phir seat choose karo.");
+      setError("Select a student first, then choose a seat.");
       return;
     }
 
@@ -707,7 +782,7 @@ export function OwnerSeatsManager() {
         }),
       });
       setSelectedFloorId(result.data.id);
-      setMessage(`New floor created. "${result.data.name}" ab seat bank create ke liye selected hai.`);
+      setMessage(`New floor created. "${result.data.name}" is now selected for seat-bank creation.`);
       await loadData();
     } catch (submitError) {
       const rawMessage = submitError instanceof Error ? submitError.message : "Floor create failed.";
@@ -715,7 +790,7 @@ export function OwnerSeatsManager() {
         const suggestion = suggestNextFloor(floors);
         setFloorNumber(suggestion.floorNumber);
         setFloorName(suggestion.floorName);
-        setError(`Ye floor number already use ho raha hai. Ab next available floor auto-fill kar diya gaya hai: ${suggestion.floorName}.`);
+        setError(`That floor number is already in use. The next available option has been filled in: ${suggestion.floorName}.`);
         return;
       }
       setError(rawMessage);
@@ -807,7 +882,7 @@ export function OwnerSeatsManager() {
     setError(null);
 
     if (!selectedFloorId) {
-      setError("Pehle floor select karo ya naya floor create karo, phir seat bank banao.");
+      setError("Select a floor first or create a new floor before adding a seat bank.");
       return;
     }
 
@@ -838,12 +913,12 @@ export function OwnerSeatsManager() {
     setError(null);
 
     if (!selectedFloorId) {
-      setError("Single seat create karne se pehle floor select karo.");
+      setError("Select a floor before creating a single seat.");
       return;
     }
 
     if (!manualSeatCode.trim()) {
-      setError("Seat code likho, jaise G-12 ya A7.");
+      setError("Enter a seat code like G-12 or A7.");
       return;
     }
 
@@ -999,7 +1074,7 @@ export function OwnerSeatsManager() {
       .filter((seat) => (floorId === "main-floor" ? !seat.floor_id : seat.floor_id === floorId))
       .sort((a, b) => a.seat_number.localeCompare(b.seat_number));
     if (floorSeats.length === 0) {
-      setError("Is floor par pehle seats create karo, tab room layout apply hoga.");
+      setError("Create seats on this floor first, then apply a room layout.");
       return;
     }
 
@@ -1051,7 +1126,7 @@ export function OwnerSeatsManager() {
       }
       setPaintSectionName(preset.sectionName);
       setPaintSectionColor(preset.sectionColor);
-      setMessage(`${preset.sectionName} layout apply ho gaya.`);
+      setMessage(`${preset.sectionName} layout applied successfully.`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Room layout apply failed.");
     }
@@ -1140,6 +1215,13 @@ export function OwnerSeatsManager() {
     await moveSeatToPosition(selectedSeat.id, Math.max(1, selectedSeat.pos_x + deltaX), Math.max(1, selectedSeat.pos_y + deltaY));
   }
 
+  async function centerSelectedSeat() {
+    if (!selectedSeat || !selectedSeatFloor) return;
+    const nextX = Math.max(1, Math.ceil(selectedSeatFloor.floor.layout_columns / 2));
+    const nextY = Math.max(1, Math.ceil(selectedSeatFloor.floor.layout_rows / 2));
+    await moveSeatToPosition(selectedSeat.id, nextX, nextY);
+  }
+
   function updateFloorDraft(floorId: string, partial: Partial<{ name: string; layoutRows: number; layoutColumns: number }>) {
     setFloorDrafts((current) => ({
       ...current,
@@ -1152,8 +1234,27 @@ export function OwnerSeatsManager() {
   }
 
   return (
-    <div className="grid gap-6">
-      <DashboardCard title="Workspace mode" subtitle="One task at a time. Baaki controls tabhi kholo jab zarurat ho.">
+    <div className="grid gap-5">
+      <section className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9cead4_100%)] p-4 text-white shadow-[0_18px_34px_rgba(22,184,113,0.16)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Seat inventory live</p>
+            <h3 className="mt-1 text-xl font-black tracking-tight">Keep seat inventory calm, then place unallotted students only when you are ready</h3>
+            <p className="mt-1 text-sm leading-6 text-white/85">
+              This page now defaults to assignment mode first. Open setup or layout tools only when the hall itself needs changes.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="rounded-[0.95rem] bg-white/12 px-4 py-2.5 text-sm font-black">
+              {totals.AVAILABLE ?? 0} free
+            </div>
+            <div className="rounded-[0.95rem] bg-white px-4 py-2.5 text-sm font-black text-[#139b62]">
+              {totals.OCCUPIED ?? 0} occupied
+            </div>
+          </div>
+        </div>
+      </section>
+      <DashboardCard title="Workspace mode" subtitle="Assignment stays primary. Setup and layout open only when the hall needs structural changes.">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
             {([
@@ -1165,9 +1266,9 @@ export function OwnerSeatsManager() {
                 key={value}
                 type="button"
                 onClick={() => setWorkspaceMode(value)}
-                className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] transition ${
                   workspaceMode === value
-                    ? "bg-slate-950 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
+                    ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-[0_10px_18px_rgba(210,114,61,0.12)]"
                     : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                 }`}
               >
@@ -1175,20 +1276,30 @@ export function OwnerSeatsManager() {
               </button>
             ))}
           </div>
-          <div className="rounded-full border border-[var(--lp-border)] bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]">
-            Active: {workspaceMode}
+          <div className="flex items-center gap-2">
+            <div className="rounded-full border border-[var(--lp-border)] bg-slate-50 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]">
+              Active: {workspaceMode}
+            </div>
+            <InlineHelp
+              title="Workspace mode"
+              points={[
+                "Assign is the daily mode for placing unallotted students.",
+                "Setup is only for floors and new seats.",
+                "Layout is only for moving desks, aisles, and section colors.",
+              ]}
+            />
           </div>
         </div>
       </DashboardCard>
       <div className="sticky top-[88px] z-10">
       <DashboardCard
-        title={workspaceMode === "setup" ? "Setup ribbon" : workspaceMode === "layout" ? "Layout ribbon" : "Assign ribbon"}
+        title={workspaceMode === "setup" ? "Setup ribbon" : workspaceMode === "layout" ? "Layout ribbon" : "Assignment ribbon"}
         subtitle={
           workspaceMode === "setup"
-            ? "Floor aur seats ko yahin se create karo."
+            ? "Create floors, seat banks, and single seats from one compact ribbon."
             : workspaceMode === "layout"
-              ? "Templates aur layout tools yahin se control karo."
-              : "Student assignment tools yahin se manage karo."
+              ? "Switch between templates, layout tools, and section painting here."
+              : "Keep unallotted-student assignment focused and close to the planner, while hall-edit tools stay hidden."
         }
       >
         <div className="grid gap-4">
@@ -1208,7 +1319,7 @@ export function OwnerSeatsManager() {
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
             <div>
               <p className="text-sm font-black text-[var(--lp-text)]">Create only what you need</p>
-              <p className="mt-1 text-sm text-slate-500">Ek waqt par ek form kholo, planner ko clean rakho.</p>
+              <p className="mt-1 text-sm text-slate-500">Open one form at a time to keep the planner clean.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex flex-wrap gap-2">
@@ -1224,9 +1335,9 @@ export function OwnerSeatsManager() {
                       setRibbonTab(value as typeof ribbonTab);
                       setSetupRibbonOpen(true);
                     }}
-                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                    className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] ${
                       ribbonTab === value
-                        ? "bg-[var(--lp-primary)] text-white shadow-[0_10px_22px_rgba(210,114,61,0.22)]"
+                        ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-[0_10px_18px_rgba(210,114,61,0.12)]"
                         : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                     }`}
                   >
@@ -1237,7 +1348,7 @@ export function OwnerSeatsManager() {
               <button
                 type="button"
                 onClick={() => setSetupRibbonOpen((current) => !current)}
-                className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
               >
                 {setupRibbonOpen ? "Hide form" : "Open form"}
               </button>
@@ -1247,7 +1358,7 @@ export function OwnerSeatsManager() {
           {setupRibbonOpen && ribbonTab === "floor" ? (
             <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
               <div className="lg:col-span-5 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
-                Existing floors ke basis par next floor number auto-suggest hota hai. Duplicate hua to next available floor suggest hoga.
+                The next floor number is suggested automatically from existing floors. If it is a duplicate, the next available floor is suggested.
               </div>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Floor Name
@@ -1265,14 +1376,14 @@ export function OwnerSeatsManager() {
                 Columns
                 <input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns" type="number" />
               </label>
-              <button type="submit" className="rounded-[1rem] bg-[var(--lp-primary)] px-5 py-3 text-sm font-semibold text-white">Create floor</button>
+              <button type="submit" className="rounded-[1rem] bg-[var(--lp-accent-soft)] px-5 py-2.5 text-sm font-semibold text-[var(--lp-accent)]">Create floor</button>
             </form>
           ) : null}
 
           {setupRibbonOpen && ribbonTab === "bank" ? (
             <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
               <div className="lg:col-span-9 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
-                Floor choose karke bulk seat bank banao. Prefix, count, row/column start aur columns per row yahin se set karo.
+                Pick a floor and create a bulk seat bank with prefix, count, row start, column start, and columns per row.
               </div>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Floor
@@ -1313,7 +1424,7 @@ export function OwnerSeatsManager() {
                 Per Row
                 <input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns per row" type="number" />
               </label>
-              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-5 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
+              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
               <datalist id="seat-sections-ribbon">
                 {sectionOptions.map((section) => (
                   <option key={section} value={section} />
@@ -1325,7 +1436,7 @@ export function OwnerSeatsManager() {
           {setupRibbonOpen && ribbonTab === "single" ? (
             <form id="seat-create-single" onSubmit={createSingleSeat} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
               <div className="lg:col-span-4 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
-                Ek exact custom seat banana ho to yahin se code likho, floor choose rakho, aur direct create karo.
+                Create one exact custom seat here with its code and target floor.
               </div>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Seat Code
@@ -1346,12 +1457,12 @@ export function OwnerSeatsManager() {
                 Section
                 <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
               </label>
-              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
+              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
             </form>
           ) : null}
           {!setupRibbonOpen ? (
             <div className="rounded-[1.25rem] border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-[var(--lp-muted)]">
-              Setup form hidden hai. Jab naya floor, seat bank, ya single seat banana ho tab relevant tab open karo.
+                The setup form is hidden. Open the matching tab only when you need a new floor, seat bank, or single seat.
             </div>
           ) : null}
             </>
@@ -1362,7 +1473,7 @@ export function OwnerSeatsManager() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Tool palette</p>
-                <p className="mt-1 text-sm text-[var(--lp-muted)]">Secondary layout tools. Canvas ko primary rehne do.</p>
+                <p className="mt-1 text-sm text-[var(--lp-muted)]">Keep the canvas primary and open secondary tools only when needed.</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex flex-wrap gap-2">
@@ -1370,7 +1481,7 @@ export function OwnerSeatsManager() {
                     ["templates", "Templates"],
                     ["layout", "Layout"],
                     ["paint", "Paint"],
-                    ["students", "Students"],
+                    ["students", "Unallotted"],
                   ].map(([value, label]) => (
                     <button
                       key={value}
@@ -1379,9 +1490,9 @@ export function OwnerSeatsManager() {
                         setPlannerRibbonTab(value as typeof plannerRibbonTab);
                         setPlannerToolbarOpen(true);
                       }}
-                      className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                      className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] ${
                         plannerRibbonTab === value
-                          ? "bg-slate-900 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
+                          ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-[0_10px_18px_rgba(210,114,61,0.12)]"
                           : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                       }`}
                     >
@@ -1392,7 +1503,7 @@ export function OwnerSeatsManager() {
                 <button
                   type="button"
                   onClick={() => setPlannerToolbarOpen((current) => !current)}
-                  className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                  className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
                 >
                   {plannerToolbarOpen ? "Hide panel" : "Open panel"}
                 </button>
@@ -1402,9 +1513,9 @@ export function OwnerSeatsManager() {
             {plannerToolbarOpen && plannerRibbonTab === "templates" ? (
               <div className="grid gap-3 xl:grid-cols-[auto_1fr]">
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "2")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">2 Seat Desk</button>
-                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "4")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">4 Seat Table</button>
-                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "6")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">6 Seat Table</button>
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "2")} className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">2 Seat Desk</button>
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "4")} className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">4 Seat Table</button>
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "6")} className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">6 Seat Table</button>
                 </div>
                 <div className="grid gap-3 xl:grid-cols-3">
                   {roomLayoutPresets.map((preset) => (
@@ -1420,7 +1531,7 @@ export function OwnerSeatsManager() {
                           <p className="text-sm font-black text-[var(--lp-text)]">{preset.title}</p>
                           <p className="mt-1 text-xs text-[var(--lp-muted)]">{preset.subtitle}</p>
                         </div>
-                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--lp-primary)] text-sm font-black text-white">+</span>
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--lp-accent-soft)] text-sm font-black text-[var(--lp-accent)]">+</span>
                       </div>
                     </button>
                   ))}
@@ -1430,7 +1541,7 @@ export function OwnerSeatsManager() {
 
             {plannerToolbarOpen && plannerRibbonTab === "layout" ? (
               <div className="grid gap-3 xl:grid-cols-[auto_auto_1fr]">
-                <button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-[1rem] px-4 py-3 text-sm font-black ${layoutMode ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
+                <button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-[1rem] px-4 py-2.5 text-sm font-black ${layoutMode ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
                   {layoutMode ? "Planner Active" : "Enable Planner"}
                 </button>
                 <div className="rounded-[1rem] bg-[#f5faf6] px-4 py-3">
@@ -1439,7 +1550,7 @@ export function OwnerSeatsManager() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {[["move", "Move"], ["aisle", "Aisle"], ["paint", "Paint"]].map(([value, label]) => (
-                    <button key={value} type="button" onClick={() => setPlannerTool(value as typeof plannerTool)} className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] ${plannerTool === value ? "bg-slate-900 text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>{label}</button>
+                    <button key={value} type="button" onClick={() => setPlannerTool(value as typeof plannerTool)} className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${plannerTool === value ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>{label}</button>
                   ))}
                 </div>
               </div>
@@ -1454,7 +1565,7 @@ export function OwnerSeatsManager() {
                     <button key={section} type="button" onClick={() => { setPaintSectionName(section); setPaintSectionColor(color); setPlannerTool("paint"); }} className="rounded-full px-3 py-2 text-[11px] font-bold text-white" style={{ backgroundColor: color }}>
                       {section}
                     </button>
-                  )) : <p className="text-sm text-[var(--lp-muted)]">Painted section colors yahan dikhenge.</p>}
+                  )) : <p className="text-sm text-[var(--lp-muted)]">Saved section colors appear here.</p>}
                 </div>
               </div>
             ) : null}
@@ -1462,15 +1573,15 @@ export function OwnerSeatsManager() {
             {plannerToolbarOpen && plannerRibbonTab === "students" ? (
               <div className="grid gap-3">
                 <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none">
-                  <option value="">Select student assignment</option>
-                  {availableStudents.map((student) => (
+                  <option value="">Select unallotted student</option>
+                  {unallottedStudents.map((student) => (
                     <option key={student.assignment_id} value={student.assignment_id}>
-                      {student.student_name} | {student.seat_number ?? "No seat"} | {student.plan_name}
+                      {student.student_name} | {student.plan_name} | {student.payment_status}
                     </option>
                   ))}
                 </select>
                 <div className="flex gap-3 overflow-x-auto pb-1">
-                  {availableStudents.map((student) => (
+                  {unallottedStudents.map((student) => (
                     <div
                       key={student.assignment_id}
                       draggable
@@ -1481,10 +1592,10 @@ export function OwnerSeatsManager() {
                         event.dataTransfer.setDragImage(preview, 54, 36);
                         window.setTimeout(() => preview.remove(), 0);
                       }}
-                      className={`min-w-[240px] cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-primary)] bg-[#fff7ef]" : "border-slate-200 bg-white"}`}
+                        className={`min-w-[240px] cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)]" : "border-slate-200 bg-white"}`}
                     >
                       <p className="font-black text-slate-950">{student.student_name}</p>
-                      <p className="text-sm text-slate-500">{student.seat_number ?? "No seat"} | {student.plan_name}</p>
+                      <p className="text-sm text-slate-500">{student.plan_name} | {student.payment_status}</p>
                     </div>
                   ))}
                 </div>
@@ -1501,10 +1612,10 @@ export function OwnerSeatsManager() {
           title={workspaceMode === "setup" ? "Planner preview" : workspaceMode === "layout" ? "Planner studio" : "Assignment canvas"}
           subtitle={
             workspaceMode === "setup"
-              ? "Setup complete hote hi yahin room preview ready hoga."
+              ? "The room preview becomes active as soon as the setup is ready."
               : workspaceMode === "layout"
-                ? "Move, paint, aur presets ke saath clean hall editing."
-                : "Focused seat assignment canvas."
+                ? "Move seats, paint sections, and apply layouts from one compact canvas."
+                : "Focused canvas for unallotted-student placement."
           }
         >
           <div className="grid gap-4">
@@ -1521,23 +1632,17 @@ export function OwnerSeatsManager() {
               </div>
             </div>
 
-            <div className="rounded-[1rem] border border-[var(--lp-border)] bg-white p-4 text-sm leading-7 text-[var(--lp-muted)]">
-              {workspaceMode === "setup" ? (
-                <>
-                  <p>1. Floor aur bank banao.</p>
-                  <p>2. Phir layout mode me room finalize karo.</p>
-                </>
-              ) : workspaceMode === "layout" ? (
-                <>
-                  <p>1. Seat drag karke move ya swap karo.</p>
-                  <p>2. Aisle aur paint se hall zones set karo.</p>
-                </>
-              ) : (
-                <>
-                  <p>1. Student choose karo.</p>
-                  <p>2. Seat par drop ya assign action use karo.</p>
-                </>
-              )}
+            <div className="flex justify-end">
+              <InlineHelp
+                title={workspaceMode === "setup" ? "Setup help" : workspaceMode === "layout" ? "Layout help" : "Assign help"}
+                points={
+                  workspaceMode === "setup"
+                    ? ["Create the floor first.", "Add a seat bank or single seats next.", "Switch to layout when the room structure is ready."]
+                    : workspaceMode === "layout"
+                      ? ["Select a seat to move or inspect it.", "Use aisle and paint tools only where needed.", "Apply presets after the base layout feels right."]
+                      : ["Pick a student from the tray.", "Drop onto a seat or use the assign action.", "Update seat state from the inspector when needed."]
+                }
+              />
             </div>
 
             {workspaceMode === "layout" ? (
@@ -1552,16 +1657,16 @@ export function OwnerSeatsManager() {
                     key={value}
                     type="button"
                     onClick={() => setPlannerTool(value as typeof plannerTool)}
-                    className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] ${plannerTool === value ? "bg-slate-900 text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+                    className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${plannerTool === value ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
                   >
                     {label}
                   </button>
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "2")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">2 Seat Desk</button>
-                <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "4")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">4 Seat Table</button>
-                <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "6")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">6 Seat Table</button>
+                <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "2")} className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">2 Seat Desk</button>
+                <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "4")} className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">4 Seat Table</button>
+                <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "6")} className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">6 Seat Table</button>
               </div>
               <div className="grid gap-3 xl:grid-cols-3">
                 {roomLayoutPresets.map((preset) => (
@@ -1613,85 +1718,50 @@ export function OwnerSeatsManager() {
           </div>
         </DashboardCard>
 
-        {workspaceMode === "assign" ? (
-        <DashboardCard title="Assignment tray" subtitle="Student select karo, phir seat par drop karo.">
+        <DashboardCard title="Action flow" subtitle="Compact assignment support without turning the seat desk into a bulky roster page.">
           <div className="grid gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
-              <div>
-                <p className="text-sm font-black text-slate-950">Student tray</p>
-                <p className="mt-1 text-sm text-slate-500">Active allotment ke time hi isko kholo.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAssignmentTrayOpen((current) => !current)}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
-              >
-                {assignmentTrayOpen ? "Hide tray" : "Open tray"}
-              </button>
+            <div className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-[var(--lp-text-soft)]">
+              {workspaceMode === "assign"
+                ? "Use the planner for placement and keep the queue limited to unallotted students only."
+                : "Seat controls no longer sit in a bulky side inspector. Tap any seat to open its action sheet."}
             </div>
-            {assignmentTrayOpen ? (
-              <>
-                <select
-                  value={selectedAssignmentId}
-                  onChange={(event) => setSelectedAssignmentId(event.target.value)}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                >
-                  <option value="">Select student assignment</option>
-                  {availableStudents.map((student) => (
-                    <option key={student.assignment_id} value={student.assignment_id}>
-                      {student.student_name} | {student.seat_number ?? "No seat"} | {student.plan_name}
-                    </option>
-                  ))}
-                </select>
-
-                <div className="max-h-[24rem] overflow-auto rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
-                  <div className="space-y-3">
-                    {availableStudents.map((student) => (
-                      <div
-                        key={student.assignment_id}
-                        draggable
-                        onDragStart={(event) => {
-                          event.dataTransfer.setData("text/assignment-id", student.assignment_id);
-                          setSelectedAssignmentId(student.assignment_id);
-                          const preview = makeSeatDragPreview(student.student_name);
-                          event.dataTransfer.setDragImage(preview, 54, 36);
-                          window.setTimeout(() => preview.remove(), 0);
-                        }}
-                        className={`cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-primary)] bg-[#fff7ef]" : "border-slate-200 bg-white"}`}
-                      >
-                        <p className="font-black text-slate-950">{student.student_name}</p>
-                        <p className="text-sm text-slate-500">
-                          {student.seat_number ?? "No seat"} | {student.plan_name}
-                        </p>
-                        <p className="text-xs text-slate-400">{student.payment_status} - Valid till {student.ends_at}</p>
-                      </div>
-                    ))}
-                  </div>
+            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-[var(--lp-text)]">Unallotted queue</p>
+                  <p className="mt-1 text-xs text-[var(--lp-text-soft)]">Keep visible here so owners can pick a student quickly and move straight into seat placement.</p>
                 </div>
-              </>
-            ) : (
-              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
-                Tray hidden hai. Allotment ke time open karo.
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black text-amber-700">
+                  {unallottedStudents.length} ready
+                </span>
               </div>
-            )}
+              <div className="mt-3 grid gap-2">
+                {unallottedStudents.slice(0, 5).map((student) => (
+                  <button
+                    key={student.assignment_id}
+                    type="button"
+                    onClick={() => {
+                      setWorkspaceMode("assign");
+                      setSelectedAssignmentId(student.assignment_id);
+                    }}
+                    className={`grid gap-1 rounded-[0.75rem] border px-3 py-2 text-left ${
+                      selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]/35" : "border-[var(--lp-border)] bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-black text-[var(--lp-text)]">{student.student_name}</p>
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${student.payment_status === "PAID" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                        {student.payment_status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--lp-text-soft)]">{student.plan_name} • Ends {formatSeatDateTime(student.ends_at)}</p>
+                  </button>
+                ))}
+                {unallottedStudents.length === 0 ? <p className="text-sm text-[var(--lp-text-soft)]">No unallotted students right now. Use Admissions for new students or Students for seat changes.</p> : null}
+              </div>
+            </div>
           </div>
         </DashboardCard>
-        ) : (
-          <DashboardCard title="Focused inspector" subtitle="Selection details quietly yahin appear hongi.">
-            <div className="grid gap-3">
-              <p className="text-sm leading-7 text-slate-600">
-                {workspaceMode === "setup"
-                  ? "Setup mode me yeh panel selection summary dikhayega. Floor aur seat structure ready karne ke baad layout ya assign mode me shift karo."
-                  : "Layout mode me ek seat select karke uski properties aur fine controls yahan dekh sakte ho."}
-              </p>
-              <div className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Selection</p>
-                <p className="mt-2 text-lg font-black text-[var(--lp-text)]">{selectedSeat?.seat_number ?? "No seat selected"}</p>
-                <p className="mt-1 text-sm text-slate-500">{selectedSeat ? `${selectedSeat.floor_name ?? "Main floor"} | ${selectedSeat.section_name ?? "Main section"}` : "Canvas se ek seat choose karo."}</p>
-              </div>
-            </div>
-          </DashboardCard>
-        )}
       </section>
 
       <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
@@ -1727,8 +1797,8 @@ export function OwnerSeatsManager() {
                 key={value}
                 type="button"
                 onClick={() => setSeatFilter(value as typeof seatFilter)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                  seatFilter === value ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+                  seatFilter === value ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                 }`}
               >
                 {label}
@@ -1738,7 +1808,7 @@ export function OwnerSeatsManager() {
         ) : null}
       </div>
 
-      <section id="seat-planner" className="grid gap-6 xl:grid-cols-[1.22fr_0.78fr]">
+      <section id="seat-planner" className={`grid gap-6 ${workspaceMode === "assign" ? "xl:grid-cols-[1.22fr_0.78fr]" : ""}`}>
         <div className="grid gap-6">
           {floorCards.length > 1 ? (
             <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
@@ -1869,11 +1939,21 @@ export function OwnerSeatsManager() {
                   <div className="overflow-x-auto">
                     <div className="min-w-[42rem] rounded-[1.75rem] border border-[var(--lp-border)] bg-[radial-gradient(circle_at_top,#ffffff_0%,#fcf7ef_100%)] p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                        <div>
+                        <div className="flex items-center gap-2">
+                          <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-muted)]">Floor Planner</p>
-                          <p className="text-sm text-slate-500">{item.columns} columns • {item.rows} rows • drag seats to design the room</p>
+                          <p className="text-sm text-slate-500">{item.columns} columns • {item.rows} rows • drag seats to shape the room</p>
+                          </div>
+                          <InlineHelp
+                            title="Planner help"
+                            points={[
+                              "Click a seat to edit it from the inspector.",
+                              "Use layout mode for moving, aisles, and section colors.",
+                              "Create missing seats from empty cells only when needed.",
+                            ]}
+                          />
                         </div>
-                        <button type="button" onClick={() => setSelectedFloorId(item.floor.id)} className={`rounded-full px-4 py-2 text-xs font-bold ${selectedFloorId === item.floor.id ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
+                        <button type="button" onClick={() => setSelectedFloorId(item.floor.id)} className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] ${selectedFloorId === item.floor.id ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
                           {selectedFloorId === item.floor.id ? "Editing this floor" : "Use this floor"}
                         </button>
                       </div>
@@ -1900,7 +1980,7 @@ export function OwnerSeatsManager() {
                             <div className="mb-4 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
                               <div className="mb-2 flex items-center justify-between">
                                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Section Legend</p>
-                                <span className="text-[11px] text-slate-500">Tap chip to load color</span>
+                                <span className="text-[11px] text-slate-500">Tap a chip to load its color</span>
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {Object.entries(sectionColors).map(([section, color]) => (
@@ -1933,7 +2013,7 @@ export function OwnerSeatsManager() {
                       ) : null}
 
                       <div
-                        className="grid gap-2 rounded-[1.5rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-3"
+                        className="grid gap-2 overflow-visible rounded-[1.5rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-3"
                         style={{ gridTemplateColumns: `repeat(${item.columns}, minmax(${getPlannerColumnWidth(item.columns)}px, 1fr))` }}
                       >
                         {cells.map((cell) => {
@@ -1960,14 +2040,22 @@ export function OwnerSeatsManager() {
                                   void createSeatAtCell(item.floor.id, cell.x, cell.y);
                                 }
                               }}
+                              onPointerDown={(event) => {
+                                if (plannerTool === "aisle" && !seat && item.floor.id !== "main-floor") {
+                                  event.preventDefault();
+                                  const mode = isAisleCell ? "remove" : "add";
+                                  updateAisleDraft(item.floor.id, cell.key, mode);
+                                  setActiveAislePaint({ floorId: item.floor.id, mode });
+                                }
+                              }}
+                              onPointerMove={(event) => {
+                                if (!activeAislePaint || activeAislePaint.floorId !== item.floor.id || seat) return;
+                                if (event.pointerType !== "touch" && event.buttons !== 1) return;
+                                updateAisleDraft(item.floor.id, cell.key, activeAislePaint.mode);
+                              }}
                               onDragOver={(event) => {
                                 event.preventDefault();
                                 setHoverCellKey(cell.key);
-                              }}
-                              onMouseEnter={() => {
-                                if (activeAislePaint?.floorId === item.floor.id && !seat) {
-                                  updateAisleDraft(item.floor.id, cell.key, activeAislePaint.mode);
-                                }
                               }}
                               onDragLeave={() => {
                                 if (hoverCellKey === cell.key) {
@@ -1988,7 +2076,7 @@ export function OwnerSeatsManager() {
 
                                 if (assignmentId && !seat && !isAisleCell) {
                                   setSelectedAssignmentId(assignmentId);
-                                  setError("Is empty spot par pehle + se seat banao, phir student assign karo.");
+                                  setError("Create a seat in this empty spot first, then assign the student.");
                                   return;
                                 }
 
@@ -2002,7 +2090,7 @@ export function OwnerSeatsManager() {
                                   void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
                                 }
                               }}
-                            className={`relative min-h-[4rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                              className={`relative min-h-[4rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "z-20 scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : "z-0"} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
                             >
                               {seat ? (
                                 <button
@@ -2023,7 +2111,7 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`group relative flex h-full w-full flex-col items-center overflow-visible rounded-[1.1rem] border px-1.5 py-1.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.12)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`group relative flex h-full w-full flex-col items-center overflow-visible rounded-[1rem] border px-1.5 py-1.5 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(15,23,42,0.10)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
                                   <div className="flex w-full items-center justify-between gap-1">
@@ -2048,65 +2136,8 @@ export function OwnerSeatsManager() {
                                       {seatShape === "Study Desk" ? "Desk" : seatShape === "Wall Desk" ? "Wall" : "Cabin"}
                                     </span>
                                     {seat.student_name ? (
-                                      <p className="rounded-full bg-slate-900 px-2 py-0.5 text-[7px] font-black text-white shadow-[0_6px_12px_rgba(15,23,42,0.16)]">{formatStudentInitials(seat.student_name)}</p>
+                                      <p className="rounded-full bg-[var(--lp-accent-soft)] px-2 py-0.5 text-[7px] font-black text-[var(--lp-accent)] shadow-[0_6px_12px_rgba(210,114,61,0.10)]">{formatStudentInitials(seat.student_name)}</p>
                                     ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Open</p>}
-                                  </div>
-                                  <div className="pointer-events-none absolute left-1/2 top-[calc(100%+12px)] z-30 hidden w-60 -translate-x-1/2 overflow-hidden rounded-[1.1rem] border border-white/15 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0.92))] p-0 text-left text-white shadow-[0_22px_44px_rgba(15,23,42,0.34)] backdrop-blur-xl group-hover:block">
-                                    <div className="h-1.5 w-full" style={{ backgroundColor: getZoneAccent(inferZone(seat)) }} />
-                                    <div className="p-3">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div>
-                                        <p className="text-sm font-black">{seat.seat_number}</p>
-                                        <p className="text-[11px] uppercase tracking-[0.14em] text-slate-300">{describeSeatState(seat)}</p>
-                                      </div>
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white backdrop-blur-sm">
-                                        <SeatStatusGlyph status={seat.status} />
-                                        {seat.status}
-                                      </span>
-                                    </div>
-                                    <div className="mt-3 flex items-center gap-2">
-                                      <span
-                                        className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/95"
-                                        style={{ backgroundColor: `${getZoneAccent(inferZone(seat))}55` }}
-                                      >
-                                        {inferZone(seat)}
-                                      </span>
-                                      <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/90">
-                                        {seatShape}
-                                      </span>
-                                    </div>
-                                    <div className="mt-3 grid gap-2 text-[11px] leading-5 text-slate-200">
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span className="uppercase tracking-[0.14em] text-slate-400">Floor</span>
-                                        <span className="font-semibold text-white">{seat.floor_name ?? "Main floor"}</span>
-                                      </div>
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span className="uppercase tracking-[0.14em] text-slate-400">Section</span>
-                                        <span className="font-semibold text-white">{seat.section_name ?? "Main section"}</span>
-                                      </div>
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span className="uppercase tracking-[0.14em] text-slate-400">Student</span>
-                                        <span className="font-semibold text-white">{seat.student_name ?? "Not assigned"}</span>
-                                      </div>
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span className="uppercase tracking-[0.14em] text-slate-400">Plan</span>
-                                        <span className="font-semibold text-white">{seat.plan_name ?? "Not allotted"}</span>
-                                      </div>
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span className="uppercase tracking-[0.14em] text-slate-400">Payment</span>
-                                        <span className="font-semibold text-white">{seat.payment_status ?? "-"}</span>
-                                      </div>
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span className="uppercase tracking-[0.14em] text-slate-400">Valid till</span>
-                                        <span className="font-semibold text-white">{formatSeatDateTime(seat.ends_at)}</span>
-                                      </div>
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span className="uppercase tracking-[0.14em] text-slate-400">Check-in</span>
-                                        <span className="font-semibold text-white">{formatSeatDateTime(seat.last_check_in_at)}</span>
-                                      </div>
-                                    </div>
-                                    </div>
-                                    <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-l border-t border-slate-200 bg-[rgba(15,23,42,0.96)]" />
                                   </div>
                                 </button>
                               ) : (
@@ -2129,8 +2160,8 @@ export function OwnerSeatsManager() {
                                     </>
                                   ) : (
                                     <div className="mt-1 flex flex-col items-center gap-1">
-                                      <span className={`rounded-full px-2 py-1 text-[7px] font-black uppercase tracking-[0.12em] ${selectedAssignmentId ? "bg-[var(--lp-primary)] text-white" : "bg-slate-200 text-slate-600"}`}>
-                                        Student assign
+                                      <span className={`rounded-full px-2 py-1 text-[7px] font-black uppercase tracking-[0.12em] ${selectedAssignmentId ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "bg-slate-200 text-slate-600"}`}>
+                                        Student ready
                                       </span>
                                       <span className="text-[8px]">{selectedAssignmentId ? "Drop student" : "Select student"}</span>
                                     </div>
@@ -2149,131 +2180,182 @@ export function OwnerSeatsManager() {
           })}
           {!loading && floorCards.length === 0 ? (
             <DashboardCard title="No seats found" subtitle="Create floors and seat banks from the setup tools above.">
-              <p className="text-sm leading-7 text-slate-600">Current filter ya library me abhi koi seat data available nahi hai.</p>
+              <p className="text-sm leading-7 text-slate-600">No seat data is available for the current library or active filter.</p>
             </DashboardCard>
           ) : null}
         </div>
 
-        <div className="grid gap-6 xl:sticky xl:top-[156px] xl:self-start">
-          <DashboardCard title="Seat drawer" subtitle="Selected seat ki summary aur controls yahin rahenge.">
-            <div className="grid gap-4">
-              {selectedSeat ? (
-                <>
-                  <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[#fff7ef] px-4 py-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-lg font-black text-[var(--lp-text)]">{selectedSeat.seat_number}</p>
-                        <p className="text-sm text-[var(--lp-muted)]">{selectedSeat.floor_name ?? "Main floor"} - {selectedSeat.section_name ?? "Main section"}</p>
-                      </div>
-                      <span className="rounded-full bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">
-                        {selectedSeat.status}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">{formatReserveTimer(selectedSeat.reserved_until)}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
-                        {selectedSeat.floor_name ?? "Main floor"}
-                      </span>
-                      <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
-                        {selectedSeat.section_name ?? "Main section"}
-                      </span>
-                    </div>
+        {workspaceMode === "assign" ? (
+          <div className="grid gap-6 xl:sticky xl:top-[84px] xl:self-start">
+            <DashboardCard title="Assignment tray" subtitle="Only unallotted students stay here, so the tray stays compact and useful.">
+              <div className="grid gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-950">Unallotted students</p>
+                    <p className="mt-1 text-sm text-slate-500">Open this only while you are placing ready students into seats.</p>
                   </div>
-
-                  <div className="grid gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-4 text-sm text-slate-600">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Occupant</span>
-                      <span className="text-sm font-bold text-slate-950">{selectedSeat.student_name ?? "Not assigned"}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Plan</span>
-                      <span className="text-sm font-bold text-slate-950">{selectedSeat.plan_name ?? "Not allotted"}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Payment</span>
-                      <span className="text-sm font-bold text-slate-950">{selectedSeat.payment_status ?? "-"}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Valid till</span>
-                      <span className="text-sm font-bold text-slate-950">{selectedSeat.ends_at ?? "-"}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Last check-in</span>
-                      <span className="text-sm font-bold text-slate-950">
-                        {selectedSeat.last_check_in_at ? new Date(selectedSeat.last_check_in_at).toLocaleString() : "No entry yet"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div>
-                      <p className="text-sm font-black text-slate-950">Seat controls</p>
-                      <p className="mt-1 text-sm text-slate-500">Advanced actions hidden by default rakhe hain.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setInspectorControlsOpen((current) => !current)}
-                      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentTrayOpen((current) => !current)}
+                    className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
+                  >
+                    {assignmentTrayOpen ? "Hide tray" : "Open tray"}
+                  </button>
+                </div>
+                {assignmentTrayOpen ? (
+                  <>
+                    <select
+                      value={selectedAssignmentId}
+                      onChange={(event) => setSelectedAssignmentId(event.target.value)}
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
                     >
-                      {inspectorControlsOpen ? "Hide controls" : "Open controls"}
-                    </button>
-                  </div>
+                      <option value="">Select unallotted student</option>
+                      {unallottedStudents.map((student) => (
+                        <option key={student.assignment_id} value={student.assignment_id}>
+                          {student.student_name} | {student.plan_name} | {student.payment_status}
+                        </option>
+                      ))}
+                    </select>
 
-                  {inspectorControlsOpen ? (
-                    <>
-                      <input value={drawerSeatCode} onChange={(event) => setDrawerSeatCode(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Seat code" />
-                      <input value={drawerSectionName} onChange={(event) => setDrawerSectionName(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Room / section" />
-                      {(workspaceMode === "layout" || selectedSeat.status === "RESERVED") ? (
-                        <input type="datetime-local" value={drawerReservedUntil} onChange={(event) => setDrawerReservedUntil(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" />
-                      ) : null}
-
-                      {workspaceMode !== "setup" ? (
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <input value={selectedSeat.pos_x} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" placeholder="Pos X" />
-                        <input value={selectedSeat.pos_y} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" placeholder="Pos Y" />
+                    <div className="max-h-[24rem] overflow-auto rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                      <div className="space-y-3">
+                        {unallottedStudents.map((student) => (
+                          <div
+                            key={student.assignment_id}
+                            draggable
+                            onDragStart={(event) => {
+                              event.dataTransfer.setData("text/assignment-id", student.assignment_id);
+                              setSelectedAssignmentId(student.assignment_id);
+                              const preview = makeSeatDragPreview(student.student_name);
+                              event.dataTransfer.setDragImage(preview, 54, 36);
+                              window.setTimeout(() => preview.remove(), 0);
+                            }}
+                            className={`cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)]" : "border-slate-200 bg-white"}`}
+                          >
+                            <p className="font-black text-slate-950">{student.student_name}</p>
+                            <p className="text-sm text-slate-500">{student.plan_name} | {student.payment_status}</p>
+                            <p className="text-xs text-slate-400">{student.payment_status} - Valid till {student.ends_at}</p>
+                          </div>
+                        ))}
+                        {unallottedStudents.length === 0 ? <p className="px-2 py-6 text-center text-sm text-slate-500">No unallotted students waiting for seat placement.</p> : null}
                       </div>
-                      ) : null}
-
-                      {workspaceMode === "layout" ? (
-                      <div className="grid grid-cols-3 gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
-                        <div />
-                        <button type="button" onClick={() => void nudgeSelectedSeat(0, -1)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Up</button>
-                        <div />
-                        <button type="button" onClick={() => void nudgeSelectedSeat(-1, 0)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Left</button>
-                        <button type="button" onClick={() => void moveSeatToPosition(selectedSeat.id, selectedSeat.pos_x, selectedSeat.pos_y)} className="rounded-[1rem] bg-[#eff7f0] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">Center</button>
-                        <button type="button" onClick={() => void nudgeSelectedSeat(1, 0)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Right</button>
-                        <div />
-                        <button type="button" onClick={() => void nudgeSelectedSeat(0, 1)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Down</button>
-                        <div />
-                      </div>
-                      ) : null}
-
-                      <div className="grid gap-3 md:grid-cols-2">
-                    <button type="button" onClick={() => void updateSeatAction("RESERVED")} className="rounded-[1rem] bg-amber-500 px-4 py-3 text-sm font-semibold text-white">Reserve till</button>
-                    <button type="button" onClick={() => void updateSeatAction("DISABLED")} className="rounded-[1rem] bg-slate-900 px-4 py-3 text-sm font-semibold text-white">Block seat</button>
-                    <button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">Mark free</button>
-                    <button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)]">Save edits</button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                    The tray is hidden. Open it only while assigning seats.
                   </div>
-                      {selectedAssignmentId ? (
-                        <button type="button" onClick={() => void assignSeat(selectedSeat.id)} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">
-                          Allot selected student to this seat
-                        </button>
-                      ) : null}
-                    </>
-                  ) : null}
-
-                </>
-              ) : (
-                <p className="text-sm leading-7 text-slate-600">Seat pod select karo. Yahin se hall planner ke exact controls milenge.</p>
-              )}
-
-              {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
-              {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
-              {loading ? <p className="text-sm text-slate-500">Loading live seat map...</p> : null}
-            </div>
-          </DashboardCard>
-        </div>
+                )}
+              </div>
+            </DashboardCard>
+          </div>
+        ) : null}
       </section>
+
+      {actionSheetOpen && selectedSeat ? (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-18px_40px_rgba(15,23,42,0.12)] backdrop-blur lg:left-auto lg:right-4 lg:top-[84px] lg:bottom-auto lg:w-[360px] lg:rounded-[0.75rem] lg:border lg:px-4 lg:pb-4">
+          <div className="grid gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lp-accent)]">Seat action sheet</p>
+                <p className="mt-1 text-lg font-semibold text-[var(--lp-text)]">{selectedSeat.seat_number}</p>
+                <p className="text-sm text-[var(--lp-muted)]">{selectedSeat.floor_name ?? "Main floor"} | {selectedSeat.section_name ?? "Main section"}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[var(--lp-accent-soft)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                  {selectedSeat.status}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionSheetOpen(false);
+                    setSelectedSeatId(null);
+                  }}
+                  className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-2 rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-3 text-sm text-[var(--lp-text-soft)]">
+              <div className="flex items-center justify-between gap-3">
+                <span>Occupant</span>
+                <span className="font-semibold text-[var(--lp-text)]">{selectedSeat.student_name ?? "Not assigned"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Plan</span>
+                <span className="font-semibold text-[var(--lp-text)]">{selectedSeat.plan_name ?? "Not allotted"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Payment</span>
+                <span className="font-semibold text-[var(--lp-text)]">{selectedSeat.payment_status ?? "-"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Valid till</span>
+                <span className="font-semibold text-[var(--lp-text)]">{selectedSeat.ends_at ?? "-"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Reserve timer</span>
+                <span className="font-semibold text-[var(--lp-text)]">{formatReserveTimer(selectedSeat.reserved_until)}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2.5">
+              <div>
+                <p className="text-sm font-semibold text-[var(--lp-text)]">Advanced controls</p>
+                <p className="text-sm text-[var(--lp-muted)]">Open only when you need to edit state or position.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInspectorControlsOpen((current) => !current)}
+                className="rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
+              >
+                {inspectorControlsOpen ? "Hide controls" : "Open controls"}
+              </button>
+            </div>
+
+            {inspectorControlsOpen ? (
+              <div className="grid gap-3">
+                <input value={drawerSeatCode} onChange={(event) => setDrawerSeatCode(event.target.value)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Seat code" />
+                <input value={drawerSectionName} onChange={(event) => setDrawerSectionName(event.target.value)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Room / section" />
+                {(workspaceMode === "layout" || selectedSeat.status === "RESERVED") ? (
+                  <input type="datetime-local" value={drawerReservedUntil} onChange={(event) => setDrawerReservedUntil(event.target.value)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+                ) : null}
+
+                {workspaceMode === "layout" ? (
+                  <div className="grid grid-cols-3 gap-2 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-3">
+                    <div />
+                    <button type="button" onClick={() => void nudgeSelectedSeat(0, -1)} className="rounded-[0.5rem] border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Up</button>
+                    <div />
+                    <button type="button" onClick={() => void nudgeSelectedSeat(-1, 0)} className="rounded-[0.5rem] border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Left</button>
+                    <button type="button" onClick={() => void centerSelectedSeat()} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-3 py-2 text-sm font-semibold text-[var(--lp-accent)]">Center</button>
+                    <button type="button" onClick={() => void nudgeSelectedSeat(1, 0)} className="rounded-[0.5rem] border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Right</button>
+                    <div />
+                    <button type="button" onClick={() => void nudgeSelectedSeat(0, 1)} className="rounded-[0.5rem] border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Down</button>
+                    <div />
+                  </div>
+                ) : null}
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button type="button" onClick={() => void updateSeatAction("RESERVED")} className="rounded-[0.5rem] border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">Reserve till</button>
+                  <button type="button" onClick={() => void updateSeatAction("DISABLED")} className="rounded-[0.5rem] border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Block seat</button>
+                  <button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text)]">Mark free</button>
+                  <button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">Save edits</button>
+                </div>
+                {selectedAssignmentId && selectedAssignmentStudent?.admission_status !== "SEAT_ALLOTTED" ? (
+                  <button type="button" onClick={() => void assignSeat(selectedSeat.id)} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
+                    Allot selected student to this seat
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
+            {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
+            {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

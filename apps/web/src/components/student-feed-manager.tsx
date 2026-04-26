@@ -141,7 +141,7 @@ export function StudentFeedManager() {
                     <option value="PRIVATE">Private</option>
                   </select>
                 </div>
-                <button type="button" onClick={() => void createPost()} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
+                <button type="button" onClick={() => void createPost()} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
                   Share update
                 </button>
               </>

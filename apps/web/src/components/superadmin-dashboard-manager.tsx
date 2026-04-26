@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { StatCard } from "./stat-card";
 
 type DashboardResponse = {
   success: boolean;
@@ -72,11 +73,19 @@ export function SuperadminDashboardManager() {
   return (
     <div className="grid gap-6">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+      <section className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">Platform Control</p>
+        <h2 className="mt-2 text-[1.4rem] font-semibold tracking-tight text-[var(--lp-text)]">
+          Monitor renewals, revenue health, and operator risk from one admin view.
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--lp-muted)]">
+          Use this dashboard to spot subscription issues quickly, review libraries that need intervention, and keep
+          platform billing visibility clean without bouncing between multiple admin tools.
+        </p>
+      </section>
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((item) => (
-          <DashboardCard key={item.label} title={item.label}>
-            <p className="text-4xl font-black text-slate-950">{item.value}</p>
-          </DashboardCard>
+          <StatCard key={item.label} label={item.label} value={item.value} />
         ))}
       </section>
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">

@@ -5,10 +5,10 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerBillingPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
+      productLabel="LibraryPro"
       panelLabel="Billing"
-      title="Renew plan, inspect subscription state, and track platform payments."
-      description="When owner access expires, billing and renewal remain available so the library can recover access without losing its workspace."
+      title="Keep plan access active, review renewal state, and track platform billing."
+      description="Billing stays reachable even when the plan expires, so the library can recover access quickly without losing workspace data."
       nav={ownerNav}
     >
       <OwnerBillingManager />

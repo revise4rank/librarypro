@@ -1,9 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { env } from "../config/env";
 import { billingRenewBodySchema } from "./billing.validators";
-import { verifyRazorpayWebhookSignature } from "../services/razorpay-webhook.service";
+
+process.env.NODE_ENV = "test";
+process.env.JWT_SECRET = "test-jwt-secret-for-librarypro";
+process.env.INTERNAL_TENANT_HEADER_SECRET = "test-internal-tenant-secret-for-librarypro";
+process.env.RAZORPAY_WEBHOOK_SECRET = "test-razorpay-webhook-secret";
+
+const { verifyRazorpayWebhookSignature } = await import("../services/razorpay-webhook.service");
+
+const TEST_WEBHOOK_SECRET = "test-razorpay-webhook-secret";
 
 test("billingRenewBodySchema defaults to growth plan", () => {
   const parsed = billingRenewBodySchema.parse({});
@@ -16,10 +23,8 @@ test("billingRenewBodySchema accepts starter plan", () => {
 });
 
 test("verifyRazorpayWebhookSignature accepts valid signature", () => {
-  assert.ok(env.razorpayWebhookSecret, "RAZORPAY_WEBHOOK_SECRET must be present for this test");
-
   const rawBody = Buffer.from(JSON.stringify({ event: "payment.captured", payload: {} }), "utf8");
-  const signature = createHmac("sha256", env.razorpayWebhookSecret)
+  const signature = createHmac("sha256", TEST_WEBHOOK_SECRET)
     .update(rawBody)
     .digest("hex");
 
@@ -27,8 +32,6 @@ test("verifyRazorpayWebhookSignature accepts valid signature", () => {
 });
 
 test("verifyRazorpayWebhookSignature rejects invalid signature", () => {
-  assert.ok(env.razorpayWebhookSecret, "RAZORPAY_WEBHOOK_SECRET must be present for this test");
-
   const rawBody = Buffer.from(JSON.stringify({ event: "payment.captured", payload: {} }), "utf8");
 
   assert.throws(

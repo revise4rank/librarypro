@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { API_URL } from "../lib/api";
+import { formatLibraryHost } from "../lib/domain";
 import { getGalleryUrl } from "../lib/public-library";
 import { ContactActions } from "./contact-actions";
 import { Surface } from "./shell";
@@ -554,7 +555,7 @@ export function MarketplaceSearch() {
                       <button
                         type="button"
                         onClick={() => toggleCompare(library)}
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] ${isCompared ? "bg-[var(--lp-primary)] text-white" : "bg-[rgba(255,255,255,0.72)] text-[var(--lp-primary)]"}`}
+                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] ${isCompared ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "bg-[rgba(255,255,255,0.72)] text-[var(--lp-primary)]"}`}
                       >
                         {isCompared ? "Added to compare" : "Compare"}
                       </button>
@@ -573,7 +574,7 @@ export function MarketplaceSearch() {
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Subdomain preview</p>
-                          <p className="mt-2 break-all text-base font-extrabold text-[var(--lp-text)] sm:text-lg">{library.subdomain}.nextlib.in</p>
+                          <p className="mt-2 break-all text-base font-extrabold text-[var(--lp-text)] sm:text-lg">{formatLibraryHost(library.subdomain)}</p>
                         </div>
                         <div className="flex gap-2">
                           <button type="button" onClick={() => setCardSlide(cardKey, activeSlide === 0 ? gallery.length - 1 : activeSlide - 1)} className="rounded-full border border-[rgba(255,255,255,0.7)] bg-white/80 px-3 py-1 text-sm font-semibold text-[var(--lp-primary)]">

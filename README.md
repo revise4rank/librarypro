@@ -12,22 +12,22 @@ LibraryPro is a multi-tenant SaaS for digital libraries with:
 
 ## Monorepo
 
-- `C:\Users\vikki\Downloads\library\apps\api` - Express + TypeScript API
-- `C:\Users\vikki\Downloads\library\apps\web` - Next.js App Router frontend
-- `C:\Users\vikki\Downloads\library\docs` - architecture, API, and schema docs
+- `apps/api` - Express + TypeScript API
+- `apps/web` - Next.js App Router frontend
+- `docs` - architecture, API, and schema docs
 
 ## Local setup
 
 1. Install dependencies
    - `npm install`
 2. Configure env
-   - copy values from [C:\Users\vikki\Downloads\library\.env.example](C:\Users\vikki\Downloads\library\.env.example)
-   - optional production sample: [C:\Users\vikki\Downloads\library\.env.production.example](C:\Users\vikki\Downloads\library\.env.production.example)
+   - copy values from `.env.example`
+   - optional production sample: `.env.production.example`
 3. Run database migration
    - `npm run migrate -w @librarypro/api`
    - migration runner now records applied versions in `schema_migrations`
-   - legacy baseline comes from [C:\Users\vikki\Downloads\library\docs\schema.sql](C:\Users\vikki\Downloads\library\docs\schema.sql)
-   - incremental SQL migrations can be added under `C:\Users\vikki\Downloads\library\apps\api\migrations`
+   - legacy baseline comes from `docs/schema.sql`
+   - incremental SQL migrations can be added under `apps/api/migrations`
 4. Seed demo data
    - `npm run seed -w @librarypro/api`
 5. Start API
@@ -77,4 +77,4 @@ LibraryPro is a multi-tenant SaaS for digital libraries with:
 - QR check-in and checkout backed by database
 - offline queue for QR actions and student payment actions
 - service worker, manifest, and offline fallback page
-- GitHub Actions CI for API tests and workspace builds
+- Render deployment descriptor via `render.yaml`

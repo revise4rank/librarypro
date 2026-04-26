@@ -21,7 +21,6 @@ export function StudentRegisterManager() {
         success: boolean;
         data: {
           csrfToken?: string;
-          accessToken: string;
           user: {
             id: string;
             fullName: string;
@@ -55,13 +54,15 @@ export function StudentRegisterManager() {
       <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Phone" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="Password" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
-      <p className="text-sm text-[var(--lp-muted)]">Account banne ke baad bhi bina library ke focus, revision, syllabus, rewards, aur offers use kar sakte ho.</p>
+      <p className="text-sm text-[var(--lp-muted)]">
+        Create your student app account first, then send a join request to a library. Owner review and payment confirmation still happen before roster access and seat allotment.
+      </p>
       <div className="flex flex-wrap gap-3">
-        <button type="submit" className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white">
-          Create student app
+        <button type="submit" className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
+          Create student account
         </button>
-        <Link href="/marketplace" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-primary)]">
-          Explore libraries
+        <Link href="/student/access" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-primary)]">
+          Find student portal
         </Link>
       </div>
     </form>

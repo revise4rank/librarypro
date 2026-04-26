@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
+import { formatLibraryHost } from "../lib/domain";
 import { DashboardCard } from "./dashboard-shell";
 
 type JoinHistoryItem = {
@@ -136,7 +137,7 @@ export function StudentJoinLibraryManager() {
       setStatus(null);
     } catch (error) {
       setSearchResults([]);
-      setStatus(error instanceof Error ? error.message : "Libraries search abhi load nahi ho paayi.");
+      setStatus(error instanceof Error ? error.message : "Unable to load library search results right now.");
     } finally {
       setSearching(false);
     }
@@ -161,7 +162,7 @@ export function StudentJoinLibraryManager() {
       method: "POST",
       body: JSON.stringify({ qrPayload, seatPreference, message }),
     });
-    setStatus(`Join request sent to ${response.data.libraryName}. Owner can now collect payment and allot your seat.`);
+    setStatus(`Join request sent to ${response.data.libraryName}. The library desk will review your admission, confirm payment, and add you to the roster before seat allotment.`);
     setQrPayload("");
     setQrPreview(null);
     setSeatPreference("");
@@ -187,7 +188,7 @@ export function StudentJoinLibraryManager() {
       setScannerStatus(`QR ready for ${response.data.libraryName}`);
     } catch (error) {
       setQrPreview(null);
-      setStatus(error instanceof Error ? error.message : "Scanned QR verify nahi ho paaya.");
+      setStatus(error instanceof Error ? error.message : "Unable to verify the scanned library QR.");
     } finally {
       setResolvingQr(false);
     }
@@ -200,7 +201,7 @@ export function StudentJoinLibraryManager() {
         method: "POST",
         body: JSON.stringify({ libraryId, seatPreference, message }),
       });
-      setStatus(`Join request sent to ${response.data.libraryName}. Library desk will review your request.`);
+      setStatus(`Join request sent to ${response.data.libraryName}. Library desk will review your admission, confirm payment, and add you to the roster before seat allotment.`);
       setSelectedLibraryId(libraryId);
       await loadHistory();
       await loadLibraries();
@@ -239,7 +240,7 @@ export function StudentJoinLibraryManager() {
 
   async function startCamera() {
     if (!cameraSupported) {
-      setStatus("Is browser me camera QR scan support available nahi hai. Paste scanner use karo.");
+      setStatus("Camera QR scanning is not available in this browser. Use the pasted payload fallback instead.");
       return;
     }
 
@@ -259,7 +260,7 @@ export function StudentJoinLibraryManager() {
       }
 
       setCameraActive(true);
-      setScannerStatus("Camera live - library QR scan karo");
+      setScannerStatus("Camera live. Scan the library QR now.");
 
       scanLoopRef.current = window.setInterval(async () => {
         if (!videoRef.current || !detectorRef.current) return;
@@ -275,7 +276,7 @@ export function StudentJoinLibraryManager() {
       }, 900);
     } catch (error) {
       stopCamera();
-      setStatus(error instanceof Error ? error.message : "Camera scanner start nahi ho paaya.");
+      setStatus(error instanceof Error ? error.message : "Unable to start the camera scanner.");
     }
   }
 
@@ -333,14 +334,14 @@ export function StudentJoinLibraryManager() {
             <button
               type="button"
               onClick={() => setJoinMode("search")}
-              className={`rounded-full px-4 py-2 text-sm font-bold ${joinMode === "search" ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+              className={`rounded-full px-4 py-2 text-sm font-bold ${joinMode === "search" ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
             >
               Search library
             </button>
             <button
               type="button"
               onClick={() => setJoinMode("scan")}
-              className={`rounded-full px-4 py-2 text-sm font-bold ${joinMode === "scan" ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+              className={`rounded-full px-4 py-2 text-sm font-bold ${joinMode === "scan" ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
             >
               Scan library QR
             </button>
@@ -348,8 +349,8 @@ export function StudentJoinLibraryManager() {
 
           <div className="rounded-2xl border border-[var(--lp-border)] bg-[#fffdfa] p-4 text-sm text-[var(--lp-muted)]">
             {joinMode === "search"
-              ? "Kisi bhi active library ko name, city, area ya subdomain se search karo. Result se direct join request bhejo."
-              : "Library reception ya gate par lage QR ko student app camera se scan karo, verify card dekho, phir request bhejo."}
+              ? "Search any active library by name, city, area, or subdomain, then send a join request directly from the result."
+              : "Scan the QR displayed at the library reception or gate, verify the preview card, then send the request for admission review."}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
@@ -395,14 +396,14 @@ export function StudentJoinLibraryManager() {
                           {[library.city, library.area].filter(Boolean).join(" | ") || "Location updating"}
                         </p>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">
-                          {library.subdomain}.nextlib.in
+                          {formatLibraryHost(library.subdomain)}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => void submitLibraryJoinRequest(library.id)}
                         disabled={submittingLibraryId === library.id}
-                        className="rounded-full bg-[var(--lp-primary)] px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+                        className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-2 text-xs font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
                       >
                         {submittingLibraryId === library.id ? "Sending..." : "Send join request"}
                       </button>
@@ -418,14 +419,14 @@ export function StudentJoinLibraryManager() {
             </div>
           ) : (
             <div className="grid gap-4">
-              <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-950 p-4 shadow-[0_16px_30px_rgba(15,23,42,0.12)]">
-                <div className="relative overflow-hidden rounded-[1.5rem] bg-black">
+              <div className="overflow-hidden rounded-[2rem] border border-[var(--lp-border)] bg-[linear-gradient(180deg,#eef7f3,#dceee9)] p-4 shadow-[0_16px_30px_rgba(15,23,42,0.08)]">
+                <div className="relative overflow-hidden rounded-[1.5rem] bg-[#19332d]">
                   <video ref={videoRef} className="h-[18rem] w-full object-cover" playsInline muted />
                   {!cameraActive ? (
                     <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(15,23,42,0.88))] px-6 text-center">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">Library Scanner</p>
-                        <p className="mt-3 text-xl font-black text-white">Student camera se library QR scan karo</p>
+                        <p className="mt-3 text-xl font-black text-white">Scan the library QR with the student camera</p>
                       </div>
                     </div>
                   ) : null}
@@ -438,7 +439,7 @@ export function StudentJoinLibraryManager() {
                   type="button"
                   onClick={() => void startCamera()}
                   disabled={cameraActive}
-                  className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+                  className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
                 >
                   Start camera scanner
                 </button>
@@ -454,8 +455,8 @@ export function StudentJoinLibraryManager() {
 
               <div className="rounded-2xl border border-[var(--lp-border)] bg-[#fffdfa] px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">
                 {scannerStatus}
-                {!cameraSupported ? <span className="mt-1 block text-[var(--lp-muted)]">Is browser me camera QR scan support available nahi hai. Pasted payload use karo.</span> : null}
-                {cameraSupported && !cameraActive ? <span className="mt-1 block text-[var(--lp-muted)]">Start camera scanner dabate hi live preview khul jayega.</span> : null}
+                {!cameraSupported ? <span className="mt-1 block text-[var(--lp-muted)]">Camera QR scanning is not available in this browser. Use the pasted payload flow instead.</span> : null}
+                {cameraSupported && !cameraActive ? <span className="mt-1 block text-[var(--lp-muted)]">Start the camera scanner to open the live preview.</span> : null}
               </div>
 
               <textarea
@@ -480,20 +481,20 @@ export function StudentJoinLibraryManager() {
                   <p className="font-bold text-emerald-800">{qrPreview.libraryName}</p>
                   <p className="mt-1 text-emerald-700">{[qrPreview.city, qrPreview.area].filter(Boolean).join(" | ") || "Library location"}</p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                    {(qrPreview.subdomain || "library")}.nextlib.in
+                    {formatLibraryHost(qrPreview.subdomain || "library")}
                   </p>
                 </div>
               ) : null}
               {!qrPreview && qrPayload.trim().length >= 20 && !resolvingQr ? (
                 <div className="rounded-2xl border border-dashed border-[var(--lp-border)] bg-[#fffdfa] px-4 py-3 text-sm text-[var(--lp-muted)]">
-                  QR payload ready hai. Pehle verify karo, phir library preview card ke saath request bhejo.
+                  The QR payload is ready. Verify it first, then send the request using the library preview card.
                 </div>
               ) : null}
               <button
                 type="button"
                 onClick={() => void submitQrJoinRequest()}
                 disabled={!qrPayload.trim() || !qrPreview}
-                className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+                className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
               >
                 {qrPreview ? `Send join request to ${qrPreview.libraryName}` : "Send join request via QR"}
               </button>
@@ -505,10 +506,10 @@ export function StudentJoinLibraryManager() {
       <DashboardCard title="Library timeline and reviews" subtitle="Track active or past libraries, rejoin quickly, and review only the libraries you actually joined.">
         <div className="grid gap-4">
           <div className="grid gap-4 text-sm leading-7 text-[var(--lp-muted)]">
-            <p>Student apna same app account use karke multiple active libraries discover kar sakta hai aur new join request bhej sakta hai.</p>
-            <p>Search se request bhejo ya direct library QR scan karo. Request owner/admin desk ko chali jayegi.</p>
-            <p>Payment aur seat allotment approve hone ke baad wahi library QR se check-in/check-out chalega.</p>
-            <p>Bina active library ke bhi pomodoro, focus, syllabus, revision, rewards, and offers use karte raho.</p>
+            <p>The same student account can discover multiple active libraries and send new join requests.</p>
+            <p>Search for a library or scan its QR directly. The request will reach the owner or admin desk.</p>
+            <p>After admission review and payment confirmation, your roster access becomes active. Seat allotment can happen after that.</p>
+            <p>Even without an active library, you can still keep using pomodoro, focus, syllabus, revision, rewards, and offers.</p>
             <Link href="/student/offers" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-center font-bold text-[var(--lp-primary)]">
               Explore coaching and library offers
             </Link>
@@ -595,7 +596,7 @@ export function StudentJoinLibraryManager() {
               <div>
                 <p className="text-sm font-bold text-[var(--lp-text)]">Review a joined library</p>
                 <p className="mt-1 text-sm text-[var(--lp-muted)]">
-                  Review marketplace par tabhi show hoga jab student ne library actually join ki ho.
+                  Reviews appear on the marketplace only when the student has actually joined that library.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
@@ -632,7 +633,7 @@ export function StudentJoinLibraryManager() {
                 type="button"
                 onClick={() => void submitReview()}
                 disabled={!selectedReviewLibraryId || reviewText.trim().length < 8}
-                className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+                className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
               >
                 Publish review
               </button>
@@ -658,7 +659,7 @@ export function StudentJoinLibraryManager() {
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">{item.status}</span>
                   </div>
                   {item.review_reason ? <p className="mt-2 text-[var(--lp-muted)]">Reason: {item.review_reason}</p> : null}
-                  {item.linked_assignment_id ? <p className="mt-2 font-semibold text-emerald-700">Seat admission activated</p> : null}
+                  {item.linked_assignment_id ? <p className="mt-2 font-semibold text-emerald-700">Admission activated in your student roster</p> : null}
                 </div>
               ))}
               {history.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No join requests yet.</p> : null}

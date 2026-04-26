@@ -6,6 +6,7 @@ import { createOwnerNotificationCampaign } from "./owner-notifications.service";
 import { getLibraryEntryQr } from "./checkin.service";
 import { OwnerOperationsRepository } from "../repositories/owner-operations.repository";
 import crypto from "node:crypto";
+import type { PoolClient } from "pg";
 
 function repository() {
   return new OwnerOperationsRepository(requireDb());
@@ -62,14 +63,416 @@ export async function listOwnerStudentsPage(input: {
   return repository().listStudentsPage(input.libraryId, input.page, input.limit);
 }
 
+function mapAdmissionPaymentStatus(status: "PAID" | "UNPAID" | "DUE") {
+  if (status === "PAID") return "PAID" as const;
+  if (status === "DUE") return "DUE" as const;
+  return "PENDING" as const;
+}
+
+function computeDiscountedAmount(baseAmount: number, discountType?: string | null, discountValue?: number | null) {
+  if (!discountType || !discountValue || discountValue <= 0) {
+    return {
+      discountType: null,
+      discountValue: null,
+      finalAmount: baseAmount,
+    };
+  }
+
+  const computedDiscount =
+    discountType === "PERCENTAGE"
+      ? Math.min(baseAmount, Math.round((baseAmount * discountValue) / 100))
+      : Math.min(baseAmount, discountValue);
+
+  return {
+    discountType,
+    discountValue: computedDiscount,
+    finalAmount: Math.max(0, baseAmount - computedDiscount),
+  };
+}
+
+async function resolveAdmissionPricing(input: {
+  repo: OwnerOperationsRepository;
+  client: PoolClient;
+  libraryId: string;
+  studentPlanId: string;
+  couponCode?: string;
+  planAmountOverride?: number;
+  durationMonthsOverride?: number;
+}) {
+  const plan = await input.repo.findStudentPlanById(input.client, input.libraryId, input.studentPlanId);
+  if (!plan || !plan.is_active) {
+    throw new AppError(404, "Student plan not found or inactive", "STUDENT_PLAN_NOT_FOUND");
+  }
+
+  const baseAmount = input.planAmountOverride ?? Number(plan.base_amount);
+  const durationMonths = input.durationMonthsOverride ?? plan.duration_months;
+  let pricing = computeDiscountedAmount(
+    baseAmount,
+    plan.default_discount_type,
+    plan.default_discount_value ? Number(plan.default_discount_value) : null,
+  );
+  let couponCode: string | null = null;
+  let couponId: string | null = null;
+
+  if (input.couponCode) {
+    const coupon = await input.repo.findCouponByCode(input.client, input.libraryId, input.couponCode.toUpperCase());
+    if (!coupon || !coupon.is_active) {
+      throw new AppError(404, "Coupon code not found or inactive", "COUPON_NOT_FOUND");
+    }
+    if (coupon.student_plan_id && coupon.student_plan_id !== plan.id) {
+      throw new AppError(409, "Coupon is not valid for the selected plan", "COUPON_PLAN_MISMATCH");
+    }
+    const now = new Date();
+    if (coupon.valid_from && new Date(coupon.valid_from) > now) {
+      throw new AppError(409, "Coupon is not active yet", "COUPON_NOT_ACTIVE_YET");
+    }
+    if (coupon.valid_until && new Date(coupon.valid_until) < now) {
+      throw new AppError(409, "Coupon has expired", "COUPON_EXPIRED");
+    }
+    if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+      throw new AppError(409, "Coupon usage limit reached", "COUPON_LIMIT_REACHED");
+    }
+
+    pricing = computeDiscountedAmount(baseAmount, coupon.discount_type, Number(coupon.discount_value));
+    couponCode = coupon.code;
+    couponId = coupon.id;
+  }
+
+  return {
+    plan,
+    baseAmount,
+    durationMonths,
+    pricing,
+    couponCode,
+    couponId,
+  };
+}
+
+async function createAdmissionRecord(input: {
+  libraryId: string;
+  actorUserId: string;
+  fullName: string;
+  fatherName?: string;
+  address?: string;
+  className?: string;
+  preparingFor?: string;
+  email?: string;
+  phone?: string;
+  emergencyContact?: string;
+  studentPlanId: string;
+  planAmountOverride?: number;
+  durationMonthsOverride?: number;
+  couponCode?: string;
+  paymentStatus: "PAID" | "UNPAID" | "DUE";
+  aadhaarDocumentUrl?: string;
+  schoolIdDocumentUrl?: string;
+  notes?: string;
+  joinRequestId?: string;
+  studentUserId?: string;
+  admissionSource?: "DESK" | "JOIN_REQUEST";
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const pricing = await resolveAdmissionPricing({
+      repo,
+      client,
+      libraryId: input.libraryId,
+      studentPlanId: input.studentPlanId,
+      couponCode: input.couponCode,
+      planAmountOverride: input.planAmountOverride,
+      durationMonthsOverride: input.durationMonthsOverride,
+    });
+
+    let student =
+      input.studentUserId
+        ? {
+            id: input.studentUserId,
+            full_name: input.fullName,
+            email: input.email ?? null,
+            phone: input.phone ?? null,
+            student_code: null,
+          }
+        : await repo.findStudentByEmailOrPhone(client, input.email, input.phone);
+    let isNewStudent = false;
+    const temporaryPassword = "changeme123";
+
+    if (!student) {
+      const passwordHash = await hashPassword(temporaryPassword);
+      const studentCode = buildStudentCode(input.fullName);
+      const created = await repo.createStudent(client, {
+        fullName: input.fullName,
+        email: input.email,
+        phone: input.phone,
+        studentCode,
+        passwordHash,
+      });
+      student = {
+        id: created.id,
+        full_name: input.fullName,
+        email: input.email ?? null,
+        phone: input.phone ?? null,
+        student_code: studentCode,
+      };
+      isNewStudent = true;
+    } else {
+      await repo.updateStudentUser(client, {
+        userId: student.id,
+        fullName: input.fullName,
+        email: input.email ?? null,
+        phone: input.phone ?? null,
+      });
+    }
+
+    await repo.ensureStudentRole(client, student.id, input.libraryId);
+
+    const startsAt = new Date().toISOString();
+    const endsAtDate = new Date();
+    endsAtDate.setMonth(endsAtDate.getMonth() + pricing.durationMonths);
+    const endsAt = endsAtDate.toISOString();
+
+    const assignment = await repo.createAssignment(client, {
+      libraryId: input.libraryId,
+      studentUserId: student.id,
+      seatId: null,
+      fatherName: input.fatherName,
+      address: input.address,
+      className: input.className,
+      preparingFor: input.preparingFor,
+      emergencyContact: input.emergencyContact,
+      studentPlanId: pricing.plan.id,
+      planName: pricing.plan.name,
+      planPrice: pricing.pricing.finalAmount,
+      baseAmount: pricing.baseAmount,
+      discountType: pricing.pricing.discountType as "PERCENTAGE" | "FLAT" | null,
+      discountValue: pricing.pricing.discountValue,
+      couponCode: pricing.couponCode,
+      finalAmount: pricing.pricing.finalAmount,
+      durationMonths: pricing.durationMonths,
+      nextDueDate: endsAt.slice(0, 10),
+      startsAt,
+      endsAt,
+      paymentStatus: mapAdmissionPaymentStatus(input.paymentStatus),
+      assignedBy: input.actorUserId,
+      aadhaarDocumentUrl: input.aadhaarDocumentUrl,
+      schoolIdDocumentUrl: input.schoolIdDocumentUrl,
+      admissionSource: input.admissionSource ?? "DESK",
+      notes: input.notes,
+    });
+
+    const payment = await repo.createPayment(client, {
+      libraryId: input.libraryId,
+      studentUserId: student.id,
+      assignmentId: assignment.id,
+      amount: pricing.pricing.finalAmount,
+      status: mapAdmissionPaymentStatus(input.paymentStatus),
+      method: input.paymentStatus === "PAID" ? "CASH" : "PENDING_DESK_COLLECTION",
+      dueDate: endsAt.slice(0, 10),
+      paidAt: input.paymentStatus === "PAID" ? new Date().toISOString() : null,
+      referenceNo: null,
+      notes: input.notes ?? `Admission created from ${input.admissionSource === "JOIN_REQUEST" ? "join request" : "desk admission"}`,
+      createdBy: input.actorUserId,
+    });
+
+    if (pricing.couponId) {
+      await repo.incrementCouponUsage(client, pricing.couponId);
+    }
+
+    if (input.joinRequestId) {
+      await repo.updateJoinRequestStatus(client, {
+        libraryId: input.libraryId,
+        requestId: input.joinRequestId,
+        status: "APPROVED",
+        reviewedBy: input.actorUserId,
+        linkedAssignmentId: assignment.id,
+      });
+    }
+
+    await client.query("COMMIT");
+
+    return {
+      id: assignment.id,
+      assignmentId: assignment.id,
+      paymentId: payment.id,
+      studentUserId: student.id,
+      loginId: (student as { student_code?: string | null }).student_code ?? student.email ?? student.phone ?? null,
+      temporaryPassword: isNewStudent ? temporaryPassword : null,
+      planName: pricing.plan.name,
+      finalAmount: pricing.pricing.finalAmount,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listOwnerStudentPlans(libraryId: string) {
+  return repository().listStudentPlans(libraryId);
+}
+
+export async function createOwnerStudentPlan(input: {
+  libraryId: string;
+  name: string;
+  targetAudience?: string;
+  description?: string;
+  durationMonths: number;
+  baseAmount: number;
+  defaultDiscountType?: "PERCENTAGE" | "FLAT";
+  defaultDiscountValue?: number;
+  isActive: boolean;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const plan = await repo.createStudentPlan(client, input);
+    await client.query("COMMIT");
+    return plan;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateOwnerStudentPlan(input: {
+  libraryId: string;
+  planId: string;
+  name: string;
+  targetAudience?: string;
+  description?: string;
+  durationMonths: number;
+  baseAmount: number;
+  defaultDiscountType?: "PERCENTAGE" | "FLAT";
+  defaultDiscountValue?: number;
+  isActive: boolean;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const plan = await repo.updateStudentPlan(client, input);
+    if (!plan) {
+      throw new AppError(404, "Student plan not found", "STUDENT_PLAN_NOT_FOUND");
+    }
+    await client.query("COMMIT");
+    return plan;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listOwnerCoupons(libraryId: string) {
+  return repository().listCoupons(libraryId);
+}
+
+export async function createOwnerCoupon(input: {
+  libraryId: string;
+  studentPlanId?: string;
+  code: string;
+  discountType: "PERCENTAGE" | "FLAT";
+  discountValue: number;
+  validFrom?: string;
+  validUntil?: string;
+  usageLimit?: number;
+  isActive: boolean;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const coupon = await repo.createCoupon(client, input);
+    await client.query("COMMIT");
+    return coupon;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateOwnerCoupon(input: {
+  libraryId: string;
+  couponId: string;
+  studentPlanId?: string;
+  code: string;
+  discountType: "PERCENTAGE" | "FLAT";
+  discountValue: number;
+  validFrom?: string;
+  validUntil?: string;
+  usageLimit?: number;
+  isActive: boolean;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const coupon = await repo.updateCoupon(client, input);
+    if (!coupon) {
+      throw new AppError(404, "Coupon not found", "COUPON_NOT_FOUND");
+    }
+    await client.query("COMMIT");
+    return coupon;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createOwnerAdmission(input: {
+  libraryId: string;
+  actorUserId: string;
+  fullName: string;
+  fatherName?: string;
+  address?: string;
+  className?: string;
+  preparingFor?: string;
+  email?: string;
+  phone?: string;
+  emergencyContact?: string;
+  studentPlanId: string;
+  planAmountOverride?: number;
+  durationMonthsOverride?: number;
+  couponCode?: string;
+  paymentStatus: "PAID" | "UNPAID" | "DUE";
+  aadhaarDocumentUrl?: string;
+  schoolIdDocumentUrl?: string;
+  notes?: string;
+}) {
+  return createAdmissionRecord({
+    ...input,
+    admissionSource: "DESK",
+  });
+}
+
 export async function createOwnerStudent(input: {
   libraryId: string;
   actorUserId: string;
   fullName: string;
   fatherName?: string;
+  address?: string;
+  className?: string;
+  preparingFor?: string;
   email?: string;
   phone?: string;
-  seatNumber?: string;
+  emergencyContact?: string;
   planName: string;
   planPrice: number;
   durationMonths: number;
@@ -77,8 +480,11 @@ export async function createOwnerStudent(input: {
   startsAt: string;
   endsAt: string;
   paymentStatus: "PENDING" | "PAID" | "DUE" | "FAILED" | "REFUNDED";
+  aadhaarDocumentUrl?: string;
+  schoolIdDocumentUrl?: string;
   notes?: string;
 }) {
+  const status = input.paymentStatus === "PAID" ? "PAID" : input.paymentStatus === "DUE" ? "DUE" : "UNPAID";
   const db = requireDb();
   const repo = repository();
   const client = await db.connect();
@@ -107,33 +513,39 @@ export async function createOwnerStudent(input: {
         student_code: studentCode,
       };
       isNewStudent = true;
+    } else {
+      await repo.updateStudentUser(client, {
+        userId: student.id,
+        fullName: input.fullName,
+        email: input.email ?? null,
+        phone: input.phone ?? null,
+      });
     }
 
     await repo.ensureStudentRole(client, student.id, input.libraryId);
 
-    let seatId: string | null = null;
-    if (input.seatNumber) {
-      const seat = await repo.findSeatByNumber(client, input.libraryId, input.seatNumber);
-      if (!seat) {
-        throw new AppError(404, "Seat not found for this library", "SEAT_NOT_FOUND");
-      }
-      seatId = seat.id;
-      await repo.updateSeatStatus(client, seat.id, "OCCUPIED");
-    }
-
     const assignment = await repo.createAssignment(client, {
       libraryId: input.libraryId,
       studentUserId: student.id,
-      seatId,
+      seatId: null,
       fatherName: input.fatherName,
+      address: input.address,
+      className: input.className,
+      preparingFor: input.preparingFor,
+      emergencyContact: input.emergencyContact,
       planName: input.planName,
       planPrice: input.planPrice,
+      baseAmount: input.planPrice,
+      finalAmount: input.planPrice,
       durationMonths: input.durationMonths,
       nextDueDate: input.nextDueDate,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
-      paymentStatus: input.paymentStatus,
+      paymentStatus: mapAdmissionPaymentStatus(status),
       assignedBy: input.actorUserId,
+      aadhaarDocumentUrl: input.aadhaarDocumentUrl,
+      schoolIdDocumentUrl: input.schoolIdDocumentUrl,
+      admissionSource: "DESK",
       notes: input.notes,
     });
 
@@ -157,9 +569,13 @@ export async function updateOwnerStudent(input: {
   assignmentId: string;
   fullName: string;
   fatherName?: string;
+  address?: string;
+  className?: string;
+  preparingFor?: string;
   email?: string;
   phone?: string;
-  seatNumber?: string;
+  emergencyContact?: string;
+  studentPlanId?: string;
   planName: string;
   planPrice: number;
   durationMonths: number;
@@ -167,6 +583,8 @@ export async function updateOwnerStudent(input: {
   startsAt: string;
   endsAt: string;
   paymentStatus: "PENDING" | "PAID" | "DUE" | "FAILED" | "REFUNDED";
+  aadhaarDocumentUrl?: string;
+  schoolIdDocumentUrl?: string;
   notes?: string;
 }) {
   const db = requireDb();
@@ -187,40 +605,28 @@ export async function updateOwnerStudent(input: {
       phone: input.phone ?? null,
     });
 
-    let nextSeatId: string | null = null;
-    if (input.seatNumber) {
-      const seat = await repo.findSeatByNumber(client, input.libraryId, input.seatNumber);
-      if (!seat) {
-        throw new AppError(404, "Seat not found for this library", "SEAT_NOT_FOUND");
-      }
-
-      const occupant = await repo.findActiveAssignmentBySeatId(client, input.libraryId, seat.id);
-      if (occupant && occupant.id !== input.assignmentId) {
-        throw new AppError(409, "Seat is already assigned to another student", "SEAT_ALREADY_OCCUPIED");
-      }
-
-      nextSeatId = seat.id;
-      await repo.updateSeatStatus(client, seat.id, "OCCUPIED");
-    }
-
-    if (assignment.seat_id && assignment.seat_id !== nextSeatId) {
-      await repo.updateSeatStatus(client, assignment.seat_id, "AVAILABLE");
-    }
-
     await repo.updateAssignment(client, {
       assignmentId: input.assignmentId,
-      seatId: nextSeatId,
+      seatId: assignment.seat_id,
       planName: input.planName,
       planPrice: input.planPrice,
       fatherName: input.fatherName,
+      address: input.address,
+      className: input.className,
+      preparingFor: input.preparingFor,
+      emergencyContact: input.emergencyContact,
+      studentPlanId: input.studentPlanId,
+      baseAmount: input.planPrice,
+      finalAmount: input.planPrice,
       durationMonths: input.durationMonths,
       nextDueDate: input.nextDueDate,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       paymentStatus: input.paymentStatus,
+      aadhaarDocumentUrl: input.aadhaarDocumentUrl,
+      schoolIdDocumentUrl: input.schoolIdDocumentUrl,
       notes: input.notes,
     });
-    await repo.refreshLibrarySeatCounts(client, input.libraryId);
 
     await client.query("COMMIT");
     return { id: input.assignmentId };
@@ -278,7 +684,7 @@ export async function listOwnerPaymentsPage(input: {
 export async function createOwnerPayment(input: {
   libraryId: string;
   actorUserId: string;
-  studentName: string;
+  assignmentId: string;
   amount: number;
   method: string;
   status: "PENDING" | "PAID" | "DUE" | "FAILED" | "REFUNDED";
@@ -293,15 +699,15 @@ export async function createOwnerPayment(input: {
 
   try {
     await client.query("BEGIN");
-    const student = await repo.findStudentByName(client, input.libraryId, input.studentName);
-    if (!student) {
-      throw new AppError(404, "Student not found in this library", "STUDENT_NOT_FOUND");
+    const assignment = await repo.findAssignmentById(client, input.libraryId, input.assignmentId);
+    if (!assignment) {
+      throw new AppError(404, "Student assignment not found in this library", "ASSIGNMENT_NOT_FOUND");
     }
 
     const payment = await repo.createPayment(client, {
       libraryId: input.libraryId,
-      studentUserId: student.student_user_id,
-      assignmentId: student.assignment_id,
+      studentUserId: assignment.student_user_id,
+      assignmentId: assignment.id,
       amount: input.amount,
       status: input.status,
       method: input.method,
@@ -531,6 +937,35 @@ export async function assignSeatToStudent(input: {
 
     await client.query("COMMIT");
     return { seatId: input.seatId, assignmentId: input.assignmentId };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function unassignSeatFromStudent(input: {
+  libraryId: string;
+  assignmentId: string;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+    const assignment = await repo.findAssignmentById(client, input.libraryId, input.assignmentId);
+    if (!assignment) {
+      throw new AppError(404, "Student assignment not found", "ASSIGNMENT_NOT_FOUND");
+    }
+    if (assignment.seat_id) {
+      await repo.updateSeatStatus(client, assignment.seat_id, "AVAILABLE");
+      await repo.clearAssignmentSeat(client, input.assignmentId);
+      await repo.refreshLibrarySeatCounts(client, input.libraryId);
+    }
+    await client.query("COMMIT");
+    return { assignmentId: input.assignmentId };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -855,7 +1290,7 @@ export async function exportOwnerPaymentReceipt(input: {
 }) {
   const receipt = await getOwnerPaymentReceipt(input);
   return buildPdfBuffer({
-    title: "Nextlib Payment Receipt",
+    title: "LibraryPro Payment Receipt",
     subtitle: receipt.receiptNo,
     summary: [
       { label: "Student", value: receipt.studentName },
@@ -1221,7 +1656,7 @@ export async function exportOwnerReport(input: {
   }
 
   if (input.format === "xlsx") {
-    const buffer = buildXlsxBuffer({
+    const buffer = await buildXlsxBuffer({
       workbookTitle: title,
       sheets: [
         {
@@ -1238,7 +1673,7 @@ export async function exportOwnerReport(input: {
   }
 
   const buffer = await buildPdfBuffer({
-    title: `${title} | Nextlib`,
+    title: `${title} | LibraryPro`,
     subtitle: `Range ${input.fromDate ?? "start"} to ${input.toDate ?? "today"}`,
     summary: [
       { label: "Paid revenue", value: formatCurrency(report.metrics.paidRevenue) },
@@ -1738,14 +2173,21 @@ export async function approveOwnerJoinRequest(input: {
   libraryId: string;
   actorUserId: string;
   requestId: string;
-  seatNumber?: string;
-  planName: string;
-  planPrice: number;
-  durationMonths: number;
-  nextDueDate?: string;
-  startsAt: string;
-  endsAt: string;
-  paymentStatus: "PENDING" | "PAID" | "DUE" | "FAILED" | "REFUNDED";
+  fullName?: string;
+  fatherName?: string;
+  address?: string;
+  className?: string;
+  preparingFor?: string;
+  email?: string;
+  phone?: string;
+  emergencyContact?: string;
+  studentPlanId: string;
+  planAmountOverride?: number;
+  durationMonthsOverride?: number;
+  couponCode?: string;
+  paymentStatus: "PAID" | "UNPAID" | "DUE";
+  aadhaarDocumentUrl?: string;
+  schoolIdDocumentUrl?: string;
   notes?: string;
 }) {
   const db = requireDb();
@@ -1760,55 +2202,30 @@ export async function approveOwnerJoinRequest(input: {
     if (request.status !== "PENDING") {
       throw new AppError(409, "Join request already reviewed", "JOIN_REQUEST_ALREADY_REVIEWED");
     }
-
-    let seatId: string | null = null;
-    if (input.seatNumber) {
-      const seat = await repo.findSeatByNumber(client, input.libraryId, input.seatNumber);
-      if (!seat) {
-        throw new AppError(404, "Seat not found for this library", "SEAT_NOT_FOUND");
-      }
-      seatId = seat.id;
-      await repo.updateSeatStatus(client, seat.id, "OCCUPIED");
-    }
-
-    await repo.ensureStudentRole(client, request.student_user_id, input.libraryId);
-    const assignment = await repo.createAssignment(client, {
-      libraryId: input.libraryId,
-      studentUserId: request.student_user_id,
-      seatId,
-      planName: input.planName,
-      planPrice: input.planPrice,
-      durationMonths: input.durationMonths,
-      nextDueDate: input.nextDueDate,
-      startsAt: input.startsAt,
-      endsAt: input.endsAt,
-      paymentStatus: input.paymentStatus,
-      assignedBy: input.actorUserId,
-      notes: input.notes,
-    });
-    const payment = await repo.createPayment(client, {
-      libraryId: input.libraryId,
-      studentUserId: request.student_user_id,
-      assignmentId: assignment.id,
-      amount: input.planPrice,
-      status: input.paymentStatus,
-      method: input.paymentStatus === "PAID" ? "CASH" : "PENDING_DESK_COLLECTION",
-      dueDate: input.nextDueDate ?? null,
-      paidAt: input.paymentStatus === "PAID" ? new Date().toISOString() : null,
-      referenceNo: null,
-      notes: input.notes ?? "Admission created from QR join request",
-      createdBy: input.actorUserId,
-    });
-    await repo.updateJoinRequestStatus(client, {
-      libraryId: input.libraryId,
-      requestId: input.requestId,
-      status: "APPROVED",
-      reviewedBy: input.actorUserId,
-      linkedAssignmentId: assignment.id,
-    });
-    await repo.refreshLibrarySeatCounts(client, input.libraryId);
     await client.query("COMMIT");
-    return { assignmentId: assignment.id, paymentId: payment.id };
+    return createAdmissionRecord({
+      libraryId: input.libraryId,
+      actorUserId: input.actorUserId,
+      studentUserId: request.student_user_id,
+      joinRequestId: input.requestId,
+      fullName: input.fullName || request.student_name,
+      fatherName: input.fatherName,
+      address: input.address,
+      className: input.className,
+      preparingFor: input.preparingFor,
+      email: input.email || request.student_email || undefined,
+      phone: input.phone || request.student_phone || undefined,
+      emergencyContact: input.emergencyContact,
+      studentPlanId: input.studentPlanId,
+      planAmountOverride: input.planAmountOverride,
+      durationMonthsOverride: input.durationMonthsOverride,
+      couponCode: input.couponCode,
+      paymentStatus: input.paymentStatus,
+      aadhaarDocumentUrl: input.aadhaarDocumentUrl,
+      schoolIdDocumentUrl: input.schoolIdDocumentUrl,
+      notes: input.notes,
+      admissionSource: "JOIN_REQUEST",
+    });
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

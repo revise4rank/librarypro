@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch, hydrateSessionFromServer } from "../lib/api";
+import { formatLibraryHost } from "../lib/domain";
 import { PublicProfileForm } from "./public-profile-form";
 
 type PublicProfileFormValues = {
@@ -89,13 +90,15 @@ function mapProfileToFormValues(profile: NonNullable<OwnerPublicProfileResponse[
 
 export function OwnerWebsiteBuilder({
   initialValues,
+  defaultEditorOpen = false,
 }: {
   initialValues: PublicProfileFormValues;
+  defaultEditorOpen?: boolean;
 }) {
   const [values, setValues] = useState(initialValues);
   const [loadMessage, setLoadMessage] = useState<string | null>(null);
   const [requestedAction, setRequestedAction] = useState<"save-draft" | "publish" | null>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(defaultEditorOpen);
 
   useEffect(() => {
     hydrateSessionFromServer()
@@ -136,7 +139,7 @@ export function OwnerWebsiteBuilder({
           <div>
             <p className="text-sm font-black text-slate-950">Website editor</p>
             <p className="mt-1 text-sm text-slate-500">
-              {values.subdomain ? `${values.subdomain}.nextlib.in` : "Subdomain pending"} | {values.published ? "Published" : "Draft"}
+              {values.subdomain ? formatLibraryHost(values.subdomain) : "Subdomain pending"} | {values.published ? "Published" : "Draft"}
             </p>
           </div>
           <button
@@ -153,7 +156,7 @@ export function OwnerWebsiteBuilder({
         <PublicProfileForm initialValues={values} requestedAction={requestedAction} onActionHandled={() => setRequestedAction(null)} />
       ) : (
         <div className="rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-slate-500">
-          Website editor hidden hai. Jab content edit ya publish karna ho tab isko open karo.
+          The website editor stays hidden until you are ready to edit content or publish updates.
         </div>
       )}
     </div>

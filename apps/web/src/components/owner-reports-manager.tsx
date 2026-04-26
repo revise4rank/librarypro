@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch, getApiBaseUrl, readSession } from "../lib/api";
+import { exportOwnerReport, fetchOwnerReports } from "../lib/owner-finance";
 import { DashboardCard } from "./dashboard-shell";
+import { StatCard } from "./stat-card";
 
 type ReportsResponse = {
   success: boolean;
@@ -107,10 +108,7 @@ export function OwnerReportsManager() {
   async function loadReports(nextFrom = fromDate, nextTo = toDate) {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (nextFrom) params.set("fromDate", nextFrom);
-      if (nextTo) params.set("toDate", nextTo);
-      const response = await apiFetch<ReportsResponse>(`/owner/reports?${params.toString()}`);
+      const response = await fetchOwnerReports<ReportsResponse>(nextFrom, nextTo);
       setReports(response.data);
       setError(null);
     } catch (loadError) {
@@ -123,29 +121,7 @@ export function OwnerReportsManager() {
   async function exportReport(reportType: ReportType, format: "xlsx" | "pdf") {
     setExportingKey(`${reportType}:${format}`);
     try {
-      const params = new URLSearchParams({
-        reportType,
-        format,
-      });
-      if (fromDate) params.set("fromDate", fromDate);
-      if (toDate) params.set("toDate", toDate);
-
-      const headers = new Headers();
-      const csrfToken = readSession()?.csrfToken;
-      if (csrfToken) {
-        headers.set("X-CSRF-Token", csrfToken);
-      }
-
-      const response = await fetch(`${getApiBaseUrl()}/v1/owner/reports/export?${params.toString()}`, {
-        method: "GET",
-        credentials: "include",
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error("Export failed");
-      }
-
+      const response = await exportOwnerReport(reportType, format, fromDate, toDate);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -188,10 +164,30 @@ export function OwnerReportsManager() {
   const categoryTotal = Math.max(...reports.expenseCategorySplit.map((item) => item.amount), 1);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-5">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
-      <DashboardCard title="Custom report window" subtitle="Date range aur exports ko compact rakho, insights ko primary rakho">
+      <section className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-[0_18px_34px_rgba(22,184,113,0.16)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Report center</p>
+            <h3 className="mt-1 text-xl font-black tracking-tight">Business snapshots and export files</h3>
+            <p className="mt-1 text-sm leading-6 text-white/85">
+              Compare revenue, expenses, attendance, and operational records without digging through dense tables.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="rounded-[0.95rem] bg-white/12 px-4 py-2.5 text-sm font-black">
+              {toCurrency(reports.metrics.paidRevenue)} paid
+            </div>
+            <div className="rounded-[0.95rem] bg-white px-4 py-2.5 text-sm font-black text-[#129b62]">
+              {reports.metrics.checkins} check-ins
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <DashboardCard title="Custom report window" subtitle="Keep date filters compact and let insights stay primary.">
         <div className="grid gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
             <div>
@@ -201,7 +197,7 @@ export function OwnerReportsManager() {
             <button
               type="button"
               onClick={() => setFiltersOpen((current) => !current)}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
             >
               {filtersOpen ? "Hide filters" : "Show filters"}
             </button>
@@ -229,7 +225,7 @@ export function OwnerReportsManager() {
               <button
                 type="button"
                 onClick={() => void loadReports(fromDate, toDate)}
-                className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white md:self-end"
+                className="rounded-2xl bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent)] md:self-end"
               >
                 Refresh report
               </button>
@@ -240,11 +236,7 @@ export function OwnerReportsManager() {
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {insightCards.map((card) => (
-          <div key={card.label} className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">{card.label}</p>
-            <p className="mt-3 text-3xl font-black text-slate-950">{card.value}</p>
-            <p className="mt-2 text-sm text-slate-500">{card.note}</p>
-          </div>
+          <StatCard key={card.label} label={card.label} value={card.value} note={card.note} />
         ))}
       </section>
 
@@ -258,7 +250,7 @@ export function OwnerReportsManager() {
             <button
               type="button"
               onClick={() => setExportsOpen((current) => !current)}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
             >
               {exportsOpen ? "Hide exports" : "Show exports"}
             </button>
@@ -279,7 +271,7 @@ export function OwnerReportsManager() {
                     <button
                       type="button"
                       onClick={() => void exportReport(reportType as ReportType, "xlsx")}
-                      className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white"
+                      className="rounded-xl bg-[var(--lp-accent-soft)] px-4 py-2 text-xs font-black text-[var(--lp-accent)]"
                     >
                       {exportingKey === `${reportType}:xlsx` ? "Preparing..." : "Download XLSX"}
                     </button>
@@ -295,7 +287,7 @@ export function OwnerReportsManager() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Export buttons hidden hain. Download ke time open karo.</div>
+            <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Export buttons are hidden. Open them only when you need a file.</div>
           )}
         </div>
       </DashboardCard>
@@ -383,12 +375,12 @@ export function OwnerReportsManager() {
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-sm font-black text-slate-950">Preview panels</p>
-                <p className="mt-1 text-sm text-slate-500">Detailed rows ko demand par kholo.</p>
+                <p className="mt-1 text-sm text-slate-500">Open detailed rows only when you are reviewing a specific slice.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setPreviewsOpen((current) => !current)}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
               >
                 {previewsOpen ? "Hide previews" : "Show previews"}
               </button>
@@ -404,8 +396,8 @@ export function OwnerReportsManager() {
                   key={tab}
                   type="button"
                   onClick={() => setPreviewTab(tab as "students" | "payments" | "expenses" | "attendance")}
-                  className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
-                    previewTab === tab ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"
+                  className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] ${
+                    previewTab === tab ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-slate-200 bg-white text-slate-700"
                   }`}
                 >
                   {label}
@@ -468,7 +460,7 @@ export function OwnerReportsManager() {
                   : null}
               </div>
             ) : (
-              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Preview rows hidden hain. Review ke time open karo.</div>
+              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Preview rows are hidden. Open them only when you need a closer review.</div>
             )}
           </div>
         </DashboardCard>

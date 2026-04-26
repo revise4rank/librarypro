@@ -174,7 +174,7 @@ export function StudentSyllabusManager() {
                     type="color"
                   />
                 </div>
-                <button type="button" onClick={() => void createSubject()} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
+                <button type="button" onClick={() => void createSubject()} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
                   Add subject
                 </button>
               </>

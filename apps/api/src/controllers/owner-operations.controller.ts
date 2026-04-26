@@ -4,13 +4,16 @@ import { AppError } from "../lib/errors";
 import { emitLibraryEvent, emitUserEvent } from "../lib/realtime";
 import {
   assignSeatToStudent,
+  createOwnerAdmission,
   createOwnerFloor,
   createOwnerNotification,
   createOwnerAdmin,
+  createOwnerCoupon,
   createOwnerExpense,
   createOwnerPayment,
   createOwnerSeats,
   createOwnerStudent,
+  createOwnerStudentPlan,
   createStudentJoinRequestByLibrary,
   createStudentJoinRequest,
   resolveStudentJoinQrPayload,
@@ -36,12 +39,14 @@ import {
   listOwnerExpenses,
   listOwnerAdmins,
   listOwnerAuditLogs,
+  listOwnerCoupons,
   listOwnerJoinRequests,
   listStudentJoinRequests,
   listOwnerNotificationsPage,
   listOwnerPaymentsPage,
   listOwnerFloors,
   listOwnerSeats,
+  listOwnerStudentPlans,
   listOwnerStudentsPage,
   listStudentNotificationsPage,
   listStudentPaymentsPage,
@@ -53,7 +58,9 @@ import {
   approveOwnerJoinRequest,
   exportOwnerReport,
   updateOwnerAdminPermissions,
+  updateOwnerCoupon,
   updateOwnerFloor,
+  updateOwnerStudentPlan,
   updateStudentFocusGoals,
   updateOwnerSettings,
   updateOwnerPayment,
@@ -61,8 +68,10 @@ import {
   updateOwnerStudent,
   createStudentFocusSession,
   createStudentFocusSubject,
+  unassignSeatFromStudent,
 } from "../services/owner-operations.service";
 import {
+  createOwnerAdmissionBodySchema,
   assignSeatBodySchema,
   createStudentFocusSessionBodySchema,
   createStudentFocusSubjectBodySchema,
@@ -70,10 +79,12 @@ import {
   updateOwnerFloorBodySchema,
   createOwnerAdminBodySchema,
   createOwnerNotificationBodySchema,
+  ownerCouponBodySchema,
   createOwnerExpenseBodySchema,
   createOwnerPaymentBodySchema,
   createOwnerSeatsBodySchema,
   createOwnerStudentBodySchema,
+  ownerStudentPlanBodySchema,
   ownerExpensesQuerySchema,
   ownerAuditLogsQuerySchema,
   ownerNotificationsQuerySchema,
@@ -142,6 +153,88 @@ export async function listOwnerStudentsController(req: Request, res: Response) {
     data: paged.rows,
     meta: buildPaginationMeta(paged.page, paged.limit, paged.total),
   });
+}
+
+export async function listOwnerStudentPlansController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const data = await listOwnerStudentPlans(libraryId);
+  res.json({ success: true, data });
+}
+
+export async function createOwnerStudentPlanController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const parsed = ownerStudentPlanBodySchema.parse(req.body);
+  const data = await createOwnerStudentPlan({
+    libraryId,
+    name: parsed.name,
+    targetAudience: parsed.targetAudience || undefined,
+    description: parsed.description || undefined,
+    durationMonths: parsed.durationMonths,
+    baseAmount: parsed.baseAmount,
+    defaultDiscountType: parsed.defaultDiscountType,
+    defaultDiscountValue: parsed.defaultDiscountValue,
+    isActive: parsed.isActive,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateOwnerStudentPlanController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const parsed = ownerStudentPlanBodySchema.parse(req.body);
+  const data = await updateOwnerStudentPlan({
+    libraryId,
+    planId: paramValue(req.params.planId),
+    name: parsed.name,
+    targetAudience: parsed.targetAudience || undefined,
+    description: parsed.description || undefined,
+    durationMonths: parsed.durationMonths,
+    baseAmount: parsed.baseAmount,
+    defaultDiscountType: parsed.defaultDiscountType,
+    defaultDiscountValue: parsed.defaultDiscountValue,
+    isActive: parsed.isActive,
+  });
+  res.json({ success: true, data });
+}
+
+export async function listOwnerCouponsController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const data = await listOwnerCoupons(libraryId);
+  res.json({ success: true, data });
+}
+
+export async function createOwnerCouponController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const parsed = ownerCouponBodySchema.parse(req.body);
+  const data = await createOwnerCoupon({
+    libraryId,
+    studentPlanId: parsed.studentPlanId || undefined,
+    code: parsed.code,
+    discountType: parsed.discountType,
+    discountValue: parsed.discountValue,
+    validFrom: parsed.validFrom || undefined,
+    validUntil: parsed.validUntil || undefined,
+    usageLimit: parsed.usageLimit,
+    isActive: parsed.isActive,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateOwnerCouponController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const parsed = ownerCouponBodySchema.parse(req.body);
+  const data = await updateOwnerCoupon({
+    libraryId,
+    couponId: paramValue(req.params.couponId),
+    studentPlanId: parsed.studentPlanId || undefined,
+    code: parsed.code,
+    discountType: parsed.discountType,
+    discountValue: parsed.discountValue,
+    validFrom: parsed.validFrom || undefined,
+    validUntil: parsed.validUntil || undefined,
+    usageLimit: parsed.usageLimit,
+    isActive: parsed.isActive,
+  });
+  res.json({ success: true, data });
 }
 
 export async function getOwnerDashboardController(req: Request, res: Response) {
@@ -240,14 +333,21 @@ export async function approveOwnerJoinRequestController(req: Request, res: Respo
     libraryId,
     actorUserId,
     requestId,
-    seatNumber: parsed.seatNumber || undefined,
-    planName: parsed.planName,
-    planPrice: parsed.planPrice,
-    durationMonths: parsed.durationMonths,
-    nextDueDate: parsed.nextDueDate || undefined,
-    startsAt: parsed.startsAt,
-    endsAt: parsed.endsAt,
+    fullName: parsed.fullName || undefined,
+    fatherName: parsed.fatherName || undefined,
+    address: parsed.address || undefined,
+    className: parsed.className || undefined,
+    preparingFor: parsed.preparingFor || undefined,
+    email: parsed.email || undefined,
+    phone: parsed.phone || undefined,
+    emergencyContact: parsed.emergencyContact || undefined,
+    studentPlanId: parsed.studentPlanId,
+    planAmountOverride: parsed.planAmountOverride,
+    durationMonthsOverride: parsed.durationMonthsOverride,
+    couponCode: parsed.couponCode || undefined,
     paymentStatus: parsed.paymentStatus,
+    aadhaarDocumentUrl: parsed.aadhaarDocumentUrl || undefined,
+    schoolIdDocumentUrl: parsed.schoolIdDocumentUrl || undefined,
     notes: parsed.notes || undefined,
   });
   await createAuditLog({
@@ -256,7 +356,7 @@ export async function approveOwnerJoinRequestController(req: Request, res: Respo
     action: "owner.join-request.approve",
     entityType: "join_request",
     entityId: requestId,
-    metadata: { planName: parsed.planName, seatNumber: parsed.seatNumber || null },
+    metadata: { studentPlanId: parsed.studentPlanId, couponCode: parsed.couponCode || null },
     ipAddress: req.ip,
     userAgent: req.header("user-agent") ?? null,
   });
@@ -306,45 +406,57 @@ export async function sendDueRecoveryCampaignController(req: Request, res: Respo
   res.status(201).json({ success: true, data: result });
 }
 
-export async function createOwnerStudentController(req: Request, res: Response) {
+export async function createOwnerAdmissionController(req: Request, res: Response) {
   const { libraryId, actorUserId } = requireOwnerContext(req);
-  const parsed = createOwnerStudentBodySchema.parse(req.body);
-  const result = await createOwnerStudent({
+  const parsed = createOwnerAdmissionBodySchema.parse(req.body);
+  const result = await createOwnerAdmission({
     libraryId,
     actorUserId,
     fullName: parsed.fullName,
     fatherName: parsed.fatherName || undefined,
+    address: parsed.address || undefined,
+    className: parsed.className || undefined,
+    preparingFor: parsed.preparingFor || undefined,
     email: parsed.email || undefined,
     phone: parsed.phone || undefined,
-    seatNumber: parsed.seatNumber || undefined,
-    planName: parsed.planName,
-    planPrice: parsed.planPrice,
-    durationMonths: parsed.durationMonths,
-    nextDueDate: parsed.nextDueDate || undefined,
-    startsAt: parsed.startsAt,
-    endsAt: parsed.endsAt,
+    emergencyContact: parsed.emergencyContact || undefined,
+    studentPlanId: parsed.studentPlanId,
+    planAmountOverride: parsed.planAmountOverride,
+    durationMonthsOverride: parsed.durationMonthsOverride,
+    couponCode: parsed.couponCode || undefined,
     paymentStatus: parsed.paymentStatus,
+    aadhaarDocumentUrl: parsed.aadhaarDocumentUrl || undefined,
+    schoolIdDocumentUrl: parsed.schoolIdDocumentUrl || undefined,
     notes: parsed.notes || undefined,
   });
 
   await createAuditLog({
     actorUserId,
     libraryId,
-    action: "owner.student.create",
+    action: "owner.admission.create",
     entityType: "student_assignment",
-    entityId: result.id,
-    metadata: { fullName: parsed.fullName, seatNumber: parsed.seatNumber || null },
+    entityId: result.assignmentId,
+    metadata: { fullName: parsed.fullName, studentPlanId: parsed.studentPlanId, couponCode: parsed.couponCode || null },
     ipAddress: req.ip,
     userAgent: req.header("user-agent") ?? null,
   });
 
   emitLibraryEvent(libraryId, "student.updated", {
-    action: "created",
-    assignmentId: result.id,
+    action: "admitted",
+    assignmentId: result.assignmentId,
     fullName: parsed.fullName,
   });
 
   res.status(201).json({ success: true, data: result });
+}
+
+export async function createOwnerStudentController(req: Request, res: Response) {
+  requireOwnerContext(req);
+  throw new AppError(
+    410,
+    "New student onboarding now happens from Admissions only. Use the admissions desk to create the student, then allot the seat later from Students.",
+    "ADMISSIONS_FLOW_REQUIRED",
+  );
 }
 
 export async function updateOwnerStudentController(req: Request, res: Response) {
@@ -355,9 +467,12 @@ export async function updateOwnerStudentController(req: Request, res: Response) 
     assignmentId: paramValue(req.params.assignmentId),
     fullName: parsed.fullName,
     fatherName: parsed.fatherName || undefined,
+    address: parsed.address || undefined,
+    className: parsed.className || undefined,
+    preparingFor: parsed.preparingFor || undefined,
     email: parsed.email || undefined,
     phone: parsed.phone || undefined,
-    seatNumber: parsed.seatNumber || undefined,
+    emergencyContact: parsed.emergencyContact || undefined,
     planName: parsed.planName,
     planPrice: parsed.planPrice,
     durationMonths: parsed.durationMonths,
@@ -365,7 +480,10 @@ export async function updateOwnerStudentController(req: Request, res: Response) 
     startsAt: parsed.startsAt,
     endsAt: parsed.endsAt,
     paymentStatus: parsed.paymentStatus,
+    aadhaarDocumentUrl: parsed.aadhaarDocumentUrl || undefined,
+    schoolIdDocumentUrl: parsed.schoolIdDocumentUrl || undefined,
     notes: parsed.notes || undefined,
+    studentPlanId: undefined,
   });
 
   await createAuditLog({
@@ -374,7 +492,7 @@ export async function updateOwnerStudentController(req: Request, res: Response) 
     action: "owner.student.update",
     entityType: "student_assignment",
     entityId: result.id,
-    metadata: { fullName: parsed.fullName, seatNumber: parsed.seatNumber || null },
+    metadata: { fullName: parsed.fullName },
     ipAddress: req.ip,
     userAgent: req.header("user-agent") ?? null,
   });
@@ -515,7 +633,7 @@ export async function createOwnerPaymentController(req: Request, res: Response) 
   const result = await createOwnerPayment({
     libraryId,
     actorUserId,
-    studentName: parsed.studentName,
+    assignmentId: parsed.assignmentId,
     amount: parsed.amount,
     method: parsed.method,
     status: parsed.status,
@@ -531,7 +649,7 @@ export async function createOwnerPaymentController(req: Request, res: Response) 
     action: "owner.payment.create",
     entityType: "payment",
     entityId: result.id,
-    metadata: { studentName: parsed.studentName, amount: parsed.amount, status: parsed.status },
+    metadata: { assignmentId: parsed.assignmentId, amount: parsed.amount, status: parsed.status },
     ipAddress: req.ip,
     userAgent: req.header("user-agent") ?? null,
   });
@@ -539,7 +657,7 @@ export async function createOwnerPaymentController(req: Request, res: Response) 
   emitLibraryEvent(libraryId, "payment.updated", {
     action: "created",
     paymentId: result.id,
-    studentName: parsed.studentName,
+    assignmentId: parsed.assignmentId,
     status: parsed.status,
   });
 
@@ -850,6 +968,64 @@ export async function assignOwnerSeatController(req: Request, res: Response) {
   emitLibraryEvent(libraryId, "seat.updated", {
     seatId: result.seatId,
     assignmentId: parsed.assignmentId,
+  });
+
+  res.json({ success: true, data: result });
+}
+
+export async function assignOwnerStudentSeatController(req: Request, res: Response) {
+  const { libraryId, actorUserId } = requireOwnerContext(req);
+  const parsed = assignSeatBodySchema.parse({
+    assignmentId: paramValue(req.params.assignmentId),
+    seatId: req.body?.seatId,
+  });
+  const result = await assignSeatToStudent({
+    libraryId,
+    assignmentId: parsed.assignmentId,
+    seatId: parsed.seatId,
+  });
+
+  await createAuditLog({
+    actorUserId,
+    libraryId,
+    action: "owner.student.seat.assign",
+    entityType: "seat",
+    entityId: result.seatId,
+    metadata: { assignmentId: parsed.assignmentId },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+
+  emitLibraryEvent(libraryId, "seat.updated", {
+    seatId: result.seatId,
+    assignmentId: parsed.assignmentId,
+  });
+
+  res.status(201).json({ success: true, data: result });
+}
+
+export async function unassignOwnerStudentSeatController(req: Request, res: Response) {
+  const { libraryId, actorUserId } = requireOwnerContext(req);
+  const assignmentId = paramValue(req.params.assignmentId);
+  const result = await unassignSeatFromStudent({
+    libraryId,
+    assignmentId,
+  });
+
+  await createAuditLog({
+    actorUserId,
+    libraryId,
+    action: "owner.student.seat.unassign",
+    entityType: "student_assignment",
+    entityId: assignmentId,
+    metadata: {},
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+
+  emitLibraryEvent(libraryId, "seat.updated", {
+    assignmentId,
+    action: "unassigned",
   });
 
   res.json({ success: true, data: result });

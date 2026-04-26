@@ -5,10 +5,10 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerAdmissionsPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
+      productLabel="LibraryPro"
       panelLabel="Admissions"
-      title="Approve QR-based admission requests and convert them into active seats."
-      description="Students can request entry from their own app. Owner or admins review, collect payment, and activate the assignment."
+      title="Onboard every new student from one admissions desk."
+      description="Create desk admissions, approve join requests, apply plans or coupons, and push students into the active roster before seat allotment."
       nav={ownerNav}
     >
       <OwnerAdmissionsManager />

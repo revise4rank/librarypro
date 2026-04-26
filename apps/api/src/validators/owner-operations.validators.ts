@@ -1,11 +1,17 @@
 import { z } from "zod";
 
+const admissionPaymentStatusSchema = z.enum(["PAID", "UNPAID", "DUE"]);
+const discountTypeSchema = z.enum(["PERCENTAGE", "FLAT"]);
+
 export const createOwnerStudentBodySchema = z.object({
   fullName: z.string().trim().min(2).max(150),
   fatherName: z.string().trim().max(150).optional().or(z.literal("")),
+  address: z.string().trim().max(500).optional().or(z.literal("")),
+  className: z.string().trim().max(120).optional().or(z.literal("")),
+  preparingFor: z.string().trim().max(150).optional().or(z.literal("")),
+  emergencyContact: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email().optional().or(z.literal("")),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
-  seatNumber: z.string().trim().min(1).max(40).optional().or(z.literal("")),
   planName: z.string().trim().min(2).max(120),
   planPrice: z.coerce.number().nonnegative(),
   durationMonths: z.coerce.number().int().min(1).max(60).default(1),
@@ -13,13 +19,57 @@ export const createOwnerStudentBodySchema = z.object({
   startsAt: z.string().trim().min(4),
   endsAt: z.string().trim().min(4),
   paymentStatus: z.enum(["PENDING", "PAID", "DUE", "FAILED", "REFUNDED"]).default("PENDING"),
+  aadhaarDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
+  schoolIdDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
 export const updateOwnerStudentBodySchema = createOwnerStudentBodySchema;
 
+export const ownerStudentPlanBodySchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  targetAudience: z.string().trim().max(150).optional().or(z.literal("")),
+  description: z.string().trim().max(1000).optional().or(z.literal("")),
+  durationMonths: z.coerce.number().int().min(1).max(60).default(1),
+  baseAmount: z.coerce.number().nonnegative(),
+  defaultDiscountType: discountTypeSchema.optional(),
+  defaultDiscountValue: z.coerce.number().nonnegative().optional(),
+  isActive: z.boolean().optional().default(true),
+});
+
+export const ownerCouponBodySchema = z.object({
+  code: z.string().trim().min(3).max(60).transform((value) => value.toUpperCase()),
+  discountType: discountTypeSchema,
+  discountValue: z.coerce.number().nonnegative(),
+  validFrom: z.string().trim().optional().or(z.literal("")),
+  validUntil: z.string().trim().optional().or(z.literal("")),
+  usageLimit: z.coerce.number().int().positive().optional(),
+  isActive: z.boolean().optional().default(true),
+  studentPlanId: z.string().uuid().optional().or(z.literal("")),
+});
+
+export const createOwnerAdmissionBodySchema = z.object({
+  joinRequestId: z.string().uuid().optional().or(z.literal("")),
+  fullName: z.string().trim().min(2).max(150),
+  fatherName: z.string().trim().max(150).optional().or(z.literal("")),
+  address: z.string().trim().max(500).optional().or(z.literal("")),
+  className: z.string().trim().max(120).optional().or(z.literal("")),
+  preparingFor: z.string().trim().max(150).optional().or(z.literal("")),
+  email: z.string().trim().email().optional().or(z.literal("")),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  emergencyContact: z.string().trim().max(20).optional().or(z.literal("")),
+  studentPlanId: z.string().uuid(),
+  planAmountOverride: z.coerce.number().nonnegative().optional(),
+  durationMonthsOverride: z.coerce.number().int().min(1).max(60).optional(),
+  couponCode: z.string().trim().max(60).optional().or(z.literal("")),
+  paymentStatus: admissionPaymentStatusSchema.default("UNPAID"),
+  aadhaarDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
+  schoolIdDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
+  notes: z.string().trim().max(1000).optional().or(z.literal("")),
+});
+
 export const createOwnerPaymentBodySchema = z.object({
-  studentName: z.string().trim().min(2).max(150),
+  assignmentId: z.string().uuid(),
   amount: z.coerce.number().positive(),
   method: z.string().trim().min(2).max(50),
   status: z.enum(["PENDING", "PAID", "DUE", "FAILED", "REFUNDED"]),
@@ -29,8 +79,14 @@ export const createOwnerPaymentBodySchema = z.object({
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
-export const updateOwnerPaymentBodySchema = createOwnerPaymentBodySchema.omit({
-  studentName: true,
+export const updateOwnerPaymentBodySchema = z.object({
+  amount: z.coerce.number().positive(),
+  method: z.string().trim().min(2).max(50),
+  status: z.enum(["PENDING", "PAID", "DUE", "FAILED", "REFUNDED"]),
+  dueDate: z.string().trim().optional().or(z.literal("")),
+  paidAt: z.string().trim().optional().or(z.literal("")),
+  referenceNo: z.string().trim().max(120).optional().or(z.literal("")),
+  notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
 export const createOwnerNotificationBodySchema = z.object({
@@ -200,14 +256,21 @@ export const createRejoinRequestBodySchema = z.object({
 });
 
 export const approveJoinRequestBodySchema = z.object({
-  seatNumber: z.string().trim().max(40).optional().or(z.literal("")),
-  planName: z.string().trim().min(2).max(120),
-  planPrice: z.coerce.number().nonnegative(),
-  durationMonths: z.coerce.number().int().min(1).max(60).default(1),
-  nextDueDate: z.string().trim().optional().or(z.literal("")),
-  startsAt: z.string().trim().min(4),
-  endsAt: z.string().trim().min(4),
-  paymentStatus: z.enum(["PENDING", "PAID", "DUE", "FAILED", "REFUNDED"]).default("PENDING"),
+  fullName: z.string().trim().min(2).max(150).optional().or(z.literal("")),
+  fatherName: z.string().trim().max(150).optional().or(z.literal("")),
+  address: z.string().trim().max(500).optional().or(z.literal("")),
+  className: z.string().trim().max(120).optional().or(z.literal("")),
+  preparingFor: z.string().trim().max(150).optional().or(z.literal("")),
+  email: z.string().trim().email().optional().or(z.literal("")),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  emergencyContact: z.string().trim().max(20).optional().or(z.literal("")),
+  studentPlanId: z.string().uuid(),
+  planAmountOverride: z.coerce.number().nonnegative().optional(),
+  durationMonthsOverride: z.coerce.number().int().min(1).max(60).optional(),
+  couponCode: z.string().trim().max(60).optional().or(z.literal("")),
+  paymentStatus: admissionPaymentStatusSchema.default("UNPAID"),
+  aadhaarDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
+  schoolIdDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 

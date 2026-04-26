@@ -5,10 +5,10 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerNotificationsPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
+      productLabel="LibraryPro"
       panelLabel="Broadcasts"
-      title="Send reminders, expiry alerts, and general notices from one clean message center."
-      description="Owners need a usable message composer with audience targeting and a visible campaign history."
+      title="Send reminders, expiry alerts, and notices from one calm message center."
+      description="Target the right student group, queue offline actions, and keep recent broadcasts visible for the whole team."
       nav={ownerNav}
     >
       <OwnerNotificationsManager />

@@ -166,7 +166,7 @@ export function StudentQrManager() {
 
   async function startCamera() {
     if (!cameraSupported) {
-      setError("Is browser me camera QR scan support available nahi hai. Paste scanner use karo.");
+      setError("Camera QR scanning is not available in this browser. Use the pasted payload fallback instead.");
       return;
     }
 
@@ -189,7 +189,7 @@ export function StudentQrManager() {
       }
 
       setCameraActive(true);
-      setScannerStatus("Camera live - library QR scan karo");
+      setScannerStatus("Camera live. Scan the library QR now.");
 
       scanLoopRef.current = window.setInterval(async () => {
         if (!videoRef.current || !detectorRef.current) return;
@@ -205,7 +205,7 @@ export function StudentQrManager() {
       }, 900);
     } catch (cameraError) {
       stopCamera();
-      setError(cameraError instanceof Error ? cameraError.message : "Camera scanner start nahi ho paaya.");
+      setError(cameraError instanceof Error ? cameraError.message : "Unable to start the camera scanner.");
     }
   }
 
@@ -253,7 +253,7 @@ export function StudentQrManager() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-      <DashboardCard title="Scan library QR" subtitle="Student app camera se library ka QR scan karo">
+      <DashboardCard title="Scan library QR" subtitle="Use the student camera to scan the QR displayed by the library.">
         <div className="grid gap-5">
           <div className="flex flex-wrap gap-2">
             {(["checkin", "checkout"] as ScanMode[]).map((mode) => (
@@ -262,7 +262,7 @@ export function StudentQrManager() {
                 type="button"
                 onClick={() => setScanMode(mode)}
                 className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
-                  scanMode === mode ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                  scanMode === mode ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                 }`}
               >
                 {mode === "checkin" ? "Check-in scan" : "Check-out scan"}
@@ -270,16 +270,16 @@ export function StudentQrManager() {
             ))}
           </div>
 
-          <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-950 p-4 shadow-[0_16px_30px_rgba(15,23,42,0.12)]">
-            <div className="relative overflow-hidden rounded-[1.5rem] bg-black">
+          <div className="overflow-hidden rounded-[2rem] border border-[var(--lp-border)] bg-[linear-gradient(180deg,#eef7f3,#dceee9)] p-4 shadow-[0_16px_30px_rgba(15,23,42,0.08)]">
+            <div className="relative overflow-hidden rounded-[1.5rem] bg-[#19332d]">
               <video ref={videoRef} className="h-[22rem] w-full object-cover" playsInline muted />
               {!cameraActive ? (
                 <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(15,23,42,0.88))] px-6 text-center">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">Library Scanner</p>
-                    <p className="mt-3 text-2xl font-black text-white">Student camera yahan se library QR scan karega</p>
+                    <p className="mt-3 text-2xl font-black text-white">Scan the library QR from the student camera</p>
                     <p className="mt-3 text-sm leading-7 text-slate-200">
-                      Sirf wahi student check-in/check-out hoga jo scanned library me active assignment rakhta ho.
+                      Only a student with an active assignment in the scanned library can complete check-in or check-out.
                     </p>
                   </div>
                 </div>
@@ -293,7 +293,7 @@ export function StudentQrManager() {
               type="button"
               onClick={() => void startCamera()}
               disabled={cameraActive}
-              className="rounded-[1.25rem] bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white disabled:opacity-60"
+              className="rounded-[1.25rem] border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-4 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
             >
               Start camera scanner
             </button>
@@ -324,7 +324,7 @@ export function StudentQrManager() {
               <textarea
                 value={manualQrPayload}
                 onChange={(event) => setManualQrPayload(event.target.value)}
-                placeholder="Agar camera support na ho to yahan scanned QR payload paste karo."
+                placeholder="Paste the scanned QR payload here if camera access is unavailable."
                 className="mt-3 min-h-28 w-full rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
               />
               <button
@@ -340,7 +340,7 @@ export function StudentQrManager() {
         </div>
       </DashboardCard>
 
-      <DashboardCard title="Library access status" subtitle="Current active assignment aur scan state">
+      <DashboardCard title="Library access status" subtitle="Current active assignment and scan state">
         <div className="grid gap-4">
           <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {isOffline ? `Offline mode active. Queued QR actions: ${queuedCount}` : `Online and ready. Queued QR actions: ${queuedCount}`}
@@ -385,7 +385,7 @@ export function StudentQrManager() {
           ) : null}
 
           <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
-            Ab student ko apna QR dikhane ki zarurat nahi hai. Library apna QR display karegi, aur student app camera se usko scan karke direct check-in/check-out karega.
+            Students no longer need to show their own QR. The library displays its QR and the student app scans it directly for check-in and check-out.
           </div>
 
           {data?.qrPayload ? (
@@ -398,7 +398,7 @@ export function StudentQrManager() {
                   className="h-24 w-24 rounded-[1rem] border border-slate-200 bg-white"
                 />
                 <p className="text-xs leading-6 text-slate-500">
-                  Ye sirf preview hai. Actual use-case me student library ke displayed QR ko scan karega.
+                  This is only a reference preview. In the real flow, the student scans the QR displayed by the library.
                 </p>
               </div>
             </div>

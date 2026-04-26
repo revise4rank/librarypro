@@ -6,10 +6,10 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentFocusPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
+      productLabel="LibraryPro"
       panelLabel="Focus Tracker"
       title="Pomodoro, subjects, goals, and long-term study tracking in one student workspace."
-      description="Library ke baad bhi app useful rahe: daily target set karo, subjects banao, sessions log karo, aur apni prep consistency track karo."
+      description="Keep the app useful beyond the library visit: set daily targets, log sessions, and track study consistency over time."
       nav={studentNav}
       actions={<StudentWorkspaceActions />}
     >

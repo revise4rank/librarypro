@@ -6,18 +6,59 @@ export type OwnerStudentRow = {
   student_code: string | null;
   student_name: string;
   father_name: string | null;
+  address: string | null;
+  class_name: string | null;
+  preparing_for: string | null;
+  emergency_contact: string | null;
   student_email: string | null;
   student_phone: string | null;
   seat_number: string | null;
+  student_plan_id: string | null;
   plan_name: string;
   plan_price: string;
+  base_amount: string | null;
+  discount_type: string | null;
+  discount_value: string | null;
+  coupon_code: string | null;
+  final_amount: string | null;
   duration_months: number;
   next_due_date: string | null;
   starts_at: string;
   ends_at: string;
   payment_status: string;
   due_amount: string;
+  aadhaar_document_url: string | null;
+  school_id_document_url: string | null;
+  admission_source: string | null;
+  admission_status: string;
   status: string;
+};
+
+export type OwnerStudentPlanRow = {
+  id: string;
+  name: string;
+  target_audience: string | null;
+  description: string | null;
+  duration_months: number;
+  base_amount: string;
+  default_discount_type: string | null;
+  default_discount_value: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type OwnerCouponRow = {
+  id: string;
+  student_plan_id: string | null;
+  code: string;
+  discount_type: string;
+  discount_value: string;
+  valid_from: string | null;
+  valid_until: string | null;
+  usage_limit: number | null;
+  used_count: number;
+  is_active: boolean;
+  created_at: string;
 };
 
 export type OwnerSeatRow = {
@@ -193,11 +234,21 @@ export class OwnerOperationsRepository {
         u.student_code,
         u.full_name AS student_name,
         sa.father_name,
+        sa.address,
+        sa.class_name,
+        sa.preparing_for,
+        sa.emergency_contact,
         u.email AS student_email,
         u.phone AS student_phone,
         s.seat_number,
+        sa.student_plan_id,
         sa.plan_name,
         sa.plan_price::text,
+        sa.base_amount::text,
+        sa.discount_type::text,
+        sa.discount_value::text,
+        sa.coupon_code,
+        sa.final_amount::text,
         sa.duration_months,
         sa.next_due_date::text,
         sa.starts_at::date::text,
@@ -210,6 +261,10 @@ export class OwnerOperationsRepository {
             AND p.student_user_id = sa.student_user_id
             AND p.status IN ('DUE', 'PENDING')
         ), 0)::text AS due_amount,
+        sa.aadhaar_document_url,
+        sa.school_id_document_url,
+        sa.admission_source,
+        CASE WHEN sa.seat_id IS NULL THEN 'SEAT_UNALLOTTED' ELSE 'SEAT_ALLOTTED' END AS admission_status,
         sa.status::text
       FROM student_assignments sa
       INNER JOIN users u ON u.id = sa.student_user_id
@@ -235,11 +290,21 @@ export class OwnerOperationsRepository {
           u.student_code,
           u.full_name AS student_name,
           sa.father_name,
+          sa.address,
+          sa.class_name,
+          sa.preparing_for,
+          sa.emergency_contact,
           u.email AS student_email,
           u.phone AS student_phone,
           s.seat_number,
+          sa.student_plan_id,
           sa.plan_name,
           sa.plan_price::text,
+          sa.base_amount::text,
+          sa.discount_type::text,
+          sa.discount_value::text,
+          sa.coupon_code,
+          sa.final_amount::text,
           sa.duration_months,
           sa.next_due_date::text,
           sa.starts_at::date::text,
@@ -252,6 +317,10 @@ export class OwnerOperationsRepository {
               AND p.student_user_id = sa.student_user_id
               AND p.status IN ('DUE', 'PENDING')
           ), 0)::text AS due_amount,
+          sa.aadhaar_document_url,
+          sa.school_id_document_url,
+          sa.admission_source,
+          CASE WHEN sa.seat_id IS NULL THEN 'SEAT_UNALLOTTED' ELSE 'SEAT_ALLOTTED' END AS admission_status,
           sa.status::text
         FROM student_assignments sa
         INNER JOIN users u ON u.id = sa.student_user_id
@@ -347,6 +416,277 @@ export class OwnerOperationsRepository {
     );
   }
 
+  async listStudentPlans(libraryId: string) {
+    const result = await this.pool.query<OwnerStudentPlanRow>(
+      `
+      SELECT
+        id,
+        name,
+        target_audience,
+        description,
+        duration_months,
+        base_amount::text,
+        default_discount_type::text,
+        default_discount_value::text,
+        is_active,
+        created_at::text
+      FROM library_student_plans
+      WHERE library_id = $1
+      ORDER BY is_active DESC, created_at DESC
+      `,
+      [libraryId],
+    );
+
+    return result.rows;
+  }
+
+  async createStudentPlan(client: PoolClient, input: {
+    libraryId: string;
+    name: string;
+    targetAudience?: string | null;
+    description?: string | null;
+    durationMonths: number;
+    baseAmount: number;
+    defaultDiscountType?: "PERCENTAGE" | "FLAT" | null;
+    defaultDiscountValue?: number | null;
+    isActive: boolean;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      INSERT INTO library_student_plans (
+        library_id, name, target_audience, description, duration_months, base_amount,
+        default_discount_type, default_discount_value, is_active
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id
+      `,
+      [
+        input.libraryId,
+        input.name,
+        input.targetAudience ?? null,
+        input.description ?? null,
+        input.durationMonths,
+        input.baseAmount,
+        input.defaultDiscountType ?? null,
+        input.defaultDiscountValue ?? null,
+        input.isActive,
+      ],
+    );
+
+    return result.rows[0];
+  }
+
+  async updateStudentPlan(client: PoolClient, input: {
+    libraryId: string;
+    planId: string;
+    name: string;
+    targetAudience?: string | null;
+    description?: string | null;
+    durationMonths: number;
+    baseAmount: number;
+    defaultDiscountType?: "PERCENTAGE" | "FLAT" | null;
+    defaultDiscountValue?: number | null;
+    isActive: boolean;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      UPDATE library_student_plans
+      SET
+        name = $3,
+        target_audience = $4,
+        description = $5,
+        duration_months = $6,
+        base_amount = $7,
+        default_discount_type = $8,
+        default_discount_value = $9,
+        is_active = $10,
+        updated_at = NOW()
+      WHERE library_id = $1 AND id = $2
+      RETURNING id
+      `,
+      [
+        input.libraryId,
+        input.planId,
+        input.name,
+        input.targetAudience ?? null,
+        input.description ?? null,
+        input.durationMonths,
+        input.baseAmount,
+        input.defaultDiscountType ?? null,
+        input.defaultDiscountValue ?? null,
+        input.isActive,
+      ],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async findStudentPlanById(client: PoolClient, libraryId: string, planId: string) {
+    const result = await client.query<OwnerStudentPlanRow>(
+      `
+      SELECT
+        id,
+        name,
+        target_audience,
+        description,
+        duration_months,
+        base_amount::text,
+        default_discount_type::text,
+        default_discount_value::text,
+        is_active,
+        created_at::text
+      FROM library_student_plans
+      WHERE library_id = $1 AND id = $2
+      LIMIT 1
+      `,
+      [libraryId, planId],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async listCoupons(libraryId: string) {
+    const result = await this.pool.query<OwnerCouponRow>(
+      `
+      SELECT
+        id,
+        student_plan_id,
+        code,
+        discount_type::text,
+        discount_value::text,
+        valid_from::text,
+        valid_until::text,
+        usage_limit,
+        used_count,
+        is_active,
+        created_at::text
+      FROM library_coupons
+      WHERE library_id = $1
+      ORDER BY is_active DESC, created_at DESC
+      `,
+      [libraryId],
+    );
+
+    return result.rows;
+  }
+
+  async createCoupon(client: PoolClient, input: {
+    libraryId: string;
+    studentPlanId?: string | null;
+    code: string;
+    discountType: "PERCENTAGE" | "FLAT";
+    discountValue: number;
+    validFrom?: string | null;
+    validUntil?: string | null;
+    usageLimit?: number | null;
+    isActive: boolean;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      INSERT INTO library_coupons (
+        library_id, student_plan_id, code, discount_type, discount_value,
+        valid_from, valid_until, usage_limit, is_active
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id
+      `,
+      [
+        input.libraryId,
+        input.studentPlanId ?? null,
+        input.code,
+        input.discountType,
+        input.discountValue,
+        input.validFrom ?? null,
+        input.validUntil ?? null,
+        input.usageLimit ?? null,
+        input.isActive,
+      ],
+    );
+
+    return result.rows[0];
+  }
+
+  async updateCoupon(client: PoolClient, input: {
+    libraryId: string;
+    couponId: string;
+    studentPlanId?: string | null;
+    code: string;
+    discountType: "PERCENTAGE" | "FLAT";
+    discountValue: number;
+    validFrom?: string | null;
+    validUntil?: string | null;
+    usageLimit?: number | null;
+    isActive: boolean;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      UPDATE library_coupons
+      SET
+        student_plan_id = $3,
+        code = $4,
+        discount_type = $5,
+        discount_value = $6,
+        valid_from = $7,
+        valid_until = $8,
+        usage_limit = $9,
+        is_active = $10,
+        updated_at = NOW()
+      WHERE library_id = $1 AND id = $2
+      RETURNING id
+      `,
+      [
+        input.libraryId,
+        input.couponId,
+        input.studentPlanId ?? null,
+        input.code,
+        input.discountType,
+        input.discountValue,
+        input.validFrom ?? null,
+        input.validUntil ?? null,
+        input.usageLimit ?? null,
+        input.isActive,
+      ],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async findCouponByCode(client: PoolClient, libraryId: string, code: string) {
+    const result = await client.query<OwnerCouponRow>(
+      `
+      SELECT
+        id,
+        student_plan_id,
+        code,
+        discount_type::text,
+        discount_value::text,
+        valid_from::text,
+        valid_until::text,
+        usage_limit,
+        used_count,
+        is_active,
+        created_at::text
+      FROM library_coupons
+      WHERE library_id = $1 AND code = $2
+      LIMIT 1
+      `,
+      [libraryId, code],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async incrementCouponUsage(client: PoolClient, couponId: string) {
+    await client.query(
+      `
+      UPDATE library_coupons
+      SET used_count = used_count + 1, updated_at = NOW()
+      WHERE id = $1
+      `,
+      [couponId],
+    );
+  }
+
   async findSeatByNumber(client: PoolClient, libraryId: string, seatNumber: string) {
     const result = await client.query<{ id: string; seat_number: string; status: string }>(
       `
@@ -366,38 +706,66 @@ export class OwnerOperationsRepository {
     studentUserId: string;
     seatId: string | null;
     fatherName?: string | null;
+    address?: string | null;
+    className?: string | null;
+    preparingFor?: string | null;
+    emergencyContact?: string | null;
+    studentPlanId?: string | null;
     planName: string;
     planPrice: number;
+    baseAmount?: number | null;
+    discountType?: "PERCENTAGE" | "FLAT" | null;
+    discountValue?: number | null;
+    couponCode?: string | null;
+    finalAmount?: number | null;
     durationMonths: number;
     nextDueDate?: string | null;
     startsAt: string;
     endsAt: string;
     paymentStatus: "PENDING" | "PAID" | "DUE" | "FAILED" | "REFUNDED";
     assignedBy: string;
+    aadhaarDocumentUrl?: string | null;
+    schoolIdDocumentUrl?: string | null;
+    admissionSource?: string | null;
     notes?: string;
   }) {
     const result = await client.query<{ id: string }>(
       `
       INSERT INTO student_assignments (
-        library_id, student_user_id, seat_id, plan_name, plan_price,
-        father_name, duration_months, next_due_date, starts_at, ends_at, status, payment_status, assigned_by, notes
+        library_id, student_user_id, seat_id, father_name, address, class_name, preparing_for, emergency_contact,
+        student_plan_id, plan_name, plan_price, base_amount, discount_type, discount_value, coupon_code, final_amount,
+        duration_months, next_due_date, starts_at, ends_at, status, payment_status, assigned_by,
+        aadhaar_document_url, school_id_document_url, admission_source, notes
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ACTIVE', $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'ACTIVE', $21, $22, $23, $24, $25, $26)
       RETURNING id
       `,
       [
         input.libraryId,
         input.studentUserId,
         input.seatId,
+        input.fatherName ?? null,
+        input.address ?? null,
+        input.className ?? null,
+        input.preparingFor ?? null,
+        input.emergencyContact ?? null,
+        input.studentPlanId ?? null,
         input.planName,
         input.planPrice,
-        input.fatherName ?? null,
+        input.baseAmount ?? input.planPrice,
+        input.discountType ?? null,
+        input.discountValue ?? null,
+        input.couponCode ?? null,
+        input.finalAmount ?? input.planPrice,
         input.durationMonths,
         input.nextDueDate ?? null,
         input.startsAt,
         input.endsAt,
         input.paymentStatus,
         input.assignedBy,
+        input.aadhaarDocumentUrl ?? null,
+        input.schoolIdDocumentUrl ?? null,
+        input.admissionSource ?? "DESK",
         input.notes ?? null,
       ],
     );
@@ -431,11 +799,23 @@ export class OwnerOperationsRepository {
     planName: string;
     planPrice: number;
     fatherName?: string | null;
+    address?: string | null;
+    className?: string | null;
+    preparingFor?: string | null;
+    emergencyContact?: string | null;
+    studentPlanId?: string | null;
+    baseAmount?: number | null;
+    discountType?: "PERCENTAGE" | "FLAT" | null;
+    discountValue?: number | null;
+    couponCode?: string | null;
+    finalAmount?: number | null;
     durationMonths: number;
     nextDueDate?: string | null;
     startsAt: string;
     endsAt: string;
     paymentStatus: "PENDING" | "PAID" | "DUE" | "FAILED" | "REFUNDED";
+    aadhaarDocumentUrl?: string | null;
+    schoolIdDocumentUrl?: string | null;
     notes?: string | null;
   }) {
     await client.query(
@@ -446,12 +826,24 @@ export class OwnerOperationsRepository {
         plan_name = $3,
         plan_price = $4,
         father_name = $5,
-        duration_months = $6,
-        next_due_date = $7,
-        starts_at = $8,
-        ends_at = $9,
-        payment_status = $10,
-        notes = $11,
+        address = $6,
+        class_name = $7,
+        preparing_for = $8,
+        emergency_contact = $9,
+        student_plan_id = $10,
+        base_amount = $11,
+        discount_type = $12,
+        discount_value = $13,
+        coupon_code = $14,
+        final_amount = $15,
+        duration_months = $16,
+        next_due_date = $17,
+        starts_at = $18,
+        ends_at = $19,
+        payment_status = $20,
+        aadhaar_document_url = $21,
+        school_id_document_url = $22,
+        notes = $23,
         updated_at = NOW()
       WHERE id = $1
       `,
@@ -461,11 +853,23 @@ export class OwnerOperationsRepository {
         input.planName,
         input.planPrice,
         input.fatherName ?? null,
+        input.address ?? null,
+        input.className ?? null,
+        input.preparingFor ?? null,
+        input.emergencyContact ?? null,
+        input.studentPlanId ?? null,
+        input.baseAmount ?? input.planPrice,
+        input.discountType ?? null,
+        input.discountValue ?? null,
+        input.couponCode ?? null,
+        input.finalAmount ?? input.planPrice,
         input.durationMonths,
         input.nextDueDate ?? null,
         input.startsAt,
         input.endsAt,
         input.paymentStatus,
+        input.aadhaarDocumentUrl ?? null,
+        input.schoolIdDocumentUrl ?? null,
         input.notes ?? null,
       ],
     );
@@ -2553,13 +2957,23 @@ export class OwnerOperationsRepository {
     const result = await client.query<{
       id: string;
       student_user_id: string;
+      student_name: string;
+      student_email: string | null;
+      student_phone: string | null;
       status: string;
     }>(
       `
-      SELECT id::text, student_user_id::text, status
-      FROM library_join_requests
-      WHERE library_id = $1
-        AND id = $2
+      SELECT
+        ljr.id::text,
+        ljr.student_user_id::text,
+        u.full_name AS student_name,
+        u.email AS student_email,
+        u.phone AS student_phone,
+        ljr.status
+      FROM library_join_requests ljr
+      INNER JOIN users u ON u.id = ljr.student_user_id
+      WHERE ljr.library_id = $1
+        AND ljr.id = $2
       LIMIT 1
       `,
       [libraryId, requestId],

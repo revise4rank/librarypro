@@ -1,16 +1,17 @@
-import { AppShell } from "../../../../components/shell";
+import { DashboardShell } from "../../../../components/dashboard-shell";
 import { OwnerExpensesManager } from "../../../../components/owner-expenses-manager";
 import { ownerNav } from "../../../../lib/role-nav";
 
 export default function OwnerExpensesPage() {
   return (
-    <AppShell
-      eyebrow="Owner Expenses"
-      title="Expense control with monthly profit visibility."
-      description="Live expense tracking with monthly revenue and profit visibility from actual backend data."
+    <DashboardShell
+      productLabel="LibraryPro"
+      panelLabel="Expense Desk"
+      title="Track daily expenses and monthly profit without leaving the owner app."
+      description="Review outgoing costs, compare them against revenue, and keep profitability visible from the same operating workspace."
       nav={ownerNav}
     >
       <OwnerExpensesManager />
-    </AppShell>
+    </DashboardShell>
   );
 }

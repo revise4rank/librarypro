@@ -5,7 +5,7 @@ import { adminNav } from "../../../lib/role-nav";
 export default function SuperadminOffersPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
+      productLabel="LibraryPro"
       panelLabel="Offers"
       title="Moderate opportunities, mark featured, and track views/clicks."
       description="Student-first monetization: optional discovery feed, clean moderation, and no disruption to study flow."

@@ -39,7 +39,7 @@ export default function MarketplacePage() {
       <section className="border-b border-[var(--lp-border)] bg-[rgba(255,244,233,0.88)]">
         <div className="mx-auto flex max-w-[1540px] flex-wrap items-center gap-3 px-4 py-3 text-sm text-[var(--lp-muted)] md:px-8">
           <span className="rounded-full bg-[var(--lp-surface)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--lp-primary)]">
-            Nextlib Marketplace
+            LibraryPro Marketplace
           </span>
           <span className="hidden h-4 w-px bg-[var(--lp-border)] md:block" />
           <span>Search libraries by city, locality, amenities, live seat visibility, offers, and contact options.</span>
@@ -67,10 +67,13 @@ export default function MarketplacePage() {
 
           <div className="flex flex-wrap gap-3">
             <Link href="/owner/login" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)]">
-              Owner Login
+              Library Access
             </Link>
-            <Link href="/student/login?library=focuslibrary" className="rounded-full bg-[var(--lp-primary)] px-5 py-2.5 text-sm font-semibold text-white">
-              Student Portal Demo
+            <Link
+              href="/student/access"
+              className="rounded-full border border-[rgba(47,143,136,0.22)] bg-[rgba(47,143,136,0.12)] px-5 py-2.5 text-sm font-semibold text-[var(--lp-accent)]"
+            >
+              Student Portal
             </Link>
           </div>
         </div>
@@ -96,11 +99,14 @@ export default function MarketplacePage() {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#marketplace-search" className="rounded-full bg-[var(--lp-primary)] px-7 py-4 text-sm font-semibold text-white shadow-[0_18px_38px_rgba(210,114,61,0.18)]">
+              <a
+                href="#marketplace-search"
+                className="rounded-full border border-[rgba(47,143,136,0.22)] bg-[rgba(47,143,136,0.12)] px-7 py-4 text-sm font-semibold text-[var(--lp-accent)] shadow-[0_18px_38px_rgba(47,143,136,0.12)]"
+              >
                 Start Search
               </a>
-              <Link href="/owner/website" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-7 py-4 text-sm font-semibold text-[var(--lp-primary)]">
-                Website Builder
+              <Link href="/owner/settings?tab=website" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-7 py-4 text-sm font-semibold text-[var(--lp-primary)]">
+                Website Setup
               </Link>
             </div>
 

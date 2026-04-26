@@ -1,29 +1,41 @@
 import PDFDocument from "pdfkit";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
-export function buildXlsxBuffer(input: {
+export async function buildXlsxBuffer(input: {
   workbookTitle: string;
   sheets: Array<{
     name: string;
     rows: Array<Record<string, unknown>>;
   }>;
 }) {
-  const workbook = XLSX.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "LibraryPro";
+  workbook.company = "LibraryPro";
+  workbook.title = input.workbookTitle;
+
   for (const sheet of input.sheets) {
     const rows = sheet.rows.length > 0 ? sheet.rows : [{ message: "No data" }];
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheet.name.slice(0, 31));
+    const worksheet = workbook.addWorksheet(sheet.name.slice(0, 31));
+    const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+
+    worksheet.columns = columns.map((column) => ({
+      header: column,
+      key: column,
+      width: Math.min(40, Math.max(column.length + 4, 16)),
+    }));
+
+    for (const row of rows) {
+      worksheet.addRow(
+        Object.fromEntries(columns.map((column) => [column, row[column] ?? ""])),
+      );
+    }
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.views = [{ state: "frozen", ySplit: 1 }];
   }
 
-  return XLSX.write(workbook, {
-    type: "buffer",
-    bookType: "xlsx",
-    Props: {
-      Title: input.workbookTitle,
-      Author: "Nextlib",
-      Company: "Nextlib",
-    },
-  }) as Buffer;
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
 }
 
 export async function buildPdfBuffer(input: {

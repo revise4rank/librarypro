@@ -1,18 +1,20 @@
 "use client";
 
 import { io, type Socket } from "socket.io-client";
-import { getApiBaseUrl, readSession } from "./api";
 
 let socket: Socket | null = null;
+const PRODUCTION_API_ORIGIN = "https://librarypro-api.onrender.com";
 
 export function getRealtimeSocket() {
   if (typeof window === "undefined") {
     return null;
   }
-  const session = readSession();
 
   if (!socket) {
-    const target = process.env.NEXT_PUBLIC_WS_URL?.replace(/^ws/, "http") || getApiBaseUrl();
+    const target =
+      process.env.NEXT_PUBLIC_WS_URL?.replace(/^ws/, "http") ||
+      process.env.NEXT_PUBLIC_API_URL?.replace(/\/v1$/, "").replace(/\/$/, "") ||
+      PRODUCTION_API_ORIGIN;
     socket = io(target, {
       transports: ["websocket"],
       withCredentials: true,

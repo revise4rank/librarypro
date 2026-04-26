@@ -5,7 +5,7 @@ import { adminNav } from "../../../lib/role-nav";
 export default function SuperAdminPaymentsPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
+      productLabel="LibraryPro"
       panelLabel="Platform Payments"
       title="Subscription payment ledger across all tenant libraries."
       description="This view is for SaaS billing visibility: successful charges, failed recoveries, pending renewals, and platform-level revenue traceability."

@@ -187,18 +187,23 @@ export function OwnerNotificationsManager() {
       setError(null);
       showToast("Template saved.");
     } catch {
-      setError("Template save nahi ho paya. Browser storage issue ho sakta hai.");
+      setError("Unable to save the template on this device. Browser storage may be unavailable.");
     }
   }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
       {toast ? (
-        <div className="fixed bottom-5 right-5 z-50 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-2xl">
+        <div className="fixed bottom-5 right-5 z-50 rounded-2xl border border-[var(--lp-accent-soft)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)] shadow-[0_20px_45px_rgba(15,23,42,0.12)]">
           {toast}
         </div>
       ) : null}
-      <DashboardCard title="Compose broadcast" subtitle={`Owner to student communication workflow | Socket ${liveStatus}`}>
+      <DashboardCard title="Broadcast studio" subtitle={`Owner-to-student communication flow | Socket ${liveStatus}`}>
+        <div className="mb-5 rounded-[1.6rem] border border-[var(--lp-accent-soft)] bg-[linear-gradient(135deg,rgba(227,248,240,0.96),rgba(255,249,240,0.96))] p-5">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-[var(--lp-accent-strong)]">Message control</p>
+          <h3 className="mt-2 text-xl font-black text-[var(--lp-text)]">Queue, target, and track every student message from one compact composer.</h3>
+          <p className="mt-2 text-sm leading-7 text-slate-600">Use templates for repeat reminders, keep offline actions safe, and review recent broadcasts without scrolling through a crowded dashboard.</p>
+        </div>
         <form className="grid gap-4" onSubmit={onSubmit}>
           <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {isOffline ? `Offline mode active. Queued notification actions: ${queuedNotifications}` : `Online and ready. Queued notification actions: ${queuedNotifications}`}
@@ -220,13 +225,13 @@ export function OwnerNotificationsManager() {
           {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
           {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
           <div className="flex flex-wrap gap-3">
-            <button type="submit" className="rounded-2xl bg-slate-950 px-5 py-4 text-sm font-bold text-white">Send notification</button>
+            <button type="submit" className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-4 text-sm font-bold text-[var(--lp-accent-strong)]">Send notification</button>
             <button type="button" onClick={saveTemplate} className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-700">Save template</button>
           </div>
         </form>
       </DashboardCard>
 
-      <DashboardCard title="Recent campaigns" subtitle="Latest sent reminders and notices">
+      <DashboardCard title="Recent broadcasts" subtitle="Latest sent reminders and notices">
         {loading ? <p className="text-sm text-slate-500">Loading campaigns...</p> : null}
         {!loading ? (
           <div className="space-y-4">

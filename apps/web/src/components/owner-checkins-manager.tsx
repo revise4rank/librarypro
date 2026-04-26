@@ -82,8 +82,28 @@ export function OwnerCheckinsManager() {
   const rows = useMemo(() => data?.rows ?? [], [data]);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-5">
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
+      <section className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-[0_18px_34px_rgba(22,184,113,0.16)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Attendance live</p>
+            <h3 className="mt-1 text-xl font-black tracking-tight">QR register and occupancy watch</h3>
+            <p className="mt-1 text-sm leading-6 text-white/85">
+              Search the register, scan today&apos;s activity, and catch long-stay cases faster.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="rounded-[0.95rem] bg-white/12 px-4 py-2.5 text-sm font-black">
+              {data?.summary.currentlyInside ?? 0} inside
+            </div>
+            <div className="rounded-[0.95rem] bg-white px-4 py-2.5 text-sm font-black text-[#129b62]">
+              {data?.summary.todayCheckins ?? 0} today
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 md:grid-cols-3">
         <DashboardCard title="Currently inside" subtitle="Students still marked in library">
           <p className="text-4xl font-black text-slate-950">{data?.summary.currentlyInside ?? 0}</p>
@@ -97,68 +117,75 @@ export function OwnerCheckinsManager() {
       </section>
 
       <DashboardCard title="Register filters" subtitle="Search student, seat, date range, or long stays">
-        <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr_0.9fr_auto]">
-          <input
-            value={filters.search}
-            onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-            placeholder="Search by student or seat"
-            className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
-          />
-          <input
-            type="date"
-            value={filters.fromDate}
-            onChange={(event) => setFilters((current) => ({ ...current, fromDate: event.target.value }))}
-            className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
-          />
-          <input
-            type="date"
-            value={filters.toDate}
-            onChange={(event) => setFilters((current) => ({ ...current, toDate: event.target.value }))}
-            className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
-          />
-          <button
-            type="button"
-            onClick={() => void loadCheckins(filters)}
-            className="rounded-[1.25rem] bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
-          >
-            {loading ? "Loading..." : "Apply filters"}
-          </button>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {[
-            ["ALL", "All"],
-            ["INSIDE", "Inside"],
-            ["COMPLETED", "Completed"],
-            ["OVERSTAY", "Overstay"],
-          ].map(([value, label]) => (
+        <div className="grid gap-4">
+          <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr_0.9fr_auto]">
+            <input
+              value={filters.search}
+              onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+              placeholder="Search by student or seat"
+              className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
+            />
+            <input
+              type="date"
+              value={filters.fromDate}
+              onChange={(event) => setFilters((current) => ({ ...current, fromDate: event.target.value }))}
+              className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
+            />
+            <input
+              type="date"
+              value={filters.toDate}
+              onChange={(event) => setFilters((current) => ({ ...current, toDate: event.target.value }))}
+              className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
+            />
             <button
-              key={value}
               type="button"
-              onClick={() => {
-                const next = { ...filters, status: value as FilterState["status"] };
-                setFilters(next);
-                void loadCheckins(next);
-              }}
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                filters.status === value
-                  ? "bg-[var(--lp-primary)] text-white"
-                  : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-              }`}
+              onClick={() => void loadCheckins(filters)}
+              className="rounded-[1.25rem] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent)]"
             >
-              {label}
+              {loading ? "Loading..." : "Apply filters"}
             </button>
-          ))}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {[
+              ["ALL", "All"],
+              ["INSIDE", "Inside"],
+              ["COMPLETED", "Completed"],
+              ["OVERSTAY", "Overstay"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  const next = { ...filters, status: value as FilterState["status"] };
+                  setFilters(next);
+                  void loadCheckins(next);
+                }}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+                  filters.status === value
+                    ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]"
+                    : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </DashboardCard>
 
       <DashboardCard title="Digital register" subtitle="Live QR entry history with duration and occupancy state">
         {loading && !data ? <p className="text-sm text-slate-500">Loading check-in register...</p> : null}
-        {!loading && rows.length === 0 ? <p className="text-sm text-slate-500">No check-ins found for current filters.</p> : null}
+        {!loading && rows.length === 0 ? (
+          <div className="rounded-[1.25rem] border border-dashed border-[var(--lp-border)] bg-white px-4 py-8 text-center">
+            <p className="text-xl font-black text-[var(--lp-text)]">No check-ins found</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--lp-muted)]">Try a different date, status, or search term.</p>
+          </div>
+        ) : null}
         {rows.length > 0 ? (
           <>
             <div className="grid gap-3 md:hidden">
               {rows.map((entry) => (
-                <article key={entry.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                <article key={entry.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-[0_8px_18px_rgba(111,95,74,0.05)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-black text-slate-950">{entry.student_name}</p>
@@ -184,9 +211,9 @@ export function OwnerCheckinsManager() {
                 </article>
               ))}
             </div>
-            <div className="hidden overflow-x-auto md:block">
+            <div className="hidden overflow-x-auto rounded-[1.15rem] border border-slate-200 bg-white md:block">
             <table className="w-full min-w-[980px] text-left">
-              <thead>
+              <thead className="bg-slate-50">
                 <tr className="border-b border-slate-200 text-xs uppercase tracking-[0.25em] text-slate-400">
                   <th className="pb-4">Student</th>
                   <th className="pb-4">Seat</th>
@@ -199,12 +226,12 @@ export function OwnerCheckinsManager() {
               <tbody>
                 {rows.map((entry) => (
                   <tr key={entry.id} className="border-b border-slate-100 bg-white text-sm text-slate-700">
-                    <td className="py-4 font-black text-slate-950">{entry.student_name}</td>
-                    <td className="py-4">{entry.seat_number ?? "-"}</td>
-                    <td className="py-4">{new Date(entry.checked_in_at).toLocaleString()}</td>
-                    <td className="py-4">{entry.checked_out_at ? new Date(entry.checked_out_at).toLocaleString() : "-"}</td>
-                    <td className="py-4">{formatMinutes(entry.duration_minutes)}</td>
-                    <td className="py-4">
+                    <td className="px-4 py-4 font-black text-slate-950">{entry.student_name}</td>
+                    <td className="px-4 py-4">{entry.seat_number ?? "-"}</td>
+                    <td className="px-4 py-4">{new Date(entry.checked_in_at).toLocaleString()}</td>
+                    <td className="px-4 py-4">{entry.checked_out_at ? new Date(entry.checked_out_at).toLocaleString() : "-"}</td>
+                    <td className="px-4 py-4">{formatMinutes(entry.duration_minutes)}</td>
+                    <td className="px-4 py-4">
                       <span
                         className={`rounded-full px-3 py-2 text-xs font-black ${
                           entry.status === "INSIDE"

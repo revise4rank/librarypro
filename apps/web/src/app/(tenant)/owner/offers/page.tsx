@@ -1,17 +1,17 @@
 import { DashboardShell } from "../../../../components/dashboard-shell";
-import { OwnerOffersManager } from "../../../../components/owner-offers-manager";
+import { OwnerMarketingManager } from "../../../../components/owner-marketing-manager";
 import { ownerNav } from "../../../../lib/role-nav";
 
 export default function OwnerOffersPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
-      panelLabel="Offers"
-      title="Submit owner promotions and library discounts for admin moderation."
-      description="Keep promotions clean and relevant. Student feed is optional and separate from productivity flow."
+      productLabel="LibraryPro"
+      panelLabel="Marketing"
+      title="Offers"
+      description="Marketing surfaces are grouped together so offers and visibility work stay in one module."
       nav={ownerNav}
     >
-      <OwnerOffersManager />
+      <OwnerMarketingManager initialTab="offers" />
     </DashboardShell>
   );
 }

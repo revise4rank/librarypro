@@ -34,8 +34,11 @@ export function PublicProfileImageUpload({ onUploaded }: PublicProfileImageUploa
       const response = await fetch(`${API_URL}/owner/public-profile/uploads`, {
         method: "POST",
         credentials: "include",
-        headers: {
-        },
+        headers: session.csrfToken
+          ? {
+              "X-CSRF-Token": session.csrfToken,
+            }
+          : undefined,
         body: formData,
       });
 
@@ -61,7 +64,7 @@ export function PublicProfileImageUpload({ onUploaded }: PublicProfileImageUploa
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         onChange={onFileSelected}
         className="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700"
       />

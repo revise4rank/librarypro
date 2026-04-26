@@ -107,7 +107,7 @@ export function StudentOffersManager() {
                   setPage(1);
                   void loadOffers("", 1);
                 }}
-                className={`rounded-full px-4 py-2 text-sm font-semibold ${category === "" ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+                className={`rounded-full px-4 py-2 text-sm font-semibold ${category === "" ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
               >
                 All
               </button>
@@ -120,7 +120,7 @@ export function StudentOffersManager() {
                     setPage(1);
                     void loadOffers(item.slug, 1);
                   }}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${category === item.slug ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold ${category === item.slug ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
                 >
                   {item.name}
                 </button>

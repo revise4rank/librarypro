@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { ContactActions } from "./contact-actions";
+import { formatLibraryHost } from "../lib/domain";
 import { PublicLibraryProfile, PublicLibraryReview, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
 import { LibraryReviewsPanel } from "./library-reviews-panel";
 
@@ -31,7 +32,7 @@ function NavLink({
       href={href}
       className={`rounded-full px-4 py-2 text-sm font-semibold ${
         active
-          ? "bg-[var(--lp-primary)] text-white"
+          ? "border border-[rgba(47,143,136,0.22)] bg-[rgba(47,143,136,0.12)] text-[var(--lp-accent)]"
           : "border border-[var(--lp-border)] bg-[var(--lp-surface)] text-[var(--lp-primary)]"
       }`}
     >
@@ -100,7 +101,7 @@ export function PublicLibraryPage({
                   Published Library Website
                 </p>
                 <p className="mt-2 break-all text-sm text-[var(--lp-muted)]">
-                  {profile.custom_domain || `${profile.subdomain}.nextlib.in`}
+                  {profile.custom_domain || formatLibraryHost(profile.subdomain)}
                 </p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--lp-accent)]">
                   Premium library subdomain website
@@ -112,7 +113,10 @@ export function PublicLibraryPage({
                 Marketplace
               </Link>
               {showStudentActions ? (
-                <Link href={`/student/login?library=${profile.subdomain}`} className="rounded-full bg-[var(--lp-primary)] px-4 py-2 text-sm font-semibold text-white">
+                <Link
+                  href={`/student/login?library=${profile.subdomain}`}
+                  className="rounded-full border border-[rgba(47,143,136,0.22)] bg-[rgba(47,143,136,0.12)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]"
+                >
                   Student login on this website
                 </Link>
               ) : null}
@@ -199,7 +203,7 @@ export function PublicLibraryPage({
             <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
               <h2 className="text-2xl font-extrabold">Student actions on this website</h2>
               <div className="mt-6 grid gap-3">
-                <div className="rounded-[1.25rem] bg-[var(--lp-primary)] px-4 py-4 text-left text-sm font-semibold text-white">
+                <div className="rounded-[1.25rem] border border-[rgba(47,143,136,0.2)] bg-[rgba(47,143,136,0.1)] px-4 py-4 text-left text-sm font-semibold text-[var(--lp-accent)]">
                   Ask about seat availability
                 </div>
                 <Link href={`/student/login?library=${profile.subdomain}`} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-4 text-sm font-semibold text-[var(--lp-primary)]">
@@ -223,7 +227,7 @@ export function PublicLibraryPage({
           <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
             <h2 className="text-3xl font-extrabold">About the library</h2>
             <p className="mt-5 max-w-4xl text-base leading-8 text-[var(--lp-muted)]">
-              {profile.about_text ?? "This library is listed on Nextlib and managed through a dedicated subdomain website. Students can use the same library website for admission, login, QR check-in, notices, and daily updates."}
+              {profile.about_text ?? "This library is listed on LibraryPro and managed through a dedicated subdomain website. Students can use the same library website for admission, login, QR check-in, notices, and daily updates."}
             </p>
             <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {(profile.amenities ?? []).map((amenity) => (

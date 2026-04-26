@@ -242,7 +242,7 @@ export function StudentPaymentsManager() {
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">
                     {payment.status !== "PAID" ? (
-                      <button onClick={() => void payNow(payment.id)} className="rounded-[1.1rem] bg-slate-950 px-4 py-3 text-sm font-bold text-white">
+                      <button onClick={() => void payNow(payment.id)} className="rounded-[1.1rem] border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
                         Pay now
                       </button>
                     ) : null}

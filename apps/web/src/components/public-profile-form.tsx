@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
+import { formatLibraryHost } from "../lib/domain";
 import { PublicProfileImageUpload } from "./public-profile-image-upload";
 
 type PublicProfileFormProps = {
@@ -181,7 +182,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
               type="button"
               onClick={() => setActiveSection(key)}
               className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
-                activeSection === key ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"
+                activeSection === key ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-slate-200 bg-white text-slate-700"
               }`}
             >
               {label}
@@ -224,7 +225,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
             type="button"
             onClick={() => saveProfile(true)}
             disabled={saving}
-            className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
+            className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
           >
             {saving ? "Publishing..." : "Publish Website"}
           </button>
@@ -249,13 +250,13 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                     type="button"
                     onClick={checkAvailability}
                     disabled={checking}
-                    className="rounded-2xl bg-slate-950 px-4 py-4 text-sm font-bold text-white disabled:opacity-60"
+                    className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-4 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
                   >
                     {checking ? "Checking..." : "Check"}
                   </button>
                 </div>
                 <p className="mt-3 text-sm text-slate-500">
-                  Final URL: <span className="font-black text-slate-950">{values.subdomain}.nextlib.in</span>
+                  Final URL: <span className="font-black text-slate-950">{formatLibraryHost(values.subdomain)}</span>
                 </p>
                 <p className="mt-2 text-sm text-slate-500">Student login, QR entry, notices, and day-to-day student actions can run from this same subdomain.</p>
                 {subdomainState !== "unknown" ? (
@@ -284,7 +285,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
 
           <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
             <h2 className="text-2xl font-black text-slate-950">Brand assets</h2>
-            <p className="mt-1 text-sm text-slate-500">Logo aur banner ko calm media panel me manage karo</p>
+            <p className="mt-1 text-sm text-slate-500">Manage logo and banner assets from one calm media panel.</p>
             <div className="mt-6 grid gap-4">
               <div className="rounded-[1.5rem] bg-[#fff7ef] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-primary)]">Brand logo</p>

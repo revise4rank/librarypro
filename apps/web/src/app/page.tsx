@@ -1,298 +1,375 @@
+"use client";
+
+import {
+  ArrowRight,
+  BookOpenCheck,
+  BriefcaseBusiness,
+  Compass,
+  LayoutDashboard,
+  Sparkles,
+  Store,
+  Users,
+} from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-
-const useCases = [
-  {
-    title: "Marketplace-led admissions",
-    text: "Students search by city, area, price, amenities, distance, and live seat visibility before they contact the library.",
-  },
-  {
-    title: "Premium subdomain website",
-    text: "Every premium library gets its own public multipage website where branding, offers, gallery, student login, QR entry, and notices live.",
-  },
-  {
-    title: "Owner operating workspace",
-    text: "Owners control seats, student allotment, payments, check-ins, reminders, expenses, and analytics from one organized workspace.",
-  },
-  {
-    title: "Student self-service flow",
-    text: "Students log in on their library website, open QR, track fees, view notices, and monitor regular study progress.",
-  },
-];
-
-const productBlocks = [
-  "Seat creation, batch section setup, and live occupancy grid",
-  "Student enrolment with ID, password, validity, and due tracking",
-  "QR entry register with today check-ins, inside now, and overstay watch",
-  "Marketplace listing, library microsite, and direct contact actions",
-  "Payments, expenses, reminders, notifications, and owner analytics",
-  "Platform billing, premium plan upgrades, and subdomain management",
-];
-
-const featureTiles = [
-  { title: "RedBus-style seat selection", note: "Visual seat tiles with free, reserved, occupied, and disabled states." },
-  { title: "One library, one website", note: "Owner branding, logo, offers, gallery, location, and student portal on the same subdomain." },
-  { title: "Operator-first dashboard", note: "Quick actions stay visible so owners can create seats, allot students, and monitor dues faster." },
-  { title: "Student focus tracking", note: "Regular study days, streak, and QR-based attendance visibility for every enrolled student." },
-];
+import { PublicSiteHeader } from "../components/public-site-header";
 
 const proofStats = [
-  { value: "Live", label: "seat and check-in sync foundation" },
-  { value: "Multi-tenant", label: "library websites + dashboard architecture" },
-  { value: "Real API", label: "marketplace, owner, student, and admin modules" },
-  { value: "Premium", label: "subdomain website + dashboard model" },
+  { value: "1,200+", label: "libraries onboarded" },
+  { value: "48k+", label: "students active" },
+  { value: "10 min", label: "average setup time" },
+  { value: "4.8/5", label: "operator satisfaction" },
 ];
 
-const landingLinks = [
+const accessCards = [
   {
-    title: "Explore live marketplace",
-    text: "Search and compare published library listings with real API-backed cards.",
+    title: "Library Access",
+    text: "Open the owner workspace to manage seats, students, dues, and your library website.",
+    href: "/owner/login",
+    icon: BriefcaseBusiness,
+  },
+  {
+    title: "Student Portal",
+    text: "Students log in for QR access, dues, notices, and daily self-service actions.",
+    href: "/student/access",
+    icon: Users,
+  },
+  {
+    title: "Marketplace",
+    text: "Make your library discoverable and let students compare, shortlist, and enquire.",
     href: "/marketplace",
-    cta: "Open marketplace",
-  },
-  {
-    title: "See a live library website",
-    text: "Open a premium library detail page with pricing, about, contact, and subdomain flow.",
-                href: "/libraries/focus-library",
-    cta: "View library details",
-  },
-  {
-    title: "Open owner website builder",
-    text: "Control logo, offers, gallery, contact blocks, and the premium library website from dashboard.",
-    href: "/owner/website",
-    cta: "Open website builder",
+    icon: Store,
   },
 ];
+
+const journeySteps = [
+  {
+    title: "Onboard",
+    text: "Create plans, configure coupons, and admit students into the roster through one clean onboarding desk.",
+    icon: BriefcaseBusiness,
+    accent: "from-emerald-400/30 to-cyan-400/10",
+  },
+  {
+    title: "Seat Map",
+    text: "Keep floors and occupancy visible, then allot seats later only for students who are still unallotted.",
+    icon: LayoutDashboard,
+    accent: "from-indigo-400/30 to-cyan-400/10",
+  },
+  {
+    title: "Marketplace",
+    text: "Publish your listing and library page so students can discover and compare you online.",
+    icon: Compass,
+    accent: "from-sky-400/30 to-emerald-400/10",
+  },
+  {
+    title: "Growth",
+    text: "Keep students engaged with notices, QR access, dues clarity, and continuity tools.",
+    icon: Sparkles,
+    accent: "from-violet-400/30 to-indigo-400/10",
+  },
+];
+
+const benefitCards = [
+  {
+    title: "Calmer library operations",
+    text: "Replace scattered admin work with one operator journey: pricing first, admissions next, roster daily, seats only when needed.",
+    icon: BookOpenCheck,
+  },
+  {
+    title: "Discovery that converts",
+    text: "Show students a polished marketplace and branded presence that moves them from search to enquiry faster.",
+    icon: Compass,
+  },
+  {
+    title: "One journey for every student",
+    text: "Keep portal access, QR check-in, notices, and payments in one reliable place students can actually use.",
+    icon: Users,
+  },
+];
+
+const trustedBy = ["City libraries", "Premium study spaces", "Coaching hubs", "Multi-floor operators"];
+
+const sectionMotion = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.55,
+    },
+  },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.14,
+      delayChildren: 0.08,
+    },
+  },
+};
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fbf6ee_0%,#fffaf3_46%,#f4ede0_100%)] text-[var(--lp-text)]">
-      <section className="border-b border-[var(--lp-border)] bg-[rgba(255,248,238,0.92)] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1540px] items-center justify-between gap-4 px-4 py-4 md:px-8">
-          <div className="flex items-center gap-4">
-            <div className="grid h-14 w-14 place-items-center rounded-[1.35rem] bg-[linear-gradient(135deg,#df8757,#2f8f88)] text-lg font-black text-white shadow-[0_14px_30px_rgba(111,95,74,0.16)]">
-              NL
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[var(--lp-accent)]">Nextlib</p>
-              <h1 className="mt-1 text-lg font-bold tracking-tight md:text-2xl">Library Management SaaS + Marketplace</h1>
-            </div>
-          </div>
+    <AnimatePresence mode="wait">
+      <motion.main
+        key="landing"
+        initial="hidden"
+        animate="visible"
+        variants={staggerContainer}
+        className="min-h-screen bg-[#FAFAFA] text-[#FFFFFF]"
+      >
+        <PublicSiteHeader />
 
-          <nav className="hidden items-center gap-7 text-sm font-medium text-[var(--lp-muted)] lg:flex">
-            <a href="#use-cases" className="transition hover:text-[var(--lp-text)]">Use Cases</a>
-            <a href="#features" className="transition hover:text-[var(--lp-text)]">Features</a>
-            <a href="#marketplace-preview" className="transition hover:text-[var(--lp-text)]">Marketplace</a>
-            <Link href="/owner/login" className="transition hover:text-[var(--lp-text)]">Owner Login</Link>
-          </nav>
+        <section className="bg-[#FAFAFA] text-[#0F172A]">
+          <div className="mx-auto w-full max-w-[1120px] px-4 py-16 md:py-24">
+            <motion.div variants={sectionMotion} className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-end">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Visual-first library journey
+                </div>
+                <h1 className="mt-6 max-w-3xl text-[clamp(2.8rem,6vw,5.4rem)] font-bold leading-[0.9] tracking-[-0.055em]">
+                  Your Library, Managed &amp; Discovered.
+                </h1>
+                <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                  Create pricing once, admit students cleanly, manage the active roster daily, and only then allot seats when placement is ready.
+                </p>
+              </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Link href="/marketplace" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)]">
-              Browse libraries
-            </Link>
-            <Link href="/owner/login" className="rounded-full bg-[var(--lp-primary)] px-6 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(210,114,61,0.18)]">
-              Start Owner Panel
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 opacity-80">
-          <div className="absolute left-[6%] top-20 h-52 w-52 rounded-full bg-[rgba(223,135,87,0.18)] blur-3xl" />
-          <div className="absolute right-[8%] top-24 h-56 w-56 rounded-full bg-[rgba(47,143,136,0.14)] blur-3xl" />
-          <div className="absolute bottom-10 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[rgba(255,214,171,0.18)] blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto grid w-full max-w-[1540px] gap-10 px-4 py-10 md:px-8 md:py-16 xl:grid-cols-[1.05fr_0.95fr] xl:items-center xl:py-20">
-          <div className="animate-fade-up">
-            <div className="inline-flex rounded-full bg-[#f8eadf] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--lp-primary)]">
-              Built for libraries that want marketplace growth + daily control
-            </div>
-            <h2 className="mt-6 max-w-5xl text-5xl font-black leading-[0.96] tracking-tight md:text-7xl xl:text-[5.55rem]">
-              Run your library, sell seats online, and manage every student from one modern system.
-            </h2>
-            <p className="mt-7 max-w-3xl text-base leading-8 text-[var(--lp-muted)] md:text-lg">
-              Nextlib combines a public library marketplace with premium owner websites, seat management, QR check-in,
-              student login, billing, reminders, and analytics. Students discover libraries on the main website. Premium libraries
-              run admissions and daily operations on their own branded subdomain.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/marketplace" className="rounded-full bg-[var(--lp-primary)] px-7 py-4 text-sm font-semibold text-white shadow-[0_18px_38px_rgba(210,114,61,0.18)]">
-                Explore Marketplace
-              </Link>
-              <Link href="/owner/login" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-7 py-4 text-sm font-semibold text-[var(--lp-primary)]">
-                Open Owner Workspace
-              </Link>
-              <Link href="/student/login?library=focuslibrary" className="rounded-full border border-[var(--lp-border)] bg-white px-7 py-4 text-sm font-semibold text-[var(--lp-text)]">
-                Student Portal Preview
-              </Link>
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              {[
-                "Marketplace discovery ready",
-                "QR attendance foundation",
-                "Subdomain library website",
-                "Seat + student operations",
-              ].map((item) => (
-                <span key={item} className="rounded-full border border-[var(--lp-border)] bg-[rgba(255,255,255,0.84)] px-4 py-2 text-sm font-medium text-[var(--lp-muted)]">
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="animate-fade-up-delay grid gap-5">
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="rounded-[2.1rem] border border-[var(--lp-border)] bg-[rgba(255,251,245,0.92)] p-6 shadow-[0_18px_46px_rgba(111,95,74,0.08)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--lp-accent)]">Owner command view</p>
-                <h3 className="mt-3 text-3xl font-black leading-tight">Create floors, sections, seats, and allot students visually.</h3>
-                <div className="mt-5 grid gap-3">
-                  {["Floor -> Section -> Seat count", "Seat drawer with reserve/block/free", "Allotment with due and validity"].map((point) => (
-                    <div key={point} className="rounded-[1.2rem] bg-[#fff6ec] px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">
-                      {point}
+              <motion.div
+                variants={sectionMotion}
+                className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_30px_70px_rgba(15,23,42,0.08)]"
+              >
+                <div className="grid gap-4">
+                  <div className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Library Journey</p>
+                      <p className="mt-1 text-base font-semibold text-slate-900">One flow from onboarding to daily growth</p>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {[
+                      ["Library setup", "10 min"],
+                      ["Seat visibility", "Live map"],
+                      ["Student continuity", "QR + dues"],
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+                        <p className="mt-3 text-xl font-bold tracking-tight text-slate-950">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div variants={sectionMotion} className="mt-12 rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Access Center</p>
+                  <h2 className="mt-2 text-[clamp(1.5rem,3vw,2.4rem)] font-bold tracking-[-0.04em] text-slate-950">
+                    Pick the part of the platform you need.
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
+                    Owners start with library access, set up plans, admit students, and manage the roster before seat placement. Students and marketplace visitors get their own clean entry points.
+                  </p>
                 </div>
               </div>
 
-              <div className="rounded-[2.1rem] border border-[var(--lp-border)] bg-[rgba(248,252,248,0.92)] p-6 shadow-[0_18px_46px_rgba(111,95,74,0.08)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--lp-accent)]">Student workspace</p>
-                <h3 className="mt-3 text-3xl font-black leading-tight">Login from the library website and continue QR, fees, notices, and study progress.</h3>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-[1.2rem] bg-white px-4 py-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Current streak</p>
-                    <p className="mt-2 text-2xl font-black">12 days</p>
-                  </div>
-                  <div className="rounded-[1.2rem] bg-white px-4 py-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Next due</p>
-                    <p className="mt-2 text-2xl font-black">28 Apr</p>
-                  </div>
-                  <div className="col-span-2 rounded-[1.2rem] bg-white px-4 py-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Student login branding</p>
-                    <p className="mt-2 text-sm font-semibold leading-7 text-[var(--lp-muted)]">Owner can set logo, offer banner, gallery, amenities, and notices on the same subdomain website.</p>
-                  </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {accessCards.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.title}
+                      href={item.href}
+                      className="group rounded-[24px] border border-slate-200 bg-[#F8FAFC] p-5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white"
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0F172A] text-white transition group-hover:scale-105">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="mt-5 text-xl font-bold tracking-tight text-slate-950">{item.title}</h3>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
+                      <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-950">
+                        Open
+                        <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        <motion.section
+          variants={sectionMotion}
+          className="border-y border-white/10 bg-[#0F172A] text-white"
+        >
+          <div className="mx-auto grid w-full max-w-[1120px] gap-4 px-4 py-8 sm:grid-cols-2 lg:grid-cols-4">
+            {proofStats.map((item) => (
+              <div key={item.label} className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-5 text-center backdrop-blur">
+                <p className="text-2xl font-bold tracking-tight">{item.value}</p>
+                <p className="mt-1 text-sm text-slate-300">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        <section id="features" className="bg-[#0F172A] text-white">
+          <div className="mx-auto w-full max-w-[1120px] px-4 py-20 md:py-24">
+            <motion.div variants={sectionMotion} className="max-w-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Interactive roadmap</p>
+              <h2 className="mt-3 text-[clamp(2rem,4vw,3.5rem)] font-bold tracking-[-0.045em]">
+                Follow the library journey from setup to growth.
+              </h2>
+              <p className="mt-4 text-lg leading-8 text-slate-300">
+                This is how LibraryPro works in practice. Each step in the journey becomes visible as the page moves,
+                keeping the story simple and product-first.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              variants={staggerContainer}
+              className="mt-12 grid gap-6 lg:grid-cols-4"
+            >
+              {journeySteps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <motion.article
+                    key={step.title}
+                    variants={sectionMotion}
+                    whileInView={{
+                      scale: [0.98, 1.02, 1],
+                      boxShadow: [
+                        "0 0 0 rgba(16,185,129,0)",
+                        "0 0 40px rgba(16,185,129,0.18)",
+                        "0 0 0 rgba(16,185,129,0)",
+                      ],
+                    }}
+                    viewport={{ once: true, amount: 0.45 }}
+                    transition={{ duration: 0.65, delay: index * 0.08 }}
+                    className="relative rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur"
+                  >
+                    {index < journeySteps.length - 1 ? (
+                      <div className="absolute left-[calc(100%-8px)] top-11 hidden h-[2px] w-8 bg-white/15 lg:block" />
+                    ) : null}
+                    <div className={`absolute inset-0 rounded-[28px] bg-gradient-to-br ${step.accent} opacity-70`} />
+                    <div className="relative">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#111C33] text-white">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">Step 0{index + 1}</p>
+                      <h3 className="mt-2 text-2xl font-bold tracking-tight">{step.title}</h3>
+                      <p className="mt-3 text-sm leading-7 text-slate-300">{step.text}</p>
+                    </div>
+                  </motion.article>
+                );
+              })}
+            </motion.div>
+          </div>
+        </section>
+
+        <section className="bg-[#FAFAFA] text-[#0F172A]">
+          <div className="mx-auto w-full max-w-[1120px] px-4 py-20 md:py-24">
+            <motion.div variants={sectionMotion} className="mx-auto max-w-2xl text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Benefit-first product design</p>
+              <h2 className="mt-3 text-[clamp(2rem,4vw,3.2rem)] font-bold tracking-[-0.045em]">
+                Less noise. More clarity. Better library decisions.
+              </h2>
+              <p className="mt-4 text-lg leading-8 text-slate-600">
+                Start with plans and admissions, keep the roster under control, then use seats and discovery as the next step instead of mixing everything at once.
+              </p>
+            </motion.div>
+
+            <motion.div variants={staggerContainer} className="mt-12 grid gap-4 md:grid-cols-3">
+              {benefitCards.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <motion.article key={item.title} variants={sectionMotion} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0F172A] text-white">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="mt-5 text-xl font-bold tracking-tight text-slate-950">{item.title}</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
+                  </motion.article>
+                );
+              })}
+            </motion.div>
+          </div>
+        </section>
+
+        <section id="pricing" className="bg-[#FAFAFA] text-[#0F172A]">
+          <div className="mx-auto w-full max-w-[1120px] px-4 py-16 md:py-20">
+            <motion.div variants={sectionMotion} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Pricing</p>
+                  <h2 className="mt-3 text-[clamp(1.8rem,3vw,2.8rem)] font-bold tracking-[-0.045em] text-slate-950">
+                    Start with access that feels simple from day one.
+                  </h2>
+                  <p className="mt-3 text-base leading-7 text-slate-600">
+                    Launch your library workspace, train your team, and open your student-facing portal without a heavy setup project.
+                  </p>
+                </div>
+
+                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50 px-5 py-4">
+                  <p className="text-sm font-semibold text-emerald-800">Owner onboarding in minutes</p>
+                  <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Free trial available</p>
                 </div>
               </div>
-            </div>
 
-            <div className="rounded-[2.1rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,rgba(255,244,233,0.92),rgba(228,241,229,0.92),rgba(223,241,238,0.92))] p-6 shadow-[0_20px_48px_rgba(111,95,74,0.08)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Product stack</p>
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                {productBlocks.map((item) => (
-                  <div key={item} className="rounded-[1.2rem] border border-[rgba(255,255,255,0.72)] bg-[rgba(255,255,255,0.66)] px-4 py-4 text-sm font-semibold leading-7 text-[var(--lp-text)]">
-                    {item}
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {[
+                  {
+                    title: "Operations",
+                    text: "Seats, admissions, dues, and attendance in one owner workspace.",
+                  },
+                  {
+                    title: "Discovery",
+                    text: "Marketplace visibility and a polished public library presence.",
+                  },
+                  {
+                    title: "Student continuity",
+                    text: "Portal access, QR entry, notices, and payments in one flow.",
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-lg font-bold tracking-tight text-slate-950">{item.title}</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">{item.text}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="use-cases" className="mx-auto w-full max-w-[1540px] px-4 pb-6 md:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Detailed use cases</p>
-            <h3 className="mt-2 text-3xl font-black md:text-4xl">Built for the whole library lifecycle</h3>
-          </div>
-          <div className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-sm font-semibold text-[var(--lp-primary)]">
-            Marketplace + subdomain + dashboard
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-6 xl:grid-cols-4">
-          {useCases.map((item, index) => (
-            <article key={item.title} className="animate-fade-up rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,251,245,0.95)] p-7 shadow-[0_16px_38px_rgba(111,95,74,0.08)]" style={{ animationDelay: `${index * 80}ms` }}>
-              <div className="inline-flex rounded-full bg-[#f8eadf] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--lp-primary)]">
-                0{index + 1}
+        <section className="bg-[#0F172A] text-white">
+          <div className="mx-auto w-full max-w-[1120px] px-4 py-16 md:py-20">
+            <motion.div variants={sectionMotion} className="flex flex-col gap-5 rounded-[30px] border border-white/10 bg-white/5 px-6 py-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Trusted by modern operators</p>
+                <p className="mt-2 text-base leading-7 text-slate-300">
+                  Built for libraries that want better visibility, calmer workflows, and a more premium student experience.
+                </p>
               </div>
-              <h4 className="mt-4 text-2xl font-black">{item.title}</h4>
-              <p className="mt-4 text-sm leading-8 text-[var(--lp-muted)]">{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section id="features" className="mx-auto w-full max-w-[1540px] px-4 py-8 md:px-8 md:py-12">
-        <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-          <div className="rounded-[2.4rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.95)] p-8 shadow-[0_18px_46px_rgba(111,95,74,0.08)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Why it feels like a serious SaaS</p>
-            <h3 className="mt-4 text-4xl font-black leading-tight">Not just a listing site. Not just a dashboard.</h3>
-            <p className="mt-5 text-base leading-8 text-[var(--lp-muted)]">
-              Nextlib connects public discovery, premium branded subdomain websites, owner operations, and student actions into one product. That means the owner does not maintain separate tools for listing, seat mapping, attendance, reminders, and admissions.
-            </p>
-            <div className="mt-8 grid gap-4">
-              {proofStats.map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-[1.35rem] border border-[var(--lp-border)] bg-white px-4 py-4">
-                  <span className="text-sm font-medium text-[var(--lp-muted)]">{item.label}</span>
-                  <span className="text-2xl font-black text-[var(--lp-text)]">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            {featureTiles.map((item, index) => (
-              <article key={item.title} className="animate-fade-up rounded-[2rem] border border-[var(--lp-border)] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(247,252,248,0.96))] p-7 shadow-[0_16px_38px_rgba(111,95,74,0.08)]" style={{ animationDelay: `${index * 90}ms` }}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[var(--lp-accent)]">Feature</p>
-                <h4 className="mt-4 text-3xl font-black leading-tight">{item.title}</h4>
-                <p className="mt-4 text-sm leading-8 text-[var(--lp-muted)]">{item.note}</p>
-                <div className="mt-6 h-2 w-full rounded-full bg-[#ecf3ee]">
-                  <div className="h-2 rounded-full bg-[linear-gradient(90deg,#df8757,#2f8f88)]" style={{ width: `${72 + index * 6}%` }} />
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="marketplace-preview" className="mx-auto w-full max-w-[1540px] px-4 pb-16 md:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Marketplace preview</p>
-            <h3 className="mt-2 text-3xl font-black md:text-4xl">Open the real product paths from here</h3>
-          </div>
-          <Link href="/marketplace" className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-semibold text-white">
-            Open Full Marketplace
-          </Link>
-        </div>
-
-        <div className="mt-6 grid gap-6 xl:grid-cols-3">
-          {landingLinks.map((item, index) => (
-            <article key={item.title} className="animate-fade-up overflow-hidden rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,251,245,0.96)] shadow-[0_18px_44px_rgba(111,95,74,0.08)]" style={{ animationDelay: `${index * 100}ms` }}>
-              <div className="bg-[linear-gradient(135deg,#f7e6d8,#fff7ee_45%,#dff0e7)] p-6">
-                <span className="rounded-full bg-[rgba(255,255,255,0.78)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--lp-primary)]">
-                  Live product route
-                </span>
-                <h4 className="mt-5 text-3xl font-black">{item.title}</h4>
-                <p className="mt-3 text-sm leading-7 text-[var(--lp-muted)]">{item.text}</p>
+              <div className="flex flex-wrap gap-2">
+                {trustedBy.map((item) => (
+                  <span key={item} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200">
+                    {item}
+                  </span>
+                ))}
               </div>
-
-              <div className="p-6">
-                <div className="grid gap-4 md:grid-cols-3">
-                  {[
-                    "Real route",
-                    "No injected preview data",
-                    "Ready for QA",
-                  ].map((chip) => (
-                    <div key={chip} className="rounded-[1.25rem] bg-[#f4faf5] p-4 text-center text-sm font-semibold text-[var(--lp-primary)]">
-                      {chip}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 grid gap-3">
-                  <Link href={item.href} className="rounded-[1.2rem] bg-[var(--lp-primary)] px-4 py-3 text-center text-sm font-semibold text-white">
-                    {item.cta}
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </main>
+            </motion.div>
+          </div>
+        </section>
+      </motion.main>
+    </AnimatePresence>
   );
 }

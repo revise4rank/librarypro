@@ -17,8 +17,8 @@ function UnavailableLibrarySite() {
             <Link href="/marketplace" className="rounded-full bg-[var(--lp-primary)] px-6 py-3 text-sm font-semibold text-white">
               Back to marketplace
             </Link>
-            <Link href="/owner/website" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-6 py-3 text-sm font-semibold text-[var(--lp-primary)]">
-              Owner website builder
+            <Link href="/owner/settings?tab=website" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-6 py-3 text-sm font-semibold text-[var(--lp-primary)]">
+              Owner website setup
             </Link>
           </div>
         </div>

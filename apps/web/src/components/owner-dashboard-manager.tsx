@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
+import { fetchOwnerFinanceDashboard } from "../lib/owner-finance";
 import { DashboardCard } from "./dashboard-shell";
+import { StatCard } from "./stat-card";
 
 type OwnerDashboardResponse = {
   success: boolean;
@@ -89,9 +91,11 @@ type TrendResponse = {
 };
 
 const actionCards = [
-  { title: "Assign new student", detail: "Seat, plan, dates, payment", href: "/owner/students" },
-  { title: "Configure seat map", detail: "Floor, room, reserve, free", href: "/owner/seats" },
-  { title: "Publish library website", detail: "Offers, logo, amenities", href: "/owner/website" },
+  { title: "Create new admission", detail: "Student details, plan, coupon, and ledger", href: "/owner/admissions" },
+  { title: "Review join requests", detail: "Approve incoming requests from one queue", href: "/owner/admissions?mode=requests" },
+  { title: "Open active roster", detail: "Seat allotment, renewals, and profile edits", href: "/owner/students" },
+  { title: "Configure seat inventory", detail: "Floor, room, reserve, and planner setup", href: "/owner/seats" },
+  { title: "Publish library website", detail: "Website tab inside settings", href: "/owner/settings?tab=website" },
   { title: "Send due reminders", detail: "Notices and reminders", href: "/owner/notifications" },
 ];
 
@@ -112,7 +116,7 @@ export function OwnerDashboardManager() {
     async function loadDashboard() {
       try {
         const [dashboardResponse, followupsResponse, trendsResponse] = await Promise.all([
-          apiFetch<OwnerDashboardResponse>("/owner/dashboard"),
+          fetchOwnerFinanceDashboard<OwnerDashboardResponse>(),
           apiFetch<FollowUpQueueResponse>("/owner/productivity/followups"),
           apiFetch<TrendResponse>(`/owner/productivity/trends?window=${trendWindow}`),
         ]);
@@ -233,25 +237,44 @@ export function OwnerDashboardManager() {
   });
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 md:gap-5">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+      <section className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,#18b56f_0%,#87e6ca_100%)] p-4 text-white shadow-[0_18px_34px_rgba(24,181,111,0.18)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Owner workflow live</p>
+            <h3 className="mt-1 text-2xl font-black tracking-tight">Run the day in the same order your team actually works</h3>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-white/85">
+              Admit students first, move them into the active roster, and only then open seat assignment when placement is ready.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/owner/admissions" className="rounded-[0.95rem] bg-white px-4 py-2.5 text-sm font-black text-[#119b61]">
+              New admission
+            </Link>
+            <Link href="/owner/admissions?mode=requests" className="rounded-[0.95rem] border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-black text-white">
+              Review requests
+            </Link>
+          </div>
+        </div>
+      </section>
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((item) => (
-          <div key={item.label} className="rounded-[1.4rem] border border-[var(--lp-border)] bg-[rgba(255,250,244,0.96)] p-4 shadow-[0_12px_24px_rgba(111,95,74,0.05)]">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-muted)]">{item.label}</p>
-            <div className="mt-2 space-y-3">
-              <p className="text-2xl font-black text-[var(--lp-text)]">{item.value}</p>
-              <span className={`inline-flex rounded-full px-3 py-1.5 text-[11px] font-black ${item.tone}`}>{item.change}</span>
-            </div>
-          </div>
+          <StatCard
+            key={item.label}
+            label={item.label}
+            value={item.value}
+            note={item.change}
+            chip={<span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black ${item.tone}`}>Live</span>}
+          />
         ))}
       </section>
 
       <section className="grid gap-4 2xl:grid-cols-[1.25fr_0.95fr]">
-        <DashboardCard title="Priority center" subtitle="Real owner alerts from seats, plans, and payments">
+        <DashboardCard title="Priority center" subtitle="What needs action before you move into the day">
           <div className="grid gap-3 md:grid-cols-2">
             {alerts.map((alert) => (
-              <article key={alert.title} className={`rounded-[1.15rem] border p-4 ${alert.tone}`}>
+              <article key={alert.title} className={`rounded-[1rem] border p-4 ${alert.tone}`}>
                 <h4 className="text-sm font-black">{alert.title}</h4>
                 <p className="mt-1 text-sm leading-6">{alert.detail}</p>
               </article>
@@ -259,17 +282,17 @@ export function OwnerDashboardManager() {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Operator shortcuts" subtitle="Fastest paths owners actually use">
+        <DashboardCard title="Operator shortcuts" subtitle="Admissions-first shortcuts with less decision fatigue">
           <div className="grid gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.95rem] border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-sm font-black text-slate-950">Quick actions</p>
-                <p className="mt-1 text-sm text-slate-500">Only the most-used owner shortcuts are shown when needed.</p>
+                <p className="mt-1 text-sm text-slate-500">Open only the flows owners need most: admissions, requests, roster, and seat inventory.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setShortcutsOpen((current) => !current)}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
               >
                 {shortcutsOpen ? "Hide" : "Open"}
               </button>
@@ -277,12 +300,12 @@ export function OwnerDashboardManager() {
             {shortcutsOpen ? (
               <div className="grid gap-2.5">
                 {actionCards.map((card) => (
-                  <Link key={card.title} href={card.href} className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3.5 transition hover:border-slate-300 hover:bg-white">
+                  <Link key={card.title} href={card.href} className="rounded-[0.95rem] border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-slate-300 hover:bg-white">
                     <p className="font-black text-slate-950">{card.title}</p>
                     <p className="mt-1 text-sm text-slate-500">{card.detail}</p>
                   </Link>
                 ))}
-                <button type="button" onClick={() => void sendDueRecovery()} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3.5 text-left text-sm font-bold text-white">
+                <button type="button" onClick={() => void sendDueRecovery()} className="rounded-[0.95rem] bg-[var(--lp-accent-soft)] px-4 py-3 text-left text-sm font-bold text-[var(--lp-accent)]">
                   Send automatic due recovery reminders
                 </button>
               </div>
@@ -306,8 +329,8 @@ export function OwnerDashboardManager() {
                   key={value}
                   type="button"
                   onClick={() => setFollowUpFilter(value)}
-                  className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
-                    followUpFilter === value ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-600"
+                  className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] ${
+                    followUpFilter === value ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-slate-200 bg-white text-slate-600"
                   }`}
                 >
                   {label}
@@ -317,12 +340,12 @@ export function OwnerDashboardManager() {
             {filteredFollowUps.map((item) => {
               const urgency = getUrgencyStyle(item.followUpAt);
               return (
-              <div key={item.id} className={`rounded-[1.25rem] border p-4 ${urgency.border}`}>
+              <div key={item.id} className={`rounded-[1rem] border p-4 ${urgency.border}`}>
                 <div className="flex items-center justify-between gap-3">
                   <Link href={`/owner/students/${item.studentUserId}?name=${encodeURIComponent(item.studentName)}`} className="font-black text-slate-950 hover:underline">{item.studentName}</Link>
                   <div className="flex items-center gap-2">
                     <span className={`rounded-full px-3 py-2 text-[11px] font-black ${urgency.chip}`}>{urgency.label}</span>
-                    <span className="rounded-full bg-slate-950 px-3 py-2 text-[11px] font-black text-white">{item.noteStatus}</span>
+                    <span className="rounded-full bg-[var(--lp-accent-soft)] px-3 py-2 text-[11px] font-black text-[var(--lp-accent)]">{item.noteStatus}</span>
                   </div>
                 </div>
                 <p className="mt-2 text-sm text-slate-500">{item.noteType} | Follow up {item.followUpAt?.slice(0, 16).replace("T", " ") ?? "-"}</p>
@@ -332,7 +355,7 @@ export function OwnerDashboardManager() {
                     type="button"
                     disabled={updatingNoteId === item.id || item.noteStatus === "DONE"}
                     onClick={() => void updateFollowUpStatus(item.id, "DONE")}
-                    className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white disabled:opacity-60"
+                    className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800 disabled:opacity-60"
                   >
                     Mark DONE
                   </button>
@@ -340,7 +363,7 @@ export function OwnerDashboardManager() {
                     type="button"
                     disabled={updatingNoteId === item.id || item.noteStatus === "ESCALATED"}
                     onClick={() => void updateFollowUpStatus(item.id, "ESCALATED")}
-                    className="rounded-full bg-amber-500 px-3 py-1 text-xs font-bold text-white disabled:opacity-60"
+                    className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 disabled:opacity-60"
                   >
                     Mark ESCALATED
                   </button>
@@ -353,7 +376,7 @@ export function OwnerDashboardManager() {
 
         <DashboardCard title="What to act on first" subtitle="Suggested owner workflow">
           <div className="grid gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.95rem] border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-sm font-black text-slate-950">Operator playbook</p>
                 <p className="mt-1 text-sm text-slate-500">Keep this closed unless you want coaching prompts for the day.</p>
@@ -361,22 +384,22 @@ export function OwnerDashboardManager() {
               <button
                 type="button"
                 onClick={() => setPlaybookOpen((current) => !current)}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
               >
                 {playbookOpen ? "Hide" : "Open"}
               </button>
             </div>
             {playbookOpen ? (
               <div className="grid gap-4">
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Attendance notes</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">Prioritize students with missed-day patterns and open attendance notes before they become churn risk.</p>
                 </div>
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Focus notes</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">Convert weak-focus cases into small daily targets instead of generic advice. Short recoverable plans work better.</p>
                 </div>
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Payment plus discipline</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">When a due student also has weak attendance, combine billing follow-up with a study commitment conversation.</p>
                 </div>
@@ -388,7 +411,7 @@ export function OwnerDashboardManager() {
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <DashboardCard title="Collection pipeline" subtitle="Students needing payment or renewal action">
-          <div className="overflow-hidden rounded-[1.5rem] border border-slate-200">
+          <div className="overflow-hidden rounded-[1.1rem] border border-slate-200">
             <div className="hidden grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr_0.8fr] gap-3 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-[0.2em] text-slate-500 md:grid">
               <span>Student</span>
               <span>Seat</span>
@@ -416,26 +439,26 @@ export function OwnerDashboardManager() {
 
         <DashboardCard title="Library controls" subtitle="Live settings and platform state">
           <div className="grid gap-4">
-            <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Plan and access</p>
+            <div className="rounded-[1.1rem] bg-[linear-gradient(135deg,#1c978f_0%,#9ce6d5_100%)] p-4 text-white">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-white/70">Plan and access</p>
               <p className="mt-3 text-2xl font-black">{data.library?.plan_name ?? "No active plan"}</p>
-              <p className="mt-2 text-sm text-slate-300">
+              <p className="mt-2 text-sm text-white/80">
                 Status {data.library?.subscription_status ?? "-"} | Renews on {data.library?.current_period_end ?? "-"}
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">WiFi</p>
                 <p className="mt-3 text-lg font-black text-slate-950">{data.library?.wifi_name ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">{data.library?.wifi_password ?? "-"}</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Check-in volume</p>
                 <p className="mt-3 text-lg font-black text-slate-950">{data.metrics.today_checkins} today</p>
                 <p className="mt-2 text-sm text-slate-500">{data.metrics.active_students} active students</p>
               </div>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Notice board</p>
               <p className="mt-3 text-sm leading-7 text-slate-700">{data.library?.notice_message ?? "No notice available."}</p>
             </div>
@@ -446,15 +469,15 @@ export function OwnerDashboardManager() {
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Focus and attendance trends" subtitle="Last 14 days of owner-side discipline signals">
           <div className="grid gap-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.95rem] border border-slate-200 bg-slate-50 px-4 py-3">
               <div className="flex flex-wrap gap-2">
                 {(["7d", "30d"] as const).map((window) => (
                   <button
                     key={window}
                     type="button"
                     onClick={() => setTrendWindow(window)}
-                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.2em] ${
-                      trendWindow === window ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-600"
+                    className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] ${
+                      trendWindow === window ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-slate-200 bg-white text-slate-600"
                     }`}
                   >
                     {window}
@@ -464,7 +487,7 @@ export function OwnerDashboardManager() {
               <button
                 type="button"
                 onClick={() => setTrendsOpen((current) => !current)}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
               >
                 {trendsOpen ? "Hide trends" : "Show trends"}
               </button>
@@ -472,12 +495,12 @@ export function OwnerDashboardManager() {
             {trendsOpen ? (
               <>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
                     <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top focus day</p>
                     <p className="mt-3 text-2xl font-black text-slate-950">{trends?.summary.topFocusMinutes ?? 0} min</p>
                     <p className="mt-2 text-sm text-slate-500">{trends?.summary.topFocusDay ?? "-"}</p>
                   </div>
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
                     <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top attendance day</p>
                     <p className="mt-3 text-2xl font-black text-slate-950">{trends?.summary.topAttendanceStudents ?? 0} students</p>
                     <p className="mt-2 text-sm text-slate-500">{trends?.summary.topAttendanceDay ?? "-"}</p>
@@ -485,7 +508,7 @@ export function OwnerDashboardManager() {
                 </div>
                 <div className="grid gap-3">
                   {trendPoints.map((point) => (
-                    <div key={point.date} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                    <div key={point.date} className="rounded-[1rem] border border-slate-200 bg-white p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-black text-slate-950">{point.date}</p>
                         <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{point.focusSessions} sessions</p>
@@ -516,7 +539,7 @@ export function OwnerDashboardManager() {
                 </div>
               </>
             ) : (
-              <div className="rounded-[1.25rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
                 Trends are tucked away by default so the dashboard stays lighter. Open this only when you want comparison data.
               </div>
             )}
@@ -525,29 +548,17 @@ export function OwnerDashboardManager() {
 
         <DashboardCard title="Seat business snapshot" subtitle="Occupancy and student coverage">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[1.5rem] bg-emerald-50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Total seats</p>
-              <p className="mt-3 text-3xl font-black text-slate-950">{data.metrics.total_seats}</p>
-            </div>
-            <div className="rounded-[1.5rem] bg-sky-50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-sky-700">Free seats</p>
-              <p className="mt-3 text-3xl font-black text-slate-950">{data.metrics.available_seats}</p>
-            </div>
-            <div className="rounded-[1.5rem] bg-amber-50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-700">Renewal due soon</p>
-              <p className="mt-3 text-3xl font-black text-slate-950">{data.metrics.expiring_students}</p>
-            </div>
-            <div className="rounded-[1.5rem] bg-rose-50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-rose-700">Active students</p>
-              <p className="mt-3 text-3xl font-black text-slate-950">{data.metrics.active_students}</p>
-            </div>
+            <StatCard label="Total seats" value={data.metrics.total_seats} note="Current seat inventory" />
+            <StatCard label="Free seats" value={data.metrics.available_seats} note="Ready to sell" />
+            <StatCard label="Renewal due soon" value={data.metrics.expiring_students} note="Needs outreach" />
+            <StatCard label="Active students" value={data.metrics.active_students} note="Current seat holders" />
           </div>
         </DashboardCard>
 
         <DashboardCard title="Recent finance log" subtitle="Latest collection activity">
           <div className="space-y-3">
             {data.recentPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+              <div key={payment.id} className="flex items-center justify-between rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
                 <div>
                   <p className="font-bold text-slate-950">{payment.student_name}</p>
                   <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.created_at).slice(0, 10)}</p>

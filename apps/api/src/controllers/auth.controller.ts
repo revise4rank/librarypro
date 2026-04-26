@@ -2,8 +2,8 @@ import type { Request, Response } from "express";
 import crypto from "node:crypto";
 import { createAuditLog } from "../lib/audit";
 import { AppError } from "../lib/errors";
-import { getAuthenticatedUser, loginUser, registerStudentUser } from "../services/auth.service";
-import { loginBodySchema, studentRegisterBodySchema } from "../validators/auth.validators";
+import { changeAuthenticatedUserPassword, getAuthenticatedUser, loginUser, registerStudentUser, updateAuthenticatedUserProfile } from "../services/auth.service";
+import { changePasswordBodySchema, loginBodySchema, studentRegisterBodySchema, updateMeBodySchema } from "../validators/auth.validators";
 
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
@@ -136,7 +136,7 @@ export async function loginController(req: Request, res: Response) {
 
   setAccessCookie(req, res, result.accessToken);
   const csrfToken = ensureCsrfToken(req, res);
-  res.json({ success: true, data: { ...result, csrfToken } });
+  res.json({ success: true, data: { user: result.user, csrfToken } });
 }
 
 export async function studentRegisterController(req: Request, res: Response) {
@@ -155,7 +155,7 @@ export async function studentRegisterController(req: Request, res: Response) {
 
   setAccessCookie(req, res, result.accessToken);
   const csrfToken = ensureCsrfToken(req, res);
-  res.status(201).json({ success: true, data: { ...result, csrfToken } });
+  res.status(201).json({ success: true, data: { user: result.user, csrfToken } });
 }
 
 export async function logoutController(req: Request, res: Response) {
@@ -185,4 +185,37 @@ export async function meController(req: Request, res: Response) {
   const user = await getAuthenticatedUser(req.auth.userId);
   const csrfToken = ensureCsrfToken(req, res);
   res.json({ success: true, data: { ...user, csrfToken } });
+}
+
+export async function updateMeController(req: Request, res: Response) {
+  if (!req.auth) {
+    throw new AppError(401, "Authentication required", "UNAUTHENTICATED");
+  }
+
+  const parsed = updateMeBodySchema.parse(req.body);
+  const user = await updateAuthenticatedUserProfile({
+    userId: req.auth.userId,
+    fullName: parsed.fullName,
+    email: parsed.email || undefined,
+    phone: parsed.phone || undefined,
+  });
+  const csrfToken = ensureCsrfToken(req, res);
+  res.json({ success: true, data: { ...user, csrfToken } });
+}
+
+export async function changePasswordController(req: Request, res: Response) {
+  if (!req.auth) {
+    throw new AppError(401, "Authentication required", "UNAUTHENTICATED");
+  }
+
+  const parsed = changePasswordBodySchema.parse(req.body);
+  await changeAuthenticatedUserPassword({
+    userId: req.auth.userId,
+    currentPassword: parsed.currentPassword,
+    nextPassword: parsed.nextPassword,
+  });
+
+  clearAccessCookie(req, res);
+  clearCsrfCookie(req, res);
+  res.json({ success: true });
 }

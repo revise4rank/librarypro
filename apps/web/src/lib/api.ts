@@ -1,6 +1,9 @@
 "use client";
 
 const PRODUCTION_API_ORIGIN = "https://librarypro-api.onrender.com";
+const CLIENT_PROXY_ORIGIN = "/api-proxy";
+const CLIENT_AUTH_LOGIN_PATH = "/api-auth/login";
+const CLIENT_AUTH_LOGOUT_PATH = "/api-auth/logout";
 
 function getDefaultApiOrigin() {
   if (typeof window !== "undefined") {
@@ -12,7 +15,7 @@ function getDefaultApiOrigin() {
       return `${protocol}//127.0.0.1:4000`;
     }
 
-    return PRODUCTION_API_ORIGIN;
+    return CLIENT_PROXY_ORIGIN;
   }
 
   return process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || PRODUCTION_API_ORIGIN;
@@ -36,7 +39,6 @@ export type SessionUser = {
 export type SessionState = {
   user: SessionUser;
   csrfToken?: string;
-  accessToken?: string;
 };
 
 const SESSION_KEY = "nextlib_session";
@@ -47,19 +49,14 @@ const LEGACY_COOKIE_TOKEN = "lp_token";
 function getPrimaryStorage() {
   if (typeof window === "undefined") return null;
   try {
-    return window.localStorage;
-  } catch {
-    return window.sessionStorage;
-  }
-}
-
-function getSecondaryStorage() {
-  if (typeof window === "undefined") return null;
-  try {
     return window.sessionStorage;
   } catch {
     return null;
   }
+}
+
+function getSecondaryStorage() {
+  return null;
 }
 
 function setCookie(name: string, value: string, maxAgeSeconds?: number) {
@@ -100,10 +97,6 @@ export function getAuthHeaders(method = "GET", initHeaders?: HeadersInit) {
   const session = readSession();
   const csrfToken = session?.csrfToken ?? readCookie("lp_csrf");
 
-  if (session?.accessToken) {
-    headers.set("Authorization", `Bearer ${session.accessToken}`);
-  }
-
   if (!["GET", "HEAD", "OPTIONS"].includes(normalizedMethod) && csrfToken) {
     headers.set("X-CSRF-Token", csrfToken);
   }
@@ -115,7 +108,6 @@ export function saveSession(session: SessionState) {
   const payload = JSON.stringify({
     user: session.user,
     csrfToken: session.csrfToken,
-    accessToken: session.accessToken,
   } satisfies SessionState);
   const storage = getPrimaryStorage();
   const secondaryStorage = getSecondaryStorage();
@@ -140,15 +132,9 @@ export function clearClientSession() {
 
 export async function logoutSession() {
   try {
-    const session = readSession();
-    await fetch(`${API_URL}/auth/logout`, {
+    await fetch(CLIENT_AUTH_LOGOUT_PATH, {
       method: "POST",
       credentials: "include",
-      headers: session?.accessToken
-        ? {
-            Authorization: `Bearer ${session.accessToken}`,
-          }
-        : undefined,
     });
   } catch {
     // Best-effort server logout. Client cleanup still happens below.
@@ -197,7 +183,6 @@ export async function hydrateSessionFromServer() {
         libraryIds: result.data.libraryIds,
       },
       csrfToken: result.data.csrfToken ?? readCookie("lp_csrf") ?? undefined,
-      accessToken: undefined,
     } satisfies SessionState;
 
     saveSession(hydrated);
@@ -216,13 +201,14 @@ export async function apiFetch<T>(path: string, init?: RequestInit, auth = true)
 
   let response: Response;
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    const target = path === "/auth/login" ? CLIENT_AUTH_LOGIN_PATH : `${API_URL}${path}`;
+    response = await fetch(target, {
       ...init,
       headers,
       credentials: "include",
     });
   } catch {
-    throw new Error("Network issue aaya. Server chal raha ho to page refresh karke dobara try karo.");
+    throw new Error("A network issue occurred. If the server is running, refresh the page and try again.");
   }
 
   const text = await response.text();

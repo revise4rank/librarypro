@@ -38,7 +38,7 @@ export default async function TenantPortalPage({ searchParams }: TenantPortalPag
     <main className="min-h-screen bg-[linear-gradient(180deg,_#0f172a,_#111827_45%,_#1e293b)] px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
         <header className="rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">
-          <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Nextlib Tenant Portal</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">LibraryPro Tenant Portal</p>
           <h1 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
             One subdomain, two focused workspaces.
           </h1>

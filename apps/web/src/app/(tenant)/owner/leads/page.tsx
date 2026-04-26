@@ -1,17 +1,17 @@
 import { DashboardShell } from "../../../../components/dashboard-shell";
-import { OwnerLeadsManager } from "../../../../components/owner-leads-manager";
+import { OwnerMarketingManager } from "../../../../components/owner-marketing-manager";
 import { ownerNav } from "../../../../lib/role-nav";
 
 export default function OwnerLeadsPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
-      panelLabel="Lead Inbox"
-      title="Track marketplace and website enquiries like a lightweight owner CRM."
-      description="Every call, WhatsApp click, and form enquiry from your marketplace listing or subdomain website lands here for follow-up."
+      productLabel="LibraryPro"
+      panelLabel="Marketing"
+      title="Lead inbox"
+      description="Marketing surfaces are grouped together so conversion work stays in one module."
       nav={ownerNav}
     >
-      <OwnerLeadsManager />
+      <OwnerMarketingManager initialTab="leads" />
     </DashboardShell>
   );
 }

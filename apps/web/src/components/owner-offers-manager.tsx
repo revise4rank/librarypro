@@ -54,8 +54,13 @@ export function OwnerOffersManager() {
   }
 
   return (
-    <DashboardCard title="Owner offers" subtitle="Optional promotions, discounts, and library-specific opportunities">
+    <DashboardCard title="Offer composer" subtitle="Optional promotions, discounts, and library-specific opportunities">
       <div className="grid gap-4">
+        <div className="rounded-[1.6rem] border border-[var(--lp-accent-soft)] bg-[linear-gradient(135deg,rgba(227,248,240,0.96),rgba(255,249,240,0.96))] p-5">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-[var(--lp-accent-strong)]">Optional growth layer</p>
+          <h3 className="mt-2 text-xl font-black text-[var(--lp-text)]">Keep promotions useful, limited, and easy to review.</h3>
+          <p className="mt-2 text-sm leading-7 text-slate-600">Publish only the offers that add value for students or help admissions. Everything else stays outside the main workflow.</p>
+        </div>
         <select value={form.categoryId} onChange={(event) => setForm((current) => ({ ...current, categoryId: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none">
           <option value="">Select category</option>
           {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
@@ -71,7 +76,7 @@ export function OwnerOffersManager() {
           <input type="date" value={form.validUntil} onChange={(event) => setForm((current) => ({ ...current, validUntil: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" />
         </div>
         <input value={form.ctaUrl} onChange={(event) => setForm((current) => ({ ...current, ctaUrl: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="https://..." />
-        <button type="button" onClick={() => void submitOffer()} className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white">
+        <button type="button" onClick={() => void submitOffer()} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
           Submit for approval
         </button>
         {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}

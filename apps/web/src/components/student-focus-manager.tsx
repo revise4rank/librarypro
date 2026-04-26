@@ -285,9 +285,9 @@ export function StudentFocusManager() {
             <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
               <input value={goalForm.dailyTargetMinutes} onChange={(event) => setGoalForm((current) => ({ ...current, dailyTargetMinutes: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Daily target minutes" type="number" min="30" />
               <input value={goalForm.weeklyTargetHours} onChange={(event) => setGoalForm((current) => ({ ...current, weeklyTargetHours: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Weekly target hours" type="number" min="1" />
-              <button type="button" onClick={() => void saveGoals()} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
-                Save goals
-              </button>
+	              <button type="button" onClick={() => void saveGoals()} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
+	                Save goals
+	              </button>
             </div>
           ) : (
             <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
@@ -331,7 +331,7 @@ export function StudentFocusManager() {
                       type="button"
                       disabled={library.is_active}
                       onClick={() => void setActiveLibrary(library.library_id)}
-                      className={`rounded-full px-4 py-2 text-sm font-bold ${library.is_active ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-800"}`}
+	                      className={`rounded-full px-4 py-2 text-sm font-bold ${library.is_active ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-slate-200 bg-white text-slate-800"}`}
                     >
                       {library.is_active ? "Active" : "Set active"}
                     </button>
@@ -392,10 +392,10 @@ export function StudentFocusManager() {
             {expanded.leaderboard ? (
               <>
                 <div className="flex flex-wrap gap-3">
-                  <button type="button" onClick={() => setLeaderboardWindow("7d")} className={`rounded-full px-4 py-2 text-sm font-bold ${leaderboardWindow === "7d" ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-800"}`}>
+	                  <button type="button" onClick={() => setLeaderboardWindow("7d")} className={`rounded-full px-4 py-2 text-sm font-bold ${leaderboardWindow === "7d" ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-slate-200 bg-white text-slate-800"}`}>
                     7 days
                   </button>
-                  <button type="button" onClick={() => setLeaderboardWindow("30d")} className={`rounded-full px-4 py-2 text-sm font-bold ${leaderboardWindow === "30d" ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-800"}`}>
+	                  <button type="button" onClick={() => setLeaderboardWindow("30d")} className={`rounded-full px-4 py-2 text-sm font-bold ${leaderboardWindow === "30d" ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-slate-200 bg-white text-slate-800"}`}>
                     30 days
                   </button>
                 </div>

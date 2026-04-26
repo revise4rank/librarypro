@@ -5,7 +5,7 @@ import { adminNav } from "../../../lib/role-nav";
 export default function SuperAdminPlansPage() {
   return (
     <DashboardShell
-      productLabel="Nextlib"
+      productLabel="LibraryPro"
       panelLabel="Plans"
       title="Manage SaaS plan catalog and tenant distribution."
       description="Keep pricing, packaging, and adoption visible so the business model stays easy to operate."

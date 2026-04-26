@@ -339,7 +339,7 @@ export function OwnerStudentProductivityManager({
               type="button"
               disabled={savingNote}
               onClick={() => void saveInterventionNote()}
-              className="rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+              className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]"
             >
               {savingNote ? "Saving..." : "Save note"}
             </button>
@@ -369,7 +369,7 @@ export function OwnerStudentProductivityManager({
                       onClick={() => void updateNoteStatus(note.id, status)}
                       className={`rounded-full px-3 py-1 text-xs font-bold ${
                         note.noteStatus === status
-                          ? "bg-slate-950 text-white"
+                          ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]"
                           : "border border-slate-200 bg-white text-slate-700"
                       }`}
                     >

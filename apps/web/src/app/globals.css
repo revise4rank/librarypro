@@ -2,16 +2,24 @@
 
 :root {
   color-scheme: light;
-  --lp-bg: #f8f2e8;
-  --lp-surface: #fffaf2;
-  --lp-surface-strong: #f1ede3;
-  --lp-border: #e7d9c7;
-  --lp-text: #20263f;
-  --lp-muted: #66646e;
-  --lp-primary: #d2723d;
-  --lp-primary-soft: #eb9b73;
-  --lp-accent: #2f8f88;
-  --lp-accent-soft: #dff1ee;
+  --lp-bg: #f7f7f5;
+  --lp-surface: rgba(255, 255, 255, 0.92);
+  --lp-surface-strong: #ffffff;
+  --lp-surface-muted: #f5f5f4;
+  --lp-border: #e5e7eb;
+  --lp-border-strong: #d1d5db;
+  --lp-text: #1f2433;
+  --lp-text-soft: #364054;
+  --lp-muted: #6a6b72;
+  --lp-primary: #c96f40;
+  --lp-primary-soft: #f4e3d8;
+  --lp-accent: #2d7d76;
+  --lp-accent-soft: #e3f1ee;
+  --lp-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+  --lp-shadow-soft: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --lp-radius-xl: 0.5rem;
+  --lp-radius-lg: 0.5rem;
+  --lp-shell-max: 1280px;
 }
 
 html,
@@ -23,20 +31,30 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(236, 173, 132, 0.24), transparent 24%),
-    radial-gradient(circle at top right, rgba(153, 214, 209, 0.22), transparent 20%),
-    linear-gradient(180deg, #fbf6ee 0%, #fffaf3 48%, #f7f0e4 100%);
+    radial-gradient(circle at top left, rgba(201, 111, 64, 0.08), transparent 24%),
+    radial-gradient(circle at top right, rgba(45, 125, 118, 0.07), transparent 20%),
+    linear-gradient(180deg, #fafaf9 0%, #f7f7f5 48%, #f3f4f6 100%);
   color: var(--lp-text);
-  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: rgba(223, 135, 87, 0.22);
+  background: rgba(223, 135, 87, 0.18);
   color: var(--lp-text);
 }
 
 * {
   box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  border-color: var(--lp-border);
 }
 
 a {
@@ -49,6 +67,7 @@ input,
 select,
 textarea {
   font: inherit;
+  color: inherit;
 }
 
 img,
@@ -65,19 +84,119 @@ textarea {
   min-width: 0;
 }
 
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(45, 125, 118, 0.22);
+  outline-offset: 2px;
+}
+
+.lp-page-frame {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(201, 111, 64, 0.06), transparent 20%),
+    radial-gradient(circle at top right, rgba(45, 125, 118, 0.06), transparent 18%),
+    linear-gradient(180deg, #fafaf9 0%, #f7f7f5 52%, #f3f4f6 100%);
+}
+
+.lp-shell-container {
+  width: 100%;
+  max-width: var(--lp-shell-max);
+  margin-inline: auto;
+}
+
+.lp-panel {
+  border: 1px solid var(--lp-border);
+  background: var(--lp-surface);
+  border-radius: var(--lp-radius-xl);
+  box-shadow: var(--lp-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.lp-panel-soft {
+  border: 1px solid var(--lp-border);
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-soft);
+}
+
+.lp-label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.lp-title-xl {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.lp-title-lg {
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+
+.lp-title-md {
+  font-size: clamp(1.1rem, 1.6vw, 1.45rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+.lp-copy {
+  color: var(--lp-muted);
+  line-height: 1.5;
+}
+
+.lp-compact-card {
+  border: 1px solid var(--lp-border);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--lp-shadow-soft);
+}
+
+.lp-header-actions {
+  gap: 0.5rem;
+}
+
+.lp-header-actions > * {
+  min-height: 2rem;
+  border: 1px solid var(--lp-border);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--lp-text);
+  box-shadow: none;
+}
+
+.lp-header-actions > *:hover {
+  background: var(--lp-surface-muted);
+}
+
 .animate-fade-up {
-  animation: fadeUp 0.7s ease-out both;
+  animation: fadeUp 0.55s ease-out both;
 }
 
 .animate-fade-up-delay {
-  animation: fadeUp 0.9s ease-out both;
-  animation-delay: 120ms;
+  animation: fadeUp 0.7s ease-out both;
+  animation-delay: 90ms;
 }
 
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translate3d(0, 24px, 0);
+    transform: translate3d(0, 16px, 0);
   }
 
   to {

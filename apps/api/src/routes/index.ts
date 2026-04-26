@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginController, logoutController, meController, studentRegisterController } from "../controllers/auth.controller";
+import { changePasswordController, loginController, logoutController, meController, studentRegisterController, updateMeController } from "../controllers/auth.controller";
 import { razorpayWebhookController } from "../controllers/billing.controller";
 import {
   getBillingSubscriptionController,
@@ -56,13 +56,17 @@ import {
 } from "../controllers/productivity.controller";
 import {
   assignOwnerSeatController,
+  assignOwnerStudentSeatController,
+  createOwnerAdmissionController,
   createOwnerFloorController,
   createOwnerNotificationController,
   createOwnerExpenseController,
   createOwnerAdminController,
+  createOwnerCouponController,
   createOwnerPaymentController,
   createOwnerSeatsController,
   createOwnerStudentController,
+  createOwnerStudentPlanController,
   createStudentJoinRequestByLibraryController,
   createStudentJoinRequestController,
   resolveStudentJoinQrController,
@@ -86,10 +90,12 @@ import {
   listOwnerExpensesController,
   listOwnerAdminsController,
   listOwnerAuditLogsController,
+  listOwnerCouponsController,
   listOwnerJoinRequestsController,
   listStudentJoinRequestsController,
   listOwnerPaymentsController,
   listOwnerSeatsController,
+  listOwnerStudentPlansController,
   listOwnerStudentsController,
   listAdminLibrariesController,
   listAdminPaymentsController,
@@ -106,17 +112,20 @@ import {
   updateStudentFocusGoalsController,
   updateOwnerSettingsController,
   updateOwnerPaymentController,
+  updateOwnerCouponController,
   updateOwnerFloorController,
   updateOwnerSeatController,
   updateOwnerStudentController,
+  updateOwnerStudentPlanController,
   createStudentFocusSessionController,
   createStudentFocusSubjectController,
   exitStudentLibraryController,
+  unassignOwnerStudentSeatController,
   updateOwnerAdminPermissionsController,
 } from "../controllers/owner-operations.controller";
-import { uploadPublicProfileAssetController } from "../controllers/upload.controller";
+import { uploadAdmissionDocumentController, uploadPublicProfileAssetController } from "../controllers/upload.controller";
 import { asyncHandler } from "../lib/async-handler";
-import { publicProfileUpload } from "../lib/upload";
+import { admissionDocumentUpload, publicProfileUpload } from "../lib/upload";
 import { requireOwnerPermission } from "../middleware/owner-permission.middleware";
 import { requireRole } from "../middleware/require-role.middleware";
 
@@ -126,6 +135,8 @@ router.post("/auth/login", asyncHandler(loginController));
 router.post("/auth/student/register", asyncHandler(studentRegisterController));
 router.post("/auth/logout", asyncHandler(logoutController));
 router.get("/auth/me", asyncHandler(meController));
+router.patch("/auth/me", asyncHandler(updateMeController));
+router.post("/auth/change-password", asyncHandler(changePasswordController));
 router.post("/billing/razorpay/webhook", asyncHandler(razorpayWebhookController));
 router.get("/billing/subscription", requireRole(["LIBRARY_OWNER"]), asyncHandler(getBillingSubscriptionController));
 router.post("/billing/subscription/renew", requireRole(["LIBRARY_OWNER"]), asyncHandler(renewBillingSubscriptionController));
@@ -155,6 +166,13 @@ router.get("/owner/audit-logs", requireRole(["LIBRARY_OWNER"]), asyncHandler(lis
 router.get("/owner/join-requests", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(listOwnerJoinRequestsController));
 router.post("/owner/join-requests/:requestId/approve", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(approveOwnerJoinRequestController));
 router.post("/owner/join-requests/:requestId/reject", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(rejectOwnerJoinRequestController));
+router.post("/owner/admissions", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(createOwnerAdmissionController));
+router.get("/owner/student-plans", requireRole(["LIBRARY_OWNER"]), asyncHandler(listOwnerStudentPlansController));
+router.post("/owner/student-plans", requireRole(["LIBRARY_OWNER"]), asyncHandler(createOwnerStudentPlanController));
+router.patch("/owner/student-plans/:planId", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerStudentPlanController));
+router.get("/owner/coupons", requireRole(["LIBRARY_OWNER"]), asyncHandler(listOwnerCouponsController));
+router.post("/owner/coupons", requireRole(["LIBRARY_OWNER"]), asyncHandler(createOwnerCouponController));
+router.patch("/owner/coupons/:couponId", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerCouponController));
 router.patch("/owner/leads/:leadId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(updateOwnerLeadController));
 router.post("/owner/offers", requireRole(["LIBRARY_OWNER"]), asyncHandler(createOwnerOfferController));
 router.get("/owner/students", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("students"), asyncHandler(listOwnerStudentsController));
@@ -170,6 +188,8 @@ router.post("/owner/campaigns/due-recovery", requireRole(["LIBRARY_OWNER"]), req
 router.post("/owner/students", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("students"), asyncHandler(createOwnerStudentController));
 router.patch("/owner/students/:assignmentId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("students"), asyncHandler(updateOwnerStudentController));
 router.delete("/owner/students/:assignmentId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("students"), asyncHandler(deleteOwnerStudentController));
+router.post("/owner/students/:assignmentId/seat-allot", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("students"), asyncHandler(assignOwnerStudentSeatController));
+router.delete("/owner/students/:assignmentId/seat-allot", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("students"), asyncHandler(unassignOwnerStudentSeatController));
 router.get("/owner/seats", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(listOwnerSeatsController));
 router.get("/owner/floors", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(listOwnerFloorsController));
 router.get("/owner/checkins", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("checkins"), asyncHandler(getOwnerCheckinsController));
@@ -237,4 +257,10 @@ router.post(
   requireRole(["LIBRARY_OWNER"]),
   publicProfileUpload.single("file"),
   asyncHandler(uploadPublicProfileAssetController),
+);
+router.post(
+  "/owner/admissions/uploads",
+  requireRole(["LIBRARY_OWNER"]),
+  admissionDocumentUpload.single("file"),
+  asyncHandler(uploadAdmissionDocumentController),
 );

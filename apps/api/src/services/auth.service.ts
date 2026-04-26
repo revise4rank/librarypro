@@ -24,6 +24,18 @@ function buildStudentCode(fullName: string) {
   return `${prefix}${suffix}`;
 }
 
+const ROLE_PRIORITY: user_role[] = ["LIBRARY_OWNER", "STUDENT"];
+
+function resolveEffectiveRole(globalRole: user_role, libraryRoles: Array<{ role: user_role }>) {
+  if (globalRole === "SUPER_ADMIN") {
+    return "SUPER_ADMIN" as user_role;
+  }
+
+  const roleSet = new Set(libraryRoles.map((item) => item.role));
+  const prioritizedRole = ROLE_PRIORITY.find((role) => roleSet.has(role));
+  return prioritizedRole ?? globalRole;
+}
+
 export async function loginUser(input: { login: string; password: string }) {
   const user = await repository().findUserByLogin(input.login);
   if (!user) {
@@ -37,9 +49,7 @@ export async function loginUser(input: { login: string; password: string }) {
 
   const roles = await repository().getUserLibraryRoles(user.id);
   const libraryIds = [...new Set(roles.map((role) => role.library_id))];
-  const effectiveRole = user.global_role === "SUPER_ADMIN"
-    ? ("SUPER_ADMIN" as user_role)
-    : (roles[0]?.role ?? user.global_role);
+  const effectiveRole = resolveEffectiveRole(user.global_role, roles);
 
   const token = signAccessToken({
     userId: user.id,
@@ -70,9 +80,7 @@ export async function getAuthenticatedUser(userId: string) {
 
   const roles = await repository().getUserLibraryRoles(user.id);
   const libraryIds = [...new Set(roles.map((role) => role.library_id))];
-  const effectiveRole = user.global_role === "SUPER_ADMIN"
-    ? ("SUPER_ADMIN" as user_role)
-    : (roles[0]?.role ?? user.global_role);
+  const effectiveRole = resolveEffectiveRole(user.global_role, roles);
 
   return {
     id: user.id,
@@ -115,4 +123,48 @@ export async function registerStudentUser(input: {
   } finally {
     client.release();
   }
+}
+
+export async function updateAuthenticatedUserProfile(input: {
+  userId: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+}) {
+  const user = await repository().updateUserProfile({
+    userId: input.userId,
+    fullName: input.fullName,
+    email: input.email || null,
+    phone: input.phone || null,
+  });
+
+  if (!user) {
+    throw new AppError(404, "Account not found", "ACCOUNT_NOT_FOUND");
+  }
+
+  return getAuthenticatedUser(user.id);
+}
+
+export async function changeAuthenticatedUserPassword(input: {
+  userId: string;
+  currentPassword: string;
+  nextPassword: string;
+}) {
+  const user = await repository().findUserById(input.userId);
+  if (!user) {
+    throw new AppError(404, "Account not found", "ACCOUNT_NOT_FOUND");
+  }
+
+  const passwordValid = await comparePassword(input.currentPassword, user.password_hash);
+  if (!passwordValid) {
+    throw new AppError(401, "Current password is incorrect", "INVALID_CREDENTIALS");
+  }
+
+  const nextPasswordHash = await hashPassword(input.nextPassword);
+  await repository().updatePassword({
+    userId: input.userId,
+    passwordHash: nextPasswordHash,
+  });
+
+  return { success: true };
 }

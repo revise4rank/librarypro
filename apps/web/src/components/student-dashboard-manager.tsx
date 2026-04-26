@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { getRealtimeSocket } from "../lib/realtime";
 import { DashboardCard } from "./dashboard-shell";
+import { StatCard } from "./stat-card";
 
 type DashboardResponse = {
   success: boolean;
@@ -222,13 +223,13 @@ export function StudentDashboardManager() {
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {summaryCards.map((card) => (
-          <div key={card.label} className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">{card.label}</p>
-            <div className="mt-3 flex items-end justify-between gap-3">
-              <p className="text-3xl font-black text-slate-950">{card.value}</p>
-              <span className={`rounded-full px-3 py-2 text-xs font-black ${card.tone}`}>{card.note}</span>
-            </div>
-          </div>
+          <StatCard
+            key={card.label}
+            label={card.label}
+            value={card.value}
+            note={card.note}
+            chip={<span className={`rounded-full px-3 py-1 text-xs font-semibold ${card.tone}`}>Live</span>}
+          />
         ))}
       </section>
 
@@ -280,7 +281,7 @@ export function StudentDashboardManager() {
 
         <DashboardCard title="Quick actions" subtitle="Student actions should be obvious and immediate">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Link href="/student/focus" className="rounded-[1.25rem] bg-slate-950 px-4 py-4 text-sm font-bold text-white">
+            <Link href="/student/focus" className="rounded-[1.25rem] border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-4 text-sm font-bold text-[var(--lp-accent-strong)]">
               Open focus tracker
             </Link>
             <Link href="/student/syllabus" className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800">
@@ -409,7 +410,7 @@ export function StudentDashboardManager() {
             </div>
           ) : (
             <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-sm text-slate-600">Progress sharing aur weak-topic reminders ready hain. Zarurat ho tab details kholo.</p>
+              <p className="text-sm text-slate-600">Progress sharing and weak-topic reminders are ready. Open the details whenever you need them.</p>
             </div>
           )}
         </DashboardCard>
@@ -437,7 +438,7 @@ export function StudentDashboardManager() {
               </div>
             ) : (
               <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-sm text-slate-600">Recent consistency aur session pattern ko tab kholkar dekho jab weekly review karna ho.</p>
+                <p className="text-sm text-slate-600">Open the recent consistency and session pattern view whenever you want a weekly review.</p>
               </div>
             )}
           </div>
@@ -530,7 +531,7 @@ export function StudentDashboardManager() {
             </div>
           ) : (
             <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-              <p className="text-sm text-slate-600">Notice board aur library history ko tab kholo jab operational update dekhna ho.</p>
+              <p className="text-sm text-slate-600">Open the notice board and library history whenever you want to review operational updates.</p>
             </div>
           )}
         </DashboardCard>

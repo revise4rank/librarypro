@@ -41,6 +41,13 @@ export class AuthRepository {
       SELECT library_id, role
       FROM user_library_roles
       WHERE user_id = $1
+      ORDER BY
+        CASE role
+          WHEN 'LIBRARY_OWNER' THEN 1
+          WHEN 'STUDENT' THEN 2
+          ELSE 99
+        END,
+        library_id ASC
       `,
       [userId],
     );
@@ -71,6 +78,37 @@ export class AuthRepository {
       LIMIT 1
       `,
       [userId],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async updateUserProfile(input: { userId: string; fullName: string; email?: string | null; phone?: string | null }) {
+    const result = await this.pool.query<UserRow>(
+      `
+      UPDATE users
+      SET full_name = $2,
+          email = $3,
+          phone = $4
+      WHERE id = $1
+      RETURNING id, full_name, email, phone, student_code, password_hash, global_role, session_version
+      `,
+      [input.userId, input.fullName, input.email ?? null, input.phone ?? null],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async updatePassword(input: { userId: string; passwordHash: string }) {
+    const result = await this.pool.query<UserRow>(
+      `
+      UPDATE users
+      SET password_hash = $2,
+          session_version = session_version + 1
+      WHERE id = $1
+      RETURNING id, full_name, email, phone, student_code, password_hash, global_role, session_version
+      `,
+      [input.userId, input.passwordHash],
     );
 
     return result.rows[0] ?? null;

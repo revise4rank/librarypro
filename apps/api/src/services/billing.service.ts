@@ -35,7 +35,7 @@ export async function createSubscriptionRenewal(input: {
       currency: plan.currency,
     });
 
-    const razorpayOrderId = `order_nextlib_${crypto.randomUUID().replace(/-/g, "").slice(0, 20)}`;
+    const razorpayOrderId = `order_librarypro_${crypto.randomUUID().replace(/-/g, "").slice(0, 20)}`;
     const paymentId = await repository().createRenewalPayment(client, {
       libraryId: input.libraryId,
       subscriptionId,
@@ -56,7 +56,7 @@ export async function createSubscriptionRenewal(input: {
         amount: plan.amount * 100,
         currency: plan.currency,
         description: `${plan.name} renewal`,
-        name: "Nextlib",
+        name: "LibraryPro",
         theme: {
           color: "#d2723d",
         },

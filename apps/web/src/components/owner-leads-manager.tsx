@@ -184,7 +184,7 @@ export function OwnerLeadsManager() {
                     key={status}
                     type="button"
                     onClick={() => void updateLead(row, status)}
-                    className={`rounded-full px-4 py-2 text-sm font-bold ${row.status === status ? "bg-[var(--lp-primary)] text-white" : "border border-slate-200 bg-white text-slate-700"}`}
+                    className={`rounded-full px-4 py-2 text-sm font-bold ${row.status === status ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-slate-200 bg-white text-slate-700"}`}
                   >
                     {status}
                   </button>

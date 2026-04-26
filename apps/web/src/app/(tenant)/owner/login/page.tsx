@@ -1,22 +1,34 @@
 import { AuthPageLayout } from "../../../../components/auth-page-layout";
 import { OwnerLoginForm } from "../../../../components/owner-login-form";
+import Link from "next/link";
 
 export default function OwnerLoginPage() {
   return (
     <AuthPageLayout
-      eyebrow="Owner Access"
-      title="Log in to run seats, students, payments, and your public library website."
-      description="Owner panel should feel like a real operating system for your library, not a random page. Manage daily operations, admissions, dues, notifications, and website updates from one place."
-      accentTitle="Owner workspace includes"
+      eyebrow="Library Access"
+      title="Open your library workspace and keep daily operations moving."
+      description="Manage seats, students, dues, attendance, notices, and your public library presence from one calm operating surface."
+      accentTitle="Library access gives you"
       accentPoints={[
         "Seat layout and student assignment control",
         "Payments, dues, notices, and expiry tracking",
         "Public subdomain website and marketplace presence",
       ]}
-      formTitle="Owner login"
+      formTitle="Library access"
       formSubtitle="Use your owner email or phone to enter the dashboard."
+      activeNavLabel="Library Access"
     >
-      <OwnerLoginForm />
+      <div className="grid gap-4">
+        <OwnerLoginForm />
+        <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
+          Student trying to sign in instead?
+          <div className="mt-3">
+            <Link href="/student/access" className="font-semibold text-emerald-700">
+              Find student portal
+            </Link>
+          </div>
+        </div>
+      </div>
     </AuthPageLayout>
   );
 }
