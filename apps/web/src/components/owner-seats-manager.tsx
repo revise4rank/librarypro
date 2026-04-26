@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { getRealtimeSocket } from "../lib/realtime";
 import { DashboardCard } from "./dashboard-shell";
@@ -96,6 +96,15 @@ function formatSeatDateTime(value?: string | null) {
   });
 }
 
+function isExpiringSoon(value?: string | null, days = 7) {
+  if (!value) return false;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return false;
+  const now = Date.now();
+  const diff = parsed.getTime() - now;
+  return diff >= 0 && diff <= days * 24 * 60 * 60 * 1000;
+}
+
 function inferZone(seat: SeatRow) {
   const value = `${seat.section_name ?? ""} ${seat.seat_number}`.toLowerCase();
   if (value.includes("girl") || value.includes("female")) return "Girls Zone";
@@ -119,10 +128,10 @@ function getClusterType(col: number) {
 }
 
 function getPlannerColumnWidth(columns: number) {
-  if (columns >= 14) return 48;
-  if (columns >= 12) return 54;
-  if (columns >= 10) return 62;
-  return 74;
+  if (columns >= 14) return 72;
+  if (columns >= 12) return 78;
+  if (columns >= 10) return 86;
+  return 96;
 }
 
 function InlineHelp({ title, points }: { title: string; points: string[] }) {
@@ -462,12 +471,14 @@ export function OwnerSeatsManager() {
   const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
   const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
   const [setupRibbonOpen, setSetupRibbonOpen] = useState(false);
-  const [hallSettingsOpen, setHallSettingsOpen] = useState(false);
+  const [hallSettingsOpen, setHallSettingsOpen] = useState<string | null>(null);
   const [plannerLegendOpen, setPlannerLegendOpen] = useState(false);
   const [inspectorControlsOpen, setInspectorControlsOpen] = useState(false);
   const [floorSwitcherOpen, setFloorSwitcherOpen] = useState(false);
   const [seatFiltersOpen, setSeatFiltersOpen] = useState(false);
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
+  const plannerBusyRef = useRef(false);
+  const refreshTimerRef = useRef<number | null>(null);
 
   async function loadData() {
     setLoading(true);
@@ -569,6 +580,10 @@ export function OwnerSeatsManager() {
   }, [workspaceMode]);
 
   useEffect(() => {
+    plannerBusyRef.current = Boolean(dragSeatId || activeAislePaint || actionSheetOpen || layoutMode);
+  }, [actionSheetOpen, activeAislePaint, dragSeatId, layoutMode]);
+
+  useEffect(() => {
     if (!activeAislePaint) return;
     const finishAislePaint = () => {
       const draft = floorMetaDrafts[activeAislePaint.floorId];
@@ -603,6 +618,16 @@ export function OwnerSeatsManager() {
     const disconnected = () => setLiveStatus("Disconnected");
     const onSeatUpdate = () => {
       setLiveStatus("Live");
+      if (plannerBusyRef.current) {
+        if (refreshTimerRef.current) {
+          window.clearTimeout(refreshTimerRef.current);
+        }
+        refreshTimerRef.current = window.setTimeout(() => {
+          refreshTimerRef.current = null;
+          void loadData();
+        }, 900);
+        return;
+      }
       void loadData();
     };
 
@@ -622,6 +647,10 @@ export function OwnerSeatsManager() {
       socket.off("realtime.ready", ready);
       socket.off("seat.updated", onSeatUpdate);
       socket.off("student.updated", onSeatUpdate);
+      if (refreshTimerRef.current) {
+        window.clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -707,7 +736,7 @@ export function OwnerSeatsManager() {
         seats: item.seats.filter((seat) => {
           if (seatFilter === "ALL") return true;
           if (seatFilter === "DUE") return seat.payment_status === "DUE" || seat.payment_status === "PENDING";
-          if (seatFilter === "EXPIRING") return !!seat.ends_at && seat.ends_at <= "2026-04-05";
+          if (seatFilter === "EXPIRING") return isExpiringSoon(seat.ends_at);
           return seat.status === seatFilter;
         }),
       }))
@@ -727,6 +756,19 @@ export function OwnerSeatsManager() {
   }, [floorCards, selectedFloorId]);
 
   const visibleFloorCards = useMemo(() => (activeFloorCard ? [activeFloorCard] : []), [activeFloorCard]);
+
+  const hallSettingsFloor = useMemo(() => {
+    if (!hallSettingsOpen) return null;
+    return floorCards.find((item) => item.floor.id === hallSettingsOpen) ?? null;
+  }, [floorCards, hallSettingsOpen]);
+
+  const hallSettingsDraft = hallSettingsFloor
+    ? floorDrafts[hallSettingsFloor.floor.id] ?? {
+        name: hallSettingsFloor.floor.name,
+        layoutRows: hallSettingsFloor.floor.layout_rows,
+        layoutColumns: hallSettingsFloor.floor.layout_columns,
+      }
+    : null;
 
   const selectedSeatFloor = useMemo(() => {
     if (!selectedSeat) return null;
@@ -814,6 +856,7 @@ export function OwnerSeatsManager() {
       });
       setMessage("Floor layout updated.");
       await loadData();
+      setHallSettingsOpen((current) => (current === floorId ? null : current));
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Floor update failed.");
     }
@@ -1861,11 +1904,7 @@ export function OwnerSeatsManager() {
           ) : null}
 
           {visibleFloorCards.map((item) => {
-            const draft = floorDrafts[item.floor.id] ?? {
-              name: item.floor.name,
-              layoutRows: item.floor.layout_rows,
-              layoutColumns: item.floor.layout_columns,
-            };
+            const isHallSettingsOpen = hallSettingsOpen === item.floor.id;
             const zones = Array.from(new Set(item.seats.map((seat) => inferZone(seat))));
             const aisleCells = new Set(floorMetaDrafts[item.floor.id]?.aisleCells ?? item.floor.layout_meta?.aisleCells ?? []);
             const sectionColors = floorMetaDrafts[item.floor.id]?.sectionColors ?? item.floor.layout_meta?.sectionColors ?? {};
@@ -1892,10 +1931,10 @@ export function OwnerSeatsManager() {
                       {item.floor.id !== "main-floor" ? (
                         <button
                           type="button"
-                          onClick={() => setHallSettingsOpen((current) => !current)}
+                          onClick={() => setHallSettingsOpen((current) => (current === item.floor.id ? null : item.floor.id))}
                           className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
                         >
-                          {hallSettingsOpen ? "Hide hall" : "Hall settings"}
+                          {isHallSettingsOpen ? "Hide hall" : "Hall settings"}
                         </button>
                       ) : null}
                       <button
@@ -1908,36 +1947,8 @@ export function OwnerSeatsManager() {
                     </div>
                   </div>
 
-                  {item.floor.id !== "main-floor" ? (
-                    <div className={`grid gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-white p-3 md:grid-cols-[1.2fr_0.7fr_0.7fr_auto] ${hallSettingsOpen ? "" : "hidden"}`}>
-                      <input
-                        value={draft.name}
-                        onChange={(event) => updateFloorDraft(item.floor.id, { name: event.target.value })}
-                        className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none"
-                        placeholder="Floor name"
-                      />
-                      <input
-                        type="number"
-                        value={draft.layoutColumns}
-                        onChange={(event) => updateFloorDraft(item.floor.id, { layoutColumns: Number(event.target.value) || 1 })}
-                        className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none"
-                        placeholder="Columns"
-                      />
-                      <input
-                        type="number"
-                        value={draft.layoutRows}
-                        onChange={(event) => updateFloorDraft(item.floor.id, { layoutRows: Number(event.target.value) || 1 })}
-                        className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none"
-                        placeholder="Rows"
-                      />
-                      <button type="button" onClick={() => void saveFloorLayout(item.floor.id)} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">
-                        Save hall
-                      </button>
-                    </div>
-                  ) : null}
-
                   <div className="overflow-x-auto">
-                    <div className="min-w-[42rem] rounded-[1.75rem] border border-[var(--lp-border)] bg-[radial-gradient(circle_at_top,#ffffff_0%,#fcf7ef_100%)] p-4">
+                    <div className="min-w-full w-max rounded-[1.75rem] border border-[var(--lp-border)] bg-[radial-gradient(circle_at_top,#ffffff_0%,#fcf7ef_100%)] p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <div>
@@ -2019,7 +2030,6 @@ export function OwnerSeatsManager() {
                         {cells.map((cell) => {
                           const seat = cell.seat;
                           const isAisleCell = aisleCells.has(cell.key);
-                          const seatShape = seat ? inferSeatShape(seat) : "Study Desk";
                           return (
                             <div
                               key={cell.key}
@@ -2067,34 +2077,38 @@ export function OwnerSeatsManager() {
                                 const assignmentId = event.dataTransfer.getData("text/assignment-id");
                                 const sourceSeatId = event.dataTransfer.getData("text/seat-id");
 
-                                if (assignmentId && seat) {
+                                if (assignmentId && workspaceMode === "assign" && seat) {
+                                  if (seat.status !== "AVAILABLE") {
+                                    setError("Choose a free seat to place the selected student.");
+                                    return;
+                                  }
                                   setSelectedAssignmentId(assignmentId);
                                   setSelectedSeatId(seat.id);
                                   void assignSeat(seat.id);
                                   return;
                                 }
 
-                                if (assignmentId && !seat && !isAisleCell) {
+                                if (assignmentId && workspaceMode === "assign" && !seat && !isAisleCell) {
                                   setSelectedAssignmentId(assignmentId);
-                                  setError("Create a seat in this empty spot first, then assign the student.");
+                                  setError("This tile does not have a real seat yet. Add the seat first in setup or layout mode.");
                                   return;
                                 }
 
-                                if (sourceSeatId && seat) {
+                                if (sourceSeatId && layoutMode && seat) {
                                   setSelectedSeatId(seat.id);
                                   void swapSeatPositions(sourceSeatId, seat.id);
                                   return;
                                 }
 
-                                if (sourceSeatId && !seat) {
+                                if (sourceSeatId && layoutMode && !seat) {
                                   void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
                                 }
                               }}
-                              className={`relative min-h-[4rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "z-20 scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : "z-0"} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                              className={`relative min-h-[5rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell && workspaceMode !== "assign" ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "z-20 scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : "z-0"} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
                             >
                               {seat ? (
                                 <button
-                                  draggable
+                                  draggable={layoutMode}
                                   onClick={() => {
                                     if (plannerTool === "paint") {
                                       void paintSeatSection(seat);
@@ -2104,6 +2118,10 @@ export function OwnerSeatsManager() {
                                     setSelectedFloorId(item.floor.id);
                                   }}
                                   onDragStart={(event) => {
+                                    if (!layoutMode) {
+                                      event.preventDefault();
+                                      return;
+                                    }
                                     event.dataTransfer.setData("text/seat-id", seat.id);
                                     setDragSeatId(seat.id);
                                     const preview = makeSeatDragPreview(seat.seat_number);
@@ -2111,33 +2129,31 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`group relative flex h-full w-full flex-col items-center overflow-visible rounded-[1rem] border px-1.5 py-1.5 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(15,23,42,0.10)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`group relative flex h-full w-full flex-col items-center overflow-hidden rounded-[1rem] border px-2 py-2 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(15,23,42,0.10)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
                                   <div className="flex w-full items-center justify-between gap-1">
-                                    <span className="text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
-                                    <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] ${
+                                    <span className="truncate text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
+                                    <SeatStatusGlyph status={seat.status} />
+                                  </div>
+                                  <div className="mt-1 flex min-h-[3rem] w-full items-center justify-center rounded-[0.95rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
+                                    <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
+                                  </div>
+                                  <div className="mt-1 flex w-full items-center justify-between gap-1">
+                                    <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.12em] ${
                                       seat.status === "AVAILABLE"
                                         ? "bg-emerald-100 text-emerald-700"
                                         : seat.status === "OCCUPIED"
                                           ? "bg-rose-100 text-rose-700"
                                           : seat.status === "RESERVED"
                                             ? "bg-amber-100 text-amber-700"
-                                          : "bg-slate-200 text-slate-600"
+                                            : "bg-slate-200 text-slate-600"
                                     }`}>
-                                      {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Sold" : seat.status === "RESERVED" ? "Hold" : "Off"}
-                                    </span>
-                                  </div>
-                                  <div className="mt-1 flex min-h-[2.8rem] w-full items-center justify-center rounded-[0.95rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
-                                    <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
-                                  </div>
-                                  <div className="mt-1 flex w-full items-center justify-between gap-1">
-                                    <span className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.12em] text-slate-500 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">
-                                      {seatShape === "Study Desk" ? "Desk" : seatShape === "Wall Desk" ? "Wall" : "Cabin"}
+                                      {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Live" : seat.status === "RESERVED" ? "Hold" : "Off"}
                                     </span>
                                     {seat.student_name ? (
                                       <p className="rounded-full bg-[var(--lp-accent-soft)] px-2 py-0.5 text-[7px] font-black text-[var(--lp-accent)] shadow-[0_6px_12px_rgba(210,114,61,0.10)]">{formatStudentInitials(seat.student_name)}</p>
-                                    ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Open</p>}
+                                    ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Tap</p>}
                                   </div>
                                 </button>
                               ) : (
@@ -2156,14 +2172,14 @@ export function OwnerSeatsManager() {
                                       >
                                         +
                                       </button>
-                                      <span className="mt-1 text-[7px] font-semibold text-[var(--lp-primary)]">Create</span>
+                                      <span className="mt-1 text-[7px] font-semibold text-[var(--lp-primary)]">Add seat</span>
                                     </>
                                   ) : (
-                                    <div className="mt-1 flex flex-col items-center gap-1">
-                                      <span className={`rounded-full px-2 py-1 text-[7px] font-black uppercase tracking-[0.12em] ${selectedAssignmentId ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "bg-slate-200 text-slate-600"}`}>
-                                        Student ready
+                                    <div className="mt-1 flex flex-col items-center gap-1 text-center">
+                                      <span className="rounded-full bg-slate-200 px-2 py-1 text-[7px] font-black uppercase tracking-[0.12em] text-slate-600">
+                                        No seat
                                       </span>
-                                      <span className="text-[8px]">{selectedAssignmentId ? "Drop student" : "Select student"}</span>
+                                      <span className="text-[8px] text-slate-500">Add in setup</span>
                                     </div>
                                   )}
                                 </div>
@@ -2252,6 +2268,77 @@ export function OwnerSeatsManager() {
         ) : null}
       </section>
 
+      {hallSettingsFloor && hallSettingsDraft ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-slate-950/20 px-3 pb-3 pt-16 backdrop-blur-sm lg:items-center lg:justify-center lg:p-6">
+          <div className="w-full max-w-lg rounded-[0.75rem] border border-[var(--lp-border)] bg-white p-4 shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lp-accent)]">Hall settings</p>
+                <h3 className="mt-1 text-lg font-semibold text-[var(--lp-text)]">{hallSettingsFloor.floor.name}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHallSettingsOpen(null)}
+                className="rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              <label className="grid gap-1.5 text-sm font-medium text-[var(--lp-text-soft)]">
+                Floor name
+                <input
+                  value={hallSettingsDraft.name}
+                  onChange={(event) => updateFloorDraft(hallSettingsFloor.floor.id, { name: event.target.value })}
+                  className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                  placeholder="Floor name"
+                />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-sm font-medium text-[var(--lp-text-soft)]">
+                  Columns
+                  <input
+                    type="number"
+                    min={1}
+                    value={hallSettingsDraft.layoutColumns}
+                    onChange={(event) => updateFloorDraft(hallSettingsFloor.floor.id, { layoutColumns: Number(event.target.value) || 1 })}
+                    className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-sm font-medium text-[var(--lp-text-soft)]">
+                  Rows
+                  <input
+                    type="number"
+                    min={1}
+                    value={hallSettingsDraft.layoutRows}
+                    onChange={(event) => updateFloorDraft(hallSettingsFloor.floor.id, { layoutRows: Number(event.target.value) || 1 })}
+                    className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-[var(--lp-border)] pt-4">
+              <button
+                type="button"
+                onClick={() => setHallSettingsOpen(null)}
+                className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveFloorLayout(hallSettingsFloor.floor.id)}
+                className="rounded-[0.5rem] bg-[var(--lp-primary)] px-4 py-2 text-sm font-semibold text-white"
+              >
+                Save hall
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {actionSheetOpen && selectedSeat ? (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-18px_40px_rgba(15,23,42,0.12)] backdrop-blur lg:left-auto lg:right-4 lg:top-[84px] lg:bottom-auto lg:w-[360px] lg:rounded-[0.75rem] lg:border lg:px-4 lg:pb-4">
           <div className="grid gap-3">
@@ -2301,6 +2388,23 @@ export function OwnerSeatsManager() {
               </div>
             </div>
 
+            {workspaceMode === "assign" && selectedAssignmentId ? (
+              <div className="grid gap-2 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-3">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--lp-text)]">Place selected student</p>
+                  <p className="text-sm text-[var(--lp-muted)]">{selectedAssignmentStudent?.student_name ?? "Selected student"} will be placed on this seat.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={selectedSeat.status !== "AVAILABLE" || selectedAssignmentStudent?.admission_status === "SEAT_ALLOTTED"}
+                  onClick={() => void assignSeat(selectedSeat.id)}
+                  className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  {selectedSeat.status === "AVAILABLE" ? "Allot this seat" : "Choose a free seat"}
+                </button>
+              </div>
+            ) : null}
+
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2.5">
               <div>
                 <p className="text-sm font-semibold text-[var(--lp-text)]">Advanced controls</p>
@@ -2343,11 +2447,6 @@ export function OwnerSeatsManager() {
                   <button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text)]">Mark free</button>
                   <button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">Save edits</button>
                 </div>
-                {selectedAssignmentId && selectedAssignmentStudent?.admission_status !== "SEAT_ALLOTTED" ? (
-                  <button type="button" onClick={() => void assignSeat(selectedSeat.id)} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
-                    Allot selected student to this seat
-                  </button>
-                ) : null}
               </div>
             ) : null}
 
