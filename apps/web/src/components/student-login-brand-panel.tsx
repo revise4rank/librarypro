@@ -84,22 +84,24 @@ export function StudentLoginBrandPanel({
         {brand.hero_tagline}
       </p>
 
-      <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">What students get</p>
-        <h3 className="mt-3 text-2xl font-bold tracking-tight">{brand.offer_text}</h3>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {[
-            "Owner-issued credentials for safe portal access",
-            "QR entry, dues, notices, and seat status in one place",
-            "Daily study continuity with goals, focus, and progress",
-          ].map((point, index) => (
-            <div key={point} className="rounded-[22px] border border-white/10 bg-[#111C33] p-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300">0{index + 1}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-200">{point}</p>
-            </div>
-          ))}
+      {showLibraryLink ? (
+        <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">What students get</p>
+          <h3 className="mt-3 text-2xl font-bold tracking-tight">{brand.offer_text}</h3>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {[
+              "Secure login for portal access",
+              "QR, dues, notices, and seat status",
+              "Daily study continuity",
+            ].map((point, index) => (
+              <div key={point} className="rounded-[22px] border border-white/10 bg-[#111C33] p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300">0{index + 1}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-200">{point}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="mt-6 flex flex-wrap gap-3">
         {showLibraryLink ? (
