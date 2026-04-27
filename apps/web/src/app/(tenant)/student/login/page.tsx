@@ -45,24 +45,16 @@ export default async function StudentLoginPage({
         <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-7">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Student login</p>
           <h3 className="mt-2 text-[clamp(1.45rem,2vw,2.2rem)] font-bold tracking-[-0.04em] text-slate-950">Open your student portal</h3>
-          <p className="mt-2 text-sm leading-7 text-slate-600">
-            Use your student app email, phone, or owner-issued student ID to continue QR access, payments, notices, and daily study actions.
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Use student ID, mobile, or email.
           </p>
-          <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-            <p className="text-sm font-bold text-emerald-900">Owner-issued credentials</p>
-            <p className="mt-1 text-sm leading-6 text-emerald-800">
-              Use the Login ID and temporary password printed after admission. Your login ID may be a student code,
-              mobile number, or email saved by the library.
-            </p>
-          </div>
-          <div className="mt-6">
+          <div className="mt-5">
             <RoleLoginForm
               expectedRole="STUDENT"
-              loginLabel="Login ID from library"
+              loginLabel="Login ID"
               loginPlaceholder="Student ID, mobile, or email"
-              passwordLabel="Temporary password or your password"
-              passwordPlaceholder="Enter temporary password"
-              helperText="After first login, use Account settings to change this password."
+              passwordLabel="Password"
+              passwordPlaceholder="Password"
               submitLabel="Open student portal"
             />
           </div>
