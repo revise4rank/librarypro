@@ -55,6 +55,31 @@ type StudentPlanConfig = {
   base_amount: string;
 };
 
+type RosterStatTone = "slate" | "green" | "amber";
+
+function RosterStatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: RosterStatTone;
+}) {
+  const toneClass = {
+    slate: "bg-slate-50 text-slate-950 ring-slate-200",
+    green: "bg-emerald-50 text-emerald-800 ring-emerald-100",
+    amber: "bg-amber-50 text-amber-800 ring-amber-100",
+  }[tone];
+
+  return (
+    <div className={`min-w-0 rounded-[0.75rem] px-3 py-3 ring-1 ${toneClass}`}>
+      <p className="truncate text-xs font-semibold text-slate-600">{label}</p>
+      <p className="mt-1 text-2xl font-black leading-none tracking-tight">{value}</p>
+    </div>
+  );
+}
+
 async function uploadStudentDocument(file: File) {
   const formData = new FormData();
   formData.append("file", file);
@@ -228,6 +253,14 @@ export function OwnerStudentsManager() {
     { total: 0, allotted: 0, unallotted: 0, paid: 0, due: 0 },
   );
 
+  const rosterStats = [
+    { label: "Students", value: summary.total, tone: "slate" as const },
+    { label: "Allotted", value: summary.allotted, tone: "green" as const },
+    { label: "No seat", value: summary.unallotted, tone: "amber" as const },
+    { label: "Paid", value: summary.paid, tone: "green" as const },
+    { label: "Due", value: summary.due, tone: "amber" as const },
+  ];
+
   async function updateStudent(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedStudent) return;
@@ -327,19 +360,20 @@ export function OwnerStudentsManager() {
     <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
       <DashboardCard title="Active roster">
         <div className="grid gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
-            <p className="text-sm font-semibold text-[var(--lp-text)]">Roster</p>
-            <Link href="/owner/admissions" className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+            <div>
+              <p className="text-base font-bold tracking-tight text-[var(--lp-text)]">Roster</p>
+              <p className="mt-0.5 text-xs text-[var(--lp-text-soft)]">Select a student to manage seat or plan.</p>
+            </div>
+            <Link href="/owner/admissions" className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] transition hover:bg-emerald-100">
               New admission
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Students</p><p className="mt-1 text-xl font-black text-slate-950">{summary.total}</p></div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Allotted</p><p className="mt-1 text-xl font-black text-emerald-700">{summary.allotted}</p></div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Open</p><p className="mt-1 text-xl font-black text-amber-700">{summary.unallotted}</p></div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Paid</p><p className="mt-1 text-xl font-black text-emerald-700">{summary.paid}</p></div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Due</p><p className="mt-1 text-xl font-black text-amber-700">{summary.due}</p></div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 2xl:grid-cols-5">
+            {rosterStats.map((stat) => (
+              <RosterStatCard key={stat.label} label={stat.label} value={stat.value} tone={stat.tone} />
+            ))}
           </div>
 
           {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
