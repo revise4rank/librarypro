@@ -67,6 +67,10 @@ type RenewResponse = {
   };
 };
 
+function compactDate(value?: string | null) {
+  return value ? value.slice(0, 10) : "-";
+}
+
 export function OwnerBillingManager() {
   const [data, setData] = useState<BillingResponse["data"] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -155,74 +159,69 @@ export function OwnerBillingManager() {
       {error ? <p className="xl:col-span-2 text-sm font-semibold text-rose-600">{error}</p> : null}
       {message ? <p className="xl:col-span-2 text-sm font-semibold text-emerald-700">{message}</p> : null}
 
-      <Surface title="Current subscription" subtitle="Owner access is enforced from this subscription state">
+      <Surface title="Current subscription">
         <div className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.5rem] bg-[#fff7ef] p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--lp-accent)]">Plan</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{data?.subscription?.plan_name ?? "No active plan"}</p>
+            <div className="rounded-xl bg-[#fff7ef] p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Plan</p>
+              <p className="mt-2 text-xl font-black text-slate-950">{data?.subscription?.plan_name ?? "No active plan"}</p>
             </div>
-            <div className="rounded-[1.5rem] bg-[#edf7ef] p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--lp-accent)]">Status</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{data?.subscription?.status ?? "INACTIVE"}</p>
+            <div className="rounded-xl bg-[#edf7ef] p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Status</p>
+              <p className="mt-2 text-xl font-black text-slate-950">{data?.subscription?.status ?? "INACTIVE"}</p>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[1.5rem] bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Amount</p>
-              <p className="mt-3 text-xl font-black text-slate-950">
+            <div className="rounded-xl bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Amount</p>
+              <p className="mt-2 text-lg font-black text-slate-950">
                 {data?.subscription?.amount ? `Rs. ${data.subscription.amount}` : "-"}
               </p>
             </div>
-            <div className="rounded-[1.5rem] bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Renews / Ends</p>
-              <p className="mt-3 text-sm font-black text-slate-950">
-                {data?.subscription?.renews_at ?? data?.subscription?.current_period_end ?? "-"}
+            <div className="rounded-xl bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Ends</p>
+              <p className="mt-2 text-sm font-black text-slate-950">
+                {compactDate(data?.subscription?.renews_at ?? data?.subscription?.current_period_end)}
               </p>
             </div>
-            <div className="rounded-[1.5rem] bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Grace till</p>
-              <p className="mt-3 text-sm font-black text-slate-950">{data?.subscription?.grace_until ?? "-"}</p>
+            <div className="rounded-xl bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Grace</p>
+              <p className="mt-2 text-sm font-black text-slate-950">{compactDate(data?.subscription?.grace_until)}</p>
             </div>
           </div>
         </div>
       </Surface>
 
-      <Surface title="Renew plan" subtitle="Create a pending platform renewal order for this library">
+      <Surface title="Renew plan">
         <div className="grid gap-4">
           <div className="grid gap-3 md:grid-cols-2">
             <button
               type="button"
               onClick={() => setSelectedPlan("STARTER_499")}
-              className={`rounded-[1.5rem] border px-4 py-4 text-left ${selectedPlan === "STARTER_499" ? "border-[var(--lp-primary)] bg-[#fff1e5]" : "border-[var(--lp-border)] bg-white"}`}
+              className={`rounded-xl border px-4 py-4 text-left ${selectedPlan === "STARTER_499" ? "border-[var(--lp-primary)] bg-[#fff1e5]" : "border-[var(--lp-border)] bg-white"}`}
             >
               <p className="text-lg font-black text-slate-950">Starter 499</p>
-              <p className="mt-2 text-sm text-slate-600">Basic plan for smaller libraries.</p>
             </button>
             <button
               type="button"
               onClick={() => setSelectedPlan("GROWTH_999")}
-              className={`rounded-[1.5rem] border px-4 py-4 text-left ${selectedPlan === "GROWTH_999" ? "border-[var(--lp-primary)] bg-[#fff1e5]" : "border-[var(--lp-border)] bg-white"}`}
+              className={`rounded-xl border px-4 py-4 text-left ${selectedPlan === "GROWTH_999" ? "border-[var(--lp-primary)] bg-[#fff1e5]" : "border-[var(--lp-border)] bg-white"}`}
             >
               <p className="text-lg font-black text-slate-950">Growth 999</p>
-              <p className="mt-2 text-sm text-slate-600">Marketplace + website + QR + operations.</p>
             </button>
           </div>
           <button
             type="button"
             onClick={() => void startRenewal()}
             disabled={renewing}
-            className="rounded-[1.5rem] bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white disabled:opacity-60"
+            className="rounded-xl bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
           >
             {renewing ? "Creating renewal order..." : "Create renewal order"}
           </button>
-          <p className="text-sm leading-7 text-slate-600">
-            This creates a pending platform payment row and renewal intent. If Razorpay key is configured, checkout opens immediately. Final activation happens when Razorpay sends a successful capture/subscription webhook.
-          </p>
         </div>
       </Surface>
 
-      <Surface title="Recent platform payments" subtitle="Latest renewal orders and capture references">
+      <Surface title="Recent payments">
         <div className="grid gap-3">
           {(data?.recentPlatformPayments ?? []).map((payment) => (
             <article key={payment.id} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4">
@@ -230,9 +229,8 @@ export function OwnerBillingManager() {
                 <p className="font-black text-slate-950">Rs. {payment.amount} {payment.currency}</p>
                 <span className="rounded-full bg-[#edf7ef] px-3 py-2 text-xs font-black text-[var(--lp-primary)]">{payment.status}</span>
               </div>
-              <p className="mt-2 text-sm text-slate-600">Order: {payment.razorpay_order_id ?? "-"}</p>
-              <p className="text-sm text-slate-600">Payment: {payment.razorpay_payment_id ?? "-"}</p>
-              <p className="text-xs text-slate-400">{payment.created_at}</p>
+              <p className="mt-2 truncate text-sm text-slate-600">Order: {payment.razorpay_order_id ?? "-"}</p>
+              <p className="text-xs text-slate-400">{compactDate(payment.created_at)}</p>
             </article>
           ))}
           {data?.recentPlatformPayments?.length === 0 ? (

@@ -171,7 +171,7 @@ export function OwnerStudentsManager() {
   const [saving, setSaving] = useState(false);
   const [seatSaving, setSeatSaving] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState<"aadhaar" | "school" | null>(null);
-  const [editorMode, setEditorMode] = useState<"profile" | "plan">("profile");
+  const [editorMode, setEditorMode] = useState<"summary" | "profile" | "plan">("summary");
   const selectedStudent = rows.find((row) => row.assignment_id === selectedAssignmentId) ?? null;
   const [form, setForm] = useState(buildInitialForm(null));
 
@@ -203,7 +203,7 @@ export function OwnerStudentsManager() {
   useEffect(() => {
     setForm(buildInitialForm(selectedStudent));
     setSelectedSeatId("");
-    setEditorMode("profile");
+    setEditorMode("summary");
   }, [selectedStudent]);
 
   const availableSeats = useMemo(
@@ -325,30 +325,21 @@ export function OwnerStudentsManager() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-      <DashboardCard title="Active roster" subtitle="Admissions happens in the admissions desk. This page is now for seat allotment, renewals, and roster actions.">
+      <DashboardCard title="Active roster">
         <div className="grid gap-4">
-          <div className="rounded-[1rem] bg-[linear-gradient(135deg,#163247_0%,#0e6a67_100%)] p-4 text-white">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Roster mode</p>
-            <h3 className="mt-2 text-xl font-black tracking-tight">Students first. Seats later.</h3>
-            <p className="mt-2 text-sm leading-6 text-white/85">Use Admissions to create students, then return here to allot or change seats from a cleaner roster workflow.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
+            <p className="text-sm font-semibold text-[var(--lp-text)]">Roster</p>
+            <Link href="/owner/admissions" className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
+              New admission
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Students</p><p className="mt-2 text-2xl font-black text-slate-950">{summary.total}</p></div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Allotted</p><p className="mt-2 text-2xl font-black text-emerald-700">{summary.allotted}</p></div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Unallotted</p><p className="mt-2 text-2xl font-black text-amber-700">{summary.unallotted}</p></div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Paid</p><p className="mt-2 text-2xl font-black text-emerald-700">{summary.paid}</p></div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Due</p><p className="mt-2 text-2xl font-black text-amber-700">{summary.due}</p></div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-[var(--lp-text)]">Need a new student?</p>
-              <p className="mt-1 text-sm text-[var(--lp-text-soft)]">Create every new student from Admissions so onboarding stays consistent.</p>
-            </div>
-            <Link href="/owner/admissions" className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
-              Open Admissions
-            </Link>
+            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Students</p><p className="mt-1 text-xl font-black text-slate-950">{summary.total}</p></div>
+            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Allotted</p><p className="mt-1 text-xl font-black text-emerald-700">{summary.allotted}</p></div>
+            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Open</p><p className="mt-1 text-xl font-black text-amber-700">{summary.unallotted}</p></div>
+            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Paid</p><p className="mt-1 text-xl font-black text-emerald-700">{summary.paid}</p></div>
+            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-3 py-3"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Due</p><p className="mt-1 text-xl font-black text-amber-700">{summary.due}</p></div>
           </div>
 
           {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
@@ -387,7 +378,7 @@ export function OwnerStudentsManager() {
       <div className="grid gap-6">
         {selectedStudent ? (
           <>
-            <DashboardCard title="Selected student" subtitle="Use one focused action at a time: seat, profile, or plan changes.">
+            <DashboardCard title="Selected student">
               <div className="grid gap-4">
                 <div className="grid gap-3 md:grid-cols-4">
                   <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Current seat</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.seat_number ?? "Unallotted"}</p></div>
@@ -437,7 +428,7 @@ export function OwnerStudentsManager() {
             </DashboardCard>
 
             {editorMode === "profile" ? (
-            <DashboardCard title="Edit roster profile" subtitle="Update personal and emergency details without touching commercial plan settings here.">
+            <DashboardCard title="Edit roster profile">
               <form className="grid gap-4" onSubmit={updateStudent}>
                 <div className="grid gap-3 md:grid-cols-2">
                   <input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Full name" />
@@ -478,7 +469,7 @@ export function OwnerStudentsManager() {
             ) : null}
 
             {editorMode === "plan" ? (
-            <DashboardCard title="Renew or change plan" subtitle="Use this section only for pricing, validity, and payment-state changes.">
+            <DashboardCard title="Renew or change plan">
               <form className="grid gap-4" onSubmit={updateStudent}>
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
@@ -515,9 +506,6 @@ export function OwnerStudentsManager() {
                     <option value="REFUNDED">Refunded</option>
                   </select>
                 </div>
-                <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3 text-sm text-[var(--lp-text-soft)]">
-                  Use this section for renewals, fee overrides, and validity updates only. For new admissions, go back to Admissions. For seat changes, use the seat controls above.
-                </div>
                 <button disabled={saving} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                   {saving ? "Saving..." : "Save plan and billing changes"}
                 </button>
@@ -526,7 +514,7 @@ export function OwnerStudentsManager() {
             ) : null}
           </>
         ) : (
-          <DashboardCard title="Student controls" subtitle="Select a student from the roster to edit details or assign a seat.">
+          <DashboardCard title="Student controls">
             <p className="text-sm text-[var(--lp-text-soft)]">No student selected yet.</p>
           </DashboardCard>
         )}

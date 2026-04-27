@@ -7,8 +7,8 @@ export default function OwnerBillingPage() {
     <DashboardShell
       productLabel="LibraryPro"
       panelLabel="Billing"
-      title="Keep plan access active, review renewal state, and track platform billing."
-      description="Billing stays reachable even when the plan expires, so the library can recover access quickly without losing workspace data."
+      title="Billing"
+      description="Plan and renewal status."
       nav={ownerNav}
     >
       <OwnerBillingManager />

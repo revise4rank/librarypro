@@ -7,8 +7,8 @@ export default function OwnerNotificationsPage() {
     <DashboardShell
       productLabel="LibraryPro"
       panelLabel="Broadcasts"
-      title="Send reminders, expiry alerts, and notices from one calm message center."
-      description="Target the right student group, queue offline actions, and keep recent broadcasts visible for the whole team."
+      title="Broadcasts"
+      description="Send notices and reminders."
       nav={ownerNav}
     >
       <OwnerNotificationsManager />

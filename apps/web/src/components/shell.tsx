@@ -93,14 +93,14 @@ export function Surface({
   children: ReactNode;
 }) {
   return (
-    <section className="lp-panel p-5 md:p-6">
+    <section className="lp-panel p-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-[clamp(1.2rem,1.9vw,1.8rem)] font-bold text-[var(--lp-text)]">{title}</h2>
+          <h2 className="text-lg font-semibold text-[var(--lp-text)]">{title}</h2>
           {subtitle ? <p className="mt-1 text-sm leading-6 text-[var(--lp-muted)]">{subtitle}</p> : null}
         </div>
       </div>
-      <div className="mt-5">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
