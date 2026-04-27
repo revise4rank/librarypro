@@ -40,7 +40,7 @@ export function StudentRegisterManager() {
         false,
       );
       saveSession(result.data);
-      router.push("/student/dashboard");
+      router.push("/student/join-library");
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Signup failed");
@@ -55,11 +55,11 @@ export function StudentRegisterManager() {
       <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="Password" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
       <p className="text-sm text-[var(--lp-muted)]">
-        Create your student app account first, then send a join request to a library. Owner review and payment confirmation still happen before roster access and seat allotment.
+        Create your student app account first, then search a library, scan QR, or send a join request. Owner review and payment confirmation still happen before roster access and seat allotment.
       </p>
       <div className="flex flex-wrap gap-3">
         <button type="submit" className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
-          Create student account
+          Create account and find library
         </button>
         <Link href="/student/access" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-primary)]">
           Find student portal

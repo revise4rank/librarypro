@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { changePasswordController, loginController, logoutController, meController, studentRegisterController, updateMeController } from "../controllers/auth.controller";
+import { changePasswordController, loginController, logoutController, meController, ownerRegisterController, studentRegisterController, updateMeController } from "../controllers/auth.controller";
 import { razorpayWebhookController } from "../controllers/billing.controller";
 import {
   getBillingSubscriptionController,
@@ -132,6 +132,7 @@ import { requireRole } from "../middleware/require-role.middleware";
 export const router = Router();
 
 router.post("/auth/login", asyncHandler(loginController));
+router.post("/auth/owner/register", asyncHandler(ownerRegisterController));
 router.post("/auth/student/register", asyncHandler(studentRegisterController));
 router.post("/auth/logout", asyncHandler(logoutController));
 router.get("/auth/me", asyncHandler(meController));

@@ -21,8 +21,11 @@ export default function OwnerLoginPage() {
       <div className="grid gap-4">
         <OwnerLoginForm />
         <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
-          Student trying to sign in instead?
-          <div className="mt-3">
+          New library owner?
+          <div className="mt-3 flex flex-wrap gap-4">
+            <Link href="/owner/register" className="font-semibold text-emerald-700">
+              Create library account
+            </Link>
             <Link href="/student/access" className="font-semibold text-emerald-700">
               Find student portal
             </Link>

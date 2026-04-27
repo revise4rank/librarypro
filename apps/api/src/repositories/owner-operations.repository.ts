@@ -2759,6 +2759,74 @@ export class OwnerOperationsRepository {
     return result.rows[0];
   }
 
+  async createLibraryForOwner(client: PoolClient, input: {
+    ownerUserId: string;
+    name: string;
+    slug: string;
+    city?: string | null;
+    qrSecretHash: string;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      INSERT INTO libraries (
+        owner_user_id,
+        name,
+        slug,
+        city,
+        total_seats,
+        available_seats,
+        starting_price,
+        offer_text,
+        qr_secret_hash
+      )
+      VALUES ($1, $2, $3, $4, 0, 0, 0, 'Setup pending', $5)
+      RETURNING id::text
+      `,
+      [
+        input.ownerUserId,
+        input.name,
+        input.slug,
+        input.city || "Setup pending",
+        input.qrSecretHash,
+      ],
+    );
+
+    return result.rows[0];
+  }
+
+  async createStarterSubscription(client: PoolClient, libraryId: string) {
+    await client.query(
+      `
+      INSERT INTO subscriptions (
+        library_id,
+        plan_code,
+        plan_name,
+        amount,
+        currency,
+        status,
+        current_period_start,
+        current_period_end,
+        renews_at,
+        updated_at
+      )
+      VALUES (
+        $1,
+        'STARTER_TRIAL',
+        'Starter Trial',
+        0,
+        'INR',
+        'ACTIVE',
+        NOW(),
+        NOW() + INTERVAL '14 days',
+        NOW() + INTERVAL '14 days',
+        NOW()
+      )
+      ON CONFLICT (library_id) DO NOTHING
+      `,
+      [libraryId],
+    );
+  }
+
   async ensureOwnerRole(client: PoolClient, userId: string, libraryId: string) {
     await client.query(
       `

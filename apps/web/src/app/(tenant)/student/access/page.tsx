@@ -79,6 +79,15 @@ export default function StudentAccessPage() {
               Open student login
             </button>
           </form>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
+            New student without owner-issued credentials?
+            <div className="mt-3">
+              <Link href="/student/register" className="font-semibold text-emerald-700">
+                Create student account and send a join request
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </main>

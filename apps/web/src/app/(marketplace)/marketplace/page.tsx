@@ -66,8 +66,8 @@ export default function MarketplacePage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Link href="/owner/login" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)]">
-              Library Access
+            <Link href="/owner/register" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)]">
+              List your library
             </Link>
             <Link
               href="/student/access"
@@ -105,8 +105,8 @@ export default function MarketplacePage() {
               >
                 Start Search
               </a>
-              <Link href="/owner/settings?tab=website" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-7 py-4 text-sm font-semibold text-[var(--lp-primary)]">
-                Website Setup
+              <Link href="/owner/register" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-7 py-4 text-sm font-semibold text-[var(--lp-primary)]">
+                Start library setup
               </Link>
             </div>
 

@@ -14,7 +14,7 @@ const navLinks = [
 ];
 
 export function PublicSiteHeader({
-  ctaHref = "/owner/login",
+  ctaHref = "/owner/register",
   ctaLabel = "Start Free Trial",
   activeLabel,
 }: PublicSiteHeaderProps) {

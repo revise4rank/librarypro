@@ -127,7 +127,7 @@ export function createServer() {
   app.use(csrfProtectionMiddleware);
   app.use(tenantMiddleware);
   app.use(subscriptionEnforcementMiddleware);
-  app.use(["/v1/auth/login", "/v1/auth/student/register"], authRateLimitMiddleware);
+  app.use(["/v1/auth/login", "/v1/auth/owner/register", "/v1/auth/student/register"], authRateLimitMiddleware);
   app.use("/v1", router);
 
   app.use((error: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -24,6 +24,16 @@ function buildStudentCode(fullName: string) {
   return `${prefix}${suffix}`;
 }
 
+function buildLibrarySlug(libraryName: string) {
+  const base = libraryName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "library";
+  return `${base}-${crypto.randomBytes(3).toString("hex")}`;
+}
+
 const ROLE_PRIORITY: user_role[] = ["LIBRARY_OWNER", "STUDENT"];
 
 function resolveEffectiveRole(globalRole: user_role, libraryRoles: Array<{ role: user_role }>) {
@@ -123,6 +133,62 @@ export async function registerStudentUser(input: {
   } finally {
     client.release();
   }
+}
+
+export async function registerOwnerUser(input: {
+  fullName: string;
+  libraryName: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  password: string;
+}) {
+  const db = requireDb();
+  const repo = ownerRepository();
+  const client = await db.connect();
+  let createdUserId: string | null = null;
+
+  try {
+    await client.query("BEGIN");
+
+    const existing = await repo.findStudentByEmailOrPhone(client, input.email, input.phone);
+    if (existing) {
+      throw new AppError(409, "Account already exists with this email or phone", "USER_ALREADY_EXISTS");
+    }
+
+    const passwordHash = await hashPassword(input.password);
+    const owner = await repo.createOwnerUser(client, {
+      fullName: input.fullName,
+      email: input.email ?? null,
+      phone: input.phone ?? null,
+      passwordHash,
+    });
+
+    const library = await repo.createLibraryForOwner(client, {
+      ownerUserId: owner.id,
+      name: input.libraryName,
+      slug: buildLibrarySlug(input.libraryName),
+      city: input.city || null,
+      qrSecretHash: crypto.randomBytes(32).toString("hex"),
+    });
+
+    await repo.ensureOwnerRole(client, owner.id, library.id);
+    await repo.createStarterSubscription(client, library.id);
+
+    await client.query("COMMIT");
+    createdUserId = owner.id;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  if (!createdUserId) {
+    throw new AppError(500, "Owner account could not be created", "OWNER_REGISTER_FAILED");
+  }
+
+  return getAuthenticatedUser(createdUserId);
 }
 
 export async function updateAuthenticatedUserProfile(input: {

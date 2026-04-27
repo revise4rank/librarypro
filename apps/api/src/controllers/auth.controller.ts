@@ -2,8 +2,8 @@ import type { Request, Response } from "express";
 import crypto from "node:crypto";
 import { createAuditLog } from "../lib/audit";
 import { AppError } from "../lib/errors";
-import { changeAuthenticatedUserPassword, getAuthenticatedUser, loginUser, registerStudentUser, updateAuthenticatedUserProfile } from "../services/auth.service";
-import { changePasswordBodySchema, loginBodySchema, studentRegisterBodySchema, updateMeBodySchema } from "../validators/auth.validators";
+import { changeAuthenticatedUserPassword, getAuthenticatedUser, loginUser, registerOwnerUser, registerStudentUser, updateAuthenticatedUserProfile } from "../services/auth.service";
+import { changePasswordBodySchema, loginBodySchema, ownerRegisterBodySchema, studentRegisterBodySchema, updateMeBodySchema } from "../validators/auth.validators";
 
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
@@ -151,6 +151,38 @@ export async function studentRegisterController(req: Request, res: Response) {
   const result = await loginUser({
     login: parsed.email || parsed.phone || user.studentCode || "",
     password: parsed.password,
+  });
+
+  setAccessCookie(req, res, result.accessToken);
+  const csrfToken = ensureCsrfToken(req, res);
+  res.status(201).json({ success: true, data: { user: result.user, csrfToken } });
+}
+
+export async function ownerRegisterController(req: Request, res: Response) {
+  const parsed = ownerRegisterBodySchema.parse(req.body);
+  const user = await registerOwnerUser({
+    fullName: parsed.fullName,
+    libraryName: parsed.libraryName,
+    email: parsed.email || undefined,
+    phone: parsed.phone || undefined,
+    city: parsed.city || undefined,
+    password: parsed.password,
+  });
+
+  const result = await loginUser({
+    login: parsed.email || parsed.phone || user.email || user.phone || "",
+    password: parsed.password,
+  });
+
+  await createAuditLog({
+    actorUserId: result.user.id,
+    libraryId: result.user.libraryIds[0] ?? null,
+    action: "auth.owner_register",
+    entityType: "user",
+    entityId: result.user.id,
+    metadata: { role: result.user.role, libraryName: parsed.libraryName },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
   });
 
   setAccessCookie(req, res, result.accessToken);

@@ -24,8 +24,8 @@ const proofStats = [
 const accessCards = [
   {
     title: "Library Access",
-    text: "Open the owner workspace to manage seats, students, dues, and your library website.",
-    href: "/owner/login",
+    text: "Create your library account or open the owner workspace to manage setup, admissions, roster, seats, and dues.",
+    href: "/owner/register",
     icon: BriefcaseBusiness,
   },
   {

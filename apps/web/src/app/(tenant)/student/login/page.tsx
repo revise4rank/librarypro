@@ -33,7 +33,7 @@ export default async function StudentLoginPage({
   return (
     <main className="min-h-screen bg-[#FAFAFA] text-[#0F172A]">
       <PublicSiteHeader
-        ctaHref="/owner/login"
+        ctaHref="/owner/register"
         ctaLabel="Start Free Trial"
         activeLabel="Student Login"
       />

@@ -32,10 +32,14 @@ export function middleware(request: NextRequest) {
     { prefix: "/superadmin", loginPath: "/superadmin/login", role: "SUPER_ADMIN" },
   ] as const;
 
+  const publicOwnerRoutes = new Set(["/owner/register"]);
   const publicStudentRoutes = new Set(["/student/access", "/student/register"]);
 
   for (const route of protectedRoutes) {
     if (url.pathname.startsWith(route.prefix) && url.pathname !== route.loginPath) {
+      if (route.prefix === "/owner" && publicOwnerRoutes.has(url.pathname)) {
+        continue;
+      }
       if (route.prefix === "/student" && publicStudentRoutes.has(url.pathname)) {
         continue;
       }
