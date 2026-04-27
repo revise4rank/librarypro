@@ -248,11 +248,17 @@ export function OwnerDashboardManager() {
               Admit students first, move them into the active roster, and only then open seat assignment when placement is ready.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/owner/admissions" className="rounded-[0.95rem] bg-white px-4 py-2.5 text-sm font-black text-[#119b61]">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+            <Link
+              href="/owner/admissions"
+              className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-[0.95rem] border border-[#0F172A] bg-[#0F172A] px-5 py-2.5 text-sm font-black !text-white shadow-[0_14px_28px_rgba(15,23,42,0.2)] transition hover:bg-slate-800"
+            >
               New admission
             </Link>
-            <Link href="/owner/admissions?mode=requests" className="rounded-[0.95rem] border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-black text-white">
+            <Link
+              href="/owner/admissions?mode=requests"
+              className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-[0.95rem] border border-white/70 bg-white px-5 py-2.5 text-sm font-black !text-[#0F172A] shadow-[0_14px_28px_rgba(15,23,42,0.08)] transition hover:bg-emerald-50"
+            >
               Review requests
             </Link>
           </div>
