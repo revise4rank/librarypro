@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { RoleLoginForm } from "../../../../components/owner-login-form";
 import { PublicSiteHeader } from "../../../../components/public-site-header";
 import { StudentLoginBrandPanel } from "../../../../components/student-login-brand-panel";
@@ -17,17 +16,19 @@ export default async function StudentLoginPage({
 }) {
   const params = await searchParams;
   const libraryKey = params?.library?.trim();
-  if (!libraryKey) {
-    redirect("/student/access");
-  }
-  const friendlyLibraryName = titleCaseLibraryKey(libraryKey);
+  const loginLibraryKey = libraryKey || "student-portal";
+  const friendlyLibraryName = libraryKey ? titleCaseLibraryKey(libraryKey) : "LibraryPro Student";
   const initialBrand = {
     library_name: friendlyLibraryName,
-    subdomain: libraryKey,
+    subdomain: libraryKey ?? "",
     brand_logo_url: null,
-    hero_title: "Continue your library routine from one student portal.",
-    hero_tagline: "Log in for QR access, dues, notices, and your daily study flow without waiting on a heavy page load.",
-    offer_text: "Owner-issued student login for QR entry, payments, notices, and study continuity in one place.",
+    hero_title: libraryKey ? "Continue your library routine from one student portal." : "Student login stays direct and simple.",
+    hero_tagline: libraryKey
+      ? "Log in for QR access, dues, notices, and your daily study flow without waiting on a heavy page load."
+      : "Use your owner-issued student ID, mobile number, email, or your student app password to enter the portal.",
+    offer_text: libraryKey
+      ? "Owner-issued student login for QR entry, payments, notices, and study continuity in one place."
+      : "Direct login first. Find or join a library only when you need a new connection.",
   };
 
   return (
@@ -39,7 +40,7 @@ export default async function StudentLoginPage({
       />
 
       <section className="mx-auto grid w-full max-w-[1120px] gap-6 px-4 py-12 md:py-16 lg:grid-cols-[1.04fr_0.96fr]">
-        <StudentLoginBrandPanel libraryKey={libraryKey} initialBrand={initialBrand} />
+        <StudentLoginBrandPanel libraryKey={loginLibraryKey} initialBrand={initialBrand} showLibraryLink={Boolean(libraryKey)} />
 
         <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-7">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Student login</p>
@@ -71,7 +72,7 @@ export default async function StudentLoginPage({
             </Link>
             <span className="text-slate-300">|</span>
             <Link href="/student/access" className="font-semibold text-slate-700">
-              Change library
+              Find library
             </Link>
           </div>
         </div>

@@ -15,6 +15,7 @@ type BrandState = {
 type StudentLoginBrandPanelProps = {
   libraryKey: string;
   initialBrand: BrandState;
+  showLibraryLink?: boolean;
 };
 
 function titleCaseLibraryKey(value: string) {
@@ -26,6 +27,7 @@ function titleCaseLibraryKey(value: string) {
 export function StudentLoginBrandPanel({
   libraryKey,
   initialBrand,
+  showLibraryLink = true,
 }: StudentLoginBrandPanelProps) {
   const [brand, setBrand] = useState<BrandState>(initialBrand);
 
@@ -100,17 +102,19 @@ export function StudentLoginBrandPanel({
       </div>
 
       <div className="mt-6 flex flex-wrap gap-3">
+        {showLibraryLink ? (
+          <Link
+            href={`/library-site?slug=${brand.subdomain || libraryKey}`}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+          >
+            View library site
+          </Link>
+        ) : null}
         <Link
-          href={`/library-site?slug=${brand.subdomain || libraryKey}`}
-          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
-        >
-          View library site
-        </Link>
-        <Link
-          href="/marketplace"
+          href={showLibraryLink ? "/marketplace" : "/student/access"}
           className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/15"
         >
-          Browse marketplace
+          {showLibraryLink ? "Browse marketplace" : "Find library"}
         </Link>
       </div>
     </div>

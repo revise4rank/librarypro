@@ -10,7 +10,7 @@ const navLinks = [
   { label: "Features", href: "/#features" },
   { label: "Pricing", href: "/#pricing" },
   { label: "Library Access", href: "/owner/login" },
-  { label: "Student Login", href: "/student/access" },
+  { label: "Student Login", href: "/student/login" },
 ];
 
 export function PublicSiteHeader({

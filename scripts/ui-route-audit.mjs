@@ -12,7 +12,7 @@ const checks = [
   ["/owner/register", 200],
   ["/student/access", 200],
   ["/student/register", 200],
-  ["/student/login", 307],
+  ["/student/login", 200],
   ["/student/login?library=focuslibrary", 200],
   ["/superadmin/login", 200],
   ["/owner/dashboard", 307],
