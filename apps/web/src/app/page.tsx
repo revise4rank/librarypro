@@ -6,6 +6,8 @@ import {
   BriefcaseBusiness,
   Compass,
   LayoutDashboard,
+  Mail,
+  MapPin,
   Sparkles,
   Store,
   Users,
@@ -88,6 +90,41 @@ const benefitCards = [
 ];
 
 const trustedBy = ["City libraries", "Premium study spaces", "Coaching hubs", "Multi-floor operators"];
+
+const footerColumns = [
+  {
+    title: "Product",
+    links: [
+      { label: "Features", href: "/#features" },
+      { label: "Pricing", href: "/#pricing" },
+      { label: "Marketplace", href: "/marketplace" },
+    ],
+  },
+  {
+    title: "Access",
+    links: [
+      { label: "Start Free Trial", href: "/owner/register" },
+      { label: "Library Access", href: "/owner/login" },
+      { label: "Student Login", href: "/student/login" },
+      { label: "Student Access", href: "/student/access" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About LibraryPro", href: "/#features" },
+      { label: "Contact support", href: "mailto:support@librarypro.in" },
+      { label: "Browse libraries", href: "/marketplace" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+    ],
+  },
+];
 
 const sectionMotion = {
   hidden: { opacity: 0, y: 20 },
@@ -350,25 +387,83 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="bg-[#0F172A] text-white">
-          <div className="mx-auto w-full max-w-[1120px] px-4 py-16 md:py-20">
-            <motion.div variants={sectionMotion} className="flex flex-col gap-5 rounded-[30px] border border-white/10 bg-white/5 px-6 py-6 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Trusted by modern operators</p>
-                <p className="mt-2 text-base leading-7 text-slate-300">
-                  Built for libraries that want better visibility, calmer workflows, and a more premium student experience.
-                </p>
+        <motion.footer variants={sectionMotion} className="bg-[#0F172A] text-white">
+          <div className="mx-auto w-full max-w-[1120px] px-4 py-14 md:py-16">
+            <div className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:p-7">
+              <div className="grid gap-8 lg:grid-cols-[1.2fr_1.8fr]">
+                <div>
+                  <Link href="/" className="inline-flex items-center gap-3">
+                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-[#0F172A]">
+                      LP
+                    </span>
+                    <span>
+                      <span className="block text-[12px] font-semibold uppercase tracking-[0.28em] text-emerald-300">
+                        LibraryPro
+                      </span>
+                      <span className="mt-1 block text-sm text-slate-300">
+                        Library growth and operations platform
+                      </span>
+                    </span>
+                  </Link>
+
+                  <p className="mt-5 max-w-md text-sm leading-7 text-slate-300">
+                    Manage admissions, seats, dues, student access, and marketplace discovery from one clean workspace.
+                  </p>
+
+                  <div className="mt-5 grid gap-3 text-sm text-slate-300">
+                    <a href="mailto:support@librarypro.in" className="inline-flex items-center gap-2 transition hover:text-white">
+                      <Mail className="h-4 w-4 text-emerald-300" />
+                      support@librarypro.in
+                    </a>
+                    <p className="inline-flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-emerald-300" />
+                      Built for Indian library operators
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                  {footerColumns.map((column) => (
+                    <div key={column.title}>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{column.title}</p>
+                      <div className="mt-4 grid gap-3">
+                        {column.links.map((link) => (
+                          <Link
+                            key={link.label}
+                            href={link.href}
+                            className="text-sm text-slate-300 transition hover:text-white"
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {trustedBy.map((item) => (
-                  <span key={item} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200">
-                    {item}
-                  </span>
-                ))}
+
+              <div className="mt-9 border-t border-white/10 pt-5">
+                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Trusted by modern operators</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {trustedBy.map((item) => (
+                        <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs leading-6 text-slate-400 md:text-right">
+                    (c) 2026 LibraryPro. All rights reserved.
+                    <br />
+                    Secure owner workflows, student access, and public discovery.
+                  </p>
+                </div>
               </div>
-            </motion.div>
+            </div>
           </div>
-        </section>
+        </motion.footer>
       </motion.main>
     </AnimatePresence>
   );
