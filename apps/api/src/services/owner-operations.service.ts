@@ -1460,6 +1460,29 @@ export async function listAdminPayments() {
   return repository().listAdminPayments();
 }
 
+export async function getPlatformMarketplaceSettings() {
+  return repository().getPlatformMarketplaceSettings();
+}
+
+export async function updatePlatformMarketplaceSettings(input: {
+  headline: string;
+  subheadline: string;
+  bannerSlides: Array<{
+    eyebrow: string;
+    title: string;
+    cta: string;
+    href: string;
+    tone: "slate" | "emerald" | "amber" | "blue";
+  }>;
+  updatedByUserId: string;
+}) {
+  return repository().updatePlatformMarketplaceSettings(input);
+}
+
+export async function getAdminDataOverview() {
+  return repository().getAdminDataOverview();
+}
+
 export async function getOwnerDashboard(input: { libraryId: string }) {
   return repository().getOwnerDashboardSummary(input.libraryId);
 }

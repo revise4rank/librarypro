@@ -23,6 +23,7 @@ import {
   exitStudentLibrary,
   exportOwnerPaymentReceipt,
   getAdminDashboard,
+  getAdminDataOverview,
   getOwnerDashboard,
   getOwnerCheckinRegisterPage,
   getOwnerReportsSummary,
@@ -69,6 +70,8 @@ import {
   createStudentFocusSession,
   createStudentFocusSubject,
   unassignSeatFromStudent,
+  getPlatformMarketplaceSettings,
+  updatePlatformMarketplaceSettings,
 } from "../services/owner-operations.service";
 import {
   createOwnerAdmissionBodySchema,
@@ -110,6 +113,7 @@ import {
   updateOwnerSeatBodySchema,
   updateOwnerPaymentBodySchema,
   updateOwnerStudentBodySchema,
+  updatePlatformMarketplaceSettingsBodySchema,
 } from "../validators/owner-operations.validators";
 
 function requireOwnerContext(req: Request) {
@@ -1348,6 +1352,11 @@ export async function getAdminDashboardController(_req: Request, res: Response) 
   res.json({ success: true, data });
 }
 
+export async function getPublicMarketplaceSettingsController(_req: Request, res: Response) {
+  const data = await getPlatformMarketplaceSettings();
+  res.json({ success: true, data });
+}
+
 export async function listAdminLibrariesController(_req: Request, res: Response) {
   const data = await listAdminLibraries();
   res.json({ success: true, data });
@@ -1360,5 +1369,37 @@ export async function listAdminPlanSummariesController(_req: Request, res: Respo
 
 export async function listAdminPaymentsController(_req: Request, res: Response) {
   const data = await listAdminPayments();
+  res.json({ success: true, data });
+}
+
+export async function getAdminMarketplaceSettingsController(_req: Request, res: Response) {
+  const data = await getPlatformMarketplaceSettings();
+  res.json({ success: true, data });
+}
+
+export async function updateAdminMarketplaceSettingsController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
+  }
+
+  const parsed = updatePlatformMarketplaceSettingsBodySchema.parse(req.body);
+  const data = await updatePlatformMarketplaceSettings({
+    ...parsed,
+    updatedByUserId: req.auth.userId,
+  });
+  await createAuditLog({
+    actorUserId: req.auth.userId,
+    action: "admin.marketplace_settings.update",
+    entityType: "platform_marketplace_settings",
+    entityId: data.id,
+    metadata: { headline: data.headline, slides: data.bannerSlides.length },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.json({ success: true, data });
+}
+
+export async function getAdminDataOverviewController(_req: Request, res: Response) {
+  const data = await getAdminDataOverview();
   res.json({ success: true, data });
 }

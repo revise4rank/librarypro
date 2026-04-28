@@ -7,8 +7,8 @@ export default function SuperAdminPaymentsPage() {
     <DashboardShell
       productLabel="LibraryPro"
       panelLabel="Platform Payments"
-      title="Subscription payment ledger across all tenant libraries."
-      description="This view is for SaaS billing visibility: successful charges, failed recoveries, pending renewals, and platform-level revenue traceability."
+      title="Platform payments"
+      description="Subscription ledger, failed recovery, and renewal visibility."
       nav={adminNav}
     >
       <SuperadminPaymentsManager />

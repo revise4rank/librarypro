@@ -18,9 +18,9 @@ export function PublicSiteHeader({
   ctaLabel = "Start Free Trial",
   activeLabel,
 }: PublicSiteHeaderProps) {
-  const baseLinkClass = "rounded-lg px-2.5 py-1.5 text-xs font-medium transition md:text-sm";
-  const activeLinkClass = "bg-white/14 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]";
-  const inactiveLinkClass = "text-white hover:bg-white/8 hover:text-white";
+  const baseLinkClass = "rounded-lg px-2.5 py-1.5 text-xs font-semibold !text-white transition md:text-sm";
+  const activeLinkClass = "bg-white/15 !text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]";
+  const inactiveLinkClass = "!text-white/90 hover:bg-white/10 hover:!text-white";
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[rgba(15,23,42,0.9)] backdrop-blur">
@@ -43,6 +43,7 @@ export function PublicSiteHeader({
                 baseLinkClass,
                 activeLabel === item.label ? activeLinkClass : inactiveLinkClass,
               ].join(" ")}
+              style={{ color: "#ffffff" }}
             >
               {item.label}
             </Link>
@@ -59,7 +60,7 @@ export function PublicSiteHeader({
           </Link>
 
           <details className="relative md:hidden">
-            <summary className="flex h-9 list-none items-center justify-center rounded-xl border border-white/12 bg-white/5 px-3 text-xs font-semibold text-white">
+            <summary className="flex h-9 list-none items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3 text-xs font-semibold !text-white">
               Menu
             </summary>
             <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-56 rounded-2xl border border-white/10 bg-[#111C33] p-2 shadow-[0_18px_40px_rgba(15,23,42,0.28)]">
@@ -72,6 +73,7 @@ export function PublicSiteHeader({
                       "rounded-xl px-3 py-2 text-sm font-medium",
                       activeLabel === item.label ? activeLinkClass : "text-white hover:bg-white/8",
                     ].join(" ")}
+                    style={{ color: "#ffffff" }}
                   >
                     {item.label}
                   </Link>

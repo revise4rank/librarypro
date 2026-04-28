@@ -75,7 +75,9 @@ import {
   createStudentRejoinRequestController,
   deleteOwnerStudentController,
   deleteOwnerAdminController,
+  getAdminDataOverviewController,
   getAdminDashboardController,
+  getAdminMarketplaceSettingsController,
   getOwnerDashboardController,
   getOwnerCheckinsController,
   getOwnerPaymentReceiptController,
@@ -107,6 +109,7 @@ import {
   rejectOwnerJoinRequestController,
   searchStudentLibrariesController,
   sendDueRecoveryCampaignController,
+  getPublicMarketplaceSettingsController,
   approveOwnerJoinRequestController,
   exportOwnerReportController,
   updateStudentFocusGoalsController,
@@ -122,6 +125,7 @@ import {
   exitStudentLibraryController,
   unassignOwnerStudentSeatController,
   updateOwnerAdminPermissionsController,
+  updateAdminMarketplaceSettingsController,
 } from "../controllers/owner-operations.controller";
 import { uploadAdmissionDocumentController, uploadPublicProfileAssetController } from "../controllers/upload.controller";
 import { asyncHandler } from "../lib/async-handler";
@@ -145,6 +149,7 @@ router.get("/student/entry-qr", requireRole(["STUDENT"]), asyncHandler(getStuden
 router.post("/checkins/scan", requireRole(["STUDENT"]), asyncHandler(scanCheckInController));
 router.post("/checkins/checkout", requireRole(["STUDENT"]), asyncHandler(scanCheckOutController));
 router.get("/public/subdomain-availability", asyncHandler(getSubdomainAvailabilityController));
+router.get("/public/marketplace-settings", asyncHandler(getPublicMarketplaceSettingsController));
 router.get("/public/libraries/suggestions", asyncHandler(searchMarketplaceSuggestionsController));
 router.get("/public/libraries/search", asyncHandler(searchMarketplaceLibrariesController));
 router.get("/offers/categories", asyncHandler(listOfferCategoriesController));
@@ -246,9 +251,12 @@ router.post("/student/payments/:paymentId/pay", requireRole(["STUDENT"]), asyncH
 router.get("/student/payments/:paymentId/receipt", requireRole(["STUDENT"]), asyncHandler(getStudentPaymentReceiptController));
 router.get("/student/notifications", requireRole(["STUDENT"]), asyncHandler(listStudentNotificationsController));
 router.get("/admin/dashboard", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminDashboardController));
+router.get("/admin/data-overview", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminDataOverviewController));
 router.get("/admin/libraries", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminLibrariesController));
 router.get("/admin/plans", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPlanSummariesController));
 router.get("/admin/payments", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPaymentsController));
+router.get("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminMarketplaceSettingsController));
+router.patch("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminMarketplaceSettingsController));
 router.get("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminOffersController));
 router.post("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(createAdminOfferController));
 router.get("/admin/review-reports", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminReviewReportsController));

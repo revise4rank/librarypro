@@ -7,8 +7,8 @@ export default function SuperAdminDashboardPage() {
     <DashboardShell
       productLabel="LibraryPro"
       panelLabel="Super Admin"
-      title="Platform revenue, tenant health, renewals, and billing from one command center."
-      description="Superadmin should see the whole SaaS business clearly: growth, failed collections, overdue renewals, and which library owners need intervention."
+      title="Platform overview"
+      description="Revenue, tenant health, renewals, and billing risk."
       nav={adminNav}
     >
       <SuperadminDashboardManager />

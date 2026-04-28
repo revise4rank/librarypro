@@ -7,6 +7,7 @@ import {
   CalendarCheck,
   ChevronDown,
   CreditCard,
+  Database,
   IndianRupee,
   LayoutDashboard,
   LockKeyhole,
@@ -14,6 +15,8 @@ import {
   Megaphone,
   Send,
   Settings as SettingsIcon,
+  ShieldCheck,
+  Store,
   UserPlus,
   Users,
   UserRound,
@@ -49,6 +52,14 @@ const navIconMap: Record<string, LucideIcon> = {
   "/student/payments": IndianRupee,
   "/student/notifications": Send,
   "/student/focus": BarChart3,
+  "/superadmin/dashboard": LayoutDashboard,
+  "/superadmin/libraries": Store,
+  "/superadmin/marketplace": Megaphone,
+  "/superadmin/data": Database,
+  "/superadmin/reviews": ShieldCheck,
+  "/superadmin/offers": Send,
+  "/superadmin/plans": CreditCard,
+  "/superadmin/payments": IndianRupee,
 };
 
 function navIconFor(item: NavItem) {

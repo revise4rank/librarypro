@@ -7,8 +7,8 @@ export default function SuperAdminLibrariesPage() {
     <DashboardShell
       productLabel="LibraryPro"
       panelLabel="Libraries"
-      title="All tenant libraries, plans, and operational status."
-      description="A clean multi-tenant view for monitoring onboarding, status, plan fit, and owner relationships."
+      title="Tenant libraries"
+      description="Onboarding, plan fit, and owner status."
       nav={adminNav}
     >
       <SuperadminLibrariesManager />

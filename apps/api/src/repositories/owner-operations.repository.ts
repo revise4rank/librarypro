@@ -61,6 +61,96 @@ export type OwnerCouponRow = {
   created_at: string;
 };
 
+export type MarketplaceBannerTone = "slate" | "emerald" | "amber" | "blue";
+
+export type MarketplaceBannerSlideRow = {
+  eyebrow: string;
+  title: string;
+  cta: string;
+  href: string;
+  tone: MarketplaceBannerTone;
+};
+
+export type PlatformMarketplaceSettingsRow = {
+  id: string | null;
+  headline: string;
+  subheadline: string;
+  bannerSlides: MarketplaceBannerSlideRow[];
+  updated_at: string | null;
+  updated_by_name: string | null;
+};
+
+const defaultMarketplaceBannerSlides: MarketplaceBannerSlideRow[] = [
+  {
+    eyebrow: "Find faster",
+    title: "Search study spaces by city, budget, seats, and facilities.",
+    cta: "Start search",
+    href: "#marketplace-search",
+    tone: "slate",
+  },
+  {
+    eyebrow: "Top picks",
+    title: "Filter top-rated and available libraries without opening every page.",
+    cta: "See top libraries",
+    href: "#marketplace-search",
+    tone: "emerald",
+  },
+  {
+    eyebrow: "Offers live",
+    title: "Find libraries with active discounts, seat offers, and quick contact.",
+    cta: "View offers",
+    href: "#marketplace-search",
+    tone: "amber",
+  },
+  {
+    eyebrow: "For owners",
+    title: "List your library with a public site, student access, and lead capture.",
+    cta: "List library",
+    href: "/owner/register",
+    tone: "blue",
+  },
+];
+
+function isUndefinedTableError(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "42P01";
+}
+
+function normalizeMarketplaceBannerSlides(value: unknown): MarketplaceBannerSlideRow[] {
+  if (!Array.isArray(value)) return defaultMarketplaceBannerSlides;
+
+  const slides = value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const candidate = item as Partial<MarketplaceBannerSlideRow>;
+      const tone = candidate.tone && ["slate", "emerald", "amber", "blue"].includes(candidate.tone)
+        ? candidate.tone
+        : "slate";
+
+      if (!candidate.eyebrow || !candidate.title || !candidate.cta || !candidate.href) return null;
+      return {
+        eyebrow: String(candidate.eyebrow),
+        title: String(candidate.title),
+        cta: String(candidate.cta),
+        href: String(candidate.href),
+        tone,
+      } satisfies MarketplaceBannerSlideRow;
+    })
+    .filter((item): item is MarketplaceBannerSlideRow => Boolean(item));
+
+  return slides.length > 0 ? slides.slice(0, 4) : defaultMarketplaceBannerSlides;
+}
+
+function defaultPlatformMarketplaceSettings(): PlatformMarketplaceSettingsRow {
+  return {
+    id: null,
+    headline: "Discover the right library without the noise.",
+    subheadline: "Search study spaces by city, budget, seats, and facilities.",
+    bannerSlides: defaultMarketplaceBannerSlides,
+    updated_at: null,
+    updated_by_name: null,
+  };
+}
+
 export type OwnerSeatRow = {
   id: string;
   floor_name: string | null;
@@ -2260,6 +2350,213 @@ export class OwnerOperationsRepository {
     );
 
     return result.rows;
+  }
+
+  async getPlatformMarketplaceSettings(): Promise<PlatformMarketplaceSettingsRow> {
+    try {
+      const result = await this.pool.query<{
+        id: string;
+        headline: string;
+        subheadline: string;
+        banner_slides: unknown;
+        updated_at: string;
+        updated_by_name: string | null;
+      }>(
+        `
+        SELECT
+          s.id,
+          s.headline,
+          s.subheadline,
+          s.banner_slides,
+          s.updated_at::text,
+          u.full_name AS updated_by_name
+        FROM platform_marketplace_settings s
+        LEFT JOIN users u ON u.id = s.updated_by
+        WHERE s.singleton_key = 'default'
+        LIMIT 1
+        `,
+      );
+
+      const row = result.rows[0];
+      if (!row) return defaultPlatformMarketplaceSettings();
+
+      return {
+        id: row.id,
+        headline: row.headline,
+        subheadline: row.subheadline,
+        bannerSlides: normalizeMarketplaceBannerSlides(row.banner_slides),
+        updated_at: row.updated_at,
+        updated_by_name: row.updated_by_name,
+      };
+    } catch (error) {
+      if (isUndefinedTableError(error)) return defaultPlatformMarketplaceSettings();
+      throw error;
+    }
+  }
+
+  async updatePlatformMarketplaceSettings(input: {
+    headline: string;
+    subheadline: string;
+    bannerSlides: MarketplaceBannerSlideRow[];
+    updatedByUserId: string;
+  }): Promise<PlatformMarketplaceSettingsRow> {
+    const result = await this.pool.query<{
+      id: string;
+      headline: string;
+      subheadline: string;
+      banner_slides: unknown;
+      updated_at: string;
+      updated_by_name: string | null;
+    }>(
+      `
+      INSERT INTO platform_marketplace_settings (
+        singleton_key, headline, subheadline, banner_slides, updated_by
+      )
+      VALUES ('default', $1, $2, $3::jsonb, $4)
+      ON CONFLICT (singleton_key) DO UPDATE
+      SET
+        headline = EXCLUDED.headline,
+        subheadline = EXCLUDED.subheadline,
+        banner_slides = EXCLUDED.banner_slides,
+        updated_by = EXCLUDED.updated_by,
+        updated_at = NOW()
+      RETURNING
+        id,
+        headline,
+        subheadline,
+        banner_slides,
+        updated_at::text,
+        (SELECT full_name FROM users WHERE id = $4) AS updated_by_name
+      `,
+      [
+        input.headline,
+        input.subheadline,
+        JSON.stringify(input.bannerSlides),
+        input.updatedByUserId,
+      ],
+    );
+
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      headline: row.headline,
+      subheadline: row.subheadline,
+      bannerSlides: normalizeMarketplaceBannerSlides(row.banner_slides),
+      updated_at: row.updated_at,
+      updated_by_name: row.updated_by_name,
+    };
+  }
+
+  async getAdminDataOverview() {
+    const [metrics, recentAudit, recentLibraries] = await Promise.all([
+      this.pool.query<{
+        total_libraries: string;
+        active_libraries: string;
+        marketplace_listings: string;
+        student_accounts: string;
+        active_assignments: string;
+        unallotted_students: string;
+        total_seats: string;
+        available_seats: string;
+        tenant_revenue_month: string;
+        tenant_dues: string;
+        platform_mrr_month: string;
+        marketplace_leads_30d: string;
+        open_review_reports: string;
+        live_offers: string;
+        audit_events_24h: string;
+      }>(
+        `
+        SELECT
+          (SELECT COUNT(*)::text FROM libraries) AS total_libraries,
+          (SELECT COUNT(*)::text FROM libraries WHERE status = 'ACTIVE') AS active_libraries,
+          (SELECT COUNT(*)::text FROM libraries_public_profiles WHERE is_published = TRUE AND show_in_marketplace = TRUE) AS marketplace_listings,
+          (SELECT COUNT(*)::text FROM users WHERE global_role = 'STUDENT') AS student_accounts,
+          (SELECT COUNT(*)::text FROM student_assignments WHERE status = 'ACTIVE') AS active_assignments,
+          (SELECT COUNT(*)::text FROM student_assignments WHERE status = 'ACTIVE' AND seat_id IS NULL) AS unallotted_students,
+          (SELECT COUNT(*)::text FROM seats) AS total_seats,
+          (SELECT COUNT(*)::text FROM seats WHERE status = 'AVAILABLE') AS available_seats,
+          COALESCE((SELECT SUM(amount)::text FROM payments WHERE status = 'PAID' AND created_at >= date_trunc('month', NOW())), '0') AS tenant_revenue_month,
+          COALESCE((SELECT SUM(amount)::text FROM payments WHERE status IN ('PENDING', 'DUE')), '0') AS tenant_dues,
+          COALESCE((SELECT SUM(amount)::text FROM platform_payments WHERE status = 'PAID' AND created_at >= date_trunc('month', NOW())), '0') AS platform_mrr_month,
+          (SELECT COUNT(*)::text FROM library_contact_leads WHERE created_at >= NOW() - INTERVAL '30 days') AS marketplace_leads_30d,
+          (SELECT COUNT(*)::text FROM library_review_reports WHERE status = 'OPEN') AS open_review_reports,
+          (SELECT COUNT(*)::text FROM offers WHERE status = 'APPROVED' AND (valid_until IS NULL OR valid_until >= NOW())) AS live_offers,
+          (SELECT COUNT(*)::text FROM audit_logs WHERE created_at >= NOW() - INTERVAL '24 hours') AS audit_events_24h
+        `,
+      ),
+      this.pool.query<{
+        id: string;
+        action: string;
+        entity_type: string;
+        created_at: string;
+        actor_name: string | null;
+        library_name: string | null;
+      }>(
+        `
+        SELECT
+          al.id,
+          al.action,
+          al.entity_type,
+          al.created_at::text,
+          u.full_name AS actor_name,
+          l.name AS library_name
+        FROM audit_logs al
+        LEFT JOIN users u ON u.id = al.actor_user_id
+        LEFT JOIN libraries l ON l.id = al.library_id
+        ORDER BY al.created_at DESC
+        LIMIT 12
+        `,
+      ),
+      this.pool.query<{
+        id: string;
+        name: string;
+        city: string;
+        status: string;
+        total_seats: number;
+        available_seats: number;
+        owner_name: string;
+        subscription_status: string | null;
+      }>(
+        `
+        SELECT
+          l.id,
+          l.name,
+          l.city,
+          l.status::text,
+          l.total_seats,
+          l.available_seats,
+          u.full_name AS owner_name,
+          s.status::text AS subscription_status
+        FROM libraries l
+        INNER JOIN users u ON u.id = l.owner_user_id
+        LEFT JOIN subscriptions s ON s.library_id = l.id
+        ORDER BY l.updated_at DESC
+        LIMIT 8
+        `,
+      ),
+    ]);
+
+    return {
+      metrics: metrics.rows[0],
+      recentAudit: recentAudit.rows,
+      recentLibraries: recentLibraries.rows,
+      readableTables: [
+        "users",
+        "libraries",
+        "libraries_public_profiles",
+        "student_assignments",
+        "seats",
+        "payments",
+        "platform_payments",
+        "subscriptions",
+        "offers",
+        "library_contact_leads",
+        "library_reviews",
+        "library_review_reports",
+        "audit_logs",
+      ],
+    };
   }
 
   async getOwnerDashboardSummary(libraryId: string) {

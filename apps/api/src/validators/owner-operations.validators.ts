@@ -2,6 +2,10 @@ import { z } from "zod";
 
 const admissionPaymentStatusSchema = z.enum(["PAID", "UNPAID", "DUE"]);
 const discountTypeSchema = z.enum(["PERCENTAGE", "FLAT"]);
+const marketplaceBannerHrefSchema = z.string().trim().min(1).max(240).refine(
+  (value) => value.startsWith("/") || value.startsWith("#") || value.startsWith("http://") || value.startsWith("https://"),
+  "Banner link must be an internal path, anchor, or full URL",
+);
 
 export const createOwnerStudentBodySchema = z.object({
   fullName: z.string().trim().min(2).max(150),
@@ -66,6 +70,20 @@ export const createOwnerAdmissionBodySchema = z.object({
   aadhaarDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   schoolIdDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
+});
+
+export const updatePlatformMarketplaceSettingsBodySchema = z.object({
+  headline: z.string().trim().min(8).max(180),
+  subheadline: z.string().trim().min(8).max(320),
+  bannerSlides: z.array(
+    z.object({
+      eyebrow: z.string().trim().min(2).max(40),
+      title: z.string().trim().min(8).max(180),
+      cta: z.string().trim().min(2).max(40),
+      href: marketplaceBannerHrefSchema,
+      tone: z.enum(["slate", "emerald", "amber", "blue"]).default("slate"),
+    }),
+  ).min(1).max(4),
 });
 
 export const createOwnerPaymentBodySchema = z.object({

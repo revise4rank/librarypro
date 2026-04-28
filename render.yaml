@@ -5,7 +5,7 @@ services:
     rootDir: .
     plan: free
     buildCommand: npm install && npm run build -w @librarypro/api
-    startCommand: npm run start -w @librarypro/api
+    startCommand: npm run migrate -w @librarypro/api && npm run start -w @librarypro/api
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION

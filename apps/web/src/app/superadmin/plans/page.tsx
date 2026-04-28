@@ -7,8 +7,8 @@ export default function SuperAdminPlansPage() {
     <DashboardShell
       productLabel="LibraryPro"
       panelLabel="Plans"
-      title="Manage SaaS plan catalog and tenant distribution."
-      description="Keep pricing, packaging, and adoption visible so the business model stays easy to operate."
+      title="Platform plans"
+      description="SaaS plan catalog and tenant distribution."
       nav={adminNav}
     >
       <SuperadminPlansManager />
