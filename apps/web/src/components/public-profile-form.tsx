@@ -173,7 +173,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="lp-density-surface grid gap-4">
       <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4">
         <div className="flex flex-wrap gap-2">
           {sections.map(([key, label]) => (

@@ -357,24 +357,24 @@ export function MarketplaceSearch() {
   );
 
   return (
-    <div className="grid gap-6 pb-24 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start xl:pb-0">
+    <div className="grid gap-4 pb-24 xl:grid-cols-[300px_minmax(0,1fr)] xl:items-start xl:pb-0">
       <div className="hidden xl:sticky xl:top-24 xl:block">
         {filterPanel}
       </div>
 
-      <div className="grid gap-6">
-        <section className="sticky top-0 z-20 rounded-[1.6rem] border border-[var(--lp-border)] bg-[rgba(248,252,248,0.94)] p-3 shadow-[0_16px_38px_rgba(93,138,102,0.08)] backdrop-blur sm:rounded-[2rem] sm:p-4">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
+      <div className="grid gap-4">
+        <section className="sticky top-0 z-20 rounded-[1rem] border border-[var(--lp-border)] bg-[rgba(248,252,248,0.96)] p-3 shadow-[0_10px_24px_rgba(93,138,102,0.06)] backdrop-blur">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
             <div className="relative">
-              <div className="rounded-[1.6rem] border border-[var(--lp-border)] bg-white px-4 py-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--lp-accent)]">Marketplace search</p>
+              <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-3">
+                <p className="lp-label text-[var(--lp-accent)]">Marketplace search</p>
                 <input
                   value={query}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search by city, library name, locality"
-                  className="mt-2 w-full bg-transparent text-base font-semibold text-[var(--lp-text)] outline-none sm:text-lg"
+                  className="mt-1 w-full bg-transparent text-base font-semibold text-[var(--lp-text)] outline-none"
                 />
               </div>
               {showSuggestions && suggestions.length > 0 ? (
@@ -392,7 +392,7 @@ export function MarketplaceSearch() {
                       className="flex w-full items-center justify-between rounded-[1rem] px-3 py-3 text-left text-sm font-medium text-[var(--lp-text)] hover:bg-[#f4faf5]"
                     >
                       <span>{item}</span>
-                      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--lp-accent)]">suggestion</span>
+                      <span className="text-xs font-semibold text-[var(--lp-accent)]">suggestion</span>
                     </button>
                   ))}
                 </div>
@@ -402,7 +402,7 @@ export function MarketplaceSearch() {
             <select
               value={sortBy}
               onChange={(event) => setSortBy(event.target.value as SortValue)}
-              className="rounded-[1.2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-4 text-sm font-semibold text-[var(--lp-primary)] outline-none"
+              className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] outline-none"
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -412,10 +412,10 @@ export function MarketplaceSearch() {
             </select>
 
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => void runSearch()} className="rounded-[1.2rem] bg-[var(--lp-primary)] px-5 py-4 text-sm font-semibold text-white">
+              <button onClick={() => void runSearch()} className="lp-button lp-button-primary">
                 Search now
               </button>
-              <button onClick={() => setIsMobileFiltersOpen(true)} className="rounded-[1.2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-4 text-sm font-semibold text-[var(--lp-primary)] xl:hidden">
+              <button onClick={() => setIsMobileFiltersOpen(true)} className="lp-button xl:hidden">
                 Filters
               </button>
             </div>
@@ -423,36 +423,36 @@ export function MarketplaceSearch() {
         </section>
 
         {comparedLibraries.length > 0 ? (
-          <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-5 shadow-[0_18px_44px_rgba(93,138,102,0.08)]">
+          <section className="rounded-[1rem] border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-[0_10px_24px_rgba(93,138,102,0.06)]">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Compare drawer</p>
-                <h2 className="mt-2 text-2xl font-extrabold md:text-3xl">Selected libraries at a glance</h2>
+                <p className="lp-label text-[var(--lp-accent)]">Compare</p>
+                <h2 className="mt-1 text-xl font-extrabold">Selected libraries</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setCompareLibraryIds([])}
-                className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-sm font-semibold text-[var(--lp-primary)]"
+                className="lp-button"
               >
                 Clear compare
               </button>
             </div>
-            <div className="mt-5 grid gap-4 xl:grid-cols-3">
+            <div className="mt-4 grid gap-3 xl:grid-cols-3">
               {comparedLibraries.map((library) => (
-                <div key={library.library_id ?? library.subdomain} className="rounded-[1.6rem] border border-[var(--lp-border)] bg-[#f8fcf8] p-4">
-                  <h3 className="text-xl font-extrabold text-[var(--lp-text)]">{library.library_name}</h3>
+                <div key={library.library_id ?? library.subdomain} className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[#f8fcf8] p-4">
+                  <h3 className="text-base font-extrabold text-[var(--lp-text)]">{library.library_name}</h3>
                   <p className="mt-1 text-sm text-[var(--lp-muted)]">{library.area ?? "Prime Area"}, {library.city}</p>
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <div className="rounded-[1rem] bg-white p-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Price</p>
+                      <p className="lp-stat-label text-[var(--lp-accent)]">Price</p>
                       <p className="mt-2 text-lg font-extrabold">Rs. {library.starting_price}</p>
                     </div>
                     <div className="rounded-[1rem] bg-white p-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Seats</p>
+                      <p className="lp-stat-label text-[var(--lp-accent)]">Seats</p>
                       <p className="mt-2 text-lg font-extrabold">{library.available_seats}</p>
                     </div>
                   </div>
-                  <div className="mt-3 rounded-[1rem] bg-white p-3 text-sm leading-7 text-[var(--lp-muted)]">
+                  <div className="mt-3 rounded-[0.75rem] bg-white p-3 text-sm leading-5 text-[var(--lp-muted)]">
                     {(library.amenities ?? []).slice(0, 3).join(" | ") || "Amenities not available"}
                   </div>
                 </div>
@@ -462,19 +462,19 @@ export function MarketplaceSearch() {
         ) : null}
 
         {shortlistedLibraries.length > 0 ? (
-          <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-5 shadow-[0_18px_44px_rgba(93,138,102,0.08)]">
+          <section className="rounded-[1rem] border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-[0_10px_24px_rgba(93,138,102,0.06)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Saved shortlist</p>
-                <h2 className="mt-2 text-xl font-extrabold sm:text-2xl md:text-3xl">Libraries you saved before choosing a seat</h2>
+                <p className="lp-label text-[var(--lp-accent)]">Shortlist</p>
+                <h2 className="mt-1 text-xl font-extrabold">Saved libraries</h2>
               </div>
-              <button type="button" onClick={() => setShortlistIds([])} className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-sm font-semibold text-[var(--lp-primary)]">
+              <button type="button" onClick={() => setShortlistIds([])} className="lp-button">
                 Clear shortlist
               </button>
             </div>
               <div className="mt-5 grid gap-4 xl:grid-cols-3">
               {shortlistedLibraries.map((library) => (
-                <div key={`short-${library.library_id ?? library.subdomain}`} className="rounded-[1.5rem] border border-[var(--lp-border)] bg-white p-4">
+                <div key={`short-${library.library_id ?? library.subdomain}`} className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white p-4">
                   <p className="text-lg font-extrabold text-[var(--lp-text)]">{library.library_name}</p>
                   <p className="mt-1 text-sm text-[var(--lp-muted)]">{library.area ?? "Prime Area"}, {library.city}</p>
                   <p className="mt-3 text-sm font-semibold text-[var(--lp-primary)]">Rs. {library.starting_price} / month</p>
@@ -484,11 +484,11 @@ export function MarketplaceSearch() {
           </section>
         ) : null}
 
-        <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-5 shadow-[0_18px_44px_rgba(93,138,102,0.08)]">
+        <section className="rounded-[1rem] border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-[0_10px_24px_rgba(93,138,102,0.06)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Marketplace results</p>
-              <h2 className="mt-2 text-xl font-extrabold sm:text-2xl md:text-3xl">Compare libraries, then move to the selected subdomain</h2>
+              <p className="lp-label text-[var(--lp-accent)]">Results</p>
+              <h2 className="mt-1 text-xl font-extrabold">Compare and continue</h2>
             </div>
             <div className="flex flex-wrap gap-3">
               <span className="rounded-full bg-[#edf7ef] px-4 py-2 text-sm font-semibold text-[var(--lp-primary)]">
@@ -534,7 +534,7 @@ export function MarketplaceSearch() {
         ) : null}
         {!loading ? (
           <div className="grid gap-6">
-            <div className="grid gap-6 2xl:grid-cols-2">
+            <div className="grid gap-4 2xl:grid-cols-2">
             {sortedResults.map((library) => {
               const cardKey = library.library_id ?? library.subdomain;
               const gallery = (library.gallery_images?.length ? library.gallery_images : ["/library-gallery/study-hall.svg", "/library-gallery/reading-zone.svg", "/library-gallery/reception.svg"]).map(getGalleryUrl);
@@ -545,17 +545,17 @@ export function MarketplaceSearch() {
               return (
                 <article
                   key={`${library.subdomain}-${library.library_slug}`}
-                  className="overflow-hidden rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(251,254,251,0.95)] shadow-[0_20px_46px_rgba(93,138,102,0.10)]"
+                  className="overflow-hidden rounded-[1rem] border border-[var(--lp-border)] bg-[rgba(251,254,251,0.95)] shadow-[0_12px_28px_rgba(93,138,102,0.08)]"
                 >
-                  <div className="border-b border-[var(--lp-border)] bg-[linear-gradient(135deg,_#dff0e2,_#eef8f0_35%,_#cde7d1)] px-5 py-4">
+                  <div className="border-b border-[var(--lp-border)] bg-[linear-gradient(135deg,_#dff0e2,_#eef8f0_35%,_#cde7d1)] px-4 py-3">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="rounded-full bg-[rgba(255,255,255,0.72)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-primary)]">
-                        Owner public website
+                      <span className="rounded-full bg-[rgba(255,255,255,0.72)] px-3 py-1 text-xs font-semibold text-[var(--lp-primary)]">
+                        Public website
                       </span>
                       <button
                         type="button"
                         onClick={() => toggleCompare(library)}
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] ${isCompared ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "bg-[rgba(255,255,255,0.72)] text-[var(--lp-primary)]"}`}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${isCompared ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "bg-[rgba(255,255,255,0.72)] text-[var(--lp-primary)]"}`}
                       >
                         {isCompared ? "Added to compare" : "Compare"}
                       </button>
@@ -564,16 +564,16 @@ export function MarketplaceSearch() {
                       <button
                         type="button"
                         onClick={() => toggleShortlist(library)}
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] ${isShortlisted ? "bg-[var(--lp-accent)] text-white" : "border border-[rgba(255,255,255,0.72)] bg-white/80 text-[var(--lp-accent)]"}`}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${isShortlisted ? "bg-[var(--lp-accent)] text-white" : "border border-[rgba(255,255,255,0.72)] bg-white/80 text-[var(--lp-accent)]"}`}
                       >
                         {isShortlisted ? "Saved to shortlist" : "Save shortlist"}
                       </button>
                     </div>
 
-                    <div className="mt-5 rounded-[1.6rem] border border-[rgba(255,255,255,0.46)] bg-[rgba(255,255,255,0.46)] p-4">
+                    <div className="mt-4 rounded-[1rem] border border-[rgba(255,255,255,0.46)] bg-[rgba(255,255,255,0.46)] p-3">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Subdomain preview</p>
+                          <p className="lp-stat-label text-[var(--lp-accent)]">Website</p>
                           <p className="mt-2 break-all text-base font-extrabold text-[var(--lp-text)] sm:text-lg">{formatLibraryHost(library.subdomain)}</p>
                         </div>
                         <div className="flex gap-2">
@@ -586,22 +586,22 @@ export function MarketplaceSearch() {
                         </div>
                       </div>
                       <div className="mt-4 overflow-hidden rounded-[1.3rem] bg-[rgba(255,255,255,0.76)]">
-                        <img src={gallery[activeSlide]} alt={`${library.library_name} preview`} className="h-48 w-full object-cover" />
-                        <div className="p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-primary)]">
+                        <img src={gallery[activeSlide]} alt={`${library.library_name} preview`} className="h-40 w-full object-cover" />
+                        <div className="p-3">
+                          <p className="text-xs font-semibold text-[var(--lp-primary)]">
                             Preview {activeSlide + 1} of {gallery.length}
                           </p>
-                          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                          <div className="mt-3 grid gap-2 sm:grid-cols-3">
                             <div className="rounded-[1rem] bg-white/80 p-3">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Seats</p>
+                              <p className="lp-stat-label text-[var(--lp-accent)]">Seats</p>
                               <p className="mt-2 text-sm font-bold text-[var(--lp-text)]">{library.available_seats} visible now</p>
                             </div>
                             <div className="rounded-[1rem] bg-white/80 p-3">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Entry</p>
+                              <p className="lp-stat-label text-[var(--lp-accent)]">Entry</p>
                               <p className="mt-2 text-sm font-bold text-[var(--lp-text)]">QR + login</p>
                             </div>
                             <div className="rounded-[1rem] bg-white/80 p-3">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Hours</p>
+                              <p className="lp-stat-label text-[var(--lp-accent)]">Hours</p>
                               <p className="mt-2 text-sm font-bold text-[var(--lp-text)]">{library.business_hours ?? "Daily"}</p>
                             </div>
                           </div>
@@ -610,12 +610,12 @@ export function MarketplaceSearch() {
                     </div>
                   </div>
 
-                  <div className="p-5 md:p-6">
+                  <div className="p-4">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
-                        <h3 className="text-2xl font-extrabold text-[var(--lp-text)] sm:text-3xl">{library.library_name}</h3>
+                        <h3 className="text-xl font-extrabold text-[var(--lp-text)]">{library.library_name}</h3>
                         <p className="mt-1 text-sm text-[var(--lp-muted)]">{library.area ?? "Prime Area"}, {library.city}</p>
-                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--lp-accent)]">
+                        <p className="mt-1 text-xs font-semibold text-[var(--lp-accent)]">
                           {formatDistance(library.distance_km) ?? library.landmark ?? "Marketplace listing"}
                         </p>
                       </div>
@@ -625,34 +625,34 @@ export function MarketplaceSearch() {
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-2">
-                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-primary)]">
+                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-1.5 text-xs font-semibold text-[var(--lp-primary)]">
                         Verified listing
                       </span>
-                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-primary)]">
+                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-1.5 text-xs font-semibold text-[var(--lp-primary)]">
                         QR enabled
                       </span>
-                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-primary)]">
+                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-1.5 text-xs font-semibold text-[var(--lp-primary)]">
                         Owner managed website
                       </span>
                     </div>
 
                     <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                       <div className="rounded-[1.2rem] bg-[#f4faf5] p-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Trust score</p>
+                        <p className="lp-stat-label text-[var(--lp-accent)]">Trust</p>
                         <p className="mt-2 text-lg font-extrabold text-[var(--lp-text)]">{Number(library.rating ?? 0).toFixed(1)}/5</p>
                       </div>
                       <div className="rounded-[1.2rem] bg-[#f4faf5] p-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Reviews</p>
+                        <p className="lp-stat-label text-[var(--lp-accent)]">Reviews</p>
                         <p className="mt-2 text-lg font-extrabold text-[var(--lp-text)]">{library.reviews ?? 0}</p>
                       </div>
                       <div className="rounded-[1.2rem] bg-[#f4faf5] p-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Quietness</p>
+                        <p className="lp-stat-label text-[var(--lp-accent)]">Quietness</p>
                         <p className="mt-2 text-lg font-extrabold text-[var(--lp-text)]">{library.quietness ?? "High"}</p>
                       </div>
                     </div>
 
                     <div className="mt-6 grid gap-4 md:grid-cols-[auto_1fr] md:items-end">
-                      <p className="text-4xl font-extrabold text-[var(--lp-text)]">
+                      <p className="text-2xl font-extrabold text-[var(--lp-text)]">
                         Rs. {library.starting_price}
                         <span className="ml-1 text-sm font-medium text-[var(--lp-muted)]">/ month</span>
                       </p>
@@ -661,10 +661,10 @@ export function MarketplaceSearch() {
                       </div>
                     </div>
 
-                    <p className="mt-4 text-sm leading-7 text-[var(--lp-muted)]">{library.hero_tagline ?? library.hero_title}</p>
+                    <p className="mt-4 line-clamp-2 text-sm leading-6 text-[var(--lp-muted)]">{library.hero_tagline ?? library.hero_title}</p>
                     {library.latest_review_snippet ? (
-                      <div className="mt-4 rounded-[1.25rem] border border-[var(--lp-border)] bg-[#fffdf8] px-4 py-4 text-sm leading-7 text-[var(--lp-muted)]">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Latest student review</p>
+                      <div className="mt-4 rounded-[0.75rem] border border-[var(--lp-border)] bg-[#fffdf8] px-4 py-3 text-sm leading-6 text-[var(--lp-muted)]">
+                        <p className="lp-stat-label text-[var(--lp-accent)]">Latest review</p>
                         <p className="mt-2">&ldquo;{library.latest_review_snippet}&rdquo;</p>
                       </div>
                     ) : null}
@@ -678,10 +678,10 @@ export function MarketplaceSearch() {
                     </div>
 
                     <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                      <Link href={`/libraries/${library.library_slug}`} className="rounded-[1.25rem] bg-[var(--lp-primary)] px-5 py-3.5 text-center text-sm font-semibold text-white">
+                      <Link href={`/libraries/${library.library_slug}`} className="lp-button lp-button-primary">
                         View Library Details
                       </Link>
-                      <Link href={`/library-site?slug=${library.subdomain}`} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-3.5 text-center text-sm font-semibold text-[var(--lp-primary)]">
+                      <Link href={`/library-site?slug=${library.subdomain}`} className="lp-button">
                         Go To Library Subdomain
                       </Link>
                     </div>
@@ -728,7 +728,7 @@ export function MarketplaceSearch() {
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--lp-border)] bg-[rgba(248,252,248,0.96)] p-3 shadow-[0_-10px_30px_rgba(93,138,102,0.10)] backdrop-blur xl:hidden">
-        <div className="mx-auto grid max-w-[1540px] grid-cols-3 gap-2 sm:flex sm:gap-3">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-3 gap-2 sm:flex sm:gap-3">
           <button onClick={() => setIsMobileFiltersOpen(true)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">
             Open filters
           </button>
@@ -743,10 +743,10 @@ export function MarketplaceSearch() {
 
       {isMobileFiltersOpen ? (
         <div className="fixed inset-0 z-50 bg-[rgba(18,29,21,0.24)] px-3 py-4 xl:hidden">
-          <div className="mx-auto flex max-h-[calc(100vh-2rem)] max-w-[1540px] flex-col overflow-hidden rounded-[2rem] border border-[var(--lp-border)] bg-[#f8fcf8] shadow-[0_20px_60px_rgba(18,29,21,0.16)]">
+          <div className="mx-auto flex max-h-[calc(100vh-2rem)] max-w-[1280px] flex-col overflow-hidden rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] shadow-[0_20px_60px_rgba(18,29,21,0.16)]">
             <div className="flex items-center justify-between border-b border-[var(--lp-border)] px-5 py-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-accent)]">Mobile filters</p>
+                <p className="lp-label text-[var(--lp-accent)]">Mobile filters</p>
                 <h3 className="mt-1 text-xl font-extrabold text-[var(--lp-text)]">Refine marketplace search</h3>
               </div>
               <button

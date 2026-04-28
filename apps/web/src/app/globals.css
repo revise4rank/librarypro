@@ -14,6 +14,7 @@
   --lp-primary: #c96f40;
   --lp-primary-soft: #f4e3d8;
   --lp-accent: #2d7d76;
+  --lp-accent-strong: #176b63;
   --lp-accent-soft: #e3f1ee;
   --lp-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
   --lp-shadow-soft: 0 2px 8px rgba(15, 23, 42, 0.04);
@@ -127,10 +128,11 @@ button:disabled {
 }
 
 .lp-label {
-  font-size: 0.64rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--lp-muted);
 }
 
 .lp-title-xl {
@@ -163,6 +165,64 @@ button:disabled {
   box-shadow: var(--lp-shadow-soft);
 }
 
+.lp-button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid var(--lp-border);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--lp-text);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.lp-button:hover {
+  background: var(--lp-surface-muted);
+  border-color: var(--lp-border-strong);
+}
+
+.lp-button.justify-start {
+  justify-content: flex-start;
+}
+
+.lp-button-primary {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.lp-button-primary:hover {
+  background: #1e293b;
+}
+
+.lp-button-accent {
+  border-color: var(--lp-accent-soft);
+  background: var(--lp-accent-soft);
+  color: var(--lp-accent);
+}
+
+.lp-stat-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--lp-muted);
+}
+
+.lp-stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--lp-text);
+}
+
 .lp-header-actions {
   gap: 0.5rem;
 }
@@ -182,6 +242,47 @@ button:disabled {
 
 .lp-header-actions > *:hover {
   background: var(--lp-surface-muted);
+}
+
+.lp-density-surface [class*="rounded-[1.25rem]"],
+.lp-density-surface [class*="rounded-[1.5rem]"],
+.lp-density-surface [class*="rounded-[1.75rem]"],
+.lp-density-surface [class*="rounded-[2rem]"],
+.lp-density-surface [class*="rounded-[24px]"],
+.lp-density-surface [class*="rounded-[28px]"],
+.lp-density-surface [class*="rounded-[32px]"] {
+  border-radius: 0.75rem !important;
+}
+
+.lp-density-surface [class*="p-5"],
+.lp-density-surface [class*="p-6"],
+.lp-density-surface [class*="p-7"],
+.lp-density-surface [class*="p-8"] {
+  padding: 1rem !important;
+}
+
+.lp-density-surface [class*="gap-6"] {
+  gap: 1rem !important;
+}
+
+.lp-density-surface [class*="tracking-[0.16em]"],
+.lp-density-surface [class*="tracking-[0.18em]"],
+.lp-density-surface [class*="tracking-[0.2em]"],
+.lp-density-surface [class*="tracking-[0.22em]"],
+.lp-density-surface [class*="tracking-[0.24em]"],
+.lp-density-surface [class*="tracking-[0.25em]"],
+.lp-density-surface [class*="tracking-[0.28em]"],
+.lp-density-surface [class*="tracking-[0.32em]"] {
+  letter-spacing: 0.02em !important;
+}
+
+.lp-density-surface [class*="uppercase"][class*="tracking-"] {
+  text-transform: none !important;
+}
+
+.lp-density-surface [class*="text-2xl"] {
+  font-size: 1.35rem !important;
+  line-height: 1.12 !important;
 }
 
 .animate-fade-up {
@@ -209,5 +310,48 @@ button:disabled {
   .animate-fade-up,
   .animate-fade-up-delay {
     animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 13px;
+  }
+
+  .lp-title-xl {
+    font-size: clamp(1.9rem, 12vw, 3rem);
+  }
+
+  .lp-title-lg {
+    font-size: clamp(1.45rem, 8vw, 2.1rem);
+  }
+
+  [class*="rounded-[2"],
+  [class*="rounded-[3"] {
+    border-radius: 0.9rem !important;
+  }
+
+  [class*="p-8"],
+  [class*="p-10"],
+  [class*="p-12"] {
+    padding: 1.25rem !important;
+  }
+
+  [class*="py-20"],
+  [class*="py-24"] {
+    padding-top: 3.5rem !important;
+    padding-bottom: 3.5rem !important;
+  }
+
+  [class*="text-5xl"],
+  [class*="text-6xl"],
+  [class*="text-7xl"] {
+    font-size: clamp(2.2rem, 13vw, 3.5rem) !important;
+    line-height: 0.98 !important;
+  }
+
+  [class*="tracking-[0.2"],
+  [class*="tracking-[0.3"] {
+    letter-spacing: 0.08em !important;
   }
 }

@@ -128,10 +128,10 @@ function getClusterType(col: number) {
 }
 
 function getPlannerColumnWidth(columns: number) {
-  if (columns >= 14) return 72;
-  if (columns >= 12) return 78;
-  if (columns >= 10) return 86;
-  return 96;
+  if (columns >= 14) return 84;
+  if (columns >= 12) return 88;
+  if (columns >= 10) return 94;
+  return 104;
 }
 
 function InlineHelp({ title, points }: { title: string; points: string[] }) {
@@ -2129,18 +2129,18 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`group relative flex h-full w-full flex-col items-center overflow-hidden rounded-[1rem] border px-2 py-2 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(15,23,42,0.10)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`group relative flex h-full w-full min-w-0 flex-col items-center overflow-hidden rounded-[0.8rem] border px-2 py-2 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(15,23,42,0.10)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
-                                  <div className="flex w-full items-center justify-between gap-1">
-                                    <span className="truncate text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
+                                  <div className="flex w-full min-w-0 items-center justify-between gap-1">
+                                    <span className="min-w-0 truncate text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
                                     <SeatStatusGlyph status={seat.status} />
                                   </div>
-                                  <div className="mt-1 flex min-h-[3rem] w-full items-center justify-center rounded-[0.95rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
+                                  <div className="mt-1 flex min-h-[2.75rem] w-full items-center justify-center rounded-[0.7rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
                                     <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
                                   </div>
-                                  <div className="mt-1 flex w-full items-center justify-between gap-1">
-                                    <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.12em] ${
+                                  <div className="mt-1 flex w-full min-w-0 items-center justify-between gap-1">
+                                    <span className={`max-w-[2.45rem] truncate rounded-full px-1.5 py-0.5 text-[8px] font-black ${
                                       seat.status === "AVAILABLE"
                                         ? "bg-emerald-100 text-emerald-700"
                                         : seat.status === "OCCUPIED"
@@ -2152,8 +2152,8 @@ export function OwnerSeatsManager() {
                                       {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Live" : seat.status === "RESERVED" ? "Hold" : "Off"}
                                     </span>
                                     {seat.student_name ? (
-                                      <p className="rounded-full bg-[var(--lp-accent-soft)] px-2 py-0.5 text-[7px] font-black text-[var(--lp-accent)] shadow-[0_6px_12px_rgba(210,114,61,0.10)]">{formatStudentInitials(seat.student_name)}</p>
-                                    ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Tap</p>}
+                                      <p className="max-w-[2rem] truncate rounded-full bg-[var(--lp-accent-soft)] px-1.5 py-0.5 text-[8px] font-black text-[var(--lp-accent)] shadow-[0_6px_12px_rgba(210,114,61,0.10)]">{formatStudentInitials(seat.student_name)}</p>
+                                    ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[8px] font-bold text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Tap</p>}
                                   </div>
                                 </button>
                               ) : (

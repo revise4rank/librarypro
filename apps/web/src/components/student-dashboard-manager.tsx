@@ -219,7 +219,7 @@ export function StudentDashboardManager() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {summaryCards.map((card) => (
@@ -233,47 +233,47 @@ export function StudentDashboardManager() {
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <DashboardCard title="Access center" subtitle="Entry readiness, billing, and seat context">
-          <div className="grid gap-4">
-            <div className="rounded-[1.5rem] border border-cyan-200 bg-cyan-50 p-5">
-              <p className="text-sm font-semibold text-slate-800">
+          <div className="grid gap-3">
+            <div className="rounded-[0.75rem] border border-cyan-200 bg-cyan-50 p-4">
+              <p className="text-sm font-semibold leading-5 text-slate-800">
                 Latest payment {data.latestPaymentDate?.slice(0, 10) ?? "-"} | Upcoming due {data.upcomingDueDate ?? "-"} | Current due Rs. {data.dueTotal}
               </p>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Seat</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">{data.assignment?.seat_number ?? "-"}</p>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+                <p className="lp-stat-label">Seat</p>
+                <p className="mt-2 text-xl font-black text-slate-950">{data.assignment?.seat_number ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">{data.assignment?.plan_name ?? "No active plan"}</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">WiFi</p>
-                <p className="mt-3 text-base font-black text-slate-950">{data.library?.wifi_name ?? "-"}</p>
+              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+                <p className="lp-stat-label">WiFi</p>
+                <p className="mt-2 text-base font-black text-slate-950">{data.library?.wifi_name ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">{data.library?.wifi_password ?? "-"}</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Live status</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">{liveStatus}</p>
+              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+                <p className="lp-stat-label">Live status</p>
+                <p className="mt-2 text-xl font-black text-slate-950">{liveStatus}</p>
                 <p className="mt-2 text-sm text-slate-500">{activeLibrary?.library_name ?? data.library?.library_name ?? "Student workspace"}</p>
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Current streak</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">{data.focusProgress.streakDays} days</p>
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+                <p className="lp-stat-label">Streak</p>
+                <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.streakDays} days</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Inside now</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">{data.focusProgress.currentlyInside ? "Yes" : "No"}</p>
+              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+                <p className="lp-stat-label">Inside</p>
+                <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.currentlyInside ? "Yes" : "No"}</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Attendance score</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">{data.focusProgress.attendanceScore}%</p>
+              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+                <p className="lp-stat-label">Attendance</p>
+                <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.attendanceScore}%</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Next due</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">{data.upcomingDueDate ?? "-"}</p>
+              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+                <p className="lp-stat-label">Next due</p>
+                <p className="mt-2 text-xl font-black text-slate-950">{data.upcomingDueDate ?? "-"}</p>
               </div>
             </div>
           </div>
@@ -281,25 +281,25 @@ export function StudentDashboardManager() {
 
         <DashboardCard title="Quick actions" subtitle="Student actions should be obvious and immediate">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Link href="/student/focus" className="rounded-[1.25rem] border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-4 text-sm font-bold text-[var(--lp-accent-strong)]">
+            <Link href="/student/focus" className="lp-button lp-button-accent justify-start">
               Open focus tracker
             </Link>
-            <Link href="/student/syllabus" className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800">
+            <Link href="/student/syllabus" className="lp-button justify-start">
               Open syllabus tracker
             </Link>
-            <Link href="/student/revisions" className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800">
+            <Link href="/student/revisions" className="lp-button justify-start">
               Open revision queue
             </Link>
-            <Link href="/student/feed" className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800">
+            <Link href="/student/feed" className="lp-button justify-start">
               Open library feed
             </Link>
-            <Link href="/student/focus-mode" className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800">
+            <Link href="/student/focus-mode" className="lp-button justify-start">
               Start focus mode
             </Link>
-            <Link href="/student/qr" className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800">
+            <Link href="/student/qr" className="lp-button justify-start">
               Open QR entry pass
             </Link>
-            <Link href="/student/payments" className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800">
+            <Link href="/student/payments" className="lp-button justify-start">
               Pay fees now
             </Link>
           </div>

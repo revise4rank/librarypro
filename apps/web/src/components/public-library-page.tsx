@@ -85,7 +85,7 @@ export function PublicLibraryPage({
           backgroundPosition: "center",
         }}
       >
-        <div className="mx-auto max-w-[1480px] px-4 py-6 md:px-8">
+        <div className="mx-auto max-w-[1280px] px-4 py-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               {brandLogoUrl ? (
@@ -97,14 +97,11 @@ export function PublicLibraryPage({
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-[var(--lp-primary)]">
-                  Published Library Website
+                <p className="lp-label text-[var(--lp-primary)]">
+                  Published website
                 </p>
                 <p className="mt-2 break-all text-sm text-[var(--lp-muted)]">
                   {profile.custom_domain || formatLibraryHost(profile.subdomain)}
-                </p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--lp-accent)]">
-                  Premium library subdomain website
                 </p>
               </div>
             </div>
@@ -130,18 +127,18 @@ export function PublicLibraryPage({
             <NavLink href={links.contact} active={page === "contact"}>Contact</NavLink>
           </div>
 
-          <div className="mt-12 grid gap-10 xl:grid-cols-[1.05fr_0.95fr] xl:items-end">
+          <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr] xl:items-end">
             <div>
-              <div className="inline-flex rounded-full bg-[var(--lp-surface)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--lp-primary)]">
+              <div className="inline-flex rounded-full bg-[var(--lp-surface)] px-4 py-2 text-xs font-semibold text-[var(--lp-primary)]">
                 {profile.area ?? "Prime Area"}, {profile.city}
               </div>
-              <h1 className="mt-6 max-w-4xl text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-6xl">
+              <h1 className="mt-4 max-w-4xl text-[clamp(2rem,7vw,4.2rem)] font-extrabold leading-[1.02] tracking-tight">
                 {profile.hero_title}
               </h1>
-              <p className="mt-6 max-w-3xl text-sm leading-7 text-[var(--lp-muted)] sm:text-base sm:leading-8">
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--lp-muted)] sm:text-base">
                 {profile.hero_tagline ?? profile.about_text ?? "Owner-managed library website with student login, QR check-in, notices, and premium public branding."}
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <ContactActions
                   slugOrSubdomain={profile.subdomain}
                   phone={profile.contact_phone}
@@ -149,18 +146,18 @@ export function PublicLibraryPage({
                   sourcePage="LIBRARY_SITE"
                 />
                 {showStudentActions ? (
-                  <Link href={`/student/qr?library=${profile.subdomain}`} className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-6 py-3 text-sm font-semibold text-[var(--lp-primary)]">
+                  <Link href={`/student/qr?library=${profile.subdomain}`} className="lp-button">
                     Student QR check-in
                   </Link>
                 ) : null}
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-2">
               {highlights.map((item) => (
-                <div key={item.label} className="rounded-[1.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">{item.label}</p>
-                  <p className="mt-3 text-2xl font-black">{item.value}</p>
+                <div key={item.label} className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4">
+                  <p className="lp-stat-label text-[var(--lp-accent)]">{item.label}</p>
+                  <p className="mt-2 text-xl font-black">{item.value}</p>
                 </div>
               ))}
             </div>
@@ -168,70 +165,67 @@ export function PublicLibraryPage({
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1480px] px-4 py-8 md:px-8 xl:py-12">
+      <section className="mx-auto max-w-[1280px] px-4 py-6 xl:py-10">
         {page === "home" ? (
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-            <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
-              <h2 className="text-2xl font-extrabold">About {profile.library_name}</h2>
-              <p className="mt-4 text-sm leading-8 text-[var(--lp-muted)]">
+            <section className="rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
+              <h2 className="text-xl font-extrabold">About {profile.library_name}</h2>
+              <p className="mt-3 line-clamp-4 text-sm leading-6 text-[var(--lp-muted)]">
                 {profile.about_text ?? "This premium library website is managed directly by the owner and gives students a single place to view facilities, contact details, pricing, login, and QR check-in access."}
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap gap-2">
                 {(profile.amenities ?? []).map((amenity) => (
-                  <span key={amenity} className="rounded-full bg-[#edf5ee] px-4 py-2 text-sm font-medium text-[var(--lp-primary)]">
+                  <span key={amenity} className="rounded-full bg-[#edf5ee] px-3 py-1.5 text-xs font-medium text-[var(--lp-primary)]">
                     {amenity}
                   </span>
                 ))}
               </div>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                <div className="rounded-[1.5rem] bg-[#edf7ef] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Offer</p>
-                  <p className="mt-2 text-lg font-black text-slate-950">{visibleOffer ?? "Contact owner for current offers"}</p>
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <div className="rounded-[0.75rem] bg-[#edf7ef] p-4">
+                  <p className="lp-stat-label text-[var(--lp-accent)]">Offer</p>
+                  <p className="mt-2 text-base font-black text-slate-950">{visibleOffer ?? "Contact owner for current offers"}</p>
                   {profile.offer_expires_at ? <p className="mt-2 text-xs font-semibold text-slate-500">Valid till {profile.offer_expires_at.slice(0, 10)}</p> : null}
                 </div>
-                <div className="rounded-[1.5rem] bg-[#f4faf5] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Landmark</p>
-                  <p className="mt-2 text-lg font-black text-slate-950">{profile.landmark ?? "Local landmark shared by owner"}</p>
+                <div className="rounded-[0.75rem] bg-[#f4faf5] p-4">
+                  <p className="lp-stat-label text-[var(--lp-accent)]">Landmark</p>
+                  <p className="mt-2 text-base font-black text-slate-950">{profile.landmark ?? "Local landmark shared by owner"}</p>
                 </div>
-                <div className="rounded-[1.5rem] bg-[#edf7ef] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Address</p>
+                <div className="rounded-[0.75rem] bg-[#edf7ef] p-4">
+                  <p className="lp-stat-label text-[var(--lp-accent)]">Address</p>
                   <p className="mt-2 text-sm font-bold text-slate-950">{profile.address}</p>
                 </div>
               </div>
             </section>
 
-            <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
-              <h2 className="text-2xl font-extrabold">Student actions on this website</h2>
-              <div className="mt-6 grid gap-3">
-                <div className="rounded-[1.25rem] border border-[rgba(47,143,136,0.2)] bg-[rgba(47,143,136,0.1)] px-4 py-4 text-left text-sm font-semibold text-[var(--lp-accent)]">
+            <section className="rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
+              <h2 className="text-xl font-extrabold">Student actions</h2>
+              <div className="mt-4 grid gap-2">
+                <div className="rounded-[0.75rem] border border-[rgba(47,143,136,0.2)] bg-[rgba(47,143,136,0.1)] px-4 py-3 text-left text-sm font-semibold text-[var(--lp-accent)]">
                   Ask about seat availability
                 </div>
-                <Link href={`/student/login?library=${profile.subdomain}`} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-4 text-sm font-semibold text-[var(--lp-primary)]">
+                <Link href={`/student/login?library=${profile.subdomain}`} className="lp-button">
                   Login with owner-issued ID
                 </Link>
-                <Link href={`/student/qr?library=${profile.subdomain}`} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-4 text-sm font-semibold text-[var(--lp-primary)]">
+                <Link href={`/student/qr?library=${profile.subdomain}`} className="lp-button">
                   Open QR and check-in flow
                 </Link>
-                <Link href={links.contact} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-4 text-sm font-semibold text-[var(--lp-primary)]">
+                <Link href={links.contact} className="lp-button">
                   Contact owner directly
                 </Link>
-              </div>
-              <div className="mt-5 rounded-[1.4rem] bg-[#fff4ea] p-4 text-sm leading-7 text-[var(--lp-muted)]">
-                Premium plan libraries get this full website plus owner control panel, student login, QR check-in, notices, payments, and daily management from the same subdomain.
               </div>
             </section>
           </div>
         ) : null}
 
         {page === "about" ? (
-          <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
-            <h2 className="text-3xl font-extrabold">About the library</h2>
-            <p className="mt-5 max-w-4xl text-base leading-8 text-[var(--lp-muted)]">
+          <section className="rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
+            <h2 className="text-2xl font-extrabold">About the library</h2>
+            <p className="mt-4 max-w-4xl text-sm leading-6 text-[var(--lp-muted)]">
               {profile.about_text ?? "This library is listed on LibraryPro and managed through a dedicated subdomain website. Students can use the same library website for admission, login, QR check-in, notices, and daily updates."}
             </p>
-            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {(profile.amenities ?? []).map((amenity) => (
-                <div key={amenity} className="rounded-[1.5rem] border border-[var(--lp-border)] bg-[#f5faf6] p-5">
+                <div key={amenity} className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[#f5faf6] p-4">
                   <p className="text-sm font-bold text-[var(--lp-text)]">{amenity}</p>
                 </div>
               ))}
@@ -241,27 +235,27 @@ export function PublicLibraryPage({
 
         {page === "pricing" ? (
           <section className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
-            <div className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
-              <h2 className="text-3xl font-extrabold">Pricing and offers</h2>
-              <div className="mt-6 rounded-[1.75rem] bg-[linear-gradient(135deg,_#fff1e3,_#fff8ef_55%,_#e5f2ef)] p-6">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--lp-accent)]">Monthly plan</p>
-                <p className="mt-3 text-5xl font-black text-[var(--lp-text)]">Rs. {profile.starting_price}</p>
+            <div className="rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
+              <h2 className="text-2xl font-extrabold">Pricing and offers</h2>
+              <div className="mt-4 rounded-[1rem] bg-[linear-gradient(135deg,_#fff1e3,_#fff8ef_55%,_#e5f2ef)] p-5">
+                <p className="lp-stat-label text-[var(--lp-accent)]">Monthly plan</p>
+                <p className="mt-2 text-4xl font-black text-[var(--lp-text)]">Rs. {profile.starting_price}</p>
                 <p className="mt-2 text-sm text-[var(--lp-muted)]">Starting monthly seat pricing shared by the owner.</p>
-                <div className="mt-5 rounded-[1.2rem] bg-white/70 px-4 py-4 text-sm font-semibold text-[var(--lp-primary)]">
+                <div className="mt-4 rounded-[0.75rem] bg-white/70 px-4 py-3 text-sm font-semibold text-[var(--lp-primary)]">
                   {visibleOffer ?? "Contact the owner for active discount offers and seat combinations."}
                 </div>
               </div>
             </div>
-            <div className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
-              <h2 className="text-2xl font-extrabold">What students get</h2>
-                <div className="mt-5 grid gap-3">
+            <div className="rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
+              <h2 className="text-xl font-extrabold">What students get</h2>
+                <div className="mt-4 grid gap-2">
                 {[
                   "Owner-issued student login credentials",
                   "Seat assignment and validity tracking",
                   "QR-based check-in and attendance register",
                   "Notices, WiFi details, and payment reminders",
                 ].map((item) => (
-                  <div key={item} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[#f5faf6] px-4 py-4 text-sm font-semibold text-[var(--lp-text)]">
+                  <div key={item} className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[#f5faf6] px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">
                     {item}
                   </div>
                 ))}
@@ -272,32 +266,32 @@ export function PublicLibraryPage({
 
         {page === "contact" ? (
           <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-            <div className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
-              <h2 className="text-3xl font-extrabold">Contact the owner</h2>
-              <div className="mt-6 grid gap-4">
-                <div className="rounded-[1.5rem] bg-[#f5faf6] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Contact person</p>
+            <div className="rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
+              <h2 className="text-2xl font-extrabold">Contact the owner</h2>
+              <div className="mt-4 grid gap-3">
+                <div className="rounded-[0.75rem] bg-[#f5faf6] p-4">
+                  <p className="lp-stat-label text-[var(--lp-accent)]">Contact person</p>
                   <p className="mt-2 text-lg font-black">{profile.contact_name ?? profile.library_name}</p>
                 </div>
-                <div className="rounded-[1.5rem] bg-[#f5faf6] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Phone</p>
+                <div className="rounded-[0.75rem] bg-[#f5faf6] p-4">
+                  <p className="lp-stat-label text-[var(--lp-accent)]">Phone</p>
                   <p className="mt-2 text-lg font-black">{profile.contact_phone ?? "Contact available on request"}</p>
                 </div>
-                <div className="rounded-[1.5rem] bg-[#f5faf6] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Email</p>
+                <div className="rounded-[0.75rem] bg-[#f5faf6] p-4">
+                  <p className="lp-stat-label text-[var(--lp-accent)]">Email</p>
                   <p className="mt-2 text-lg font-black">{profile.email ?? "Email not published"}</p>
                 </div>
-                <div className="rounded-[1.5rem] bg-[#f5faf6] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-accent)]">Address</p>
+                <div className="rounded-[0.75rem] bg-[#f5faf6] p-4">
+                  <p className="lp-stat-label text-[var(--lp-accent)]">Address</p>
                   <p className="mt-2 text-sm font-bold">{profile.address}</p>
                 </div>
               </div>
             </div>
-            <div className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
-              <h2 className="text-2xl font-extrabold">Photo gallery</h2>
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
+              <h2 className="text-xl font-extrabold">Photo gallery</h2>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
                 {gallery.map((item, index) => (
-                  <div key={`${item}-${index}`} className="aspect-[16/10] overflow-hidden rounded-[1.75rem] bg-[linear-gradient(135deg,_#dff0e2,_#eef8f0_35%,_#cfe7d4)]">
+                  <div key={`${item}-${index}`} className="aspect-[16/10] overflow-hidden rounded-[0.75rem] bg-[linear-gradient(135deg,_#dff0e2,_#eef8f0_35%,_#cfe7d4)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={item} alt={profile.library_name} className="h-full w-full object-cover" />
                   </div>
@@ -308,16 +302,16 @@ export function PublicLibraryPage({
         ) : null}
 
         {page === "home" ? (
-          <section className="mt-6 rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
+          <section className="mt-5 rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-2xl font-extrabold">Photo gallery</h2>
+                <h2 className="text-xl font-extrabold">Photo gallery</h2>
                 <p className="mt-1 text-sm text-[var(--lp-muted)]">Owner-managed visual showcase</p>
               </div>
             </div>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               {gallery.map((item, index) => (
-                <div key={`${item}-${index}`} className="aspect-[16/10] overflow-hidden rounded-[1.75rem] bg-[linear-gradient(135deg,_#dff0e2,_#eef8f0_35%,_#cfe7d4)]">
+                <div key={`${item}-${index}`} className="aspect-[16/10] overflow-hidden rounded-[0.75rem] bg-[linear-gradient(135deg,_#dff0e2,_#eef8f0_35%,_#cfe7d4)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item} alt={profile.library_name} className="h-full w-full object-cover" />
                 </div>
@@ -326,10 +320,10 @@ export function PublicLibraryPage({
           </section>
         ) : null}
 
-        <section className="mt-6 rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
+        <section className="mt-5 rounded-[1rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_8px_20px_rgba(93,138,102,0.06)]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-2xl font-extrabold">Student reviews</h2>
+              <h2 className="text-xl font-extrabold">Student reviews</h2>
               <p className="mt-1 text-sm text-[var(--lp-muted)]">
                 Only joined students can post reviews. Marketplace trust score updates from these reviews.
               </p>

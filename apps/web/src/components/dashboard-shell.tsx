@@ -158,7 +158,7 @@ export function DashboardShell({
   }
 
   return (
-    <main className="lp-page-frame text-[var(--lp-text)]">
+    <main className="lp-page-frame lp-density-surface text-[var(--lp-text)]">
       <div className={`grid min-h-screen ${sidebarExpanded ? "lg:grid-cols-[192px_minmax(0,1fr)]" : "lg:grid-cols-[64px_minmax(0,1fr)]"}`}>
         <aside
           onMouseEnter={() => setDesktopHovered(true)}
@@ -331,6 +331,14 @@ export function DashboardShell({
           }`}
         >
           <div className="grid gap-2">
+            {actions ? (
+              <div className="grid gap-2 border-b border-[var(--lp-border)] pb-2">
+                <p className="px-1 text-xs font-semibold text-[var(--lp-muted)]">Page actions</p>
+                <div className="grid gap-2 [&>*]:justify-center [&>*]:rounded-lg [&>*]:border [&>*]:border-[var(--lp-border)] [&>*]:bg-white [&>*]:px-3 [&>*]:py-2 [&>*]:text-sm [&>*]:font-semibold [&>*]:text-[var(--lp-text)]">
+                  {actions}
+                </div>
+              </div>
+            ) : null}
             {nav.slice(5).map((item) => {
               const active = pathname === item.href;
               const Icon = navIconFor(item);
