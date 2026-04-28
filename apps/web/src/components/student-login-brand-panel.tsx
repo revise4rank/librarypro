@@ -32,6 +32,11 @@ export function StudentLoginBrandPanel({
   const [brand, setBrand] = useState<BrandState>(initialBrand);
 
   useEffect(() => {
+    if (!showLibraryLink || !libraryKey || libraryKey === "student-portal") {
+      setBrand(initialBrand);
+      return;
+    }
+
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 2500);
 
@@ -53,7 +58,7 @@ export function StudentLoginBrandPanel({
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [libraryKey]);
+  }, [initialBrand, libraryKey, showLibraryLink]);
 
   const fallbackInitials = useMemo(
     () => (brand.library_name || titleCaseLibraryKey(libraryKey)).slice(0, 2).toUpperCase(),
