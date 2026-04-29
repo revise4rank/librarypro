@@ -296,7 +296,11 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                   placeholder="Logo image URL"
                 />
                 <div className="mt-3">
-                  <PublicProfileImageUpload onUploaded={(url) => updateValue("brandLogoUrl", url)} />
+                  <PublicProfileImageUpload
+                    label="Upload logo"
+                    helperText="Square logo works best"
+                    onUploaded={(url) => updateValue("brandLogoUrl", url)}
+                  />
                 </div>
               </div>
               <div className="rounded-[1.5rem] bg-[#eef7f5] p-5">
@@ -308,7 +312,11 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                   placeholder="Banner image URL"
                 />
                 <div className="mt-3">
-                  <PublicProfileImageUpload onUploaded={(url) => updateValue("heroBannerUrl", url)} />
+                  <PublicProfileImageUpload
+                    label="Upload hero banner"
+                    helperText="Wide image, 1600 x 900 recommended"
+                    onUploaded={(url) => updateValue("heroBannerUrl", url)}
+                  />
                 </div>
               </div>
             </div>
@@ -320,10 +328,32 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
         <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
           <h2 className="text-2xl font-black text-slate-950">Hero and brand content</h2>
           <p className="mt-1 text-sm text-slate-500">What students see first</p>
-          <div className="mt-6 grid gap-4">
-            <input value={values.heroTitle} onChange={(event) => updateValue("heroTitle", event.target.value)} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
-            <textarea value={values.heroTagline} onChange={(event) => updateValue("heroTagline", event.target.value)} className="min-h-28 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
-            <textarea value={values.aboutText} onChange={(event) => updateValue("aboutText", event.target.value)} className="min-h-40 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
+          <div className="mt-6 grid gap-4 xl:grid-cols-[0.82fr_1.18fr]">
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Hero image</p>
+              <div className="mt-3 overflow-hidden rounded-[1rem] bg-slate-100">
+                {values.heroBannerUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={values.heroBannerUrl} alt="Hero banner preview" className="aspect-[16/10] w-full object-cover" />
+                ) : (
+                  <div className="grid aspect-[16/10] place-items-center px-4 text-center text-sm font-semibold text-slate-500">
+                    Upload a wide banner to make the public site look premium.
+                  </div>
+                )}
+              </div>
+              <div className="mt-3">
+                <PublicProfileImageUpload
+                  label="Change hero image"
+                  helperText="This is the main landing page background"
+                  onUploaded={(url) => updateValue("heroBannerUrl", url)}
+                />
+              </div>
+            </div>
+            <div className="grid gap-4">
+              <input value={values.heroTitle} onChange={(event) => updateValue("heroTitle", event.target.value)} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
+              <textarea value={values.heroTagline} onChange={(event) => updateValue("heroTagline", event.target.value)} className="min-h-28 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
+              <textarea value={values.aboutText} onChange={(event) => updateValue("aboutText", event.target.value)} className="min-h-40 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
+            </div>
           </div>
         </section>
       ) : null}
@@ -399,7 +429,11 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
               onChange={(event) => updateValue("galleryImages", event.target.value.split(",").map((item) => item.trim()).filter(Boolean))}
               className="min-h-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none"
             />
-            <PublicProfileImageUpload onUploaded={(url) => updateValue("galleryImages", [...values.galleryImages, url])} />
+            <PublicProfileImageUpload
+              label="Upload gallery photo"
+              helperText="Add reception, desks, study hall, or exterior photos"
+              onUploaded={(url) => updateValue("galleryImages", [...values.galleryImages, url])}
+            />
             {values.galleryImages.length ? (
               <div className="grid gap-3">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Live gallery preview</p>

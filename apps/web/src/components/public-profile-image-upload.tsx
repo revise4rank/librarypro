@@ -5,9 +5,15 @@ import { API_URL, hydrateSessionFromServer } from "../lib/api";
 
 type PublicProfileImageUploadProps = {
   onUploaded: (url: string) => void;
+  label?: string;
+  helperText?: string;
 };
 
-export function PublicProfileImageUpload({ onUploaded }: PublicProfileImageUploadProps) {
+export function PublicProfileImageUpload({
+  onUploaded,
+  label = "Upload image",
+  helperText = "JPG, PNG, or WEBP",
+}: PublicProfileImageUploadProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,8 +72,19 @@ export function PublicProfileImageUpload({ onUploaded }: PublicProfileImageUploa
         type="file"
         accept="image/jpeg,image/png,image/webp"
         onChange={onFileSelected}
-        className="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700"
+        className="sr-only"
       />
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)] disabled:opacity-60"
+        >
+          {uploading ? "Uploading..." : label}
+        </button>
+        <p className="text-xs font-semibold text-slate-500">{helperText}</p>
+      </div>
       {uploading ? <p className="text-sm font-semibold text-slate-600">Uploading image...</p> : null}
       {success ? <p className="text-sm font-semibold text-emerald-700">{success}</p> : null}
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
