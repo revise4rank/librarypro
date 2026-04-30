@@ -31,7 +31,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       href={item.href}
       className={`rounded-full px-3 py-2 text-xs font-semibold transition sm:text-sm ${
         active
-          ? "bg-white text-slate-950 shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
+          ? "bg-emerald-300 text-slate-950 shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
           : "text-white/78 hover:bg-white/10 hover:text-white"
       }`}
     >
@@ -178,10 +178,10 @@ export function PublicLibraryPage({
               <Sparkles className="h-4 w-4" />
               Premium library website
             </div>
-            <h1 className="mt-5 max-w-4xl text-[clamp(2.6rem,8vw,5.8rem)] font-black leading-[0.9] tracking-[-0.07em] text-white">
+            <h1 className="mt-5 max-w-3xl text-balance text-[clamp(2.05rem,5.8vw,4.25rem)] font-black leading-[1.02] tracking-[-0.045em] text-white">
               {profile.hero_title}
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-white/72 md:text-lg">
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/72 md:text-base md:leading-7">
               {profile.hero_tagline ?? profile.about_text ?? "A premium study space with seat visibility, student access, QR check-in, and direct owner contact."}
             </p>
 
