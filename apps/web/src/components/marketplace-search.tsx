@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { API_URL } from "../lib/api";
-import { formatLibraryHost } from "../lib/domain";
 import { getGalleryUrl } from "../lib/public-library";
-import { ContactActions } from "./contact-actions";
 import { Surface } from "./shell";
 
 const filterOptions = ["AC", "WiFi", "Girls Only Zone", "Power Backup", "Locker", "QR Entry"];
+const fallbackImages = ["/library-gallery/study-hall.svg", "/library-gallery/reading-zone.svg", "/library-gallery/reception.svg"];
 const sortOptions = [
   { value: "relevance", label: "Relevance" },
   { value: "price_asc", label: "Price low-high" },
@@ -68,17 +66,16 @@ type SuggestionsResponse = {
   data: string[];
 };
 
-function formatDistance(distanceKm?: string | null) {
-  if (!distanceKm) return null;
-  const parsed = Number(distanceKm);
-  return Number.isFinite(parsed) ? `${parsed.toFixed(1)} km away` : null;
+function tileImageFor(library: LibrarySearchItem, index: number) {
+  const source = library.gallery_images?.[0] ?? fallbackImages[index % fallbackImages.length];
+  return getGalleryUrl(source, index);
+}
+
+function locationFor(library: LibrarySearchItem) {
+  return [library.area, library.city].filter(Boolean).join(", ") || library.landmark || "Location available on details";
 }
 
 export function MarketplaceSearch() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const [query, setQuery] = useState("Indore");
   const [area, setArea] = useState("Vijay Nagar");
   const [minPrice, setMinPrice] = useState("500");
@@ -92,41 +89,43 @@ export function MarketplaceSearch() {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
-  const [compareLibraryIds, setCompareLibraryIds] = useState<string[]>([]);
-  const [activeSlides, setActiveSlides] = useState<Record<string, number>>({});
   const [sortBy, setSortBy] = useState<SortValue>("relevance");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
-  const [shortlistIds, setShortlistIds] = useState<string[]>([]);
   const [quickFilter, setQuickFilter] = useState<QuickFilterValue>("all");
 
-  async function runSearch(overrides?: { lat?: number; lng?: number }) {
+  async function runSearch(overrides?: { lat?: number; lng?: number; page?: number; query?: string }) {
     setLoading(true);
     setError(null);
 
+    const activePage = overrides?.page ?? page;
+    const activeQuery = overrides?.query ?? query;
+    const activeLat = overrides?.lat ?? coords?.lat;
+    const activeLng = overrides?.lng ?? coords?.lng;
     const params = new URLSearchParams();
-    if (query) params.set("city", query);
+
+    if (activeQuery) params.set("city", activeQuery);
     if (area) params.set("area", area);
     if (minPrice) params.set("minPrice", minPrice);
     if (maxPrice) params.set("maxPrice", maxPrice);
     if (availableOnly) params.set("availableOnly", "true");
     if (selectedAmenities.length > 0) params.set("amenities", selectedAmenities.join(","));
-    params.set("page", String(page));
+    params.set("page", String(activePage));
     params.set("limit", "20");
-    if (overrides?.lat ?? coords?.lat) params.set("lat", String(overrides?.lat ?? coords?.lat));
-    if (overrides?.lng ?? coords?.lng) params.set("lng", String(overrides?.lng ?? coords?.lng));
-    if ((overrides?.lat ?? coords?.lat) && (overrides?.lng ?? coords?.lng)) params.set("radiusKm", "5");
+    if (activeLat) params.set("lat", String(activeLat));
+    if (activeLng) params.set("lng", String(activeLng));
+    if (activeLat && activeLng) params.set("radiusKm", "5");
 
     try {
       const response = await fetch(`${API_URL}/public/libraries/search?${params.toString()}`, {
         cache: "no-store",
       });
-      const json = await response.json() as SearchResponse;
+      const json = (await response.json()) as SearchResponse;
       if (!response.ok) {
         throw new Error("Failed to load marketplace libraries.");
       }
       setResults(json.data);
-      setPagination(json.meta ?? { total: json.data.length, page, limit: 20, totalPages: 1 });
+      setPagination(json.meta ?? { total: json.data.length, page: activePage, limit: 20, totalPages: 1 });
     } catch (searchError) {
       setError(searchError instanceof Error ? searchError.message : "Search failed.");
       setResults([]);
@@ -137,64 +136,8 @@ export function MarketplaceSearch() {
   }
 
   useEffect(() => {
-    void runSearch();
+    void runSearch({ page });
   }, [page]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const stored = window.localStorage.getItem("lp_marketplace_shortlist");
-    if (!stored) {
-      return;
-    }
-
-    try {
-      setShortlistIds(JSON.parse(stored) as string[]);
-    } catch {
-      setShortlistIds([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    const compare = searchParams.get("compare");
-    const sort = searchParams.get("sort");
-
-    if (compare) {
-      setCompareLibraryIds(compare.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 3));
-    }
-
-    if (sort && sortOptions.some((item) => item.value === sort)) {
-      setSortBy(sort as SortValue);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const nextParams = new URLSearchParams(searchParams.toString());
-
-    if (compareLibraryIds.length > 0) {
-      nextParams.set("compare", compareLibraryIds.join(","));
-    } else {
-      nextParams.delete("compare");
-    }
-
-    if (sortBy !== "relevance") {
-      nextParams.set("sort", sortBy);
-    } else {
-      nextParams.delete("sort");
-    }
-
-    const nextQuery = nextParams.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
-  }, [compareLibraryIds, sortBy, pathname, router, searchParams]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    window.localStorage.setItem("lp_marketplace_shortlist", JSON.stringify(shortlistIds));
-  }, [shortlistIds]);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -208,7 +151,7 @@ export function MarketplaceSearch() {
         const response = await fetch(`${API_URL}/public/libraries/suggestions?q=${encodeURIComponent(trimmed)}&limit=6`, {
           cache: "no-store",
         });
-        const json = await response.json() as SuggestionsResponse;
+        const json = (await response.json()) as SuggestionsResponse;
         if (response.ok) {
           setApiSuggestions(json.data);
         }
@@ -226,6 +169,11 @@ export function MarketplaceSearch() {
     );
   }
 
+  function searchFromFirstPage(overrides?: { lat?: number; lng?: number; query?: string }) {
+    setPage(1);
+    void runSearch({ ...overrides, page: 1 });
+  }
+
   function useMyLocation() {
     if (!navigator.geolocation) {
       setError("Browser geolocation is not available.");
@@ -239,35 +187,13 @@ export function MarketplaceSearch() {
           lng: position.coords.longitude,
         };
         setCoords(nextCoords);
-        void runSearch(nextCoords);
+        searchFromFirstPage(nextCoords);
       },
       () => {
         setError("Location access denied. Showing normal city search results.");
       },
       { enableHighAccuracy: true, timeout: 8000 },
     );
-  }
-
-  function toggleCompare(library: LibrarySearchItem) {
-    const key = library.library_id ?? library.subdomain;
-    setCompareLibraryIds((current) => {
-      if (current.includes(key)) {
-        return current.filter((item) => item !== key);
-      }
-      if (current.length >= 3) {
-        return [...current.slice(1), key];
-      }
-      return [...current, key];
-    });
-  }
-
-  function setCardSlide(cardKey: string, nextIndex: number) {
-    setActiveSlides((current) => ({ ...current, [cardKey]: nextIndex }));
-  }
-
-  function toggleShortlist(library: LibrarySearchItem) {
-    const key = library.library_id ?? library.subdomain;
-    setShortlistIds((current) => (current.includes(key) ? current.filter((item) => item !== key) : [...current, key]));
   }
 
   const localSuggestions = Array.from(
@@ -317,8 +243,6 @@ export function MarketplaceSearch() {
     nearby: sortedResults.filter((library) => Boolean(library.distance_km)).length,
   } satisfies Record<QuickFilterValue, number>;
 
-  const comparedLibraries = visibleResults.filter((library) => compareLibraryIds.includes(library.library_id ?? library.subdomain));
-  const shortlistedLibraries = visibleResults.filter((library) => shortlistIds.includes(library.library_id ?? library.subdomain));
   const amenityCounts = filterOptions.reduce<Record<string, number>>((accumulator, item) => {
     accumulator[item] = sortedResults.filter((library) => (library.amenities ?? []).includes(item)).length;
     return accumulator;
@@ -366,15 +290,16 @@ export function MarketplaceSearch() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
+            type="button"
             onClick={() => {
-              void runSearch();
+              searchFromFirstPage();
               setIsMobileFiltersOpen(false);
             }}
             className="lp-button lp-button-primary"
           >
             Search libraries
           </button>
-          <button onClick={useMyLocation} className="lp-button">
+          <button type="button" onClick={useMyLocation} className="lp-button">
             Near me
           </button>
         </div>
@@ -410,8 +335,7 @@ export function MarketplaceSearch() {
                       onMouseDown={() => {
                         setQuery(item);
                         setShowSuggestions(false);
-                        setPage(1);
-                        void runSearch();
+                        searchFromFirstPage({ query: item });
                       }}
                       className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-medium text-[var(--lp-text)] hover:bg-[#f4faf5]"
                     >
@@ -446,10 +370,10 @@ export function MarketplaceSearch() {
             </select>
 
             <div className="flex flex-wrap gap-2 xl:justify-end">
-              <button onClick={() => void runSearch()} className="lp-button lp-button-primary">
+              <button type="button" onClick={() => searchFromFirstPage()} className="lp-button lp-button-primary">
                 Search now
               </button>
-              <button onClick={() => setIsMobileFiltersOpen(true)} className="lp-button">
+              <button type="button" onClick={() => setIsMobileFiltersOpen(true)} className="lp-button">
                 Filters
               </button>
             </div>
@@ -481,283 +405,67 @@ export function MarketplaceSearch() {
           </div>
         </section>
 
-        {comparedLibraries.length > 0 ? (
-          <section className="rounded-xl border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="lp-label text-[var(--lp-accent)]">Compare</p>
-                <h2 className="mt-1 text-xl font-extrabold">Selected libraries</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCompareLibraryIds([])}
-                className="lp-button"
-              >
-                Clear compare
-              </button>
-            </div>
-            <div className="mt-4 grid gap-3 xl:grid-cols-3">
-              {comparedLibraries.map((library) => (
-                <div key={library.library_id ?? library.subdomain} className="rounded-lg border border-[var(--lp-border)] bg-[#f8fcf8] p-4">
-                  <h3 className="text-base font-extrabold text-[var(--lp-text)]">{library.library_name}</h3>
-                  <p className="mt-1 text-sm text-[var(--lp-muted)]">{library.area ?? "Prime Area"}, {library.city}</p>
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <div className="rounded-xl bg-white p-3">
-                      <p className="lp-stat-label text-[var(--lp-accent)]">Price</p>
-                      <p className="mt-2 text-lg font-extrabold">Rs. {library.starting_price}</p>
-                    </div>
-                    <div className="rounded-xl bg-white p-3">
-                      <p className="lp-stat-label text-[var(--lp-accent)]">Seats</p>
-                      <p className="mt-2 text-lg font-extrabold">{library.available_seats}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 rounded-lg bg-white p-3 text-sm leading-5 text-[var(--lp-muted)]">
-                    {(library.amenities ?? []).slice(0, 3).join(" | ") || "Amenities not available"}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {shortlistedLibraries.length > 0 ? (
-          <section className="rounded-xl border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="lp-label text-[var(--lp-accent)]">Shortlist</p>
-                <h2 className="mt-1 text-xl font-extrabold">Saved libraries</h2>
-              </div>
-              <button type="button" onClick={() => setShortlistIds([])} className="lp-button">
-                Clear shortlist
-              </button>
-            </div>
-              <div className="mt-5 grid gap-4 xl:grid-cols-3">
-              {shortlistedLibraries.map((library) => (
-                <div key={`short-${library.library_id ?? library.subdomain}`} className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
-                  <p className="text-lg font-extrabold text-[var(--lp-text)]">{library.library_name}</p>
-                  <p className="mt-1 text-sm text-[var(--lp-muted)]">{library.area ?? "Prime Area"}, {library.city}</p>
-                  <p className="mt-3 text-sm font-semibold text-[var(--lp-primary)]">Rs. {library.starting_price} / month</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
         <section className="rounded-xl border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="lp-label text-[var(--lp-accent)]">Libraries</p>
-              <h2 className="mt-1 text-xl font-extrabold">Marketplace results</h2>
+              <h2 className="mt-1 text-xl font-extrabold">Browse library tiles</h2>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <span className="rounded-full bg-[#edf7ef] px-4 py-2 text-sm font-semibold text-[var(--lp-primary)]">
-                {loading ? "Loading..." : `${visibleResults.length} shown`}
-              </span>
-              <span className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-sm font-semibold text-[var(--lp-primary)]">
-                {quickFilters.find((filter) => filter.value === quickFilter)?.label}
-              </span>
-              <span className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-sm font-semibold text-[var(--lp-primary)]">
-                Compare {compareLibraryIds.length}/3
-              </span>
-            </div>
+            <p className="text-sm font-semibold text-[var(--lp-muted)]">
+              {loading ? "Loading..." : `${visibleResults.length} shown`}
+            </p>
           </div>
         </section>
 
         {loading ? <Surface title="Loading libraries"><p className="text-sm text-slate-500">Fetching live marketplace data...</p></Surface> : null}
         {!loading && visibleResults.length === 0 ? (
-          <Surface title="No published libraries found" subtitle="The marketplace is currently showing only live API data.">
-            <div className="grid gap-3 text-sm leading-7 text-[var(--lp-muted)]">
-              <p>Try a different city, remove quick filters, or widen your budget/facility filters.</p>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => {
-                    setArea("");
-                    setSelectedAmenities([]);
-                    setAvailableOnly(false);
-                    setQuickFilter("all");
-                    setPage(1);
-                    void runSearch();
-                  }}
-                  className="lp-button lp-button-primary"
-                >
-                  Reset filters
-                </button>
-                <button
-                  onClick={useMyLocation}
-                  className="lp-button"
-                >
-                  Search near me
-                </button>
-              </div>
+          <Surface title="No published libraries found" subtitle="Try a different city, locality, or filter set.">
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setArea("");
+                  setSelectedAmenities([]);
+                  setAvailableOnly(false);
+                  setQuickFilter("all");
+                  searchFromFirstPage();
+                }}
+                className="lp-button lp-button-primary"
+              >
+                Reset filters
+              </button>
+              <button type="button" onClick={useMyLocation} className="lp-button">
+                Search near me
+              </button>
             </div>
           </Surface>
         ) : null}
+
         {!loading ? (
-          <div className="grid gap-6">
-            <div className="grid gap-4 2xl:grid-cols-2">
-            {visibleResults.map((library) => {
-              const cardKey = library.library_id ?? library.subdomain;
-              const gallery = (library.gallery_images?.length ? library.gallery_images : ["/library-gallery/study-hall.svg", "/library-gallery/reading-zone.svg", "/library-gallery/reception.svg"]).map(getGalleryUrl);
-              const activeSlide = activeSlides[cardKey] ?? 0;
-              const isCompared = compareLibraryIds.includes(cardKey);
-              const isShortlisted = shortlistIds.includes(cardKey);
-
-              return (
-                <article
+          <div className="grid gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {visibleResults.map((library, index) => (
+                <Link
                   key={`${library.subdomain}-${library.library_slug}`}
-                  className="overflow-hidden rounded-xl border border-[var(--lp-border)] bg-[rgba(251,254,251,0.95)] shadow-sm"
+                  href={`/libraries/${library.library_slug}`}
+                  aria-label={`Open ${library.library_name} details`}
+                  className="group overflow-hidden rounded-xl border border-[var(--lp-border)] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
                 >
-                  <div className="border-b border-[var(--lp-border)] bg-[linear-gradient(135deg,_#dff0e2,_#eef8f0_35%,_#cde7d1)] px-4 py-3">
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="rounded-full bg-[rgba(255,255,255,0.72)] px-3 py-1 text-xs font-semibold text-[var(--lp-primary)]">
-                        Public website
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleCompare(library)}
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${isCompared ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "bg-[rgba(255,255,255,0.72)] text-[var(--lp-primary)]"}`}
-                      >
-                        {isCompared ? "Added to compare" : "Compare"}
-                      </button>
-                    </div>
-                    <div className="mt-3">
-                      <button
-                        type="button"
-                        onClick={() => toggleShortlist(library)}
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${isShortlisted ? "bg-[var(--lp-accent)] text-white" : "border border-[rgba(255,255,255,0.72)] bg-white/80 text-[var(--lp-accent)]"}`}
-                      >
-                        {isShortlisted ? "Saved to shortlist" : "Save shortlist"}
-                      </button>
-                    </div>
-
-                    <div className="mt-4 rounded-xl border border-[rgba(255,255,255,0.46)] bg-[rgba(255,255,255,0.46)] p-3">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="lp-stat-label text-[var(--lp-accent)]">Website</p>
-                          <p className="mt-2 break-all text-base font-extrabold text-[var(--lp-text)] sm:text-lg">{formatLibraryHost(library.subdomain)}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button type="button" onClick={() => setCardSlide(cardKey, activeSlide === 0 ? gallery.length - 1 : activeSlide - 1)} className="rounded-full border border-[rgba(255,255,255,0.7)] bg-white/80 px-3 py-1 text-sm font-semibold text-[var(--lp-primary)]">
-                            {"<"}
-                          </button>
-                          <button type="button" onClick={() => setCardSlide(cardKey, activeSlide === gallery.length - 1 ? 0 : activeSlide + 1)} className="rounded-full border border-[rgba(255,255,255,0.7)] bg-white/80 px-3 py-1 text-sm font-semibold text-[var(--lp-primary)]">
-                            {">"}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mt-4 overflow-hidden rounded-xl bg-[rgba(255,255,255,0.76)]">
-                        <img src={gallery[activeSlide]} alt={`${library.library_name} preview`} className="h-40 w-full object-cover" />
-                        <div className="p-3">
-                          <p className="text-xs font-semibold text-[var(--lp-primary)]">
-                            Preview {activeSlide + 1} of {gallery.length}
-                          </p>
-                          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                            <div className="rounded-xl bg-white/80 p-3">
-                              <p className="lp-stat-label text-[var(--lp-accent)]">Seats</p>
-                              <p className="mt-2 text-sm font-bold text-[var(--lp-text)]">{library.available_seats} visible now</p>
-                            </div>
-                            <div className="rounded-xl bg-white/80 p-3">
-                              <p className="lp-stat-label text-[var(--lp-accent)]">Entry</p>
-                              <p className="mt-2 text-sm font-bold text-[var(--lp-text)]">QR + login</p>
-                            </div>
-                            <div className="rounded-xl bg-white/80 p-3">
-                              <p className="lp-stat-label text-[var(--lp-accent)]">Hours</p>
-                              <p className="mt-2 text-sm font-bold text-[var(--lp-text)]">{library.business_hours ?? "Daily"}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <h3 className="text-xl font-extrabold text-[var(--lp-text)]">{library.library_name}</h3>
-                        <p className="mt-1 text-sm text-[var(--lp-muted)]">{library.area ?? "Prime Area"}, {library.city}</p>
-                        <p className="mt-1 text-xs font-semibold text-[var(--lp-accent)]">
-                          {formatDistance(library.distance_km) ?? library.landmark ?? "Marketplace listing"}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-700">
-                        {library.available_seats} seats left
-                      </span>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-1.5 text-xs font-semibold text-[var(--lp-primary)]">
-                        Verified listing
-                      </span>
-                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-1.5 text-xs font-semibold text-[var(--lp-primary)]">
-                        QR enabled
-                      </span>
-                      <span className="rounded-full border border-[#cfe1d2] bg-[#f4faf5] px-3 py-1.5 text-xs font-semibold text-[var(--lp-primary)]">
-                        Owner managed website
-                      </span>
-                    </div>
-
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-                      <div className="rounded-lg bg-[#f4faf5] p-4">
-                        <p className="lp-stat-label text-[var(--lp-accent)]">Trust</p>
-                        <p className="mt-2 text-lg font-extrabold text-[var(--lp-text)]">{Number(library.rating ?? 0).toFixed(1)}/5</p>
-                      </div>
-                      <div className="rounded-lg bg-[#f4faf5] p-4">
-                        <p className="lp-stat-label text-[var(--lp-accent)]">Reviews</p>
-                        <p className="mt-2 text-lg font-extrabold text-[var(--lp-text)]">{library.reviews ?? 0}</p>
-                      </div>
-                      <div className="rounded-lg bg-[#f4faf5] p-4">
-                        <p className="lp-stat-label text-[var(--lp-accent)]">Quietness</p>
-                        <p className="mt-2 text-lg font-extrabold text-[var(--lp-text)]">{library.quietness ?? "High"}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 grid gap-4 md:grid-cols-[auto_1fr] md:items-end">
-                      <p className="text-2xl font-extrabold text-[var(--lp-text)]">
-                        Rs. {library.starting_price}
-                        <span className="ml-1 text-sm font-medium text-[var(--lp-muted)]">/ month</span>
-                      </p>
-                      <div className="rounded-xl bg-[#edf7ef] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)]">
-                        {library.offer_text ?? "Contact owner for current offers"}
-                      </div>
-                    </div>
-
-                    <p className="mt-4 line-clamp-2 text-sm leading-6 text-[var(--lp-muted)]">{library.hero_tagline ?? library.hero_title}</p>
-                    {library.latest_review_snippet ? (
-                      <div className="mt-4 rounded-lg border border-[var(--lp-border)] bg-[#fffdf8] px-4 py-3 text-sm leading-6 text-[var(--lp-muted)]">
-                        <p className="lp-stat-label text-[var(--lp-accent)]">Latest review</p>
-                        <p className="mt-2">&ldquo;{library.latest_review_snippet}&rdquo;</p>
-                      </div>
-                    ) : null}
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {(library.amenities ?? []).map((amenity) => (
-                        <span key={amenity} className="rounded-full bg-[#edf5ee] px-3 py-2 text-xs font-medium text-[var(--lp-primary)]">
-                          {amenity}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                      <Link href={`/libraries/${library.library_slug}`} className="lp-button lp-button-primary">
-                        View Library Details
-                      </Link>
-                      <Link href={`/library-site?slug=${library.subdomain}`} className="lp-button">
-                        Go To Library Subdomain
-                      </Link>
-                    </div>
-
-                    <ContactActions
-                      className="mt-4"
-                      slugOrSubdomain={library.subdomain}
-                      phone={library.contact_phone}
-                      whatsappPhone={library.whatsapp_phone}
-                      sourcePage="MARKETPLACE"
+                  <div className="aspect-[4/3] overflow-hidden bg-slate-100">
+                    <img
+                      src={tileImageFor(library, index)}
+                      alt={`${library.library_name} preview`}
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                     />
                   </div>
-                </article>
-              );
-            })}
+                  <div className="grid gap-1 p-3">
+                    <h3 className="truncate text-base font-bold tracking-tight text-[var(--lp-text)]">{library.library_name}</h3>
+                    <p className="truncate text-sm text-[var(--lp-muted)]">{locationFor(library)}</p>
+                  </div>
+                </Link>
+              ))}
             </div>
+
             {pagination.totalPages > 1 ? (
               <div className="flex flex-col gap-3 rounded-xl border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <p className="text-sm font-semibold text-[var(--lp-muted)]">
@@ -789,13 +497,13 @@ export function MarketplaceSearch() {
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--lp-border)] bg-[rgba(248,252,248,0.96)] p-3 shadow-sm backdrop-blur xl:hidden">
         <div className="mx-auto grid max-w-[1280px] grid-cols-3 gap-2 sm:flex sm:gap-3">
-          <button onClick={() => setIsMobileFiltersOpen(true)} className="rounded-xl border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">
+          <button type="button" onClick={() => setIsMobileFiltersOpen(true)} className="rounded-xl border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">
             Open filters
           </button>
-          <button onClick={useMyLocation} className="rounded-xl border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">
+          <button type="button" onClick={useMyLocation} className="rounded-xl border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">
             Near me
           </button>
-          <button onClick={() => void runSearch()} className="rounded-xl bg-[var(--lp-primary)] px-3 py-3 text-sm font-semibold text-white">
+          <button type="button" onClick={() => searchFromFirstPage()} className="rounded-xl bg-[var(--lp-primary)] px-3 py-3 text-sm font-semibold text-white">
             Search
           </button>
         </div>
