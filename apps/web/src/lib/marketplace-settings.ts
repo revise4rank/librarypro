@@ -73,9 +73,13 @@ function normalizeSettings(value: Partial<PlatformMarketplaceSettings> | null | 
 }
 
 export async function loadMarketplaceSettings(): Promise<PlatformMarketplaceSettings> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2500);
+
   try {
     const response = await fetch(`${getApiBaseUrl()}/public/marketplace-settings`, {
       cache: "no-store",
+      signal: controller.signal,
     });
     if (!response.ok) return defaultMarketplaceSettings;
 
@@ -83,5 +87,7 @@ export async function loadMarketplaceSettings(): Promise<PlatformMarketplaceSett
     return normalizeSettings(json.data);
   } catch {
     return defaultMarketplaceSettings;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
