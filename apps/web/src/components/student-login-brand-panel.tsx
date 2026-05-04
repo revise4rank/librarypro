@@ -105,12 +105,14 @@ export function StudentLoginBrandPanel({
             View library site
           </Link>
         ) : null}
-        <Link
-          href={showLibraryLink ? "/marketplace" : "/student/access"}
-          className="lp-button border-emerald-400/20 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/15"
-        >
-          {showLibraryLink ? "Browse marketplace" : "Find library"}
-        </Link>
+        {!showLibraryLink ? (
+          <Link
+            href="/student/access"
+            className="lp-button border-emerald-400/20 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/15"
+          >
+            Find library
+          </Link>
+        ) : null}
       </div>
     </div>
   );

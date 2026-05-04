@@ -32,12 +32,6 @@ export default function StudentAccessPage() {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
-              href="/marketplace"
-              className="lp-button border-white/10 bg-white/5 text-white hover:bg-white/10"
-            >
-              Find your library
-            </Link>
-            <Link
               href="/owner/login"
               className="lp-button border-emerald-400/20 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/15"
             >

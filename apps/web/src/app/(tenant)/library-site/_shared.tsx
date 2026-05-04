@@ -14,8 +14,8 @@ function UnavailableLibrarySite() {
             Once the owner activates the premium subdomain website, students will be able to use the same library website for library details, login, QR entry, and direct contact.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/marketplace" className="rounded-full bg-[var(--lp-primary)] px-6 py-3 text-sm font-semibold text-white">
-              Back to marketplace
+            <Link href="/" className="rounded-full bg-[var(--lp-primary)] px-6 py-3 text-sm font-semibold text-white">
+              Back home
             </Link>
             <Link href="/owner/settings?tab=website" className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-6 py-3 text-sm font-semibold text-[var(--lp-primary)]">
               Owner website setup

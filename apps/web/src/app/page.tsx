@@ -9,7 +9,6 @@ import {
   Mail,
   MapPin,
   Sparkles,
-  Store,
   Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -35,12 +34,6 @@ const accessCards = [
     text: "Students log in for QR access, dues, notices, and daily self-service actions.",
     href: "/student/access",
     icon: Users,
-  },
-  {
-    title: "Marketplace",
-    text: "Make your library discoverable and let students compare, shortlist, and enquire.",
-    href: "/marketplace",
-    icon: Store,
   },
 ];
 
@@ -97,7 +90,6 @@ const footerColumns = [
     links: [
       { label: "Features", href: "/#features" },
       { label: "Pricing", href: "/#pricing" },
-      { label: "Marketplace", href: "/marketplace" },
     ],
   },
   {
@@ -114,7 +106,6 @@ const footerColumns = [
     links: [
       { label: "About LibraryPro", href: "/#features" },
       { label: "Contact support", href: "mailto:support@librarypro.in" },
-      { label: "Browse libraries", href: "/marketplace" },
     ],
   },
   {
@@ -211,12 +202,12 @@ export default function HomePage() {
                     Pick the part of the platform you need.
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-                    Owners start with library access, set up plans, admit students, and manage the roster before seat placement. Students and marketplace visitors get their own clean entry points.
+                    Owners start with library access, set up plans, admit students, and manage the roster before seat placement. Students get their own clean portal entry.
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
                 {accessCards.map((item) => {
                   const Icon = item.icon;
                   return (

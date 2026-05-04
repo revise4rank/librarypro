@@ -159,9 +159,6 @@ export function PublicLibraryPage({
                   Student login
                 </Link>
               ) : null}
-              <Link href="/marketplace" className="rounded-full border border-white/14 bg-white/8 px-3 py-2 text-xs font-bold text-white hover:bg-white/14">
-                Marketplace
-              </Link>
             </div>
           </div>
 
