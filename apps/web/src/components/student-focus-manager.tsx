@@ -206,21 +206,21 @@ export function StudentFocusManager() {
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
       <section className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Today</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.totals.todayMinutes} min</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.totals.todayMinutes} min</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">This week</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.totals.weeklyMinutes} min</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.totals.weeklyMinutes} min</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Deep work</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{analytics.deepWorkHours} hrs</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{analytics.deepWorkHours} hrs</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Streak</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{analytics.longestStreak} days</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{analytics.longestStreak} days</p>
         </div>
       </section>
 
@@ -262,12 +262,12 @@ export function StudentFocusManager() {
 
         <DashboardCard title="Focus snapshot" subtitle="Only the top signal stays open by default">
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Total study</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{analytics.totalStudyHours} hrs</p>
               <p className="mt-2 text-sm text-slate-500">Monthly {analytics.monthlyStudyHours} hrs</p>
             </div>
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Most studied</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{analytics.mostStudiedSubject ?? "-"}</p>
               <p className="mt-2 text-sm text-slate-500">{analytics.focusSessionsCount} sessions logged</p>
@@ -278,7 +278,7 @@ export function StudentFocusManager() {
 
       <DashboardCard title="Study goals" subtitle="Targets, secondary analytics, and library context open only when needed">
         <div className="grid gap-4">
-          <button type="button" onClick={() => toggle("goals")} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+          <button type="button" onClick={() => toggle("goals")} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
             {expanded.goals ? "Hide goal editor" : "Show goal editor"}
           </button>
           {expanded.goals ? (
@@ -290,22 +290,22 @@ export function StudentFocusManager() {
 	              </button>
             </div>
           ) : (
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
               Daily target {data.goals.daily_target_minutes} min | Weekly target {data.goals.weekly_target_hours} hrs
             </div>
           )}
 
-          <button type="button" onClick={() => toggle("analytics")} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+          <button type="button" onClick={() => toggle("analytics")} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
             {expanded.analytics ? "Hide productivity analytics" : "Show productivity analytics"}
           </button>
           {expanded.analytics ? (
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Attendance</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{analytics.attendanceDays} days</p>
                 <p className="mt-2 text-sm text-slate-500">{analytics.missedDays} missed days in rolling window</p>
               </div>
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Entry pattern</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{analytics.avgEntryHour ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">Average library entry time</p>
@@ -313,13 +313,13 @@ export function StudentFocusManager() {
             </div>
           ) : null}
 
-          <button type="button" onClick={() => toggle("libraries")} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+          <button type="button" onClick={() => toggle("libraries")} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
             {expanded.libraries ? "Hide joined libraries" : "Show joined libraries"}
           </button>
           {expanded.libraries ? (
             <div className="grid gap-3">
               {libraries.map((library) => (
-                <div key={library.library_id} className={`rounded-[1.25rem] border p-4 ${library.is_active ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+                <div key={library.library_id} className={`rounded-xl border p-4 ${library.is_active ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
                       <p className="font-black text-slate-950">{library.library_name}</p>
@@ -342,7 +342,7 @@ export function StudentFocusManager() {
               {activeLibrary ? <p className="text-sm text-slate-500">Leaderboard currently follows {activeLibrary.library_name}.</p> : null}
             </div>
           ) : (
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
               {activeLibrary ? `${activeLibrary.library_name} is your active library.` : "No active library selected right now."}
             </div>
           )}
@@ -352,7 +352,7 @@ export function StudentFocusManager() {
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <DashboardCard title="Subjects and topics" subtitle="Only open the planning layer when you need to shape study structure">
           <div className="grid gap-4">
-            <button type="button" onClick={() => toggle("subjects")} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+            <button type="button" onClick={() => toggle("subjects")} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
               {expanded.subjects ? "Hide subjects and topics" : "Show subjects and topics"}
             </button>
             {expanded.subjects ? (
@@ -367,7 +367,7 @@ export function StudentFocusManager() {
                 </button>
                 <div className="grid gap-3">
                   {data.subjects.map((subject) => (
-                    <div key={subject.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                    <div key={subject.id} className="rounded-xl border border-slate-200 bg-white p-4">
                       <p className="font-black text-slate-950">{subject.subject_name}</p>
                       <p className="mt-1 text-sm text-slate-500">{subject.topic_name ?? "No topic added yet"}</p>
                       <p className="mt-2 text-sm font-semibold text-[var(--lp-primary)]">Target {subject.target_minutes} min</p>
@@ -377,7 +377,7 @@ export function StudentFocusManager() {
                 </div>
               </>
             ) : (
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                 {data.subjects.length} active subject records saved. Open this only when updating study structure.
               </div>
             )}
@@ -386,7 +386,7 @@ export function StudentFocusManager() {
 
         <DashboardCard title="Focus leaderboard" subtitle="Competition stays optional, not always in your face">
           <div className="grid gap-4">
-            <button type="button" onClick={() => toggle("leaderboard")} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+            <button type="button" onClick={() => toggle("leaderboard")} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
               {expanded.leaderboard ? "Hide focus leaderboard" : "Show focus leaderboard"}
             </button>
             {expanded.leaderboard ? (
@@ -400,7 +400,7 @@ export function StudentFocusManager() {
                   </button>
                 </div>
                 {leaderboard.map((row) => (
-                  <div key={row.studentUserId} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div key={row.studentUserId} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-black text-slate-950">#{row.rank} {row.studentName}</p>
                       <p className="mt-1 text-sm text-slate-500">{row.totalSessions} sessions</p>
@@ -411,7 +411,7 @@ export function StudentFocusManager() {
                 {leaderboard.length === 0 ? <p className="text-sm text-slate-500">No leaderboard data yet for your active library.</p> : null}
               </>
             ) : (
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                 Leaderboard stays hidden until you want a comparison view.
               </div>
             )}
@@ -421,13 +421,13 @@ export function StudentFocusManager() {
 
       <DashboardCard title="Recent study history" subtitle="Logs stay available without overwhelming the main workspace">
         <div className="grid gap-4">
-          <button type="button" onClick={() => toggle("history")} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+          <button type="button" onClick={() => toggle("history")} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
             {expanded.history ? "Hide study history" : "Show study history"}
           </button>
           {expanded.history ? (
             <div className="grid gap-3">
               {data.sessions.map((session) => (
-                <div key={session.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                <div key={session.id} className="rounded-xl border border-slate-200 bg-white p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="font-black text-slate-950">{session.topic_title ?? "Focus session"}</p>
                     <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">{session.session_type}</span>
@@ -439,7 +439,7 @@ export function StudentFocusManager() {
               {data.sessions.length === 0 ? <p className="text-sm text-slate-500">No focus sessions logged yet. Start with one 25-minute pomodoro.</p> : null}
             </div>
           ) : (
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
               {data.sessions.length} sessions logged so far. Open history only when reviewing consistency.
             </div>
           )}

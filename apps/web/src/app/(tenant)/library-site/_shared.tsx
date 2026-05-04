@@ -7,7 +7,7 @@ function UnavailableLibrarySite() {
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fbf6ee_0%,#fffaf3_52%,#f6efe4_100%)] text-[var(--lp-text)]">
       <section className="mx-auto max-w-[980px] px-4 py-20 text-center md:px-8">
-        <div className="rounded-[2rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-8 shadow-[0_12px_30px_rgba(93,138,102,0.08)]">
+        <div className="rounded-2xl border border-[var(--lp-border)] bg-[var(--lp-surface)] p-6 shadow-sm">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--lp-accent)]">Library website unavailable</p>
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight">This library has not published its premium website yet.</h1>
           <p className="mt-5 text-base leading-8 text-[var(--lp-muted)]">

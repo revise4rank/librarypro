@@ -61,21 +61,21 @@ export function StudentRewardsManager() {
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Badges earned</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.badges.length}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.badges.length}</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Longest streak</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.longestStreak} days</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.longestStreak} days</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Total study</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.totalStudyHours} hrs</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.totalStudyHours} hrs</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Attendance days</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.attendanceDays}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.attendanceDays}</p>
         </div>
       </section>
 
@@ -84,7 +84,7 @@ export function StudentRewardsManager() {
           <button
             type="button"
             onClick={() => setShowTimeline((current) => !current)}
-            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
             {showTimeline ? "Hide badge timeline" : `Show badge timeline (${data.badges.length})`}
           </button>
@@ -93,7 +93,7 @@ export function StudentRewardsManager() {
               {data.badges.map((badge, index) => {
                 const theme = getTheme(badge.badgeCode, badge.metadata);
                 return (
-                  <div key={badge.badgeCode} className={`rounded-[1.5rem] border p-5 ${theme.card}`}>
+                  <div key={badge.badgeCode} className={`rounded-xl border p-5 ${theme.card}`}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Milestone {String(index + 1).padStart(2, "0")}</p>
@@ -113,7 +113,7 @@ export function StudentRewardsManager() {
               {data.badges.length === 0 ? <p className="text-sm text-slate-500">No badges yet. Start with a short streak and one focused week.</p> : null}
             </>
           ) : (
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-sm text-slate-600">{data.badges.length > 0 ? `${data.badges.length} badges unlocked so far.` : "No badges yet. Start with a short streak and one focused week."}</p>
             </div>
           )}

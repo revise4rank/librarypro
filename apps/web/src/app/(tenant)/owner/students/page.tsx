@@ -12,7 +12,7 @@ export default function OwnerStudentsPage() {
       description="Roster and seat allotment."
       nav={ownerNav}
       actions={
-        <Link href="/owner/admissions" className="rounded-[0.95rem] bg-[var(--lp-accent-soft)] px-5 py-2.5 text-sm font-bold text-[var(--lp-accent)]">
+        <Link href="/owner/admissions" className="rounded-lg bg-[var(--lp-accent-soft)] px-5 py-2.5 text-sm font-bold text-[var(--lp-accent)]">
           Open Admissions
         </Link>
       }

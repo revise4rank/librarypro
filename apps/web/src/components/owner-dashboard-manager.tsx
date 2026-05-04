@@ -239,7 +239,7 @@ export function OwnerDashboardManager() {
   return (
     <div className="grid gap-4 md:gap-5">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
-      <section className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,#18b56f_0%,#87e6ca_100%)] p-4 text-white shadow-[0_18px_34px_rgba(24,181,111,0.18)]">
+      <section className="rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#18b56f_0%,#87e6ca_100%)] p-4 text-white shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Owner workflow live</p>
@@ -251,13 +251,13 @@ export function OwnerDashboardManager() {
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               href="/owner/admissions"
-              className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-[0.95rem] border border-[#0F172A] bg-[#0F172A] px-5 py-2.5 text-sm font-black !text-white shadow-[0_14px_28px_rgba(15,23,42,0.2)] transition hover:bg-slate-800"
+              className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-lg border border-[#0F172A] bg-[#0F172A] px-5 py-2.5 text-sm font-black !text-white shadow-sm transition hover:bg-slate-800"
             >
               New admission
             </Link>
             <Link
               href="/owner/admissions?mode=requests"
-              className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-[0.95rem] border border-white/70 bg-white px-5 py-2.5 text-sm font-black !text-[#0F172A] shadow-[0_14px_28px_rgba(15,23,42,0.08)] transition hover:bg-emerald-50"
+              className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-lg border border-white/70 bg-white px-5 py-2.5 text-sm font-black !text-[#0F172A] shadow-sm transition hover:bg-emerald-50"
             >
               Review requests
             </Link>
@@ -280,7 +280,7 @@ export function OwnerDashboardManager() {
         <DashboardCard title="Priority center" subtitle="What needs action before you move into the day">
           <div className="grid gap-3 md:grid-cols-2">
             {alerts.map((alert) => (
-              <article key={alert.title} className={`rounded-[1rem] border p-4 ${alert.tone}`}>
+              <article key={alert.title} className={`rounded-xl border p-4 ${alert.tone}`}>
                 <h4 className="text-sm font-black">{alert.title}</h4>
                 <p className="mt-1 text-sm leading-6">{alert.detail}</p>
               </article>
@@ -290,7 +290,7 @@ export function OwnerDashboardManager() {
 
         <DashboardCard title="Operator shortcuts" subtitle="Admissions-first shortcuts with less decision fatigue">
           <div className="grid gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.95rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-sm font-black text-slate-950">Quick actions</p>
                 <p className="mt-1 text-sm text-slate-500">Open only the flows owners need most: admissions, requests, roster, and seat inventory.</p>
@@ -306,12 +306,12 @@ export function OwnerDashboardManager() {
             {shortcutsOpen ? (
               <div className="grid gap-2.5">
                 {actionCards.map((card) => (
-                  <Link key={card.title} href={card.href} className="rounded-[0.95rem] border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-slate-300 hover:bg-white">
+                  <Link key={card.title} href={card.href} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-slate-300 hover:bg-white">
                     <p className="font-black text-slate-950">{card.title}</p>
                     <p className="mt-1 text-sm text-slate-500">{card.detail}</p>
                   </Link>
                 ))}
-                <button type="button" onClick={() => void sendDueRecovery()} className="rounded-[0.95rem] bg-[var(--lp-accent-soft)] px-4 py-3 text-left text-sm font-bold text-[var(--lp-accent)]">
+                <button type="button" onClick={() => void sendDueRecovery()} className="rounded-lg bg-[var(--lp-accent-soft)] px-4 py-3 text-left text-sm font-bold text-[var(--lp-accent)]">
                   Send automatic due recovery reminders
                 </button>
               </div>
@@ -346,7 +346,7 @@ export function OwnerDashboardManager() {
             {filteredFollowUps.map((item) => {
               const urgency = getUrgencyStyle(item.followUpAt);
               return (
-              <div key={item.id} className={`rounded-[1rem] border p-4 ${urgency.border}`}>
+              <div key={item.id} className={`rounded-xl border p-4 ${urgency.border}`}>
                 <div className="flex items-center justify-between gap-3">
                   <Link href={`/owner/students/${item.studentUserId}?name=${encodeURIComponent(item.studentName)}`} className="font-black text-slate-950 hover:underline">{item.studentName}</Link>
                   <div className="flex items-center gap-2">
@@ -382,7 +382,7 @@ export function OwnerDashboardManager() {
 
         <DashboardCard title="What to act on first" subtitle="Suggested owner workflow">
           <div className="grid gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.95rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-sm font-black text-slate-950">Operator playbook</p>
                 <p className="mt-1 text-sm text-slate-500">Keep this closed unless you want coaching prompts for the day.</p>
@@ -397,15 +397,15 @@ export function OwnerDashboardManager() {
             </div>
             {playbookOpen ? (
               <div className="grid gap-4">
-                <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Attendance notes</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">Prioritize students with missed-day patterns and open attendance notes before they become churn risk.</p>
                 </div>
-                <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Focus notes</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">Convert weak-focus cases into small daily targets instead of generic advice. Short recoverable plans work better.</p>
                 </div>
-                <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Payment plus discipline</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">When a due student also has weak attendance, combine billing follow-up with a study commitment conversation.</p>
                 </div>
@@ -417,7 +417,7 @@ export function OwnerDashboardManager() {
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <DashboardCard title="Collection pipeline" subtitle="Students needing payment or renewal action">
-          <div className="overflow-hidden rounded-[1.1rem] border border-slate-200">
+          <div className="overflow-hidden rounded-xl border border-slate-200">
             <div className="hidden grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr_0.8fr] gap-3 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-[0.2em] text-slate-500 md:grid">
               <span>Student</span>
               <span>Seat</span>
@@ -445,7 +445,7 @@ export function OwnerDashboardManager() {
 
         <DashboardCard title="Library controls" subtitle="Live settings and platform state">
           <div className="grid gap-4">
-            <div className="rounded-[1.1rem] bg-[linear-gradient(135deg,#1c978f_0%,#9ce6d5_100%)] p-4 text-white">
+            <div className="rounded-xl bg-[linear-gradient(135deg,#1c978f_0%,#9ce6d5_100%)] p-4 text-white">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-white/70">Plan and access</p>
               <p className="mt-3 text-2xl font-black">{data.library?.plan_name ?? "No active plan"}</p>
               <p className="mt-2 text-sm text-white/80">
@@ -453,18 +453,18 @@ export function OwnerDashboardManager() {
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">WiFi</p>
                 <p className="mt-3 text-lg font-black text-slate-950">{data.library?.wifi_name ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">{data.library?.wifi_password ?? "-"}</p>
               </div>
-              <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Check-in volume</p>
                 <p className="mt-3 text-lg font-black text-slate-950">{data.metrics.today_checkins} today</p>
                 <p className="mt-2 text-sm text-slate-500">{data.metrics.active_students} active students</p>
               </div>
             </div>
-            <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Notice board</p>
               <p className="mt-3 text-sm leading-7 text-slate-700">{data.library?.notice_message ?? "No notice available."}</p>
             </div>
@@ -475,7 +475,7 @@ export function OwnerDashboardManager() {
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Focus and attendance trends" subtitle="Last 14 days of owner-side discipline signals">
           <div className="grid gap-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.95rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
               <div className="flex flex-wrap gap-2">
                 {(["7d", "30d"] as const).map((window) => (
                   <button
@@ -501,12 +501,12 @@ export function OwnerDashboardManager() {
             {trendsOpen ? (
               <>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
+                  <div className="rounded-xl border border-slate-200 bg-white p-4">
                     <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top focus day</p>
                     <p className="mt-3 text-2xl font-black text-slate-950">{trends?.summary.topFocusMinutes ?? 0} min</p>
                     <p className="mt-2 text-sm text-slate-500">{trends?.summary.topFocusDay ?? "-"}</p>
                   </div>
-                  <div className="rounded-[1.1rem] border border-slate-200 bg-white p-4">
+                  <div className="rounded-xl border border-slate-200 bg-white p-4">
                     <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top attendance day</p>
                     <p className="mt-3 text-2xl font-black text-slate-950">{trends?.summary.topAttendanceStudents ?? 0} students</p>
                     <p className="mt-2 text-sm text-slate-500">{trends?.summary.topAttendanceDay ?? "-"}</p>
@@ -514,7 +514,7 @@ export function OwnerDashboardManager() {
                 </div>
                 <div className="grid gap-3">
                   {trendPoints.map((point) => (
-                    <div key={point.date} className="rounded-[1rem] border border-slate-200 bg-white p-4">
+                    <div key={point.date} className="rounded-xl border border-slate-200 bg-white p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-black text-slate-950">{point.date}</p>
                         <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{point.focusSessions} sessions</p>
@@ -545,7 +545,7 @@ export function OwnerDashboardManager() {
                 </div>
               </>
             ) : (
-              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+              <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
                 Trends are tucked away by default so the dashboard stays lighter. Open this only when you want comparison data.
               </div>
             )}
@@ -564,7 +564,7 @@ export function OwnerDashboardManager() {
         <DashboardCard title="Recent finance log" subtitle="Latest collection activity">
           <div className="space-y-3">
             {data.recentPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+              <div key={payment.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-4">
                 <div>
                   <p className="font-bold text-slate-950">{payment.student_name}</p>
                   <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.created_at).slice(0, 10)}</p>

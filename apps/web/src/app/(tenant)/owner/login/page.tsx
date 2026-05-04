@@ -20,7 +20,7 @@ export default function OwnerLoginPage() {
     >
       <div className="grid gap-4">
         <OwnerLoginForm />
-        <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
           New library owner?
           <div className="mt-3 flex flex-wrap gap-4">
             <Link href="/owner/register" className="font-semibold text-emerald-700">

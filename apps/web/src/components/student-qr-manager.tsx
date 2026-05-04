@@ -270,8 +270,8 @@ export function StudentQrManager() {
             ))}
           </div>
 
-          <div className="overflow-hidden rounded-[2rem] border border-[var(--lp-border)] bg-[linear-gradient(180deg,#eef7f3,#dceee9)] p-4 shadow-[0_16px_30px_rgba(15,23,42,0.08)]">
-            <div className="relative overflow-hidden rounded-[1.5rem] bg-[#19332d]">
+          <div className="overflow-hidden rounded-2xl border border-[var(--lp-border)] bg-[linear-gradient(180deg,#eef7f3,#dceee9)] p-4 shadow-sm">
+            <div className="relative overflow-hidden rounded-xl bg-[#19332d]">
               <video ref={videoRef} className="h-[22rem] w-full object-cover" playsInline muted />
               {!cameraActive ? (
                 <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(15,23,42,0.88))] px-6 text-center">
@@ -284,7 +284,7 @@ export function StudentQrManager() {
                   </div>
                 </div>
               ) : null}
-              <div className="pointer-events-none absolute inset-[16%] rounded-[1.5rem] border-2 border-white/80 shadow-[0_0_0_999px_rgba(15,23,42,0.18)]" />
+              <div className="pointer-events-none absolute inset-[16%] rounded-xl border-2 border-white/80 shadow-sm" />
             </div>
           </div>
 
@@ -293,7 +293,7 @@ export function StudentQrManager() {
               type="button"
               onClick={() => void startCamera()}
               disabled={cameraActive}
-              className="rounded-[1.25rem] border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-4 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
+              className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-4 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
             >
               Start camera scanner
             </button>
@@ -301,37 +301,37 @@ export function StudentQrManager() {
               type="button"
               onClick={stopCamera}
               disabled={!cameraActive}
-              className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-5 py-4 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
+              className="rounded-xl border border-[var(--lp-border)] bg-white px-5 py-4 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
             >
               Stop camera
             </button>
           </div>
 
-          <div className="rounded-[1.4rem] bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">
+          <div className="rounded-xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">
             {scannerStatus}
           </div>
 
           <button
             type="button"
             onClick={() => setShowManualFallback((current) => !current)}
-            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
             {showManualFallback ? "Hide manual fallback" : "Use manual fallback scanner"}
           </button>
           {showManualFallback ? (
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Fallback scanner</p>
               <textarea
                 value={manualQrPayload}
                 onChange={(event) => setManualQrPayload(event.target.value)}
                 placeholder="Paste the scanned QR payload here if camera access is unavailable."
-                className="mt-3 min-h-28 w-full rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                className="mt-3 min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
               />
               <button
                 type="button"
                 onClick={() => void runAction(scanMode, manualQrPayload.trim())}
                 disabled={!manualQrPayload.trim() || submitting !== null}
-                className="mt-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
+                className="mt-3 rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
               >
                 Run {scanMode === "checkin" ? "check-in" : "check-out"} from pasted QR
               </button>
@@ -342,21 +342,21 @@ export function StudentQrManager() {
 
       <DashboardCard title="Library access status" subtitle="Current active assignment and scan state">
         <div className="grid gap-4">
-          <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+          <div className={`rounded-xl px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {isOffline ? `Offline mode active. Queued QR actions: ${queuedCount}` : `Online and ready. Queued QR actions: ${queuedCount}`}
           </div>
-          {message ? <div className="rounded-[1.4rem] bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-700">{message}</div> : null}
-          {error ? <div className="rounded-[1.4rem] bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-600">{error}</div> : null}
+          {message ? <div className="rounded-xl bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-700">{message}</div> : null}
+          {error ? <div className="rounded-xl bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-600">{error}</div> : null}
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Current seat</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{data?.seatNumber ?? "-"}</p>
             </div>
             <button
               type="button"
               onClick={() => setShowPassDetails((current) => !current)}
-              className="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-left"
+              className="rounded-xl border border-slate-200 bg-white p-5 text-left"
             >
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Pass details</p>
               <p className="mt-3 text-base font-black text-slate-950">{showPassDetails ? "Hide technical pass info" : "Show technical pass info"}</p>
@@ -365,17 +365,17 @@ export function StudentQrManager() {
 
           {showPassDetails ? (
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">QR key</p>
                 <p className="mt-3 text-sm font-black text-slate-950">{data?.qrKeyId ?? "-"}</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Valid from</p>
                 <p className="mt-3 text-sm font-semibold text-slate-800">
                   {data?.validFrom ? new Date(data.validFrom).toLocaleString() : "-"}
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 md:col-span-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-5 md:col-span-2">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Valid until</p>
                 <p className="mt-3 text-sm font-semibold text-slate-800">
                   {data?.validUntil ? new Date(data.validUntil).toLocaleString() : "-"}
@@ -384,18 +384,18 @@ export function StudentQrManager() {
             </div>
           ) : null}
 
-          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
             Students no longer need to show their own QR. The library displays its QR and the student app scans it directly for check-in and check-out.
           </div>
 
           {data?.qrPayload ? (
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Reference preview</p>
               <div className="mt-3 flex items-center gap-4">
                 <img
                   src={buildQrImageUrl(data.qrPayload)}
                   alt="Reference QR preview"
-                  className="h-24 w-24 rounded-[1rem] border border-slate-200 bg-white"
+                  className="h-24 w-24 rounded-xl border border-slate-200 bg-white"
                 />
                 <p className="text-xs leading-6 text-slate-500">
                   This is only a reference preview. In the real flow, the student scans the QR displayed by the library.
@@ -407,7 +407,7 @@ export function StudentQrManager() {
           <button
             type="button"
             onClick={() => void loadQr()}
-            className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4 text-sm font-bold text-[var(--lp-text)]"
+            className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-4 text-sm font-bold text-[var(--lp-text)]"
           >
             Refresh access status
           </button>

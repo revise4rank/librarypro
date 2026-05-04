@@ -134,7 +134,7 @@ export function OwnerWebsiteBuilder({
 
   return (
     <div className="grid gap-4">
-      <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4">
+      <div className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-black text-slate-950">Website editor</p>
@@ -155,7 +155,7 @@ export function OwnerWebsiteBuilder({
       {editorOpen ? (
         <PublicProfileForm initialValues={values} requestedAction={requestedAction} onActionHandled={() => setRequestedAction(null)} />
       ) : (
-        <div className="rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-slate-500">
+        <div className="rounded-xl border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-slate-500">
           The website editor stays hidden until you are ready to edit content or publish updates.
         </div>
       )}

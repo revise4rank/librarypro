@@ -66,13 +66,13 @@ export function StudentLoginBrandPanel({
   );
 
   return (
-    <div className="rounded-[1rem] border border-slate-200 bg-[#0F172A] p-4 text-white shadow-[0_18px_42px_rgba(15,23,42,0.10)] md:p-5">
+    <div className="rounded-xl border border-slate-200 bg-[#0F172A] p-4 text-white shadow-sm md:p-5">
       <div className="flex items-center gap-3">
         {brand.brand_logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={brand.brand_logo_url} alt={brand.library_name} className="h-12 w-12 rounded-[0.75rem] object-cover" />
+          <img src={brand.brand_logo_url} alt={brand.library_name} className="h-12 w-12 rounded-lg object-cover" />
         ) : (
-          <div className="grid h-12 w-12 place-items-center rounded-[0.75rem] bg-white text-base font-black text-[#0F172A]">
+          <div className="grid h-12 w-12 place-items-center rounded-lg bg-white text-base font-black text-[#0F172A]">
             {fallbackInitials}
           </div>
         )}
@@ -90,7 +90,7 @@ export function StudentLoginBrandPanel({
       </p>
 
       {showLibraryLink ? (
-        <div className="mt-4 rounded-[1rem] border border-white/10 bg-white/5 p-3">
+        <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-xs font-semibold text-emerald-300">Portal includes</p>
           <p className="mt-2 text-sm leading-6 text-slate-200">{brand.offer_text}</p>
         </div>

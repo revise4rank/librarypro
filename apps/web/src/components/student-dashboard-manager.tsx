@@ -236,42 +236,42 @@ export function StudentDashboardManager() {
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <DashboardCard title="Access center" subtitle="Entry readiness, billing, and seat context">
           <div className="grid gap-3">
-            <div className="rounded-[0.75rem] border border-cyan-200 bg-cyan-50 p-4">
+            <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-4">
               <p className="text-sm font-semibold leading-5 text-slate-800">
                 Latest payment {data.latestPaymentDate?.slice(0, 10) ?? "-"} | Upcoming due {data.upcomingDueDate ?? "-"} | Current due Rs. {data.dueTotal}
               </p>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <p className="lp-stat-label">Seat</p>
                 <p className="mt-2 text-xl font-black text-slate-950">{data.assignment?.seat_number ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">{data.assignment?.plan_name ?? "No active plan"}</p>
               </div>
-              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <p className="lp-stat-label">WiFi</p>
                 <p className="mt-2 text-base font-black text-slate-950">{data.library?.wifi_name ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">{data.library?.wifi_password ?? "-"}</p>
               </div>
-              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <p className="lp-stat-label">Live status</p>
                 <p className="mt-2 text-xl font-black text-slate-950">{liveStatus}</p>
                 <p className="mt-2 text-sm text-slate-500">{activeLibrary?.library_name ?? data.library?.library_name ?? "Student workspace"}</p>
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-4">
-              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <p className="lp-stat-label">Streak</p>
                 <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.streakDays} days</p>
               </div>
-              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <p className="lp-stat-label">Inside</p>
                 <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.currentlyInside ? "Yes" : "No"}</p>
               </div>
-              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <p className="lp-stat-label">Attendance</p>
                 <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.attendanceScore}%</p>
               </div>
-              <div className="rounded-[0.75rem] border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <p className="lp-stat-label">Next due</p>
                 <p className="mt-2 text-xl font-black text-slate-950">{data.upcomingDueDate ?? "-"}</p>
               </div>
@@ -310,12 +310,12 @@ export function StudentDashboardManager() {
         <DashboardCard title="Study analytics" subtitle="This app should stay useful even outside the library">
           <div className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Total study</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{analytics.totalStudyHours} hrs</p>
                 <p className="mt-2 text-sm text-slate-500">{analytics.focusSessionsCount} sessions recorded</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Most studied</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{analytics.mostStudiedSubject ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">Monthly {analytics.monthlyStudyHours} hrs</p>
@@ -324,18 +324,18 @@ export function StudentDashboardManager() {
             <button
               type="button"
               onClick={() => toggleSection("analytics")}
-              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
             >
               {expandedSections.analytics ? "Hide deeper analytics" : "Show deeper analytics"}
             </button>
             {expandedSections.analytics ? (
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <div className="rounded-xl border border-slate-200 bg-white p-5">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Deep work</p>
                   <p className="mt-3 text-2xl font-black text-slate-950">{analytics.deepWorkHours} hrs</p>
                   <p className="mt-2 text-sm text-slate-500">Longer sessions above 50 min</p>
                 </div>
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                <div className="rounded-xl border border-slate-200 bg-white p-5">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Entry pattern</p>
                   <p className="mt-3 text-2xl font-black text-slate-950">{analytics.avgEntryHour ?? "-"}</p>
                   <p className="mt-2 text-sm text-slate-500">{analytics.missedDays} missed days in active window</p>
@@ -348,7 +348,7 @@ export function StudentDashboardManager() {
         <DashboardCard title="Latest alerts" subtitle="Payment reminders, expiry alerts, and operational updates">
           <div className="space-y-3">
             {previewNotifications.map((notification) => (
-              <article key={notification.id} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+              <article key={notification.id} className="rounded-xl border border-slate-200 bg-white px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-black text-slate-950">{notification.title}</p>
                   <span className="rounded-full bg-slate-100 px-3 py-2 text-[11px] font-black text-slate-600">{notification.type}</span>
@@ -360,7 +360,7 @@ export function StudentDashboardManager() {
               <button
                 type="button"
                 onClick={() => toggleSection("notices")}
-                className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
               >
                 {expandedSections.notices ? "Show fewer alerts" : `Show all ${data.notifications.length} alerts`}
               </button>
@@ -373,12 +373,12 @@ export function StudentDashboardManager() {
         <DashboardCard title="Revision engine" subtitle="The system should help you remember what you finished">
           <div className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-700">Pending revisions</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.pendingCount}</p>
                 <p className="mt-2 text-sm text-slate-600">{revisionAnalytics.overdueCount} overdue reminders</p>
               </div>
-              <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Revision consistency</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.revisionConsistencyDays} days</p>
                 <p className="mt-2 text-sm text-slate-600">{revisionAnalytics.revisionCompletionPercent}% completion rate</p>
@@ -387,7 +387,7 @@ export function StudentDashboardManager() {
             <button
               type="button"
               onClick={() => toggleSection("revisions")}
-              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
             >
               {expandedSections.revisions ? "Hide accountability details" : "Show accountability details"}
             </button>
@@ -397,19 +397,19 @@ export function StudentDashboardManager() {
         <DashboardCard title="Accountability loop" subtitle="Share progress only when you want, and keep the pressure healthy">
           {expandedSections.revisions ? (
             <div className="grid gap-4">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-sm leading-7 text-slate-600">
                   Library feed is separate from study widgets. Share completed topics, focus hours, and streak wins without popups or distractions.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Weak topics</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{revisionAnalytics.weakTopics}</p>
                 <p className="mt-2 text-sm text-slate-500">Use custom reminders to revisit the hardest topics faster.</p>
               </div>
             </div>
           ) : (
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-sm text-slate-600">Progress sharing and weak-topic reminders are ready. Open the details whenever you need them.</p>
             </div>
           )}
@@ -422,14 +422,14 @@ export function StudentDashboardManager() {
             <button
               type="button"
               onClick={() => toggleSection("calendar")}
-              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
             >
               {expandedSections.calendar ? "Hide study calendar" : "Show study calendar"}
             </button>
             {expandedSections.calendar ? (
               <div className="grid grid-cols-4 gap-3 md:grid-cols-7">
                 {calendarDays.map((day) => (
-                  <div key={day.date} className={`rounded-[1.25rem] border p-3 ${day.sessions > 0 ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+                  <div key={day.date} className={`rounded-xl border p-3 ${day.sessions > 0 ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
                     <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{day.date.slice(5)}</p>
                     <p className="mt-2 text-lg font-black text-slate-950">{day.sessions}</p>
                     <p className="text-xs text-slate-500">{day.minutes} min</p>
@@ -437,7 +437,7 @@ export function StudentDashboardManager() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-sm text-slate-600">Open the recent consistency and session pattern view whenever you want a weekly review.</p>
               </div>
             )}
@@ -446,17 +446,17 @@ export function StudentDashboardManager() {
 
         <DashboardCard title="Syllabus progress" subtitle="Long-term chapter coverage stays visible">
           <div className="grid gap-4">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Completed topics</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{syllabusAnalytics.completedTopics}/{syllabusAnalytics.totalTopics}</p>
               <p className="mt-2 text-sm text-slate-500">{syllabusAnalytics.dailyCompletedTopics} topics completed today</p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Subjects</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{syllabusAnalytics.totalSubjects}</p>
               <p className="mt-2 text-sm text-slate-500">Build your own syllabus instead of keeping prep vague.</p>
             </div>
-            <Link href="/student/syllabus" className="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-800">
+            <Link href="/student/syllabus" className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-800">
               Open full syllabus tracker
             </Link>
           </div>
@@ -469,7 +469,7 @@ export function StudentDashboardManager() {
             <button
               type="button"
               onClick={() => toggleSection("rewards")}
-              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
             >
               {expandedSections.rewards ? "Hide badge cabinet" : "Show badge cabinet"}
             </button>
@@ -483,7 +483,7 @@ export function StudentDashboardManager() {
                     icon: reward.metadata?.icon ?? fallbackTheme.icon,
                   };
                   return (
-                    <div key={reward.badgeCode} className={`rounded-[1.25rem] border p-4 ${theme.card}`}>
+                    <div key={reward.badgeCode} className={`rounded-xl border p-4 ${theme.card}`}>
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-black text-slate-950">{reward.badgeLabel}</p>
                         <span className={`rounded-full bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] ${theme.text}`}>{theme.tier}</span>
@@ -496,7 +496,7 @@ export function StudentDashboardManager() {
                 {rewards.length === 0 ? <p className="text-sm text-slate-500">Keep building consistency to unlock your first badge.</p> : null}
               </div>
             ) : (
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-sm text-slate-600">{rewards.length > 0 ? `${rewards.length} reward badges unlocked so far.` : "No badges yet. Consistency unlocks the first one."}</p>
               </div>
             )}
@@ -505,7 +505,7 @@ export function StudentDashboardManager() {
 
         <DashboardCard title="Recovery planner" subtitle="If days are missed, the app should show a realistic catch-up path">
           <div className="grid gap-4">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Missed days</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{analytics.missedDays}</p>
               <p className="mt-2 text-sm text-slate-500">
@@ -514,7 +514,7 @@ export function StudentDashboardManager() {
                   : "No recovery plan needed right now. Maintain the streak."}
               </p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Best subject to resume</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{analytics.mostStudiedSubject ?? "Pick one active subject"}</p>
               <p className="mt-2 text-sm text-slate-500">Restart with a familiar track to rebuild consistency faster.</p>
@@ -526,11 +526,11 @@ export function StudentDashboardManager() {
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <DashboardCard title="Library notice board" subtitle="Everything owner wants students to see right now">
           {expandedSections.notices ? (
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-sm leading-8 text-slate-700">{data.library?.notice_message ?? "No notice available right now."}</p>
             </div>
           ) : (
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-sm text-slate-600">Open the notice board and library history whenever you want to review operational updates.</p>
             </div>
           )}
@@ -541,21 +541,21 @@ export function StudentDashboardManager() {
             <button
               type="button"
               onClick={() => toggleSection("notices")}
-              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
             >
               {expandedSections.notices ? "Hide library context" : "Show library context"}
             </button>
             {expandedSections.notices ? (
               <div className="grid gap-3">
                 {libraries.map((library) => (
-                  <div key={library.library_id} className={`rounded-[1.25rem] border p-4 ${library.is_active ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+                  <div key={library.library_id} className={`rounded-xl border p-4 ${library.is_active ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
                     <p className="font-black text-slate-950">{library.library_name}</p>
                     <p className="mt-1 text-sm text-slate-500">{library.city} | Login ID {library.login_id} | Seat {library.seat_number ?? "-"}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-sm text-slate-600">{libraries.length} connected libraries on this account. Active library context is shown at the top.</p>
               </div>
             )}

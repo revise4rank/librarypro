@@ -77,18 +77,18 @@ export function StudentFocusMode() {
   if (!running) {
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,#09090b_0%,#111827_100%)] px-6 py-8 text-white">
-        <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-4xl content-center gap-8">
+        <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-4xl content-center gap-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.32em] text-emerald-400">Focus Mode</p>
-              <h1 className="mt-3 text-4xl font-black md:text-6xl">One task. One timer. No noise.</h1>
+              <h1 className="mt-3 text-4xl font-black md:text-5xl">One task. One timer. No noise.</h1>
             </div>
             <Link href="/student/focus" className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold text-white/90">
               Exit to tracker
             </Link>
           </div>
 
-          <div className="grid gap-6 rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur md:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid gap-6 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur md:grid-cols-[1.1fr_0.9fr]">
             <div className="grid gap-4">
               <label className="grid gap-2 text-sm font-semibold text-white/80">
                 Current task
@@ -124,7 +124,7 @@ export function StudentFocusMode() {
               </div>
             </div>
 
-            <div className="grid gap-4 rounded-[1.75rem] border border-emerald-400/20 bg-emerald-400/10 p-5">
+            <div className="grid gap-4 rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-5">
               <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-300">Mode rules</p>
               <p className="text-sm leading-7 text-white/75">No offers, no notice stream, no dashboard widgets. This screen stays intentionally minimal for dopamine control.</p>
               <div className="grid gap-3">
@@ -149,13 +149,13 @@ export function StudentFocusMode() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-8 px-6 py-10 text-center">
+      <div className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-6 px-6 py-10 text-center">
         <div className="absolute left-6 top-6 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.25em] text-emerald-300">
           Emergency calls only
         </div>
         <p className="text-xs font-black uppercase tracking-[0.35em] text-emerald-400">Focus Mode Active</p>
-        <h1 className="max-w-3xl text-4xl font-black md:text-6xl">{taskTitle}</h1>
-        <p className="text-7xl font-black tabular-nums md:text-8xl">{formatClock(remainingSeconds)}</p>
+        <h1 className="max-w-3xl text-4xl font-black md:text-5xl">{taskTitle}</h1>
+        <p className="text-5xl font-black tabular-nums md:text-5xl">{formatClock(remainingSeconds)}</p>
         <p className="max-w-xl text-sm leading-7 text-zinc-400">
           Everything non-essential is visually removed here. Finish one meaningful block, then return to the dashboard.
         </p>

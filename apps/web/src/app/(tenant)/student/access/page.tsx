@@ -7,7 +7,7 @@ export default function StudentAccessPage() {
       <PublicSiteHeader activeLabel="Student Login" />
 
       <section className="mx-auto grid w-full max-w-[1040px] gap-4 px-4 py-6 md:py-8 lg:grid-cols-[0.95fr_1.05fr] lg:py-10">
-        <div className="order-2 rounded-[1rem] border border-slate-200 bg-[#0F172A] p-4 text-white shadow-[0_18px_42px_rgba(15,23,42,0.10)] md:p-5 lg:order-1">
+        <div className="order-2 rounded-xl border border-slate-200 bg-[#0F172A] p-4 text-white shadow-sm md:p-5 lg:order-1">
           <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-emerald-300">
             Student Portal
           </div>
@@ -18,7 +18,7 @@ export default function StudentAccessPage() {
             Enter the library code once. We will open the correct student login page for QR, dues, notices, and study actions.
           </p>
 
-          <div className="mt-4 rounded-[1rem] border border-white/10 bg-white/5 p-3">
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
             <p className="text-xs font-semibold text-emerald-300">Need direct login?</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Link href="/student/login" className="lp-button border-white/10 bg-white/5 text-white hover:bg-white/10">
@@ -46,7 +46,7 @@ export default function StudentAccessPage() {
           </div>
         </div>
 
-        <div className="order-1 rounded-[1rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)] md:p-5 lg:order-2">
+        <div className="order-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5 lg:order-2">
           <p className="lp-label text-emerald-700">Student access</p>
           <h2 className="mt-2 text-[clamp(1.45rem,2vw,2.2rem)] font-bold tracking-[-0.04em] text-slate-950">
             Continue with your library code

@@ -73,7 +73,7 @@ function RosterStatCard({
   }[tone];
 
   return (
-    <div className={`min-w-0 rounded-[0.75rem] px-3 py-3 ring-1 ${toneClass}`}>
+    <div className={`min-w-0 rounded-lg px-3 py-3 ring-1 ${toneClass}`}>
       <p className="truncate text-xs font-semibold text-slate-600">{label}</p>
       <p className="mt-1 text-2xl font-black leading-none tracking-tight">{value}</p>
     </div>
@@ -104,7 +104,7 @@ function DocumentUploadField({
   onChange: (file: File | null) => void;
 }) {
   return (
-    <div className="grid gap-3 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-[var(--lp-text-soft)]">
+    <div className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-[var(--lp-text-soft)]">
       <div className="flex items-center justify-between gap-3">
         <span className="font-medium text-[var(--lp-text)]">{label}</span>
         <span className="text-xs">{status}</span>
@@ -112,7 +112,7 @@ function DocumentUploadField({
       <div className="flex flex-wrap items-center gap-3">
         <label
           htmlFor={id}
-          className="inline-flex cursor-pointer items-center justify-center rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]"
+          className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]"
         >
           Choose file
         </label>
@@ -360,12 +360,12 @@ export function OwnerStudentsManager() {
     <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
       <DashboardCard title="Active roster">
         <div className="grid gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 shadow-sm">
             <div>
               <p className="text-base font-bold tracking-tight text-[var(--lp-text)]">Roster</p>
               <p className="mt-0.5 text-xs text-[var(--lp-text-soft)]">Select a student to manage seat or plan.</p>
             </div>
-            <Link href="/owner/admissions" className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] transition hover:bg-emerald-100">
+            <Link href="/owner/admissions" className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] transition hover:bg-emerald-100">
               New admission
             </Link>
           </div>
@@ -386,7 +386,7 @@ export function OwnerStudentsManager() {
                 key={student.assignment_id}
                 type="button"
                 onClick={() => setSelectedAssignmentId(student.assignment_id)}
-                className={`grid gap-3 rounded-[0.75rem] border p-4 text-left ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]/35" : "border-[var(--lp-border)] bg-white"}`}
+                className={`grid gap-3 rounded-lg border p-4 text-left ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]/35" : "border-[var(--lp-border)] bg-white"}`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -415,14 +415,14 @@ export function OwnerStudentsManager() {
             <DashboardCard title="Selected student">
               <div className="grid gap-4">
                 <div className="grid gap-3 md:grid-cols-4">
-                  <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Current seat</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.seat_number ?? "Unallotted"}</p></div>
-                  <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Plan</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.plan_name}</p></div>
-                  <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Fee status</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.payment_status}</p></div>
-                  <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Validity</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.ends_at}</p></div>
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Current seat</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.seat_number ?? "Unallotted"}</p></div>
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Plan</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.plan_name}</p></div>
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Fee status</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.payment_status}</p></div>
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Validity</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.ends_at}</p></div>
                 </div>
 
-                <div className="grid gap-3 rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 md:grid-cols-[1fr_auto_auto]">
-                  <select value={selectedSeatId} onChange={(event) => setSelectedSeatId(event.target.value)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
+                <div className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 md:grid-cols-[1fr_auto_auto]">
+                  <select value={selectedSeatId} onChange={(event) => setSelectedSeatId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
                     <option value="">{selectedStudent.seat_number ? "Change seat" : "Allot seat"}</option>
                     {availableSeats.map((seat) => (
                       <option key={seat.id} value={seat.id}>
@@ -430,10 +430,10 @@ export function OwnerStudentsManager() {
                       </option>
                     ))}
                   </select>
-                  <button type="button" disabled={seatSaving || !selectedSeatId} onClick={() => void assignSeat()} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                  <button type="button" disabled={seatSaving || !selectedSeatId} onClick={() => void assignSeat()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                     {seatSaving ? "Saving..." : selectedStudent.seat_number ? "Change seat" : "Allot seat"}
                   </button>
-                  <button type="button" disabled={seatSaving || !selectedStudent.seat_number} onClick={() => void removeSeat()} className="rounded-[0.5rem] border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 disabled:opacity-60">
+                  <button type="button" disabled={seatSaving || !selectedStudent.seat_number} onClick={() => void removeSeat()} className="rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 disabled:opacity-60">
                     Remove seat
                   </button>
                 </div>
@@ -442,14 +442,14 @@ export function OwnerStudentsManager() {
                   <button
                     type="button"
                     onClick={() => setEditorMode("profile")}
-                    className={`rounded-[0.5rem] px-4 py-2 text-sm font-semibold ${editorMode === "profile" ? "border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"}`}
+                    className={`rounded-lg px-4 py-2 text-sm font-semibold ${editorMode === "profile" ? "border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"}`}
                   >
                     Edit profile
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditorMode("plan")}
-                    className={`rounded-[0.5rem] px-4 py-2 text-sm font-semibold ${editorMode === "plan" ? "border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"}`}
+                    className={`rounded-lg px-4 py-2 text-sm font-semibold ${editorMode === "plan" ? "border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"}`}
                   >
                     Renew / change plan
                   </button>
@@ -465,18 +465,18 @@ export function OwnerStudentsManager() {
             <DashboardCard title="Edit roster profile">
               <form className="grid gap-4" onSubmit={updateStudent}>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Full name" />
-                  <input value={form.fatherName} onChange={(event) => setForm((current) => ({ ...current, fatherName: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Guardian / father name" />
+                  <input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Full name" />
+                  <input value={form.fatherName} onChange={(event) => setForm((current) => ({ ...current, fatherName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Guardian / father name" />
                 </div>
-                <textarea value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} className="min-h-20 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Address" />
+                <textarea value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} className="min-h-20 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Address" />
                 <div className="grid gap-3 md:grid-cols-2">
-                  <input value={form.className} onChange={(event) => setForm((current) => ({ ...current, className: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Class" />
-                  <input value={form.preparingFor} onChange={(event) => setForm((current) => ({ ...current, preparingFor: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Preparing for" />
+                  <input value={form.className} onChange={(event) => setForm((current) => ({ ...current, className: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Class" />
+                  <input value={form.preparingFor} onChange={(event) => setForm((current) => ({ ...current, preparingFor: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Preparing for" />
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Contact number" />
-                  <input value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Email" />
-                  <input value={form.emergencyContact} onChange={(event) => setForm((current) => ({ ...current, emergencyContact: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Emergency contact" />
+                  <input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Contact number" />
+                  <input value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Email" />
+                  <input value={form.emergencyContact} onChange={(event) => setForm((current) => ({ ...current, emergencyContact: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Emergency contact" />
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <DocumentUploadField
@@ -494,8 +494,8 @@ export function OwnerStudentsManager() {
                     onChange={(file) => void handleDocumentUpload("school", file)}
                   />
                 </div>
-                <textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} className="min-h-20 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Roster notes" />
-                <button disabled={saving} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                <textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} className="min-h-20 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Roster notes" />
+                <button disabled={saving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                   {saving ? "Saving..." : "Save profile changes"}
                 </button>
               </form>
@@ -506,22 +506,22 @@ export function OwnerStudentsManager() {
             <DashboardCard title="Renew or change plan">
               <form className="grid gap-4" onSubmit={updateStudent}>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
                     <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Current plan</p>
                     <p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.plan_name}</p>
                   </div>
-                  <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
                     <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Current fee</p>
                     <p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">Rs. {Number(selectedStudent.plan_price).toLocaleString("en-IN")}</p>
                   </div>
-                  <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
                     <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Coupon</p>
                     <p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.coupon_code ?? "No coupon used"}</p>
                   </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <input list="owner-plan-names" value={form.planName} onChange={(event) => setForm((current) => ({ ...current, planName: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Plan name" />
-                  <input type="number" min="0" value={form.planPrice} onChange={(event) => setForm((current) => ({ ...current, planPrice: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Final amount" />
+                  <input list="owner-plan-names" value={form.planName} onChange={(event) => setForm((current) => ({ ...current, planName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Plan name" />
+                  <input type="number" min="0" value={form.planPrice} onChange={(event) => setForm((current) => ({ ...current, planPrice: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Final amount" />
                 </div>
                 <datalist id="owner-plan-names">
                   {plans.map((plan) => (
@@ -529,10 +529,10 @@ export function OwnerStudentsManager() {
                   ))}
                 </datalist>
                 <div className="grid gap-3 md:grid-cols-4">
-                  <input type="number" min="1" value={form.durationMonths} onChange={(event) => setForm((current) => ({ ...current, durationMonths: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration (months)" />
-                  <input type="date" value={form.startsAt} onChange={(event) => setForm((current) => ({ ...current, startsAt: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
-                  <input type="date" value={form.endsAt} onChange={(event) => setForm((current) => ({ ...current, endsAt: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
-                  <select value={form.paymentStatus} onChange={(event) => setForm((current) => ({ ...current, paymentStatus: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
+                  <input type="number" min="1" value={form.durationMonths} onChange={(event) => setForm((current) => ({ ...current, durationMonths: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration (months)" />
+                  <input type="date" value={form.startsAt} onChange={(event) => setForm((current) => ({ ...current, startsAt: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+                  <input type="date" value={form.endsAt} onChange={(event) => setForm((current) => ({ ...current, endsAt: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+                  <select value={form.paymentStatus} onChange={(event) => setForm((current) => ({ ...current, paymentStatus: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
                     <option value="PENDING">Pending</option>
                     <option value="DUE">Due</option>
                     <option value="PAID">Paid</option>
@@ -540,7 +540,7 @@ export function OwnerStudentsManager() {
                     <option value="REFUNDED">Refunded</option>
                   </select>
                 </div>
-                <button disabled={saving} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                <button disabled={saving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                   {saving ? "Saving..." : "Save plan and billing changes"}
                 </button>
               </form>

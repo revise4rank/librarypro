@@ -173,9 +173,9 @@ export function OwnerStudentProductivityManager({
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {summaryCards.map((card) => (
-          <div key={card.label} className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+          <div key={card.label} className="rounded-xl border border-slate-200 bg-white p-5">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">{card.label}</p>
-            <p className="mt-3 text-3xl font-black text-slate-950">{card.value}</p>
+            <p className="mt-3 text-2xl font-bold text-slate-950">{card.value}</p>
             <p className="mt-2 text-sm text-slate-500">{card.note}</p>
           </div>
         ))}
@@ -184,21 +184,21 @@ export function OwnerStudentProductivityManager({
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <DashboardCard title="Performance summary" subtitle="Owner-friendly discipline signals">
           <div className="grid gap-4">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Top subject</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{data.summary.mostStudiedSubject ?? "Not enough data"}</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Longest streak</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{data.summary.longestStreak} days</p>
               </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Deep work</p>
                 <p className="mt-3 text-2xl font-black text-slate-950">{data.summary.deepWorkHours} hrs</p>
               </div>
             </div>
-            <div className="rounded-[1.5rem] border border-cyan-200 bg-cyan-50 p-5">
+            <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-5">
               <p className="text-sm font-semibold text-slate-800">{recoveryMessage}</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
@@ -210,7 +210,7 @@ export function OwnerStudentProductivityManager({
                   icon: badge.metadata?.icon ?? fallbackTheme.icon,
                 };
                 return (
-                <div key={badge.badgeCode} className={`rounded-[1.25rem] border p-4 ${theme.tone}`}>
+                <div key={badge.badgeCode} className={`rounded-xl border p-4 ${theme.tone}`}>
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-black text-slate-950">{badge.badgeLabel}</p>
                     <span className="rounded-full bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">{theme.tier}</span>
@@ -227,7 +227,7 @@ export function OwnerStudentProductivityManager({
         <DashboardCard title="Study mix" subtitle="Where the student is actually spending time">
           <div className="grid gap-3">
             {data.focusSubjects.map((subject) => (
-              <div key={subject.subjectLabel} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+              <div key={subject.subjectLabel} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-black text-slate-950">{subject.subjectLabel}</p>
                   <p className="text-sm font-bold text-[var(--lp-primary)]">{subject.totalMinutes} min</p>
@@ -257,7 +257,7 @@ export function OwnerStudentProductivityManager({
         <DashboardCard title="Trend line" subtitle="Last 14 days of focus and attendance">
           <div className="grid gap-3">
             {data.trends.map((point) => (
-              <div key={point.date} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+              <div key={point.date} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-black text-slate-950">{point.date}</p>
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{point.focusSessions} sessions</p>
@@ -278,7 +278,7 @@ export function OwnerStudentProductivityManager({
         <DashboardCard title="Recent study log" subtitle={`Latest tracked sessions${studentName ? ` for ${studentName}` : ""}`}>
           <div className="grid gap-3">
             {data.recentSessions.map((session, index) => (
-              <div key={`${session.completedAt}-${index}`} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+              <div key={`${session.completedAt}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-black text-slate-950">{session.topicTitle ?? "Focus session"}</p>
                   <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">{session.sessionType}</span>
@@ -293,15 +293,15 @@ export function OwnerStudentProductivityManager({
 
         <DashboardCard title="Owner coaching cues" subtitle="Simple actions an operator can take next">
           <div className="grid gap-4">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">If attendance is weak</p>
               <p className="mt-3 text-sm leading-7 text-slate-600">Recommend a fixed arrival window and seat-stability plan. Students with irregular check-ins usually need timing discipline before longer focus blocks.</p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">If focus is weak</p>
               <p className="mt-3 text-sm leading-7 text-slate-600">Push one short daily target first. Smaller consistent wins generally convert better than forcing long sessions immediately.</p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">If syllabus is stalled</p>
               <p className="mt-3 text-sm leading-7 text-slate-600">Ask the student to break the next chapter into smaller topics and complete at least one visible topic per day.</p>
             </div>
@@ -349,7 +349,7 @@ export function OwnerStudentProductivityManager({
         <DashboardCard title="Intervention history" subtitle="Last coaching, follow-up, and operational notes">
           <div className="grid gap-3">
             {data.interventionNotes.map((note) => (
-              <div key={note.id} className={`rounded-[1.25rem] border p-4 ${getUrgencyStyle(note.followUpAt).border}`}>
+              <div key={note.id} className={`rounded-xl border p-4 ${getUrgencyStyle(note.followUpAt).border}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <p className="font-black text-slate-950">{note.noteType}</p>

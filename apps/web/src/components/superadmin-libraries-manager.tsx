@@ -41,7 +41,7 @@ export function SuperadminLibrariesManager() {
   return (
     <DashboardCard title="Tenant directory" subtitle="All onboarded libraries">
       {error ? <p className="mb-4 text-sm font-semibold text-amber-700">{error}</p> : null}
-      <div className="overflow-hidden rounded-[1.5rem] border border-slate-200">
+      <div className="overflow-hidden rounded-xl border border-slate-200">
         <div className="hidden grid-cols-[1.2fr_0.8fr_1fr_0.9fr_0.7fr_0.8fr] gap-3 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500 md:grid">
           <span>Library</span>
           <span>City</span>

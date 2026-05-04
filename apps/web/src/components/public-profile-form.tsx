@@ -174,7 +174,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
 
   return (
     <div className="lp-density-surface grid gap-4">
-      <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4">
+      <div className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-4">
         <div className="flex flex-wrap gap-2">
           {sections.map(([key, label]) => (
             <button
@@ -191,21 +191,21 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
         </div>
       </div>
 
-      <div className="sticky top-4 z-10 grid gap-3 rounded-[1.5rem] border border-[var(--lp-border)] bg-white/95 px-4 py-4 backdrop-blur">
+      <div className="sticky top-4 z-10 grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white/95 px-4 py-4 backdrop-blur">
         <div className="grid gap-3 md:grid-cols-4">
-          <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Subdomain</p>
             <p className="mt-2 text-sm font-bold text-slate-950">{values.subdomain || "Pending"}</p>
           </div>
-          <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">State</p>
             <p className="mt-2 text-sm font-bold text-slate-950">{values.published ? "Published" : "Draft"}</p>
           </div>
-          <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Budget</p>
             <p className="mt-2 text-sm font-bold text-slate-950">Rs. {values.adBudget || "0"}</p>
           </div>
-          <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Active section</p>
             <p className="mt-2 text-sm font-bold text-slate-950">{sections.find(([key]) => key === activeSection)?.[1]}</p>
           </div>
@@ -234,11 +234,11 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
 
       {activeSection === "identity" ? (
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
+          <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
             <h2 className="text-2xl font-black text-slate-950">Subdomain and publishing</h2>
             <p className="mt-1 text-sm text-slate-500">Premium plan libraries get this shareable public web address</p>
             <div className="mt-6 grid gap-4">
-              <div className="rounded-[1.5rem] bg-slate-50 p-5">
+              <div className="rounded-xl bg-slate-50 p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">Chosen subdomain</p>
                 <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center">
                   <input
@@ -266,11 +266,11 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                 ) : null}
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[1.5rem] bg-emerald-50 p-5">
+                <div className="rounded-xl bg-emerald-50 p-5">
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-700">Status</p>
                   <p className="mt-3 text-2xl font-black text-slate-950">{values.published ? "Published" : "Draft"}</p>
                 </div>
-                <div className="rounded-[1.5rem] bg-orange-50 p-5">
+                <div className="rounded-xl bg-orange-50 p-5">
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-orange-700">Ad budget</p>
                   <input
                     value={values.adBudget}
@@ -283,11 +283,11 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
             </div>
           </section>
 
-          <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
+          <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
             <h2 className="text-2xl font-black text-slate-950">Brand assets</h2>
             <p className="mt-1 text-sm text-slate-500">Manage logo and banner assets from one calm media panel.</p>
             <div className="mt-6 grid gap-4">
-              <div className="rounded-[1.5rem] bg-[#fff7ef] p-5">
+              <div className="rounded-xl bg-[#fff7ef] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-primary)]">Brand logo</p>
                 <input
                   value={values.brandLogoUrl}
@@ -303,7 +303,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                   />
                 </div>
               </div>
-              <div className="rounded-[1.5rem] bg-[#eef7f5] p-5">
+              <div className="rounded-xl bg-[#eef7f5] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-accent)]">Hero banner</p>
                 <input
                   value={values.heroBannerUrl}
@@ -325,13 +325,13 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
       ) : null}
 
       {activeSection === "hero" ? (
-        <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
+        <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
           <h2 className="text-2xl font-black text-slate-950">Hero and brand content</h2>
           <p className="mt-1 text-sm text-slate-500">What students see first</p>
           <div className="mt-6 grid gap-4 xl:grid-cols-[0.82fr_1.18fr]">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Hero image</p>
-              <div className="mt-3 overflow-hidden rounded-[1rem] bg-slate-100">
+              <div className="mt-3 overflow-hidden rounded-xl bg-slate-100">
                 {values.heroBannerUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={values.heroBannerUrl} alt="Hero banner preview" className="aspect-[16/10] w-full object-cover" />
@@ -359,7 +359,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
       ) : null}
 
       {activeSection === "theme" ? (
-        <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
+        <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
           <h2 className="text-2xl font-black text-slate-950">Theme builder</h2>
           <div className="mt-6 grid gap-6 xl:grid-cols-[0.7fr_1.3fr]">
             <div className="grid gap-4">
@@ -376,12 +376,12 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                 <input type="color" value={values.themeSurface} onChange={(event) => updateValue("themeSurface", event.target.value)} className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-2 py-2" />
               </label>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 p-4" style={{ background: values.themeSurface }}>
-              <div className="rounded-[1.25rem] px-4 py-4 text-white" style={{ background: values.themePrimary }}>
+            <div className="rounded-xl border border-slate-200 p-4" style={{ background: values.themeSurface }}>
+              <div className="rounded-xl px-4 py-4 text-white" style={{ background: values.themePrimary }}>
                 <p className="text-sm font-black">Live theme preview</p>
                 <p className="mt-1 text-sm opacity-90">{values.highlightOffer || values.heroTitle || "Your campaign card and hero CTA will use this tone."}</p>
               </div>
-              <div className="mt-3 rounded-[1rem] px-4 py-3 text-sm font-semibold text-white" style={{ background: values.themeAccent }}>
+              <div className="mt-3 rounded-xl px-4 py-3 text-sm font-semibold text-white" style={{ background: values.themeAccent }}>
                 Accent chip for offer banners, pricing tags, and action pills
               </div>
             </div>
@@ -390,7 +390,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
       ) : null}
 
       {activeSection === "contact" ? (
-        <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
+        <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
           <h2 className="text-2xl font-black text-slate-950">Contact details</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <input value={values.contactName} onChange={(event) => updateValue("contactName", event.target.value)} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
@@ -402,7 +402,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
       ) : null}
 
       {activeSection === "seo" ? (
-        <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
+        <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
           <h2 className="text-2xl font-black text-slate-950">Location and SEO</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <input value={values.addressText} onChange={(event) => updateValue("addressText", event.target.value)} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
@@ -416,7 +416,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
       ) : null}
 
       {activeSection === "gallery" ? (
-        <section className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-[0_24px_70px_rgba(111,95,74,0.10)]">
+        <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
           <h2 className="text-2xl font-black text-slate-950">Amenities and gallery</h2>
           <div className="mt-6 grid gap-4">
             <textarea
@@ -439,7 +439,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Live gallery preview</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {values.galleryImages.map((url, index) => (
-                    <div key={`${url}-${index}`} className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
+                    <div key={`${url}-${index}`} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                       <div className="aspect-[4/3] bg-slate-100">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={url} alt={`Gallery ${index + 1}`} className="h-full w-full object-cover" />

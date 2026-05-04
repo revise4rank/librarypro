@@ -79,7 +79,7 @@ export function PublicProfileImageUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)] disabled:opacity-60"
+          className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-sm disabled:opacity-60"
         >
           {uploading ? "Uploading..." : label}
         </button>

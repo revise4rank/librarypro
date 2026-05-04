@@ -39,7 +39,7 @@ export default async function MarketplacePage() {
             </div>
           </div>
 
-          <div className="lp-marketplace-banner relative h-[136px] overflow-hidden rounded-[1rem] border border-slate-200 bg-[#0F172A] shadow-[0_18px_44px_rgba(15,23,42,0.12)]">
+          <div className="lp-marketplace-banner relative h-[136px] overflow-hidden rounded-xl border border-slate-200 bg-[#0F172A] shadow-sm">
             {bannerSlides.map((slide, index) => (
               <article
                 key={slide.title}
@@ -60,7 +60,7 @@ export default async function MarketplacePage() {
       </section>
 
       <section id="marketplace-search" className="mx-auto max-w-[1280px] px-4 py-5 pb-16">
-        <Suspense fallback={<div className="rounded-[2rem] border border-[var(--lp-border)] bg-[rgba(255,251,245,0.96)] p-6 text-sm font-medium text-[var(--lp-muted)]">Loading marketplace search...</div>}>
+        <Suspense fallback={<div className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,251,245,0.96)] p-6 text-sm font-medium text-[var(--lp-muted)]">Loading marketplace search...</div>}>
           <MarketplaceSearch />
         </Suspense>
       </section>

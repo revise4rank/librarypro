@@ -134,28 +134,28 @@ export function StudentSyllabusManager() {
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
       <section className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Subjects</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.analytics.totalSubjects}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.totalSubjects}</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Topics</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.analytics.totalTopics}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.totalTopics}</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Completed</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.analytics.completedTopics}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.completedTopics}</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Today</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{data.analytics.dailyCompletedTopics}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.dailyCompletedTopics}</p>
         </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
         <DashboardCard title="Create subject" subtitle="Only open creation panels when actually planning">
           <div className="grid gap-4">
-            <button type="button" onClick={() => setShowSubjectForm((current) => !current)} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+            <button type="button" onClick={() => setShowSubjectForm((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
               {showSubjectForm ? "Hide subject creator" : "Show subject creator"}
             </button>
             {showSubjectForm ? (
@@ -179,7 +179,7 @@ export function StudentSyllabusManager() {
                 </button>
               </>
             ) : (
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                 Add a new subject only when your study map changes. Existing subjects stay below.
               </div>
             )}
@@ -188,7 +188,7 @@ export function StudentSyllabusManager() {
 
         <DashboardCard title="Create topic" subtitle="Break subjects into small, finishable blocks">
           <div className="grid gap-4">
-            <button type="button" onClick={() => setShowTopicForm((current) => !current)} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+            <button type="button" onClick={() => setShowTopicForm((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
               {showTopicForm ? "Hide topic creator" : "Show topic creator"}
             </button>
             {showTopicForm ? (
@@ -226,7 +226,7 @@ export function StudentSyllabusManager() {
                 </button>
               </>
             ) : (
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                 Topic creation stays tucked away until you need to expand the syllabus.
               </div>
             )}
@@ -261,7 +261,7 @@ export function StudentSyllabusManager() {
               {openSubjects[subject.id] ? (
                 <div className="grid gap-3">
                   {subject.topics.map((topic) => (
-                    <div key={topic.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                    <div key={topic.id} className="rounded-xl border border-slate-200 bg-white p-4">
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                           <p className="font-black text-slate-950">{topic.title}</p>

@@ -419,8 +419,8 @@ export function StudentJoinLibraryManager() {
             </div>
           ) : (
             <div className="grid gap-4">
-              <div className="overflow-hidden rounded-[2rem] border border-[var(--lp-border)] bg-[linear-gradient(180deg,#eef7f3,#dceee9)] p-4 shadow-[0_16px_30px_rgba(15,23,42,0.08)]">
-                <div className="relative overflow-hidden rounded-[1.5rem] bg-[#19332d]">
+              <div className="overflow-hidden rounded-2xl border border-[var(--lp-border)] bg-[linear-gradient(180deg,#eef7f3,#dceee9)] p-4 shadow-sm">
+                <div className="relative overflow-hidden rounded-xl bg-[#19332d]">
                   <video ref={videoRef} className="h-[18rem] w-full object-cover" playsInline muted />
                   {!cameraActive ? (
                     <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(15,23,42,0.88))] px-6 text-center">
@@ -430,7 +430,7 @@ export function StudentJoinLibraryManager() {
                       </div>
                     </div>
                   ) : null}
-                  <div className="pointer-events-none absolute inset-[16%] rounded-[1.5rem] border-2 border-white/80 shadow-[0_0_0_999px_rgba(15,23,42,0.18)]" />
+                  <div className="pointer-events-none absolute inset-[16%] rounded-xl border-2 border-white/80 shadow-sm" />
                 </div>
               </div>
 
@@ -518,7 +518,7 @@ export function StudentJoinLibraryManager() {
           <button
             type="button"
             onClick={() => setShowTimeline((current) => !current)}
-            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
             {showTimeline ? "Hide library timeline" : `Show library timeline (${libraries.length})`}
           </button>
@@ -587,7 +587,7 @@ export function StudentJoinLibraryManager() {
           <button
             type="button"
             onClick={() => setShowReviewPanel((current) => !current)}
-            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
             {showReviewPanel ? "Hide review form" : "Write marketplace review"}
           </button>
@@ -643,7 +643,7 @@ export function StudentJoinLibraryManager() {
           <button
             type="button"
             onClick={() => setShowRequestHistory((current) => !current)}
-            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
             {showRequestHistory ? "Hide join request history" : `Show join request history (${history.length})`}
           </button>

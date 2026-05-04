@@ -151,23 +151,23 @@ export function OwnerExpensesManager() {
 
   return (
     <div className="grid gap-6">
-      <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+      <div className={`rounded-xl px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
         {isOffline ? `Offline mode active. Queued expense actions: ${queuedExpenses}` : `Online and ready. Queued expense actions: ${queuedExpenses}`}
       </div>
       {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
       <section className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-[1.75rem] bg-white p-5 ring-1 ring-slate-200">
+        <article className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
           <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">Monthly revenue</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">Rs. {data ? data.summary.monthlyRevenue.toLocaleString() : 0}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">Rs. {data ? data.summary.monthlyRevenue.toLocaleString() : 0}</p>
         </article>
-        <article className="rounded-[1.75rem] bg-white p-5 ring-1 ring-slate-200">
+        <article className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
           <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">Monthly expenses</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">Rs. {data ? data.summary.monthlyExpenses.toLocaleString() : 0}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">Rs. {data ? data.summary.monthlyExpenses.toLocaleString() : 0}</p>
         </article>
-        <article className="rounded-[1.75rem] bg-white p-5 ring-1 ring-slate-200">
+        <article className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
           <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">Monthly profit</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">Rs. {data ? data.summary.monthlyProfit.toLocaleString() : 0}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">Rs. {data ? data.summary.monthlyProfit.toLocaleString() : 0}</p>
         </article>
       </section>
 
@@ -191,10 +191,10 @@ export function OwnerExpensesManager() {
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {data?.rows.map((expense) => (
-              <article key={expense.id} className="rounded-[1.75rem] bg-white p-5 ring-1 ring-slate-200">
+              <article key={expense.id} className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">{expense.category}</p>
                 <p className="mt-3 text-xl font-black text-slate-950">{expense.title}</p>
-                <p className="mt-3 text-3xl font-black text-slate-950">Rs. {Number(expense.amount).toLocaleString()}</p>
+                <p className="mt-3 text-2xl font-bold text-slate-950">Rs. {Number(expense.amount).toLocaleString()}</p>
                 <p className="mt-2 text-sm text-slate-500">{expense.spent_on}</p>
                 {expense.notes ? <p className="mt-3 text-sm text-slate-600">{expense.notes}</p> : null}
               </article>

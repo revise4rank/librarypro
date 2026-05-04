@@ -95,7 +95,7 @@ export function StudentOffersManager() {
         subtitle="Optional discovery section. Study flow se intentionally separate."
       >
         <div className="grid gap-4">
-          <button type="button" onClick={() => setShowCategories((current) => !current)} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+          <button type="button" onClick={() => setShowCategories((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
             {showCategories ? "Hide category filters" : "Show category filters"}
           </button>
           {showCategories ? (
@@ -127,7 +127,7 @@ export function StudentOffersManager() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
               Filters stay hidden unless you want to narrow down coaching, courses, colleges, or discounts.
             </div>
           )}
@@ -139,7 +139,7 @@ export function StudentOffersManager() {
         {offers.map((offer) => (
           <DashboardCard key={offer.id} title={offer.title} subtitle={`${offer.category_name} | ${offer.city ?? "India"}${offer.area ? ` | ${offer.area}` : ""}`}>
             <div className="grid gap-4">
-              <div className="aspect-[16/10] overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#f7e6d8,#fff8ef_50%,#dff1ec)]">
+              <div className="aspect-[16/10] overflow-hidden rounded-xl bg-[linear-gradient(135deg,#f7e6d8,#fff8ef_50%,#dff1ec)]">
                 {offer.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={offer.image_url} alt={offer.title} className="h-full w-full object-cover" />
@@ -178,7 +178,7 @@ export function StudentOffersManager() {
       </section>
 
       {meta ? (
-        <div className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[var(--lp-border)] bg-white px-5 py-4">
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--lp-border)] bg-white px-5 py-4">
           <p className="text-sm text-slate-600">Page {meta.page} of {meta.totalPages}</p>
           <div className="flex gap-3">
             <button type="button" disabled={meta.page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50">

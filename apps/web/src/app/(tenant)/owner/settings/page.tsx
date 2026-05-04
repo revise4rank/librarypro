@@ -16,7 +16,7 @@ export default function OwnerSettingsPage({ searchParams }: { searchParams?: { t
       description="Manage library profile, pricing plans, coupons, account, website, team access, and billing from one settings hub."
       nav={ownerNav}
       actions={
-        <Link href="/owner/dashboard" className="rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-sm font-semibold text-[var(--lp-text)]">
+        <Link href="/owner/dashboard" className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-sm font-semibold text-[var(--lp-text)]">
           Dashboard
         </Link>
       }

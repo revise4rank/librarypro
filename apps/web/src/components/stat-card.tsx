@@ -16,7 +16,7 @@ export function StatCard({
   children?: ReactNode;
 }) {
   return (
-    <div className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+    <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4 shadow-sm">
       <p className="lp-stat-label">{label}</p>
       <div className="mt-2 flex items-start justify-between gap-3">
         <p className="lp-stat-value">{value}</p>

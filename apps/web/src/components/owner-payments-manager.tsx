@@ -290,11 +290,11 @@ export function OwnerPaymentsManager() {
   return (
     <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
       {toast ? (
-        <div className="fixed bottom-5 right-5 z-50 rounded-2xl border border-[var(--lp-accent-soft)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)] shadow-[0_20px_45px_rgba(15,23,42,0.12)]">
+        <div className="fixed bottom-5 right-5 z-50 rounded-2xl border border-[var(--lp-accent-soft)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)] shadow-sm">
           {toast}
         </div>
       ) : null}
-      <section className="xl:col-span-2 rounded-[1.25rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-[0_18px_34px_rgba(22,184,113,0.16)]">
+      <section className="xl:col-span-2 rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Revenue desk</p>
@@ -304,10 +304,10 @@ export function OwnerPaymentsManager() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <div className="rounded-[0.95rem] bg-white/12 px-4 py-2.5 text-sm font-black">
+            <div className="rounded-lg bg-white/12 px-4 py-2.5 text-sm font-black">
               Rs. {summary.paid.toLocaleString("en-IN")} paid
             </div>
-            <div className="rounded-[0.95rem] bg-white px-4 py-2.5 text-sm font-black text-[#129b62]">
+            <div className="rounded-lg bg-white px-4 py-2.5 text-sm font-black text-[#129b62]">
               Rs. {summary.due.toLocaleString("en-IN")} due
             </div>
           </div>
@@ -316,7 +316,7 @@ export function OwnerPaymentsManager() {
       <DashboardCard title="Collections desk" subtitle={`Socket ${liveStatus} | keep entry form hidden until needed`}>
         <div className="grid gap-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            <div className={`rounded-[1.2rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+            <div className={`rounded-lg px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
               {isOffline ? `Offline mode active. Queued actions: ${queuedPayments}` : `Online and ready. Queued actions: ${queuedPayments}`}
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -325,7 +325,7 @@ export function OwnerPaymentsManager() {
               <StatCard label="Pending" value={summary.pending} note="Awaiting closure" />
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
             <div>
               <p className="text-sm font-black text-slate-950">{editingId ? "Edit payment" : "New roster-linked payment"}</p>
               <p className="mt-1 text-sm text-slate-500">Every payment must stay linked to one roster assignment, so the ledger always matches the real student record.</p>
@@ -340,7 +340,7 @@ export function OwnerPaymentsManager() {
           </div>
           {composerOpen ? (
         <form className="grid gap-4" onSubmit={onSubmit}>
-          <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+          <div className={`rounded-xl px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {isOffline ? `Offline mode active. Queued owner payment actions: ${queuedPayments}` : `Online and ready. Queued owner payment actions: ${queuedPayments}`}
           </div>
           <div className="grid gap-3 md:grid-cols-[1.2fr_0.8fr]">
@@ -359,7 +359,7 @@ export function OwnerPaymentsManager() {
             <input value={selectedStudent?.student_name ?? form.studentName} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" placeholder="Student" />
           </div>
           {selectedStudent ? (
-            <div className="grid gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3 md:grid-cols-4">
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 md:grid-cols-4">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Plan</p>
                 <p className="mt-1 text-sm font-semibold text-slate-950">{selectedStudent.plan_name}</p>
@@ -427,7 +427,7 @@ export function OwnerPaymentsManager() {
           </div>
         </form>
           ) : (
-            <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+            <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
               The entry form is hidden. Open it only for a new collection or payment edit.
             </div>
           )}
@@ -438,7 +438,7 @@ export function OwnerPaymentsManager() {
         {selectedPayment ? (
           <DashboardCard title="Selected payment" subtitle="Quick detail before edit or follow-up">
             <div className="grid gap-4">
-              <div className="flex flex-wrap items-start justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
                 <div>
                   <p className="text-lg font-black text-slate-950">{selectedPayment.student_name}</p>
                   <p className="mt-1 text-sm text-slate-500">
@@ -454,21 +454,21 @@ export function OwnerPaymentsManager() {
                 </button>
               </div>
               <div className="grid gap-3 md:grid-cols-4">
-                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Amount</p>
                   <p className="mt-2 text-lg font-black text-slate-950">Rs. {Number(selectedPayment.amount).toLocaleString("en-IN")}</p>
                 </div>
-                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
                   <p className={`mt-2 text-lg font-black ${selectedPayment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>
                     {selectedPayment.status}
                   </p>
                 </div>
-                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Reference</p>
                   <p className="mt-2 text-sm font-semibold text-slate-950">{selectedPayment.reference_no ?? "-"}</p>
                 </div>
-                <div className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Due date</p>
                   <p className="mt-2 text-sm font-semibold text-slate-950">{selectedPayment.due_date?.slice(0, 10) ?? "-"}</p>
                 </div>
@@ -495,7 +495,7 @@ export function OwnerPaymentsManager() {
                   key={payment.id}
                   type="button"
                   onClick={() => setSelectedPaymentId(payment.id)}
-                  className={`flex w-full flex-col gap-3 rounded-[1.25rem] border px-4 py-4 text-left transition sm:flex-row sm:items-center sm:justify-between ${
+                  className={`flex w-full flex-col gap-3 rounded-xl border px-4 py-4 text-left transition sm:flex-row sm:items-center sm:justify-between ${
                     selectedPaymentId === payment.id
                       ? "border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-text)]"
                       : "border-slate-200 bg-white"

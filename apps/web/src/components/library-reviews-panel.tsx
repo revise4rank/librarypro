@@ -38,7 +38,7 @@ export function LibraryReviewsPanel({ reviews }: { reviews: PublicLibraryReview[
         ))}
       </div>
       {reviews.slice(0, 6).map((review) => (
-        <div key={review.id} className="rounded-[1.5rem] border border-[var(--lp-border)] bg-white p-5">
+        <div key={review.id} className="rounded-xl border border-[var(--lp-border)] bg-white p-5">
           <div className="flex items-center justify-between gap-3">
             <p className="font-bold text-[var(--lp-text)]">{review.student_name}</p>
             <p className="text-sm font-black text-[var(--lp-accent)]">{review.rating}/5</p>
@@ -55,7 +55,7 @@ export function LibraryReviewsPanel({ reviews }: { reviews: PublicLibraryReview[
         </div>
       ))}
       {reviews.length === 0 ? (
-        <div className="rounded-[1.5rem] border border-dashed border-[var(--lp-border)] bg-white p-5 text-sm text-[var(--lp-muted)]">
+        <div className="rounded-xl border border-dashed border-[var(--lp-border)] bg-white p-5 text-sm text-[var(--lp-muted)]">
           No student reviews yet. Joined students can add the first review from their app.
         </div>
       ) : null}

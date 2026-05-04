@@ -37,7 +37,7 @@ export default async function TenantPortalPage({ searchParams }: TenantPortalPag
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,_#0f172a,_#111827_45%,_#1e293b)] px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
-        <header className="rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">
+        <header className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-md backdrop-blur">
           <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">LibraryPro Tenant Portal</p>
           <h1 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
             One subdomain, two focused workspaces.
@@ -56,7 +56,7 @@ export default async function TenantPortalPage({ searchParams }: TenantPortalPag
             <a
               key={item.href}
               href={item.href}
-              className="group rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-xl transition hover:-translate-y-1 hover:bg-white/10"
+              className="group rounded-2xl border border-white/10 bg-white/5 p-6 shadow-md transition hover:-translate-y-1 hover:bg-white/10"
             >
               <div className={`h-2 w-32 rounded-full bg-gradient-to-r ${item.accent}`} />
               <h2 className="mt-6 text-2xl font-black">{item.title}</h2>

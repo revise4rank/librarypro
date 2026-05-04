@@ -224,7 +224,7 @@ export function OwnerBillingManager() {
       <Surface title="Recent payments">
         <div className="grid gap-3">
           {(data?.recentPlatformPayments ?? []).map((payment) => (
-            <article key={payment.id} className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4">
+            <article key={payment.id} className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="font-black text-slate-950">Rs. {payment.amount} {payment.currency}</p>
                 <span className="rounded-full bg-[#edf7ef] px-3 py-2 text-xs font-black text-[var(--lp-primary)]">{payment.status}</span>

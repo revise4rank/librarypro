@@ -42,7 +42,7 @@ export default async function StudentLoginPage({
       <section className="mx-auto grid w-full max-w-[1040px] gap-4 px-4 py-6 md:py-8 lg:grid-cols-[0.95fr_1.05fr] lg:py-10">
         <StudentLoginBrandPanel libraryKey={loginLibraryKey} initialBrand={initialBrand} showLibraryLink={Boolean(libraryKey)} />
 
-        <div className="rounded-[1rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)] md:p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
           <p className="lp-label text-emerald-700">Student login</p>
           <h3 className="mt-2 text-[clamp(1.45rem,2vw,2.2rem)] font-bold tracking-[-0.04em] text-slate-950">Open your student portal</h3>
           <div className="mt-4">

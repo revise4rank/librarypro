@@ -167,7 +167,7 @@ export function OwnerReportsManager() {
     <div className="grid gap-5">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
-      <section className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-[0_18px_34px_rgba(22,184,113,0.16)]">
+      <section className="rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Report center</p>
@@ -177,10 +177,10 @@ export function OwnerReportsManager() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <div className="rounded-[0.95rem] bg-white/12 px-4 py-2.5 text-sm font-black">
+            <div className="rounded-lg bg-white/12 px-4 py-2.5 text-sm font-black">
               {toCurrency(reports.metrics.paidRevenue)} paid
             </div>
-            <div className="rounded-[0.95rem] bg-white px-4 py-2.5 text-sm font-black text-[#129b62]">
+            <div className="rounded-lg bg-white px-4 py-2.5 text-sm font-black text-[#129b62]">
               {reports.metrics.checkins} check-ins
             </div>
           </div>
@@ -189,7 +189,7 @@ export function OwnerReportsManager() {
 
       <DashboardCard title="Custom report window" subtitle="Keep date filters compact and let insights stay primary.">
         <div className="grid gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
             <div>
               <p className="text-sm font-black text-slate-950">Report filters</p>
               <p className="mt-1 text-sm text-slate-500">{fromDate} to {toDate}</p>
@@ -242,7 +242,7 @@ export function OwnerReportsManager() {
 
       <DashboardCard title="Server exports" subtitle="Keep exports tucked away until you actually need a file">
         <div className="grid gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
             <div>
               <p className="text-sm font-black text-slate-950">Export center</p>
               <p className="mt-1 text-sm text-slate-500">True XLSX/PDF download actions.</p>
@@ -265,7 +265,7 @@ export function OwnerReportsManager() {
                 ["expenses", "Expenses"],
                 ["attendance", "Attendance"],
               ].map(([reportType, label]) => (
-                <div key={reportType} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                <div key={reportType} className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="font-black text-slate-950">{label}</p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <button
@@ -287,7 +287,7 @@ export function OwnerReportsManager() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Export buttons are hidden. Open them only when you need a file.</div>
+            <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Export buttons are hidden. Open them only when you need a file.</div>
           )}
         </div>
       </DashboardCard>
@@ -296,7 +296,7 @@ export function OwnerReportsManager() {
         <DashboardCard title="Monthly comparison" subtitle="Revenue, expense, and profit trend over the last six months">
           <div className="grid gap-4">
             {reports.monthlyComparison.map((point) => (
-              <div key={point.month} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+              <div key={point.month} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="font-black text-slate-950">{point.month}</p>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
@@ -330,7 +330,7 @@ export function OwnerReportsManager() {
 
         <DashboardCard title="Category split" subtitle="Where money is leaking and where collections stand">
           <div className="grid gap-4">
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Payment mix</p>
               <div className="mt-4 grid gap-3">
                 <div className="flex items-center justify-between text-sm">
@@ -348,7 +348,7 @@ export function OwnerReportsManager() {
               </div>
             </div>
 
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Expense categories</p>
               <div className="mt-4 grid gap-3">
                 {reports.expenseCategorySplit.map((item) => (
@@ -372,7 +372,7 @@ export function OwnerReportsManager() {
       <section className="grid gap-6">
         <DashboardCard title="Preview workspace" subtitle="Open one operational slice at a time instead of reading everything together">
           <div className="grid gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-sm font-black text-slate-950">Preview panels</p>
                 <p className="mt-1 text-sm text-slate-500">Open detailed rows only when you are reviewing a specific slice.</p>
@@ -408,7 +408,7 @@ export function OwnerReportsManager() {
               <div className="space-y-3">
                 {previewTab === "students"
                   ? reports.students.slice(0, 8).map((row) => (
-                      <div key={row.assignment_id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div key={row.assignment_id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="font-bold text-slate-950">{row.student_name}</p>
                           <p className="text-sm text-slate-500">
@@ -424,7 +424,7 @@ export function OwnerReportsManager() {
                   : null}
                 {previewTab === "payments"
                   ? reports.payments.slice(0, 8).map((row) => (
-                      <div key={row.id} className="flex flex-col gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div key={row.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="font-bold text-slate-950">{row.student_name}</p>
                           <p className="text-sm text-slate-500">{row.method} | {(row.paid_at ?? row.created_at).slice(0, 10)}</p>
@@ -438,7 +438,7 @@ export function OwnerReportsManager() {
                   : null}
                 {previewTab === "expenses"
                   ? reports.expenses.slice(0, 8).map((row) => (
-                      <div key={row.id} className="rounded-[1.25rem] border border-rose-200 bg-rose-50 px-4 py-4">
+                      <div key={row.id} className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-4">
                         <p className="font-bold text-slate-950">{row.title}</p>
                         <p className="mt-1 text-sm text-slate-500">{row.category} | {row.spent_on.slice(0, 10)}</p>
                         <p className="mt-2 text-sm font-black text-rose-700">Rs. {Number(row.amount).toLocaleString("en-IN")}</p>
@@ -447,7 +447,7 @@ export function OwnerReportsManager() {
                   : null}
                 {previewTab === "attendance"
                   ? reports.checkins.slice(0, 8).map((row) => (
-                      <div key={row.id} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+                      <div key={row.id} className="rounded-xl border border-slate-200 bg-white px-4 py-4">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <p className="font-bold text-slate-950">{row.student_name}</p>
@@ -460,7 +460,7 @@ export function OwnerReportsManager() {
                   : null}
               </div>
             ) : (
-              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Preview rows are hidden. Open them only when you need a closer review.</div>
+              <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Preview rows are hidden. Open them only when you need a closer review.</div>
             )}
           </div>
         </DashboardCard>

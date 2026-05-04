@@ -76,9 +76,9 @@ export function StatCard({
   tone: string;
 }) {
   return (
-    <article className={`rounded-[1.25rem] p-4 shadow-[0_12px_28px_rgba(111,95,74,0.07)] ${tone}`}>
+    <article className={`rounded-xl p-4 shadow-sm ${tone}`}>
       <p className="text-[11px] font-black uppercase tracking-[0.26em] opacity-75">{label}</p>
-      <p className="mt-2 text-3xl font-black">{value}</p>
+      <p className="mt-2 text-2xl font-bold">{value}</p>
     </article>
   );
 }

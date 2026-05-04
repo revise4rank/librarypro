@@ -53,10 +53,10 @@ type FloorDrafts = Record<string, { name: string; layoutRows: number; layoutColu
 type FloorMetaDrafts = Record<string, { aisleCells: string[]; sectionColors: Record<string, string> }>;
 
 const seatToneClasses: Record<string, string> = {
-  AVAILABLE: "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-[0_10px_18px_rgba(16,185,129,0.10)]",
-  OCCUPIED: "border-rose-300 bg-rose-50 text-rose-900 shadow-[0_10px_18px_rgba(244,63,94,0.10)]",
-  RESERVED: "border-amber-300 bg-amber-50 text-amber-900 shadow-[0_10px_18px_rgba(245,158,11,0.10)]",
-  DISABLED: "border-slate-300 bg-slate-100 text-slate-500 shadow-[0_10px_18px_rgba(100,116,139,0.10)]",
+  AVAILABLE: "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-sm",
+  OCCUPIED: "border-rose-300 bg-rose-50 text-rose-900 shadow-sm",
+  RESERVED: "border-amber-300 bg-amber-50 text-amber-900 shadow-sm",
+  DISABLED: "border-slate-300 bg-slate-100 text-slate-500 shadow-sm",
 };
 
 function formatReserveTimer(value?: string | null) {
@@ -142,13 +142,13 @@ function InlineHelp({ title, points }: { title: string; points: string[] }) {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--lp-border)] bg-white text-sm font-black text-[var(--lp-accent)] shadow-[0_8px_18px_rgba(210,114,61,0.08)]"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--lp-border)] bg-white text-sm font-black text-[var(--lp-accent)] shadow-sm"
         aria-label={`${title} help`}
       >
         ?
       </button>
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+10px)] z-[120] w-72 rounded-[1rem] border border-[var(--lp-border)] bg-white p-3 shadow-[0_20px_44px_rgba(15,23,42,0.14)]">
+        <div className="absolute right-0 top-[calc(100%+10px)] z-[120] w-72 rounded-xl border border-[var(--lp-border)] bg-white p-3 shadow-sm">
           <p className="text-sm font-black text-[var(--lp-text)]">{title}</p>
           <div className="mt-2 grid gap-2 text-sm leading-6 text-[var(--lp-muted)]">
             {points.map((point) => (
@@ -383,7 +383,7 @@ function SeatPodIcon({ status, occupied }: { status: string; occupied: boolean }
           : "text-slate-400";
 
   return (
-    <svg viewBox="0 0 72 72" className={`h-10 w-10 drop-shadow-[0_6px_12px_rgba(15,23,42,0.08)] ${tone}`} aria-hidden="true">
+    <svg viewBox="0 0 72 72" className={`h-10 w-10 drop-shadow-sm ${tone}`} aria-hidden="true">
       <defs>
         <linearGradient id={`seat-shell-${status}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
@@ -1278,7 +1278,7 @@ export function OwnerSeatsManager() {
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9cead4_100%)] p-4 text-white shadow-[0_18px_34px_rgba(22,184,113,0.16)]">
+      <section className="rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9cead4_100%)] p-4 text-white shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Seat inventory live</p>
@@ -1288,10 +1288,10 @@ export function OwnerSeatsManager() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <div className="rounded-[0.95rem] bg-white/12 px-4 py-2.5 text-sm font-black">
+            <div className="rounded-lg bg-white/12 px-4 py-2.5 text-sm font-black">
               {totals.AVAILABLE ?? 0} free
             </div>
-            <div className="rounded-[0.95rem] bg-white px-4 py-2.5 text-sm font-black text-[#139b62]">
+            <div className="rounded-lg bg-white px-4 py-2.5 text-sm font-black text-[#139b62]">
               {totals.OCCUPIED ?? 0} occupied
             </div>
           </div>
@@ -1311,7 +1311,7 @@ export function OwnerSeatsManager() {
                 onClick={() => setWorkspaceMode(value)}
                 className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] transition ${
                   workspaceMode === value
-                    ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-[0_10px_18px_rgba(210,114,61,0.12)]"
+                    ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-sm"
                     : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                 }`}
               >
@@ -1347,19 +1347,19 @@ export function OwnerSeatsManager() {
       >
         <div className="grid gap-4">
           {error ? (
-            <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
               {error}
             </div>
           ) : null}
           {message ? (
-            <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
               {message}
             </div>
           ) : null}
 
           {workspaceMode === "setup" ? (
             <>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
             <div>
               <p className="text-sm font-black text-[var(--lp-text)]">Create only what you need</p>
               <p className="mt-1 text-sm text-slate-500">Open one form at a time to keep the planner clean.</p>
@@ -1380,7 +1380,7 @@ export function OwnerSeatsManager() {
                     }}
                     className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] ${
                       ribbonTab === value
-                        ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-[0_10px_18px_rgba(210,114,61,0.12)]"
+                        ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-sm"
                         : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                     }`}
                   >
@@ -1399,38 +1399,38 @@ export function OwnerSeatsManager() {
           </div>
 
           {setupRibbonOpen && ribbonTab === "floor" ? (
-            <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
-              <div className="lg:col-span-5 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+            <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
+              <div className="lg:col-span-5 rounded-xl border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
                 The next floor number is suggested automatically from existing floors. If it is a duplicate, the next available floor is suggested.
               </div>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Floor Name
-                <input value={floorName} onChange={(event) => setFloorName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Floor name" />
+                <input value={floorName} onChange={(event) => setFloorName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Floor name" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Floor No.
-                <input value={floorNumber} onChange={(event) => setFloorNumber(Number(event.target.value) || 0)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Floor number" type="number" />
+                <input value={floorNumber} onChange={(event) => setFloorNumber(Number(event.target.value) || 0)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Floor number" type="number" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Rows
-                <input value={layoutRows} onChange={(event) => setLayoutRows(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Rows" type="number" />
+                <input value={layoutRows} onChange={(event) => setLayoutRows(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Rows" type="number" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Columns
-                <input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns" type="number" />
+                <input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns" type="number" />
               </label>
-              <button type="submit" className="rounded-[1rem] bg-[var(--lp-accent-soft)] px-5 py-2.5 text-sm font-semibold text-[var(--lp-accent)]">Create floor</button>
+              <button type="submit" className="rounded-xl bg-[var(--lp-accent-soft)] px-5 py-2.5 text-sm font-semibold text-[var(--lp-accent)]">Create floor</button>
             </form>
           ) : null}
 
           {setupRibbonOpen && ribbonTab === "bank" ? (
-            <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
-              <div className="lg:col-span-9 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+            <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
+              <div className="lg:col-span-9 rounded-xl border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
                 Pick a floor and create a bulk seat bank with prefix, count, row start, column start, and columns per row.
               </div>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Floor
-                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none">
+                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none">
                   <option value="">Choose floor</option>
                   {floorCards.map((item) => (
                     <option key={item.floor.id} value={item.floor.id}>
@@ -1441,33 +1441,33 @@ export function OwnerSeatsManager() {
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Section
-                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} list="seat-sections-ribbon" className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
+                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} list="seat-sections-ribbon" className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Prefix
-                <input value={seatPrefix} onChange={(event) => setSeatPrefix(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Seat prefix" />
+                <input value={seatPrefix} onChange={(event) => setSeatPrefix(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Seat prefix" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Start
-                <input value={startNumber} onChange={(event) => setStartNumber(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Start number" type="number" />
+                <input value={startNumber} onChange={(event) => setStartNumber(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Start number" type="number" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Count
-                <input value={seatCount} onChange={(event) => setSeatCount(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Seat count" type="number" />
+                <input value={seatCount} onChange={(event) => setSeatCount(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Seat count" type="number" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Row
-                <input value={rowStart} onChange={(event) => setRowStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Row start" type="number" />
+                <input value={rowStart} onChange={(event) => setRowStart(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Row start" type="number" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Column
-                <input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Column start" type="number" />
+                <input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Column start" type="number" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Per Row
-                <input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns per row" type="number" />
+                <input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns per row" type="number" />
               </label>
-              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
+              <button type="submit" disabled={!selectedFloorId} className="rounded-xl border border-[var(--lp-border)] bg-[#eff7f0] px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
               <datalist id="seat-sections-ribbon">
                 {sectionOptions.map((section) => (
                   <option key={section} value={section} />
@@ -1477,17 +1477,17 @@ export function OwnerSeatsManager() {
           ) : null}
 
           {setupRibbonOpen && ribbonTab === "single" ? (
-            <form id="seat-create-single" onSubmit={createSingleSeat} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-              <div className="lg:col-span-4 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+            <form id="seat-create-single" onSubmit={createSingleSeat} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+              <div className="lg:col-span-4 rounded-xl border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
                 Create one exact custom seat here with its code and target floor.
               </div>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Seat Code
-                <input value={manualSeatCode} onChange={(event) => setManualSeatCode(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Exact seat code e.g. G-12" />
+                <input value={manualSeatCode} onChange={(event) => setManualSeatCode(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Exact seat code e.g. G-12" />
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Floor
-                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none">
+                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none">
                   <option value="">Choose floor</option>
                   {floorCards.map((item) => (
                     <option key={item.floor.id} value={item.floor.id}>
@@ -1498,13 +1498,13 @@ export function OwnerSeatsManager() {
               </label>
               <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
                 Section
-                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
+                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
               </label>
-              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
+              <button type="submit" disabled={!selectedFloorId} className="rounded-xl border border-[var(--lp-border)] bg-white px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
             </form>
           ) : null}
           {!setupRibbonOpen ? (
-            <div className="rounded-[1.25rem] border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-[var(--lp-muted)]">
+            <div className="rounded-xl border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-[var(--lp-muted)]">
                 The setup form is hidden. Open the matching tab only when you need a new floor, seat bank, or single seat.
             </div>
           ) : null}
@@ -1512,7 +1512,7 @@ export function OwnerSeatsManager() {
           ) : null}
 
           {workspaceMode !== "setup" ? (
-          <div className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-[rgba(255,255,255,0.92)] p-4">
+          <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-[rgba(255,255,255,0.92)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Tool palette</p>
@@ -1535,7 +1535,7 @@ export function OwnerSeatsManager() {
                       }}
                       className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] ${
                         plannerRibbonTab === value
-                          ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-[0_10px_18px_rgba(210,114,61,0.12)]"
+                          ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-sm"
                           : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                       }`}
                     >
@@ -1567,7 +1567,7 @@ export function OwnerSeatsManager() {
                       type="button"
                       onClick={() => selectedFloorId && void applyRoomLayoutPreset(selectedFloorId, preset)}
                       disabled={!selectedFloorId}
-                      className="rounded-[1rem] border border-[var(--lp-border)] bg-white p-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-xl border border-[var(--lp-border)] bg-white p-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -1584,10 +1584,10 @@ export function OwnerSeatsManager() {
 
             {plannerToolbarOpen && plannerRibbonTab === "layout" ? (
               <div className="grid gap-3 xl:grid-cols-[auto_auto_1fr]">
-                <button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-[1rem] px-4 py-2.5 text-sm font-black ${layoutMode ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
+                <button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-xl px-4 py-2.5 text-sm font-black ${layoutMode ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
                   {layoutMode ? "Planner Active" : "Enable Planner"}
                 </button>
-                <div className="rounded-[1rem] bg-[#f5faf6] px-4 py-3">
+                <div className="rounded-xl bg-[#f5faf6] px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Socket</p>
                   <p className="mt-1 text-sm font-black text-[var(--lp-text)]">{liveStatus}</p>
                 </div>
@@ -1601,8 +1601,8 @@ export function OwnerSeatsManager() {
 
             {plannerToolbarOpen && plannerRibbonTab === "paint" ? (
               <div className="grid gap-3 xl:grid-cols-[1fr_auto_1fr]">
-                <input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" />
-                <input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-20 rounded-[1rem] border border-[var(--lp-border)] bg-white p-1" />
+                <input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" />
+                <input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-20 rounded-xl border border-[var(--lp-border)] bg-white p-1" />
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(activeRibbonSectionColors).length ? Object.entries(activeRibbonSectionColors).map(([section, color]) => (
                     <button key={section} type="button" onClick={() => { setPaintSectionName(section); setPaintSectionColor(color); setPlannerTool("paint"); }} className="rounded-full px-3 py-2 text-[11px] font-bold text-white" style={{ backgroundColor: color }}>
@@ -1615,7 +1615,7 @@ export function OwnerSeatsManager() {
 
             {plannerToolbarOpen && plannerRibbonTab === "students" ? (
               <div className="grid gap-3">
-                <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none">
+                <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none">
                   <option value="">Select unallotted student</option>
                   {unallottedStudents.map((student) => (
                     <option key={student.assignment_id} value={student.assignment_id}>
@@ -1635,7 +1635,7 @@ export function OwnerSeatsManager() {
                         event.dataTransfer.setDragImage(preview, 54, 36);
                         window.setTimeout(() => preview.remove(), 0);
                       }}
-                        className={`min-w-[240px] cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)]" : "border-slate-200 bg-white"}`}
+                        className={`min-w-[240px] cursor-grab rounded-xl border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)]" : "border-slate-200 bg-white"}`}
                     >
                       <p className="font-black text-slate-950">{student.student_name}</p>
                       <p className="text-sm text-slate-500">{student.plan_name} | {student.payment_status}</p>
@@ -1663,11 +1663,11 @@ export function OwnerSeatsManager() {
         >
           <div className="grid gap-4">
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-[1rem] bg-[#f5faf6] px-4 py-3">
+              <div className="rounded-xl bg-[#f5faf6] px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Socket</p>
                 <p className="mt-1 text-lg font-black text-[var(--lp-text)]">{liveStatus}</p>
               </div>
-              <div className="rounded-[1rem] bg-[#f5faf6] px-4 py-3">
+              <div className="rounded-xl bg-[#f5faf6] px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Active mode</p>
                 <p className="mt-1 text-lg font-black text-[var(--lp-text)]">
                   {workspaceMode === "setup" ? "Setup" : workspaceMode === "layout" ? "Layout" : "Assign"}
@@ -1718,7 +1718,7 @@ export function OwnerSeatsManager() {
                     type="button"
                     onClick={() => selectedFloorId && void applyRoomLayoutPreset(selectedFloorId, preset)}
                     disabled={!selectedFloorId}
-                    className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 text-left shadow-[0_12px_24px_rgba(15,23,42,0.06)] transition hover:border-[var(--lp-primary)] hover:shadow-[0_16px_28px_rgba(210,114,61,0.12)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-[var(--lp-border)] bg-white p-4 text-left shadow-sm transition hover:border-[var(--lp-primary)] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -1729,7 +1729,7 @@ export function OwnerSeatsManager() {
                         +
                       </span>
                     </div>
-                    <div className="mt-3 rounded-[1rem] bg-[#f7f4ee] p-3">
+                    <div className="mt-3 rounded-xl bg-[#f7f4ee] p-3">
                       <RoomLayoutThumbnail presetId={preset.id} />
                     </div>
                     <div className="mt-3 flex items-center justify-between">
@@ -1743,8 +1743,8 @@ export function OwnerSeatsManager() {
               </div>
               {plannerTool === "paint" ? (
                 <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-                  <input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" />
-                  <input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-16 rounded-[1rem] border border-[var(--lp-border)] bg-white p-1" />
+                  <input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" />
+                  <input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-16 rounded-xl border border-[var(--lp-border)] bg-white p-1" />
                 </div>
               ) : null}
             </div>
@@ -1752,9 +1752,9 @@ export function OwnerSeatsManager() {
 
             <div className="grid gap-3 md:grid-cols-2">
               {["AVAILABLE", "OCCUPIED", "RESERVED", "DISABLED"].map((status) => (
-                <div key={status} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-4">
+                <div key={status} className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">{status}</p>
-                  <p className="mt-2 text-3xl font-black text-slate-950">{totals[status] ?? 0}</p>
+                  <p className="mt-2 text-2xl font-bold text-slate-950">{totals[status] ?? 0}</p>
                 </div>
               ))}
             </div>
@@ -1763,12 +1763,12 @@ export function OwnerSeatsManager() {
 
         <DashboardCard title="Action flow" subtitle="Compact assignment support without turning the seat desk into a bulky roster page.">
           <div className="grid gap-3">
-            <div className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-[var(--lp-text-soft)]">
+            <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-[var(--lp-text-soft)]">
               {workspaceMode === "assign"
                 ? "Use the planner for placement and keep the queue limited to unallotted students only."
                 : "Seat controls no longer sit in a bulky side inspector. Tap any seat to open its action sheet."}
             </div>
-            <div className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-3">
+            <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-[var(--lp-text)]">Unallotted queue</p>
@@ -1787,7 +1787,7 @@ export function OwnerSeatsManager() {
                       setWorkspaceMode("assign");
                       setSelectedAssignmentId(student.assignment_id);
                     }}
-                    className={`grid gap-1 rounded-[0.75rem] border px-3 py-2 text-left ${
+                    className={`grid gap-1 rounded-lg border px-3 py-2 text-left ${
                       selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]/35" : "border-[var(--lp-border)] bg-white"
                     }`}
                   >
@@ -1807,7 +1807,7 @@ export function OwnerSeatsManager() {
         </DashboardCard>
       </section>
 
-      <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
+      <div className="rounded-xl border border-[var(--lp-border)] bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-black text-[var(--lp-text)]">Seat filters</p>
@@ -1854,7 +1854,7 @@ export function OwnerSeatsManager() {
       <section id="seat-planner" className={`grid gap-6 ${workspaceMode === "assign" ? "xl:grid-cols-[1.22fr_0.78fr]" : ""}`}>
         <div className="grid gap-6">
           {floorCards.length > 1 ? (
-            <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
+            <div className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Floor switcher</p>
@@ -1918,7 +1918,7 @@ export function OwnerSeatsManager() {
             return (
               <DashboardCard key={item.floor.id} title="Active floor workspace" subtitle="Only one floor stays open, so the planner feels lighter and easier to edit.">
                 <div className="grid gap-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
                     <div className="min-w-0">
                       <p className="text-sm font-black text-[var(--lp-text)]">{item.floor.name}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
@@ -1948,7 +1948,7 @@ export function OwnerSeatsManager() {
                   </div>
 
                   <div className="overflow-x-auto">
-                    <div className="min-w-full w-max rounded-[1.75rem] border border-[var(--lp-border)] bg-[radial-gradient(circle_at_top,#ffffff_0%,#fcf7ef_100%)] p-4">
+                    <div className="min-w-full w-max rounded-xl border border-[var(--lp-border)] bg-[radial-gradient(circle_at_top,#ffffff_0%,#fcf7ef_100%)] p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <div>
@@ -1988,7 +1988,7 @@ export function OwnerSeatsManager() {
                           </div>
 
                           {Object.keys(sectionColors).length > 0 ? (
-                            <div className="mb-4 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                            <div className="mb-4 rounded-xl border border-[var(--lp-border)] bg-white p-3">
                               <div className="mb-2 flex items-center justify-between">
                                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Section Legend</p>
                                 <span className="text-[11px] text-slate-500">Tap a chip to load its color</span>
@@ -2024,7 +2024,7 @@ export function OwnerSeatsManager() {
                       ) : null}
 
                       <div
-                        className="grid gap-2 overflow-visible rounded-[1.5rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-3"
+                        className="grid gap-2 overflow-visible rounded-xl bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-3"
                         style={{ gridTemplateColumns: `repeat(${item.columns}, minmax(${getPlannerColumnWidth(item.columns)}px, 1fr))` }}
                       >
                         {cells.map((cell) => {
@@ -2104,7 +2104,7 @@ export function OwnerSeatsManager() {
                                   void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
                                 }
                               }}
-                              className={`relative min-h-[5rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell && workspaceMode !== "assign" ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "z-20 scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : "z-0"} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                              className={`relative min-h-[5rem] rounded-lg border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell && workspaceMode !== "assign" ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "z-20 scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : "z-0"} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
                             >
                               {seat ? (
                                 <button
@@ -2129,14 +2129,14 @@ export function OwnerSeatsManager() {
                                     window.setTimeout(() => preview.remove(), 0);
                                   }}
                                   onDragEnd={() => setDragSeatId(null)}
-                                  className={`group relative flex h-full w-full min-w-0 flex-col items-center overflow-hidden rounded-[0.8rem] border px-2 py-2 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(15,23,42,0.10)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  className={`group relative flex h-full w-full min-w-0 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-md ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
                                   style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
                                 >
                                   <div className="flex w-full min-w-0 items-center justify-between gap-1">
                                     <span className="min-w-0 truncate text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
                                     <SeatStatusGlyph status={seat.status} />
                                   </div>
-                                  <div className="mt-1 flex min-h-[2.75rem] w-full items-center justify-center rounded-[0.7rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
+                                  <div className="mt-1 flex min-h-[2.75rem] w-full items-center justify-center rounded-md bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-sm">
                                     <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
                                   </div>
                                   <div className="mt-1 flex w-full min-w-0 items-center justify-between gap-1">
@@ -2152,12 +2152,12 @@ export function OwnerSeatsManager() {
                                       {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Live" : seat.status === "RESERVED" ? "Hold" : "Off"}
                                     </span>
                                     {seat.student_name ? (
-                                      <p className="max-w-[2rem] truncate rounded-full bg-[var(--lp-accent-soft)] px-1.5 py-0.5 text-[8px] font-black text-[var(--lp-accent)] shadow-[0_6px_12px_rgba(210,114,61,0.10)]">{formatStudentInitials(seat.student_name)}</p>
-                                    ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[8px] font-bold text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Tap</p>}
+                                      <p className="max-w-[2rem] truncate rounded-full bg-[var(--lp-accent-soft)] px-1.5 py-0.5 text-[8px] font-black text-[var(--lp-accent)] shadow-sm">{formatStudentInitials(seat.student_name)}</p>
+                                    ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[8px] font-bold text-slate-400 shadow-sm">Tap</p>}
                                   </div>
                                 </button>
                               ) : (
-                                <div className={`flex h-full flex-col items-center justify-center rounded-[0.8rem] p-1.5 text-[9px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
+                                <div className={`flex h-full flex-col items-center justify-center rounded-lg p-1.5 text-[9px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
                                   <span className="text-[8px] font-semibold uppercase tracking-[0.12em]">{isAisleCell ? "Aisle" : "Empty"}</span>
                                   {!isAisleCell && workspaceMode !== "assign" ? (
                                     <>
@@ -2205,7 +2205,7 @@ export function OwnerSeatsManager() {
           <div className="grid gap-6 xl:sticky xl:top-[84px] xl:self-start">
             <DashboardCard title="Assignment tray" subtitle="Only unallotted students stay here, so the tray stays compact and useful.">
               <div className="grid gap-3">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div>
                     <p className="text-sm font-black text-slate-950">Unallotted students</p>
                     <p className="mt-1 text-sm text-slate-500">Open this only while you are placing ready students into seats.</p>
@@ -2233,7 +2233,7 @@ export function OwnerSeatsManager() {
                       ))}
                     </select>
 
-                    <div className="max-h-[24rem] overflow-auto rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                    <div className="max-h-[24rem] overflow-auto rounded-xl border border-[var(--lp-border)] bg-white p-3">
                       <div className="space-y-3">
                         {unallottedStudents.map((student) => (
                           <div
@@ -2246,7 +2246,7 @@ export function OwnerSeatsManager() {
                               event.dataTransfer.setDragImage(preview, 54, 36);
                               window.setTimeout(() => preview.remove(), 0);
                             }}
-                            className={`cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)]" : "border-slate-200 bg-white"}`}
+                            className={`cursor-grab rounded-xl border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)]" : "border-slate-200 bg-white"}`}
                           >
                             <p className="font-black text-slate-950">{student.student_name}</p>
                             <p className="text-sm text-slate-500">{student.plan_name} | {student.payment_status}</p>
@@ -2258,7 +2258,7 @@ export function OwnerSeatsManager() {
                     </div>
                   </>
                 ) : (
-                  <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
                     The tray is hidden. Open it only while assigning seats.
                   </div>
                 )}
@@ -2270,7 +2270,7 @@ export function OwnerSeatsManager() {
 
       {hallSettingsFloor && hallSettingsDraft ? (
         <div className="fixed inset-0 z-50 flex items-end bg-slate-950/20 px-3 pb-3 pt-16 backdrop-blur-sm lg:items-center lg:justify-center lg:p-6">
-          <div className="w-full max-w-lg rounded-[0.75rem] border border-[var(--lp-border)] bg-white p-4 shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+          <div className="w-full max-w-lg rounded-lg border border-[var(--lp-border)] bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lp-accent)]">Hall settings</p>
@@ -2279,7 +2279,7 @@ export function OwnerSeatsManager() {
               <button
                 type="button"
                 onClick={() => setHallSettingsOpen(null)}
-                className="rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
+                className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
               >
                 Close
               </button>
@@ -2291,7 +2291,7 @@ export function OwnerSeatsManager() {
                 <input
                   value={hallSettingsDraft.name}
                   onChange={(event) => updateFloorDraft(hallSettingsFloor.floor.id, { name: event.target.value })}
-                  className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
                   placeholder="Floor name"
                 />
               </label>
@@ -2303,7 +2303,7 @@ export function OwnerSeatsManager() {
                     min={1}
                     value={hallSettingsDraft.layoutColumns}
                     onChange={(event) => updateFloorDraft(hallSettingsFloor.floor.id, { layoutColumns: Number(event.target.value) || 1 })}
-                    className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
                   />
                 </label>
                 <label className="grid gap-1.5 text-sm font-medium text-[var(--lp-text-soft)]">
@@ -2313,7 +2313,7 @@ export function OwnerSeatsManager() {
                     min={1}
                     value={hallSettingsDraft.layoutRows}
                     onChange={(event) => updateFloorDraft(hallSettingsFloor.floor.id, { layoutRows: Number(event.target.value) || 1 })}
-                    className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
                   />
                 </label>
               </div>
@@ -2323,14 +2323,14 @@ export function OwnerSeatsManager() {
               <button
                 type="button"
                 onClick={() => setHallSettingsOpen(null)}
-                className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
+                className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => void saveFloorLayout(hallSettingsFloor.floor.id)}
-                className="rounded-[0.5rem] bg-[var(--lp-primary)] px-4 py-2 text-sm font-semibold text-white"
+                className="rounded-lg bg-[var(--lp-primary)] px-4 py-2 text-sm font-semibold text-white"
               >
                 Save hall
               </button>
@@ -2340,7 +2340,7 @@ export function OwnerSeatsManager() {
       ) : null}
 
       {actionSheetOpen && selectedSeat ? (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-18px_40px_rgba(15,23,42,0.12)] backdrop-blur lg:left-auto lg:right-4 lg:top-[84px] lg:bottom-auto lg:w-[360px] lg:rounded-[0.75rem] lg:border lg:px-4 lg:pb-4">
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-sm backdrop-blur lg:left-auto lg:right-4 lg:top-[84px] lg:bottom-auto lg:w-[360px] lg:rounded-lg lg:border lg:px-4 lg:pb-4">
           <div className="grid gap-3">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -2358,14 +2358,14 @@ export function OwnerSeatsManager() {
                     setActionSheetOpen(false);
                     setSelectedSeatId(null);
                   }}
-                  className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
                 >
                   Close
                 </button>
               </div>
             </div>
 
-            <div className="grid gap-2 rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-3 text-sm text-[var(--lp-text-soft)]">
+            <div className="grid gap-2 rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-3 text-sm text-[var(--lp-text-soft)]">
               <div className="flex items-center justify-between gap-3">
                 <span>Occupant</span>
                 <span className="font-semibold text-[var(--lp-text)]">{selectedSeat.student_name ?? "Not assigned"}</span>
@@ -2389,7 +2389,7 @@ export function OwnerSeatsManager() {
             </div>
 
             {workspaceMode === "assign" && selectedAssignmentId ? (
-              <div className="grid gap-2 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-3">
+              <div className="grid gap-2 rounded-lg border border-[var(--lp-border)] bg-white p-3">
                 <div>
                   <p className="text-sm font-semibold text-[var(--lp-text)]">Place selected student</p>
                   <p className="text-sm text-[var(--lp-muted)]">{selectedAssignmentStudent?.student_name ?? "Selected student"} will be placed on this seat.</p>
@@ -2398,14 +2398,14 @@ export function OwnerSeatsManager() {
                   type="button"
                   disabled={selectedSeat.status !== "AVAILABLE" || selectedAssignmentStudent?.admission_status === "SEAT_ALLOTTED"}
                   onClick={() => void assignSeat(selectedSeat.id)}
-                  className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   {selectedSeat.status === "AVAILABLE" ? "Allot this seat" : "Choose a free seat"}
                 </button>
               </div>
             ) : null}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-3 py-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2.5">
               <div>
                 <p className="text-sm font-semibold text-[var(--lp-text)]">Advanced controls</p>
                 <p className="text-sm text-[var(--lp-muted)]">Open only when you need to edit state or position.</p>
@@ -2413,7 +2413,7 @@ export function OwnerSeatsManager() {
               <button
                 type="button"
                 onClick={() => setInspectorControlsOpen((current) => !current)}
-                className="rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
+                className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
               >
                 {inspectorControlsOpen ? "Hide controls" : "Open controls"}
               </button>
@@ -2421,31 +2421,31 @@ export function OwnerSeatsManager() {
 
             {inspectorControlsOpen ? (
               <div className="grid gap-3">
-                <input value={drawerSeatCode} onChange={(event) => setDrawerSeatCode(event.target.value)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Seat code" />
-                <input value={drawerSectionName} onChange={(event) => setDrawerSectionName(event.target.value)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Room / section" />
+                <input value={drawerSeatCode} onChange={(event) => setDrawerSeatCode(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Seat code" />
+                <input value={drawerSectionName} onChange={(event) => setDrawerSectionName(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Room / section" />
                 {(workspaceMode === "layout" || selectedSeat.status === "RESERVED") ? (
-                  <input type="datetime-local" value={drawerReservedUntil} onChange={(event) => setDrawerReservedUntil(event.target.value)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+                  <input type="datetime-local" value={drawerReservedUntil} onChange={(event) => setDrawerReservedUntil(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
                 ) : null}
 
                 {workspaceMode === "layout" ? (
-                  <div className="grid grid-cols-3 gap-2 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-3">
+                  <div className="grid grid-cols-3 gap-2 rounded-lg border border-[var(--lp-border)] bg-white p-3">
                     <div />
-                    <button type="button" onClick={() => void nudgeSelectedSeat(0, -1)} className="rounded-[0.5rem] border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Up</button>
+                    <button type="button" onClick={() => void nudgeSelectedSeat(0, -1)} className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Up</button>
                     <div />
-                    <button type="button" onClick={() => void nudgeSelectedSeat(-1, 0)} className="rounded-[0.5rem] border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Left</button>
-                    <button type="button" onClick={() => void centerSelectedSeat()} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-3 py-2 text-sm font-semibold text-[var(--lp-accent)]">Center</button>
-                    <button type="button" onClick={() => void nudgeSelectedSeat(1, 0)} className="rounded-[0.5rem] border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Right</button>
+                    <button type="button" onClick={() => void nudgeSelectedSeat(-1, 0)} className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Left</button>
+                    <button type="button" onClick={() => void centerSelectedSeat()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-3 py-2 text-sm font-semibold text-[var(--lp-accent)]">Center</button>
+                    <button type="button" onClick={() => void nudgeSelectedSeat(1, 0)} className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Right</button>
                     <div />
-                    <button type="button" onClick={() => void nudgeSelectedSeat(0, 1)} className="rounded-[0.5rem] border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Down</button>
+                    <button type="button" onClick={() => void nudgeSelectedSeat(0, 1)} className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">Down</button>
                     <div />
                   </div>
                 ) : null}
 
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <button type="button" onClick={() => void updateSeatAction("RESERVED")} className="rounded-[0.5rem] border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">Reserve till</button>
-                  <button type="button" onClick={() => void updateSeatAction("DISABLED")} className="rounded-[0.5rem] border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Block seat</button>
-                  <button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text)]">Mark free</button>
-                  <button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">Save edits</button>
+                  <button type="button" onClick={() => void updateSeatAction("RESERVED")} className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">Reserve till</button>
+                  <button type="button" onClick={() => void updateSeatAction("DISABLED")} className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Block seat</button>
+                  <button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text)]">Mark free</button>
+                  <button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">Save edits</button>
                 </div>
               </div>
             ) : null}

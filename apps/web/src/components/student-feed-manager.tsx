@@ -100,7 +100,7 @@ export function StudentFeedManager() {
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Share progress" subtitle="Post only when you want healthy accountability">
           <div className="grid gap-4">
-            <button type="button" onClick={() => setShowComposer((current) => !current)} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+            <button type="button" onClick={() => setShowComposer((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
               {showComposer ? "Hide composer" : "Create progress update"}
             </button>
             {showComposer ? (
@@ -114,7 +114,7 @@ export function StudentFeedManager() {
                 <textarea
                   value={postForm.body}
                   onChange={(event) => setPostForm((current) => ({ ...current, body: event.target.value }))}
-                  className="min-h-[140px] rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 outline-none"
+                  className="min-h-[140px] rounded-xl border border-slate-200 bg-white px-4 py-4 outline-none"
                   placeholder="Keep it short and motivating."
                 />
                 <div className="grid gap-4 md:grid-cols-2">
@@ -146,7 +146,7 @@ export function StudentFeedManager() {
                 </button>
               </>
             ) : (
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                 Post composer stays closed by default so the feed feels calm, not noisy.
               </div>
             )}
@@ -155,7 +155,7 @@ export function StudentFeedManager() {
 
         <DashboardCard title="Privacy control" subtitle="Sharing rules should be visible, but not always expanded">
           <div className="grid gap-4">
-            <button type="button" onClick={() => setShowPrivacy((current) => !current)} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+            <button type="button" onClick={() => setShowPrivacy((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
               {showPrivacy ? "Hide privacy controls" : "Show privacy controls"}
             </button>
             {showPrivacy ? (
@@ -182,7 +182,7 @@ export function StudentFeedManager() {
                   ["allowFocusPosts", "Share focus milestones"],
                   ["allowStreakPosts", "Share streak updates"],
                 ].map(([key, label]) => (
-                  <label key={key} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+                  <label key={key} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-4">
                     <span className="text-sm font-semibold text-slate-700">{label}</span>
                     <input
                       type="checkbox"
@@ -198,7 +198,7 @@ export function StudentFeedManager() {
                 ))}
               </>
             ) : (
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                 Default visibility is {feed.visibility.defaultVisibility}. Open privacy only when you want to adjust automatic sharing.
               </div>
             )}
@@ -209,7 +209,7 @@ export function StudentFeedManager() {
       <DashboardCard title="Library feed" subtitle="Minimal, motivational, and clean.">
         <div className="grid gap-4">
           {feed.items.map((item) => (
-            <article key={item.id} className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-black uppercase tracking-[0.22em] text-slate-400">{item.eventType.replaceAll("_", " ")}</p>

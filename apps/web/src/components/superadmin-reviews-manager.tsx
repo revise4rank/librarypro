@@ -60,7 +60,7 @@ export function SuperadminReviewsManager() {
           ))}
         </div>
         {rows.map((row) => (
-          <div key={row.id} className="rounded-[1.6rem] border border-[var(--lp-border)] bg-white p-4">
+          <div key={row.id} className="rounded-2xl border border-[var(--lp-border)] bg-white p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-base font-bold text-[var(--lp-text)]">{row.library_name}</p>

@@ -390,7 +390,7 @@ export default function HomePage() {
         <motion.footer variants={sectionMotion} className="bg-[#0F172A] text-white">
           <div className="mx-auto w-full max-w-[1120px] px-4 py-14 md:py-16">
             <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5 shadow-sm md:p-6">
-              <div className="grid gap-8 lg:grid-cols-[1.2fr_1.8fr]">
+              <div className="grid gap-6 lg:grid-cols-[1.2fr_1.8fr]">
                 <div>
                   <Link href="/" className="inline-flex items-center gap-3">
                     <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-[#0F172A]">

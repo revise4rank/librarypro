@@ -194,7 +194,7 @@ export function OwnerNotificationsManager() {
   return (
     <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
       {toast ? (
-        <div className="fixed bottom-5 right-5 z-50 rounded-2xl border border-[var(--lp-accent-soft)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)] shadow-[0_20px_45px_rgba(15,23,42,0.12)]">
+        <div className="fixed bottom-5 right-5 z-50 rounded-2xl border border-[var(--lp-accent-soft)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)] shadow-sm">
           {toast}
         </div>
       ) : null}

@@ -31,7 +31,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       href={item.href}
       className={`rounded-full px-3 py-2 text-xs font-semibold transition sm:text-sm ${
         active
-          ? "bg-emerald-300 text-slate-950 shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
+          ? "bg-emerald-300 text-slate-950 shadow-sm"
           : "text-white/78 hover:bg-white/10 hover:text-white"
       }`}
     >
@@ -42,7 +42,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
 
 function SiteCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-[1.25rem] border border-slate-200 bg-white/92 p-4 shadow-[0_18px_45px_rgba(15,23,42,0.07)] backdrop-blur ${className}`}>
+    <section className={`rounded-xl border border-slate-200 bg-white/92 p-4 shadow-sm backdrop-blur ${className}`}>
       {children}
     </section>
   );
@@ -59,7 +59,7 @@ function MiniStat({ label, value }: { label: string; value: ReactNode }) {
 
 function FacilityCard({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
   return (
-    <div className="rounded-[1rem] border border-slate-200 bg-[#F8FAFC] p-4">
+    <div className="rounded-xl border border-slate-200 bg-[#F8FAFC] p-4">
       <div className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
         {icon}
       </div>
@@ -154,7 +154,7 @@ export function PublicLibraryPage({
               {showStudentActions ? (
                 <Link
                   href={`/student/login?library=${profile.subdomain}`}
-                  className="hidden rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-950 shadow-[0_18px_34px_rgba(0,0,0,0.18)] sm:inline-flex"
+                  className="hidden rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-950 shadow-sm sm:inline-flex"
                 >
                   Student login
                 </Link>
@@ -172,13 +172,13 @@ export function PublicLibraryPage({
           </div>
         </header>
 
-        <div className="relative z-10 mx-auto grid max-w-[1180px] gap-8 px-4 py-12 md:py-16 lg:grid-cols-[1.02fr_0.98fr] lg:items-end">
+        <div className="relative z-10 mx-auto grid max-w-[1180px] gap-6 px-4 py-8 md:py-12 lg:grid-cols-[1.02fr_0.98fr] lg:items-end">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-2 text-xs font-bold text-emerald-200 backdrop-blur">
               <Sparkles className="h-4 w-4" />
               Premium library website
             </div>
-            <h1 className="mt-5 max-w-3xl text-balance text-[clamp(2.05rem,5.8vw,4.25rem)] font-black leading-[1.02] tracking-[-0.045em] text-white">
+            <h1 className="mt-5 max-w-3xl text-balance text-[clamp(2rem,4.8vw,3.75rem)] font-bold leading-[1.05] tracking-[-0.04em] text-white">
               {profile.hero_title}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-white/72 md:text-base md:leading-7">
@@ -194,7 +194,7 @@ export function PublicLibraryPage({
                 className="sm:block"
               />
               {showStudentActions ? (
-                <Link href={`/student/login?library=${profile.subdomain}`} className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-slate-950 shadow-[0_20px_45px_rgba(16,185,129,0.28)]">
+                <Link href={`/student/login?library=${profile.subdomain}`} className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-slate-950 shadow-sm">
                   Open student portal
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -202,8 +202,8 @@ export function PublicLibraryPage({
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-white/14 bg-white/10 p-3 shadow-[0_30px_90px_rgba(0,0,0,0.28)] backdrop-blur">
-            <div className="overflow-hidden rounded-[1.15rem] bg-slate-900">
+          <div className="rounded-xl border border-white/14 bg-white/10 p-3 shadow-sm backdrop-blur">
+            <div className="overflow-hidden rounded-lg bg-slate-900">
               <div className="relative aspect-[16/10]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={gallery[0]} alt={`${profile.library_name} preview`} className="h-full w-full object-cover opacity-90" />
@@ -246,7 +246,7 @@ export function PublicLibraryPage({
             <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
               <SiteCard>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Why students choose us</p>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950">A calmer study day, from seat to check-in.</h2>
+                <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-slate-950">A calmer study day, from seat to check-in.</h2>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
                   {profile.about_text ?? "This library website gives students one clean place to discover facilities, check pricing, contact the owner, log in, and continue daily study actions."}
                 </p>
@@ -260,7 +260,7 @@ export function PublicLibraryPage({
 
               <SiteCard className="bg-slate-950 text-white">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Current offer</p>
-                <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-white">{visibleOffer ?? "Contact owner for seat offers"}</h2>
+                <h2 className="mt-3 text-2xl font-bold tracking-[-0.04em] text-white">{visibleOffer ?? "Contact owner for seat offers"}</h2>
                 <p className="mt-3 text-sm leading-7 text-white/68">
                   {profile.offer_expires_at ? `Valid till ${profile.offer_expires_at.slice(0, 10)}.` : "Ask the owner about current seat availability, pricing, and joining options."}
                 </p>
@@ -279,13 +279,13 @@ export function PublicLibraryPage({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Visual tour</p>
-                  <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-slate-950">See the study space before you visit.</h2>
+                  <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950">See the study space before you visit.</h2>
                 </div>
                 <Link href={links.contact} className="text-sm font-black text-emerald-700">Book a visit</Link>
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 {gallery.slice(0, 3).map((item, index) => (
-                  <div key={`${item}-${index}`} className="aspect-[16/11] overflow-hidden rounded-[1rem] bg-slate-100">
+                  <div key={`${item}-${index}`} className="aspect-[16/11] overflow-hidden rounded-xl bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={item} alt={`${profile.library_name} gallery ${index + 1}`} className="h-full w-full object-cover transition duration-500 hover:scale-105" />
                   </div>
@@ -299,7 +299,7 @@ export function PublicLibraryPage({
           <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
             <SiteCard className="bg-slate-950 text-white">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">About</p>
-              <h2 className="mt-2 text-4xl font-black tracking-[-0.05em] text-white">{profile.library_name}</h2>
+              <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-white">{profile.library_name}</h2>
               <p className="mt-4 text-sm leading-7 text-white/70">
                 {profile.about_text ?? "A premium LibraryPro-powered library website for students to discover, contact, log in, and continue daily study actions."}
               </p>
@@ -321,7 +321,7 @@ export function PublicLibraryPage({
           <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
             <SiteCard className="bg-[linear-gradient(135deg,#0F172A,#115E59)] text-white">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Starting plan</p>
-              <p className="mt-4 text-6xl font-black tracking-[-0.06em] text-white">Rs. {profile.starting_price}</p>
+              <p className="mt-4 text-3xl font-bold tracking-[-0.04em] text-white">Rs. {profile.starting_price}</p>
               <p className="mt-3 text-sm leading-7 text-white/70">Starting monthly seat pricing shared by the owner. Final plan and discounts are confirmed during admission.</p>
               <div className="mt-5 rounded-2xl border border-white/12 bg-white/10 p-4 text-sm font-bold text-white">
                 {visibleOffer ?? "Ask owner for active discount offers and seat combinations."}
@@ -344,7 +344,7 @@ export function PublicLibraryPage({
           <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
             <SiteCard>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Contact</p>
-              <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950">Talk to the library owner.</h2>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-slate-950">Talk to the library owner.</h2>
               <div className="mt-5 grid gap-3">
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Contact person</p>
@@ -364,7 +364,7 @@ export function PublicLibraryPage({
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Visit preview</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {gallery.slice(0, 4).map((item, index) => (
-                  <div key={`${item}-${index}`} className="aspect-[16/11] overflow-hidden rounded-[1rem] bg-slate-100">
+                  <div key={`${item}-${index}`} className="aspect-[16/11] overflow-hidden rounded-xl bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={item} alt={`${profile.library_name} contact preview ${index + 1}`} className="h-full w-full object-cover" />
                   </div>
@@ -378,7 +378,7 @@ export function PublicLibraryPage({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Student reviews</p>
-              <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-slate-950">Trusted by joined students.</h2>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950">Trusted by joined students.</h2>
             </div>
             <div className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">
               {rating}/5 from {reviewCount} reviews

@@ -141,21 +141,21 @@ export function StudentRevisionManager() {
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-        <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-700">Pending</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{revision.analytics.pendingCount}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{revision.analytics.pendingCount}</p>
         </div>
-        <div className="rounded-[1.75rem] border border-rose-200 bg-rose-50 p-5">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-rose-700">Overdue</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{revision.analytics.overdueCount}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{revision.analytics.overdueCount}</p>
         </div>
-        <div className="rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-5">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Completed</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{revision.analytics.completedCount}</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{revision.analytics.completedCount}</p>
         </div>
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Consistency</p>
-          <p className="mt-3 text-3xl font-black text-slate-950">{revision.analytics.revisionConsistencyDays} days</p>
+          <p className="mt-3 text-2xl font-bold text-slate-950">{revision.analytics.revisionConsistencyDays} days</p>
         </div>
       </section>
 
@@ -165,7 +165,7 @@ export function StudentRevisionManager() {
             <button
               type="button"
               onClick={() => setShowManualReminder((current) => !current)}
-              className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
             >
               {showManualReminder ? "Hide manual reminder form" : "Add manual reminder"}
             </button>
@@ -205,7 +205,7 @@ export function StudentRevisionManager() {
                 </button>
               </>
             ) : (
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+                  <div className="rounded-xl border border-slate-200 bg-white p-5">
                     <p className="text-sm text-slate-600">Add a custom reminder here for weak topics or chapters that need a short-notice revision push.</p>
                   </div>
             )}
@@ -214,15 +214,15 @@ export function StudentRevisionManager() {
 
         <DashboardCard title="Retention insight" subtitle="The system should push recall, not just completion">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Completion</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{revision.analytics.revisionCompletionPercent}%</p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Weak topics</p>
               <p className="mt-3 text-2xl font-black text-slate-950">{revision.analytics.weakTopics}</p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Reminder logic</p>
               <p className="mt-3 text-sm font-semibold text-slate-600">Auto cadence: 1d, 3d, 7d, 15d after topic completion.</p>
             </div>
@@ -241,14 +241,14 @@ export function StudentRevisionManager() {
               <button
                 type="button"
                 onClick={() => setVisibleQueues((current) => ({ ...current, [column.key]: !current[column.key] }))}
-                className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
               >
                 {visibleQueues[column.key] ? `Hide ${column.title.toLowerCase()}` : `Show ${column.title.toLowerCase()} (${grouped[column.key].length})`}
               </button>
               {visibleQueues[column.key] ? (
                 <>
                   {grouped[column.key].map((item) => (
-                    <div key={item.id} className={`rounded-[1.25rem] border p-4 ${column.tone}`}>
+                    <div key={item.id} className={`rounded-xl border p-4 ${column.tone}`}>
                       <p className="font-black text-slate-950">{item.topicTitle}</p>
                       <p className="mt-1 text-sm text-slate-500">{item.subjectTitle ?? "General"} | Stage {item.revisionStage}</p>
                       <p className="mt-2 text-sm text-slate-600">Scheduled {item.scheduledFor.slice(0, 10)}</p>

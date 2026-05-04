@@ -13,10 +13,10 @@ export default function OwnerDashboardPage() {
       nav={ownerNav}
       actions={
         <>
-          <Link href="/owner/admissions" className="rounded-[0.95rem] bg-[var(--lp-accent-soft)] px-4 py-2.5 text-sm font-bold text-[var(--lp-accent)]">
+          <Link href="/owner/admissions" className="rounded-lg bg-[var(--lp-accent-soft)] px-4 py-2.5 text-sm font-bold text-[var(--lp-accent)]">
             New admission
           </Link>
-          <Link href="/owner/students" className="rounded-[0.95rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2.5 text-sm font-bold text-[var(--lp-text)]">
+          <Link href="/owner/students" className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2.5 text-sm font-bold text-[var(--lp-text)]">
             Open roster
           </Link>
         </>

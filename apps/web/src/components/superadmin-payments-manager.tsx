@@ -38,7 +38,7 @@ export function SuperadminPaymentsManager() {
   return (
     <DashboardCard title="Platform payment ledger" subtitle="Subscription payment history across all tenant libraries">
       {error ? <p className="mb-4 text-sm font-semibold text-amber-700">{error}</p> : null}
-      <div className="overflow-hidden rounded-[1.5rem] border border-slate-200">
+      <div className="overflow-hidden rounded-xl border border-slate-200">
         <div className="hidden grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.7fr] gap-3 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500 md:grid">
           <span>Library</span>
           <span>Amount</span>

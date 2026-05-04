@@ -101,7 +101,7 @@ function SettingsTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-[0.5rem] border px-4 py-2 text-sm font-semibold transition ${
+      className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
         active
           ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]"
           : "border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"
@@ -407,7 +407,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                 key={group.id}
                 type="button"
                 onClick={() => setActiveTab(group.tabs[0])}
-                className={`rounded-[0.75rem] border px-3 py-3 text-left transition ${
+                className={`rounded-lg border px-3 py-3 text-left transition ${
                   activeGroup.id === group.id
                     ? "border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)]/45"
                     : "border-[var(--lp-border)] bg-white"
@@ -435,18 +435,18 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
         <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
           <DashboardCard title="Library profile" subtitle="Basic customer-facing information and operational defaults.">
             <form className="grid gap-3" onSubmit={saveSettings}>
-              <input value={form.libraryName} onChange={(event) => setForm((current) => ({ ...current, libraryName: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Library name" />
-              <input value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Address" />
+              <input value={form.libraryName} onChange={(event) => setForm((current) => ({ ...current, libraryName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Library name" />
+              <input value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Address" />
               <div className="grid gap-3 md:grid-cols-2">
-                <input value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="City" />
-                <input value={form.area} onChange={(event) => setForm((current) => ({ ...current, area: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Area / Locality" />
+                <input value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="City" />
+                <input value={form.area} onChange={(event) => setForm((current) => ({ ...current, area: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Area / Locality" />
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <input value={form.wifiName} onChange={(event) => setForm((current) => ({ ...current, wifiName: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="WiFi name" />
-                <input value={form.wifiPassword} onChange={(event) => setForm((current) => ({ ...current, wifiPassword: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="WiFi password" />
+                <input value={form.wifiName} onChange={(event) => setForm((current) => ({ ...current, wifiName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="WiFi name" />
+                <input value={form.wifiPassword} onChange={(event) => setForm((current) => ({ ...current, wifiPassword: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="WiFi password" />
               </div>
-              <textarea value={form.noticeMessage} onChange={(event) => setForm((current) => ({ ...current, noticeMessage: event.target.value }))} className="min-h-28 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Notice message" />
-              <label className="flex items-center gap-3 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
+              <textarea value={form.noticeMessage} onChange={(event) => setForm((current) => ({ ...current, noticeMessage: event.target.value }))} className="min-h-28 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Notice message" />
+              <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
                 <input
                   type="checkbox"
                   checked={form.allowOfflineCheckin}
@@ -454,7 +454,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                 />
                 Allow offline QR sync
               </label>
-              <button disabled={saving} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+              <button disabled={saving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                 {saving ? "Saving..." : "Save settings"}
               </button>
             </form>
@@ -462,16 +462,16 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
 
           <DashboardCard title="QR access" subtitle="Library-level QR validation state and entry image.">
             <div className="grid gap-3 text-sm text-[var(--lp-text-soft)]">
-              <div className="overflow-hidden rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-4">
+              <div className="overflow-hidden rounded-lg border border-[var(--lp-border)] bg-white p-4">
                 <img
                   src={buildQrImageUrl(data.qr_payload)}
                   alt={`${data.library_name} library QR`}
-                  className="mx-auto h-52 w-52 rounded-[0.5rem] bg-white object-cover"
+                  className="mx-auto h-52 w-52 rounded-lg bg-white object-cover"
                 />
               </div>
               <p>Active QR key: <span className="font-semibold text-[var(--lp-text)]">{data.qr_key_id}</span></p>
               <p>Offline check-in: <span className="font-semibold text-[var(--lp-text)]">{data.allow_offline_checkin ? "Enabled" : "Disabled"}</span></p>
-              <button onClick={() => void regenerateQr()} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
+              <button onClick={() => void regenerateQr()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
                 Regenerate QR key
               </button>
             </div>
@@ -485,31 +485,31 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
             <DashboardCard title="Student plans" subtitle="Create reusable pricing and duration templates before admitting students.">
               <form className="grid gap-3" onSubmit={savePlan}>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <input value={planForm.name} onChange={(event) => setPlanForm((current) => ({ ...current, name: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Plan name" />
-                  <input value={planForm.targetAudience} onChange={(event) => setPlanForm((current) => ({ ...current, targetAudience: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Target audience / label" />
+                  <input value={planForm.name} onChange={(event) => setPlanForm((current) => ({ ...current, name: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Plan name" />
+                  <input value={planForm.targetAudience} onChange={(event) => setPlanForm((current) => ({ ...current, targetAudience: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Target audience / label" />
                 </div>
-                <textarea value={planForm.description} onChange={(event) => setPlanForm((current) => ({ ...current, description: event.target.value }))} className="min-h-24 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Description" />
+                <textarea value={planForm.description} onChange={(event) => setPlanForm((current) => ({ ...current, description: event.target.value }))} className="min-h-24 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Description" />
                 <div className="grid gap-3 md:grid-cols-2">
-                  <input type="number" min="1" value={planForm.durationMonths} onChange={(event) => setPlanForm((current) => ({ ...current, durationMonths: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration (months)" />
-                  <input type="number" min="0" value={planForm.baseAmount} onChange={(event) => setPlanForm((current) => ({ ...current, baseAmount: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Base amount" />
+                  <input type="number" min="1" value={planForm.durationMonths} onChange={(event) => setPlanForm((current) => ({ ...current, durationMonths: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration (months)" />
+                  <input type="number" min="0" value={planForm.baseAmount} onChange={(event) => setPlanForm((current) => ({ ...current, baseAmount: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Base amount" />
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <select value={planForm.defaultDiscountType} onChange={(event) => setPlanForm((current) => ({ ...current, defaultDiscountType: event.target.value as DiscountType | "" }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
+                  <select value={planForm.defaultDiscountType} onChange={(event) => setPlanForm((current) => ({ ...current, defaultDiscountType: event.target.value as DiscountType | "" }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
                     <option value="">No default discount</option>
                     <option value="PERCENTAGE">Percentage</option>
                     <option value="FLAT">Flat</option>
                   </select>
-                  <input type="number" min="0" value={planForm.defaultDiscountValue} onChange={(event) => setPlanForm((current) => ({ ...current, defaultDiscountValue: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Discount value" />
+                  <input type="number" min="0" value={planForm.defaultDiscountValue} onChange={(event) => setPlanForm((current) => ({ ...current, defaultDiscountValue: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Discount value" />
                 </div>
-                <label className="flex items-center gap-3 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
+                <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
                   <input type="checkbox" checked={planForm.isActive} onChange={(event) => setPlanForm((current) => ({ ...current, isActive: event.target.checked }))} />
                   Active for new admissions
                 </label>
-                <div className="rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3 text-sm text-[var(--lp-text-soft)]">
+                <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3 text-sm text-[var(--lp-text-soft)]">
                   Final preview: <span className="font-semibold text-[var(--lp-text)]">Rs. {planPreview.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button disabled={planSaving} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                  <button disabled={planSaving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                     {planSaving ? "Saving..." : editingPlanId ? "Update plan" : "Create plan"}
                   </button>
                   {editingPlanId ? (
@@ -528,7 +528,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                           isActive: true,
                         });
                       }}
-                      className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
+                      className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
                     >
                       Reset
                     </button>
@@ -540,8 +540,8 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
             <DashboardCard title="Coupons" subtitle="Optional one-code discounts for admissions. Keep them separate from marketing offers.">
               <form className="grid gap-3" onSubmit={saveCoupon}>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <input value={couponForm.code} onChange={(event) => setCouponForm((current) => ({ ...current, code: event.target.value.toUpperCase() }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Coupon code" />
-                  <select value={couponForm.studentPlanId} onChange={(event) => setCouponForm((current) => ({ ...current, studentPlanId: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
+                  <input value={couponForm.code} onChange={(event) => setCouponForm((current) => ({ ...current, code: event.target.value.toUpperCase() }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Coupon code" />
+                  <select value={couponForm.studentPlanId} onChange={(event) => setCouponForm((current) => ({ ...current, studentPlanId: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
                     <option value="">All plans</option>
                     {plans.map((plan) => (
                       <option key={plan.id} value={plan.id}>{plan.name}</option>
@@ -549,23 +549,23 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                   </select>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <select value={couponForm.discountType} onChange={(event) => setCouponForm((current) => ({ ...current, discountType: event.target.value as DiscountType }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
+                  <select value={couponForm.discountType} onChange={(event) => setCouponForm((current) => ({ ...current, discountType: event.target.value as DiscountType }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
                     <option value="PERCENTAGE">Percentage</option>
                     <option value="FLAT">Flat</option>
                   </select>
-                  <input type="number" min="0" value={couponForm.discountValue} onChange={(event) => setCouponForm((current) => ({ ...current, discountValue: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Discount value" />
+                  <input type="number" min="0" value={couponForm.discountValue} onChange={(event) => setCouponForm((current) => ({ ...current, discountValue: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Discount value" />
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <input type="date" value={couponForm.validFrom} onChange={(event) => setCouponForm((current) => ({ ...current, validFrom: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
-                  <input type="date" value={couponForm.validUntil} onChange={(event) => setCouponForm((current) => ({ ...current, validUntil: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
-                  <input type="number" min="1" value={couponForm.usageLimit} onChange={(event) => setCouponForm((current) => ({ ...current, usageLimit: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Usage limit" />
+                  <input type="date" value={couponForm.validFrom} onChange={(event) => setCouponForm((current) => ({ ...current, validFrom: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+                  <input type="date" value={couponForm.validUntil} onChange={(event) => setCouponForm((current) => ({ ...current, validUntil: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+                  <input type="number" min="1" value={couponForm.usageLimit} onChange={(event) => setCouponForm((current) => ({ ...current, usageLimit: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Usage limit" />
                 </div>
-                <label className="flex items-center gap-3 rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
+                <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
                   <input type="checkbox" checked={couponForm.isActive} onChange={(event) => setCouponForm((current) => ({ ...current, isActive: event.target.checked }))} />
                   Coupon is active
                 </label>
                 <div className="flex flex-wrap gap-3">
-                  <button disabled={couponSaving} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                  <button disabled={couponSaving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                     {couponSaving ? "Saving..." : editingCouponId ? "Update coupon" : "Create coupon"}
                   </button>
                   {editingCouponId ? (
@@ -584,7 +584,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                           isActive: true,
                         });
                       }}
-                      className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
+                      className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
                     >
                       Reset
                     </button>
@@ -598,7 +598,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
             <DashboardCard title="Saved plans" subtitle="These plans appear directly inside admissions.">
               <div className="grid gap-3">
                 {plans.map((plan) => (
-                  <div key={plan.id} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-4">
+                  <div key={plan.id} className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold text-[var(--lp-text)]">{plan.name}</p>
@@ -626,7 +626,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                             isActive: plan.is_active,
                           });
                         }}
-                        className="rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]"
+                        className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]"
                       >
                         Edit
                       </button>
@@ -640,7 +640,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
             <DashboardCard title="Coupon bank" subtitle="One coupon code per admission in v1.">
               <div className="grid gap-3">
                 {coupons.map((coupon) => (
-                  <div key={coupon.id} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-4">
+                  <div key={coupon.id} className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold text-[var(--lp-text)]">{coupon.code}</p>
@@ -670,7 +670,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                             isActive: coupon.is_active,
                           });
                         }}
-                        className="rounded-[0.5rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]"
+                        className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]"
                       >
                         Edit
                       </button>
@@ -688,10 +688,10 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
         <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
           <DashboardCard title="Account profile" subtitle="Update your own name, email, and phone from one place.">
             <form className="grid gap-3" onSubmit={saveAccount}>
-              <input value={accountForm.fullName} onChange={(event) => setAccountForm((current) => ({ ...current, fullName: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Full name" />
-              <input value={accountForm.email} onChange={(event) => setAccountForm((current) => ({ ...current, email: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Email" />
-              <input value={accountForm.phone} onChange={(event) => setAccountForm((current) => ({ ...current, phone: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Phone" />
-              <button disabled={accountSaving} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+              <input value={accountForm.fullName} onChange={(event) => setAccountForm((current) => ({ ...current, fullName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Full name" />
+              <input value={accountForm.email} onChange={(event) => setAccountForm((current) => ({ ...current, email: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Email" />
+              <input value={accountForm.phone} onChange={(event) => setAccountForm((current) => ({ ...current, phone: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Phone" />
+              <button disabled={accountSaving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                 {accountSaving ? "Saving..." : "Save account profile"}
               </button>
             </form>
@@ -700,9 +700,9 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
           <div className="grid gap-4">
             <DashboardCard title="Security" subtitle="Password updates will sign you out on success for safety.">
               <form className="grid gap-3" onSubmit={updatePassword}>
-                <input type="password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Current password" />
-                <input type="password" value={passwordForm.nextPassword} onChange={(event) => setPasswordForm((current) => ({ ...current, nextPassword: event.target.value }))} className="rounded-[0.5rem] border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="New password" />
-                <button disabled={passwordSaving} className="rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                <input type="password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Current password" />
+                <input type="password" value={passwordForm.nextPassword} onChange={(event) => setPasswordForm((current) => ({ ...current, nextPassword: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="New password" />
+                <button disabled={passwordSaving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                   {passwordSaving ? "Updating..." : "Change password"}
                 </button>
               </form>
@@ -721,7 +721,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                     clearClientSession();
                     window.location.href = "/owner/login";
                   }}
-                  className="inline-flex w-fit rounded-[0.5rem] border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700"
+                  className="inline-flex w-fit rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700"
                 >
                   Logout
                 </button>
@@ -771,7 +771,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
               <p>Current plan: <span className="font-semibold text-[var(--lp-text)]">{data.subscription_plan ?? "No active plan"}</span></p>
               <p>Status: <span className="font-semibold text-[var(--lp-text)]">{data.subscription_status ?? "-"}</span></p>
               <p>Renewal date: <span className="font-semibold text-[var(--lp-text)]">{data.renewal_date ?? "-"}</span></p>
-              <Link href="/owner/billing" className="inline-flex w-fit rounded-[0.5rem] border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
+              <Link href="/owner/billing" className="inline-flex w-fit rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
                 Open renew plan flow
               </Link>
             </div>

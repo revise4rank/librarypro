@@ -47,19 +47,19 @@ export function StudentSeatManager() {
     <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
       <DashboardCard title="Assignment summary" subtitle="Current active subscription and seat">
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-[1.5rem] bg-slate-50 p-5">
+          <div className="rounded-xl bg-slate-50 p-5">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Seat Number</p>
-            <p className="mt-3 text-3xl font-black text-slate-950">{data.assignment?.seat_number ?? "-"}</p>
+            <p className="mt-3 text-2xl font-bold text-slate-950">{data.assignment?.seat_number ?? "-"}</p>
           </div>
-          <div className="rounded-[1.5rem] bg-emerald-50 p-5">
+          <div className="rounded-xl bg-emerald-50 p-5">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Plan</p>
             <p className="mt-3 text-xl font-black text-slate-950">{data.assignment?.plan_name ?? "No active plan"}</p>
           </div>
-          <div className="rounded-[1.5rem] bg-amber-50 p-5">
+          <div className="rounded-xl bg-amber-50 p-5">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-700">Valid Till</p>
             <p className="mt-3 text-xl font-black text-slate-950">{data.assignment?.ends_at ?? "-"}</p>
           </div>
-          <div className="rounded-[1.5rem] bg-cyan-50 p-5">
+          <div className="rounded-xl bg-cyan-50 p-5">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-700">Next Due</p>
             <p className="mt-3 text-xl font-black text-slate-950">{data.upcomingDueDate ?? "-"}</p>
           </div>
@@ -68,13 +68,13 @@ export function StudentSeatManager() {
 
       <DashboardCard title="Library details" subtitle="Useful when arriving or contacting owner">
         <div className="grid gap-4">
-          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
             {data.library?.library_name ?? "No library linked"} | Payment status {data.assignment?.payment_status ?? "-"}
           </div>
           <button
             type="button"
             onClick={() => setShowLibraryInfo((current) => !current)}
-            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
             {showLibraryInfo ? "Hide library details" : "Show library details"}
           </button>

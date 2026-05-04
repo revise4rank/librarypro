@@ -73,7 +73,7 @@ export function SuperadminDashboardManager() {
   return (
     <div className="grid gap-4">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
-      <section className="rounded-[0.75rem] border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+      <section className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 shadow-sm">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">Platform Control</p>
         <h2 className="mt-2 text-[1.25rem] font-semibold tracking-tight text-[var(--lp-text)]">
           Platform health, renewals, and risk in one view.
@@ -88,7 +88,7 @@ export function SuperadminDashboardManager() {
         <DashboardCard title="Tenant watchlist" subtitle="Who needs admin attention right now">
           <div className="space-y-3">
             {data.watchlist.map((library) => (
-              <div key={library.id} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+              <div key={library.id} className="rounded-xl border border-slate-200 bg-white px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-black text-slate-950">{library.name}</p>
@@ -104,7 +104,7 @@ export function SuperadminDashboardManager() {
         <DashboardCard title="Recent platform charges" subtitle="Subscription billing stream">
           <div className="space-y-3">
             {data.recentPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+              <div key={payment.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-4">
                 <div>
                   <p className="font-black text-slate-950">{payment.library_name}</p>
                   <p className="text-sm text-slate-500">{payment.reference_no} | {payment.created_at.slice(0, 10)}</p>

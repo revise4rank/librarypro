@@ -56,7 +56,7 @@ export function OwnerOffersManager() {
   return (
     <DashboardCard title="Offer composer" subtitle="Optional promotions, discounts, and library-specific opportunities">
       <div className="grid gap-4">
-        <div className="rounded-[1.6rem] border border-[var(--lp-accent-soft)] bg-[linear-gradient(135deg,rgba(227,248,240,0.96),rgba(255,249,240,0.96))] p-5">
+        <div className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[linear-gradient(135deg,rgba(227,248,240,0.96),rgba(255,249,240,0.96))] p-5">
           <p className="text-xs font-black uppercase tracking-[0.28em] text-[var(--lp-accent-strong)]">Optional growth layer</p>
           <h3 className="mt-2 text-xl font-black text-[var(--lp-text)]">Keep promotions useful, limited, and easy to review.</h3>
           <p className="mt-2 text-sm leading-7 text-slate-600">Publish only the offers that add value for students or help admissions. Everything else stays outside the main workflow.</p>

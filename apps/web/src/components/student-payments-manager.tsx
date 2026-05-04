@@ -186,24 +186,24 @@ export function StudentPaymentsManager() {
     <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
       <DashboardCard title="Current billing status" subtitle={`Real student payment summary | Socket ${liveStatus}`}>
         <div className="grid gap-4">
-          <div className={`rounded-[1.4rem] px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+          <div className={`rounded-xl px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {isOffline ? `Offline mode active. Queued payment actions: ${queuedPayments}` : `Online and ready. Queued payment actions: ${queuedPayments}`}
           </div>
-          <div className="rounded-[1.5rem] bg-amber-50 p-5">
+          <div className="rounded-xl bg-amber-50 p-5">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-700">Status</p>
-            <p className="mt-3 text-3xl font-black text-slate-950">{summary.paymentStatus ?? "UNKNOWN"}</p>
+            <p className="mt-3 text-2xl font-bold text-slate-950">{summary.paymentStatus ?? "UNKNOWN"}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Seat</p>
               <p className="mt-3 text-xl font-black text-slate-950">{summary.seatNumber ?? "-"}</p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Current due</p>
               <p className="mt-3 text-xl font-black text-slate-950">Rs. {summary.totalDue}</p>
             </div>
           </div>
-          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Plan validity</p>
             <p className="mt-3 text-xl font-black text-slate-950">{summary.validityEnd ?? "-"}</p>
             <p className="mt-2 text-sm text-slate-500">{summary.planName ?? "No active plan"}</p>
@@ -216,20 +216,20 @@ export function StudentPaymentsManager() {
 
       <DashboardCard title="Receipts and dues" subtitle="Payment actions students actually need">
         <div className="grid gap-4">
-          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
             {rows.filter((payment) => payment.status !== "PAID").length} payment item(s) still need action. Old receipts can stay tucked away.
           </div>
           <button
             type="button"
             onClick={() => setShowHistory((current) => !current)}
-            className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
             {showHistory ? "Hide receipt history" : `Show receipt history (${rows.length})`}
           </button>
           {showHistory ? (
             <div className="space-y-3">
               {rows.map((payment) => (
-                <div key={payment.id} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4">
+                <div key={payment.id} className="rounded-xl border border-slate-200 bg-white px-4 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-bold text-slate-950">{payment.student_name}</p>
@@ -242,11 +242,11 @@ export function StudentPaymentsManager() {
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">
                     {payment.status !== "PAID" ? (
-                      <button onClick={() => void payNow(payment.id)} className="rounded-[1.1rem] border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
+                      <button onClick={() => void payNow(payment.id)} className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
                         Pay now
                       </button>
                     ) : null}
-                    <button onClick={() => void downloadReceipt(payment.id)} className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                    <button onClick={() => void downloadReceipt(payment.id)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
                       Get receipt
                     </button>
                   </div>

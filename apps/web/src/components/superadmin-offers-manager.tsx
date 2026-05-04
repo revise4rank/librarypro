@@ -122,7 +122,7 @@ export function SuperadminOffersManager() {
       <DashboardCard title="Offer moderation" subtitle="Views, clicks, and approval state">
         <div className="grid gap-3">
           {rows.map((row) => (
-            <div key={row.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+            <div key={row.id} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-black text-slate-950">{row.title}</p>

@@ -122,23 +122,23 @@ export function OwnerLeadsManager() {
           <DashboardCard key={row.id} title={row.student_name ?? row.student_phone ?? "Anonymous lead"} subtitle={`${row.channel} | ${row.source_page} | ${row.created_at.slice(0, 10)}`}>
             <div className="grid gap-4">
               <div className="grid gap-4 md:grid-cols-5">
-                <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Phone</p>
                   <p className="mt-2 font-bold text-slate-950">{row.student_phone ?? "-"}</p>
                 </div>
-                <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Email</p>
                   <p className="mt-2 font-bold text-slate-950">{row.student_email ?? "-"}</p>
                 </div>
-                <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Status</p>
                   <p className="mt-2 font-bold text-slate-950">{row.status}</p>
                 </div>
-                <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Last contacted</p>
                   <p className="mt-2 font-bold text-slate-950">{row.last_contacted_at?.slice(0, 10) ?? "-"}</p>
                 </div>
-                <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Follow-up</p>
                   <p className="mt-2 font-bold text-slate-950">{row.follow_up_at?.slice(0, 16).replace("T", " ") ?? "-"}</p>
                 </div>
@@ -165,7 +165,7 @@ export function OwnerLeadsManager() {
                   className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
                 />
               </div>
-              <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700">
                 {row.message ?? "No message provided. This lead was captured from a contact intent action."}
               </div>
               <textarea
