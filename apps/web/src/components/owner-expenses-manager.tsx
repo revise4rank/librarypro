@@ -181,7 +181,7 @@ export function OwnerExpensesManager() {
               <input value={form.spentOn} onChange={(event) => setForm((current) => ({ ...current, spentOn: event.target.value }))} type="date" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
             </div>
             <textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes" className="min-h-28 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
-            <button className="rounded-2xl bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white">Save expense</button>
+            <button type="submit" className="rounded-2xl bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white">Save expense</button>
           </form>
         </Surface>
 

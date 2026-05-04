@@ -13,9 +13,9 @@ export default function StudentQrPage() {
       nav={studentNav}
       actions={
         <StudentWorkspaceActions>
-          <button className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
+          <span className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
             Live QR
-          </button>
+          </span>
         </StudentWorkspaceActions>
       }
     >

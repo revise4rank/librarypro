@@ -57,6 +57,8 @@ export function StudentOffersManager() {
   const [meta, setMeta] = useState<OffersResponse["meta"] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCategories, setShowCategories] = useState(false);
+  const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
+  const [contactOfferId, setContactOfferId] = useState<string | null>(null);
 
   async function loadCategories() {
     const response = await apiFetch<CategoriesResponse>("/offers/categories", undefined, false);
@@ -156,22 +158,58 @@ export function StudentOffersManager() {
                 {offer.valid_until ? <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Valid till {offer.valid_until.slice(0, 10)}</span> : null}
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={() => void trackAction(offer.id, "VIEW_DETAILS")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]">
-                  View details
-                </button>
-                <button type="button" onClick={() => void trackAction(offer.id, "CONTACT")} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]">
-                  Contact
-                </button>
-                <a
-                  href={offer.cta_url ?? "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => void trackAction(offer.id, "APPLY")}
-                  className="rounded-full bg-[var(--lp-primary)] px-4 py-2 text-sm font-bold text-white"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExpandedOfferId((current) => (current === offer.id ? null : offer.id));
+                    void trackAction(offer.id, "VIEW_DETAILS");
+                  }}
+                  className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]"
                 >
-                  {offer.cta_label}
-                </a>
+                  {expandedOfferId === offer.id ? "Hide details" : "View details"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContactOfferId((current) => (current === offer.id ? null : offer.id));
+                    void trackAction(offer.id, "CONTACT");
+                  }}
+                  className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]"
+                >
+                  {contactOfferId === offer.id ? "Hide contact" : "Contact"}
+                </button>
+                {offer.cta_url ? (
+                  <a
+                    href={offer.cta_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => void trackAction(offer.id, "APPLY")}
+                    className="rounded-full bg-[var(--lp-primary)] px-4 py-2 text-sm font-bold text-white"
+                  >
+                    {offer.cta_label}
+                  </a>
+                ) : (
+                  <button type="button" disabled className="rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-400">
+                    {offer.cta_label}
+                  </button>
+                )}
               </div>
+              {expandedOfferId === offer.id ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+                  {offer.long_description ?? offer.short_description}
+                </div>
+              ) : null}
+              {contactOfferId === offer.id ? (
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+                  {offer.contact_phone ? (
+                    <a href={`tel:${offer.contact_phone}`} className="underline-offset-4 hover:underline">
+                      Call {offer.contact_phone}
+                    </a>
+                  ) : (
+                    "Contact details are not shared for this opportunity yet."
+                  )}
+                </div>
+              ) : null}
             </div>
           </DashboardCard>
         ))}

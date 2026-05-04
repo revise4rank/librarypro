@@ -172,6 +172,12 @@ export function DashboardShell({
 
               <div className="flex shrink-0 items-center gap-2">
                 {actions ? <div className="lp-header-actions hidden items-center md:flex">{actions}</div> : null}
+                <Link
+                  href="/marketplace"
+                  className="hidden h-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white px-3 text-xs font-semibold text-[var(--lp-text)] transition hover:bg-[var(--lp-surface-muted)] xl:flex"
+                >
+                  Explore
+                </Link>
                 <div className="relative" ref={notificationMenuRef}>
                   <button
                     type="button"
@@ -285,6 +291,12 @@ export function DashboardShell({
                 </div>
               </div>
             ) : null}
+            <Link
+              href="/marketplace"
+              className="flex items-center justify-center rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--lp-text)]"
+            >
+              Explore Libraries
+            </Link>
             {nav.slice(5).map((item) => {
               const active = pathname === item.href;
               const Icon = navIconFor(item);

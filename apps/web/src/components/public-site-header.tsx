@@ -52,6 +52,14 @@ export function PublicSiteHeader({
 
         <div className="flex shrink-0 items-center gap-2">
           <Link
+            href="/marketplace"
+            className="inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-semibold !text-white transition hover:bg-white/15 sm:px-4 sm:text-sm"
+          >
+            <span className="sm:hidden">Explore</span>
+            <span className="hidden sm:inline">Explore Libraries</span>
+          </Link>
+
+          <Link
             href={ctaHref}
             className="inline-flex items-center justify-center rounded-lg bg-emerald-400 px-3 py-2 text-[11px] font-semibold text-[#0F172A] shadow-sm transition hover:bg-emerald-300 sm:px-4 sm:text-sm"
           >
@@ -78,6 +86,13 @@ export function PublicSiteHeader({
                     {item.label}
                   </Link>
                 ))}
+                <Link
+                  href="/marketplace"
+                  className="rounded-xl px-3 py-2 text-sm font-medium text-white hover:bg-white/8"
+                  style={{ color: "#ffffff" }}
+                >
+                  Explore Libraries
+                </Link>
               </div>
             </div>
           </details>
