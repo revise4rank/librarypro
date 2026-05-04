@@ -163,24 +163,24 @@ export default function HomePage() {
           <div className="mx-auto w-full max-w-[1120px] px-4 py-16 md:py-24">
             <motion.div variants={sectionMotion} className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-end">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
                   <Sparkles className="h-3.5 w-3.5" />
                   Visual-first library journey
                 </div>
-                <h1 className="mt-6 max-w-3xl text-[clamp(2.8rem,6vw,5.4rem)] font-bold leading-[0.9] tracking-[-0.055em]">
+                <h1 className="mt-6 max-w-3xl text-[clamp(2.25rem,5vw,4.25rem)] font-bold leading-[1.02] tracking-[-0.045em]">
                   Your Library, Managed &amp; Discovered.
                 </h1>
-                <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
                   Create pricing once, admit students cleanly, manage the active roster daily, and only then allot seats when placement is ready.
                 </p>
               </div>
 
               <motion.div
                 variants={sectionMotion}
-                className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_30px_70px_rgba(15,23,42,0.08)]"
+                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="grid gap-4">
-                  <div className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Library Journey</p>
                       <p className="mt-1 text-base font-semibold text-slate-900">One flow from onboarding to daily growth</p>
@@ -193,7 +193,7 @@ export default function HomePage() {
                       ["Seat visibility", "Live map"],
                       ["Student continuity", "QR + dues"],
                     ].map(([label, value]) => (
-                      <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <div key={label} className="rounded-lg border border-slate-200 bg-white p-4">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
                         <p className="mt-3 text-xl font-bold tracking-tight text-slate-950">{value}</p>
                       </div>
@@ -203,7 +203,7 @@ export default function HomePage() {
               </motion.div>
             </motion.div>
 
-            <motion.div variants={sectionMotion} className="mt-12 rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+            <motion.div variants={sectionMotion} className="mt-12 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Access Center</p>
@@ -223,7 +223,7 @@ export default function HomePage() {
                     <Link
                       key={item.title}
                       href={item.href}
-                      className="group rounded-[24px] border border-slate-200 bg-[#F8FAFC] p-5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white"
+                      className="group rounded-xl border border-slate-200 bg-[#F8FAFC] p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-sm"
                     >
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0F172A] text-white transition group-hover:scale-105">
                         <Icon className="h-5 w-5" />
@@ -248,7 +248,7 @@ export default function HomePage() {
         >
           <div className="mx-auto grid w-full max-w-[1120px] gap-4 px-4 py-8 sm:grid-cols-2 lg:grid-cols-4">
             {proofStats.map((item) => (
-              <div key={item.label} className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-5 text-center backdrop-blur">
+              <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 px-4 py-4 text-center">
                 <p className="text-2xl font-bold tracking-tight">{item.value}</p>
                 <p className="mt-1 text-sm text-slate-300">{item.label}</p>
               </div>
@@ -260,10 +260,10 @@ export default function HomePage() {
           <div className="mx-auto w-full max-w-[1120px] px-4 py-20 md:py-24">
             <motion.div variants={sectionMotion} className="max-w-2xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Interactive roadmap</p>
-              <h2 className="mt-3 text-[clamp(2rem,4vw,3.5rem)] font-bold tracking-[-0.045em]">
+              <h2 className="mt-3 text-[clamp(1.8rem,3.5vw,2.8rem)] font-bold tracking-[-0.04em]">
                 Follow the library journey from setup to growth.
               </h2>
-              <p className="mt-4 text-lg leading-8 text-slate-300">
+              <p className="mt-4 text-base leading-7 text-slate-300">
                 This is how LibraryPro works in practice. Each step in the journey becomes visible as the page moves,
                 keeping the story simple and product-first.
               </p>
@@ -292,18 +292,18 @@ export default function HomePage() {
                     }}
                     viewport={{ once: true, amount: 0.45 }}
                     transition={{ duration: 0.65, delay: index * 0.08 }}
-                    className="relative rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur"
+                    className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-4"
                   >
                     {index < journeySteps.length - 1 ? (
                       <div className="absolute left-[calc(100%-8px)] top-11 hidden h-[2px] w-8 bg-white/15 lg:block" />
                     ) : null}
-                    <div className={`absolute inset-0 rounded-[28px] bg-gradient-to-br ${step.accent} opacity-70`} />
+                    <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${step.accent} opacity-80`} />
                     <div className="relative">
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#111C33] text-white">
                         <Icon className="h-5 w-5" />
                       </div>
                       <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">Step 0{index + 1}</p>
-                      <h3 className="mt-2 text-2xl font-bold tracking-tight">{step.title}</h3>
+                      <h3 className="mt-2 text-xl font-bold tracking-tight">{step.title}</h3>
                       <p className="mt-3 text-sm leading-7 text-slate-300">{step.text}</p>
                     </div>
                   </motion.article>
@@ -317,10 +317,10 @@ export default function HomePage() {
           <div className="mx-auto w-full max-w-[1120px] px-4 py-20 md:py-24">
             <motion.div variants={sectionMotion} className="mx-auto max-w-2xl text-center">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Benefit-first product design</p>
-              <h2 className="mt-3 text-[clamp(2rem,4vw,3.2rem)] font-bold tracking-[-0.045em]">
+              <h2 className="mt-3 text-[clamp(1.8rem,3.4vw,2.75rem)] font-bold tracking-[-0.04em]">
                 Less noise. More clarity. Better library decisions.
               </h2>
-              <p className="mt-4 text-lg leading-8 text-slate-600">
+              <p className="mt-4 text-base leading-7 text-slate-600">
                 Start with plans and admissions, keep the roster under control, then use seats and discovery as the next step instead of mixing everything at once.
               </p>
             </motion.div>
@@ -329,7 +329,7 @@ export default function HomePage() {
               {benefitCards.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <motion.article key={item.title} variants={sectionMotion} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+                  <motion.article key={item.title} variants={sectionMotion} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0F172A] text-white">
                       <Icon className="h-5 w-5" />
                     </div>
@@ -344,7 +344,7 @@ export default function HomePage() {
 
         <section id="pricing" className="bg-[#FAFAFA] text-[#0F172A]">
           <div className="mx-auto w-full max-w-[1120px] px-4 py-16 md:py-20">
-            <motion.div variants={sectionMotion} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+            <motion.div variants={sectionMotion} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
               <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
                 <div className="max-w-2xl">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Pricing</p>
@@ -356,7 +356,7 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50 px-5 py-4">
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
                   <p className="text-sm font-semibold text-emerald-800">Owner onboarding in minutes</p>
                   <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Free trial available</p>
                 </div>
@@ -377,7 +377,7 @@ export default function HomePage() {
                     text: "Portal access, QR entry, notices, and payments in one flow.",
                   },
                 ].map((item) => (
-                  <div key={item.title} className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                  <div key={item.title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                     <p className="text-lg font-bold tracking-tight text-slate-950">{item.title}</p>
                     <p className="mt-2 text-sm leading-7 text-slate-600">{item.text}</p>
                   </div>
@@ -389,7 +389,7 @@ export default function HomePage() {
 
         <motion.footer variants={sectionMotion} className="bg-[#0F172A] text-white">
           <div className="mx-auto w-full max-w-[1120px] px-4 py-14 md:py-16">
-            <div className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:p-7">
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5 shadow-sm md:p-6">
               <div className="grid gap-8 lg:grid-cols-[1.2fr_1.8fr]">
                 <div>
                   <Link href="/" className="inline-flex items-center gap-3">

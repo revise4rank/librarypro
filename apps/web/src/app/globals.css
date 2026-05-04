@@ -16,9 +16,10 @@
   --lp-accent: #2d7d76;
   --lp-accent-strong: #176b63;
   --lp-accent-soft: #e3f1ee;
-  --lp-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
-  --lp-shadow-soft: 0 2px 8px rgba(15, 23, 42, 0.04);
-  --lp-radius-xl: 0.5rem;
+  --lp-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --lp-shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --lp-shadow-hover: 0 8px 22px rgba(15, 23, 42, 0.08);
+  --lp-radius-xl: 0.75rem;
   --lp-radius-lg: 0.5rem;
   --lp-shell-max: 1280px;
 }
@@ -31,10 +32,7 @@ body {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top left, rgba(201, 111, 64, 0.08), transparent 24%),
-    radial-gradient(circle at top right, rgba(45, 125, 118, 0.07), transparent 20%),
-    linear-gradient(180deg, #fafaf9 0%, #f7f7f5 48%, #f3f4f6 100%);
+  background: linear-gradient(180deg, #fafaf9 0%, #f7f7f5 100%);
   color: var(--lp-text);
   font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
   font-size: 14px;
@@ -100,10 +98,7 @@ button:disabled {
 
 .lp-page-frame {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(201, 111, 64, 0.06), transparent 20%),
-    radial-gradient(circle at top right, rgba(45, 125, 118, 0.06), transparent 18%),
-    linear-gradient(180deg, #fafaf9 0%, #f7f7f5 52%, #f3f4f6 100%);
+  background: linear-gradient(180deg, #fafaf9 0%, #f4f5f7 100%);
 }
 
 .lp-shell-container {
@@ -117,7 +112,7 @@ button:disabled {
   background: var(--lp-surface);
   border-radius: var(--lp-radius-xl);
   box-shadow: var(--lp-shadow);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(6px);
 }
 
 .lp-panel-soft {
@@ -248,8 +243,10 @@ button:disabled {
 .lp-density-surface [class*="rounded-[1.5rem]"],
 .lp-density-surface [class*="rounded-[1.75rem]"],
 .lp-density-surface [class*="rounded-[2rem]"],
+.lp-density-surface [class*="rounded-[22px]"],
 .lp-density-surface [class*="rounded-[24px]"],
 .lp-density-surface [class*="rounded-[28px]"],
+.lp-density-surface [class*="rounded-[30px]"],
 .lp-density-surface [class*="rounded-[32px]"] {
   border-radius: 0.75rem !important;
 }

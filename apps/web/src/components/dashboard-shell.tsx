@@ -1,70 +1,25 @@
 "use client";
 
 import {
-  Armchair,
-  BarChart3,
   Bell,
-  CalendarCheck,
   ChevronDown,
-  CreditCard,
-  Database,
-  IndianRupee,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
-  Megaphone,
-  Send,
   Settings as SettingsIcon,
-  ShieldCheck,
-  Store,
-  UserPlus,
-  Users,
   UserRound,
-  Wallet,
-  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { dashboardPathForRole, hydrateSessionFromServer, logoutSession, type SessionUser } from "../lib/api";
-
-type NavItem = {
-  href: string;
-  label: string;
-  shortLabel?: string;
-};
-
-const navIconMap: Record<string, LucideIcon> = {
-  "/owner/dashboard": LayoutDashboard,
-  "/owner/students": Users,
-  "/owner/seats": Armchair,
-  "/owner/checkins": CalendarCheck,
-  "/owner/payments": IndianRupee,
-  "/owner/reports": BarChart3,
-  "/owner/admissions": UserPlus,
-  "/owner/expenses": Wallet,
-  "/owner/marketing": Megaphone,
-  "/owner/notifications": Send,
-  "/owner/billing": CreditCard,
-  "/owner/settings": SettingsIcon,
-  "/student/dashboard": LayoutDashboard,
-  "/student/seat": Armchair,
-  "/student/payments": IndianRupee,
-  "/student/notifications": Send,
-  "/student/focus": BarChart3,
-  "/superadmin/dashboard": LayoutDashboard,
-  "/superadmin/libraries": Store,
-  "/superadmin/marketplace": Megaphone,
-  "/superadmin/data": Database,
-  "/superadmin/reviews": ShieldCheck,
-  "/superadmin/offers": Send,
-  "/superadmin/plans": CreditCard,
-  "/superadmin/payments": IndianRupee,
-};
-
-function navIconFor(item: NavItem) {
-  return navIconMap[item.href] ?? LayoutDashboard;
-}
+import {
+  loginPathForRole,
+  navIconFor,
+  notificationsPathForRole,
+  settingsPathForRole,
+  type DashboardNavItem,
+} from "./dashboard-shell-config";
 
 function initialsFromName(value?: string | null) {
   if (!value) return "U";
@@ -74,26 +29,6 @@ function initialsFromName(value?: string | null) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("") || "U";
-}
-
-function settingsPathForRole(role?: string, tab?: string) {
-  if (role === "LIBRARY_OWNER") return `/owner/settings${tab ? `?tab=${tab}` : ""}`;
-  if (role === "STUDENT") return `/student/dashboard`;
-  if (role === "SUPER_ADMIN") return "/superadmin/dashboard";
-  return "/owner/login";
-}
-
-function notificationsPathForRole(role?: string) {
-  if (role === "LIBRARY_OWNER") return "/owner/notifications";
-  if (role === "STUDENT") return "/student/notifications";
-  if (role === "SUPER_ADMIN") return "/superadmin/dashboard";
-  return "/owner/login";
-}
-
-function loginPathForRole(role?: string) {
-  if (role === "STUDENT") return "/student/login";
-  if (role === "SUPER_ADMIN") return "/superadmin/login";
-  return "/owner/login";
 }
 
 export function DashboardShell({
@@ -109,7 +44,7 @@ export function DashboardShell({
   panelLabel: string;
   title: string;
   description: string;
-  nav: NavItem[];
+  nav: DashboardNavItem[];
   actions?: ReactNode;
   children: ReactNode;
 }) {
@@ -251,13 +186,13 @@ export function DashboardShell({
                     <span className="absolute -right-0.5 -top-0.5 inline-flex h-2.5 w-2.5 rounded-full bg-[#ff6d6d]" />
                   </button>
                   {notificationMenuOpen ? (
-                    <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-64 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-2 shadow-[0_18px_34px_rgba(15,23,42,0.10)]">
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-64 rounded-lg border border-[var(--lp-border)] bg-white p-2 shadow-sm">
                       <p className="px-2 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--lp-muted)]">Notifications</p>
-                      <Link href={notificationsHref} className="mt-1 flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                      <Link href={notificationsHref} className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
                         <Bell className="h-4 w-4 text-[var(--lp-accent)]" />
                         Open alert center
                       </Link>
-                      <Link href={settingsPathForRole(sessionUser?.role)} className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                      <Link href={settingsPathForRole(sessionUser?.role)} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
                         <SettingsIcon className="h-4 w-4 text-[var(--lp-accent)]" />
                         Open settings
                       </Link>
@@ -274,15 +209,15 @@ export function DashboardShell({
                     className="flex h-8 items-center gap-2 rounded-full border border-[var(--lp-border)] bg-white pl-1 pr-2 text-xs font-semibold text-[var(--lp-text)]"
                     aria-label={`Open ${panelLabel} profile`}
                   >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fde68a,#fcd34d)] text-[10px] font-bold text-[var(--lp-text)]">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-[10px] font-bold text-[var(--lp-text)] ring-1 ring-amber-200">
                       {userInitials}
                     </span>
                     <ChevronDown className="h-3.5 w-3.5 text-[var(--lp-muted)]" />
                   </button>
                   {profileMenuOpen ? (
-                    <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-72 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-2 shadow-[0_18px_34px_rgba(15,23,42,0.10)]">
-                      <div className="flex items-center gap-3 rounded-[0.5rem] bg-[var(--lp-surface-muted)] px-3 py-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fde68a,#fcd34d)] text-sm font-bold text-[var(--lp-text)]">
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-72 rounded-lg border border-[var(--lp-border)] bg-white p-2 shadow-sm">
+                      <div className="flex items-center gap-3 rounded-lg bg-[var(--lp-surface-muted)] px-3 py-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-[var(--lp-text)] ring-1 ring-amber-200">
                           {userInitials}
                         </span>
                         <div className="min-w-0">
@@ -291,15 +226,15 @@ export function DashboardShell({
                         </div>
                       </div>
                       <div className="mt-2 grid gap-1">
-                        <Link href={accountHref} className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                        <Link href={accountHref} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
                           <UserRound className="h-4 w-4 text-[var(--lp-accent)]" />
                           Account settings
                         </Link>
-                        <Link href={securityHref} className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                        <Link href={securityHref} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
                           <LockKeyhole className="h-4 w-4 text-[var(--lp-accent)]" />
                           Password & security
                         </Link>
-                        <Link href={dashboardPathForRole(sessionUser?.role ?? "LIBRARY_OWNER")} className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
+                        <Link href={dashboardPathForRole(sessionUser?.role ?? "LIBRARY_OWNER")} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[var(--lp-text)] hover:bg-[var(--lp-surface-muted)]">
                           <LayoutDashboard className="h-4 w-4 text-[var(--lp-accent)]" />
                           Dashboard
                         </Link>
@@ -309,7 +244,7 @@ export function DashboardShell({
                             await logoutSession();
                             window.location.href = loginPathForRole(sessionUser?.role);
                           }}
-                          className="flex items-center gap-3 rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-rose-700 hover:bg-rose-50"
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-rose-700 hover:bg-rose-50"
                         >
                           <LogOut className="h-4 w-4" />
                           Logout
@@ -337,7 +272,7 @@ export function DashboardShell({
         ) : null}
 
         <div
-          className={`fixed bottom-16 left-3 right-3 z-40 rounded-lg border border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] p-3 shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur transition ${
+          className={`fixed bottom-16 left-3 right-3 z-40 rounded-lg border border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] p-3 shadow-md backdrop-blur transition ${
             mobileMenuOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
           }`}
         >
@@ -412,7 +347,7 @@ export function DashboardCard({
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
-    <section className={`rounded-[0.5rem] border border-[var(--lp-border)] p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)] ${tone}`}>
+    <section className={`rounded-lg border border-[var(--lp-border)] p-4 shadow-sm ${tone}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-[var(--lp-text)]">{title}</h3>
@@ -428,7 +363,7 @@ export function DashboardCard({
               ?
             </button>
             {detailsOpen ? (
-              <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-72 rounded-[0.5rem] border border-[var(--lp-border)] bg-white p-3 text-sm leading-6 text-[var(--lp-muted)] shadow-[0_18px_34px_rgba(15,23,42,0.10)]">
+              <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-72 rounded-lg border border-[var(--lp-border)] bg-white p-3 text-sm leading-6 text-[var(--lp-muted)] shadow-sm">
                 {subtitle}
               </div>
             ) : null}

@@ -28,20 +28,20 @@ export function AuthPageLayout({
       <PublicSiteHeader activeLabel={activeNavLabel} />
 
       <section className="mx-auto grid w-full max-w-[1040px] gap-4 px-4 py-6 md:py-8 lg:grid-cols-[1fr_1fr] lg:py-10">
-        <div className="order-2 rounded-[1rem] border border-slate-200 bg-[#0F172A] p-4 text-white shadow-[0_18px_42px_rgba(15,23,42,0.10)] md:p-5 lg:order-1">
-          <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-emerald-300">
+        <div className="order-2 rounded-xl border border-slate-800 bg-[#0F172A] p-4 text-white shadow-sm md:p-5 lg:order-1">
+          <div className="inline-flex rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-emerald-300">
             {eyebrow}
           </div>
-          <h2 className="mt-4 max-w-3xl text-[clamp(1.8rem,4vw,3.25rem)] font-bold leading-[0.98] tracking-[-0.04em]">
+          <h2 className="mt-4 max-w-3xl text-[clamp(1.65rem,3.5vw,2.7rem)] font-bold leading-[1.04] tracking-[-0.035em]">
             {title}
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">{description}</p>
 
-          <div className="mt-4 rounded-[1rem] border border-white/10 bg-white/5 p-3">
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
             <p className="text-xs font-semibold text-emerald-300">{accentTitle}</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {accentPoints.map((point, index) => (
-                <div key={point} className="rounded-[0.75rem] border border-white/10 bg-[#111C33] p-3">
+                <div key={point} className="rounded-lg border border-white/10 bg-[#111C33] p-3">
                   <p className="text-xs font-bold text-emerald-300">0{index + 1}</p>
                   <p className="mt-1 text-sm leading-5 text-slate-200">{point}</p>
                 </div>
@@ -65,9 +65,9 @@ export function AuthPageLayout({
           </div>
         </div>
 
-        <div className="order-1 rounded-[1rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)] md:p-5 lg:order-2">
+        <div className="order-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5 lg:order-2">
           <p className="lp-label text-emerald-700">Access form</p>
-          <h3 className="mt-2 text-[clamp(1.45rem,2vw,2.2rem)] font-bold tracking-[-0.04em] text-slate-950">{formTitle}</h3>
+          <h3 className="mt-2 text-[clamp(1.35rem,2vw,1.95rem)] font-bold tracking-[-0.035em] text-slate-950">{formTitle}</h3>
           <p className="mt-2 text-sm leading-6 text-slate-600">{formSubtitle}</p>
           <div className="mt-4">{children}</div>
         </div>

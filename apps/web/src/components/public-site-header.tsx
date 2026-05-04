@@ -19,7 +19,7 @@ export function PublicSiteHeader({
   activeLabel,
 }: PublicSiteHeaderProps) {
   const baseLinkClass = "rounded-lg px-2.5 py-1.5 text-xs font-semibold !text-white transition md:text-sm";
-  const activeLinkClass = "bg-white/15 !text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]";
+  const activeLinkClass = "bg-white/15 !text-white ring-1 ring-white/20";
   const inactiveLinkClass = "!text-white/90 hover:bg-white/10 hover:!text-white";
 
   return (
@@ -53,7 +53,7 @@ export function PublicSiteHeader({
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href={ctaHref}
-            className="inline-flex items-center justify-center rounded-xl bg-emerald-400 px-3 py-2 text-[11px] font-semibold text-[#0F172A] shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition hover:bg-emerald-300 sm:px-4 sm:text-sm"
+            className="inline-flex items-center justify-center rounded-lg bg-emerald-400 px-3 py-2 text-[11px] font-semibold text-[#0F172A] shadow-sm transition hover:bg-emerald-300 sm:px-4 sm:text-sm"
           >
             <span className="sm:hidden">Start</span>
             <span className="hidden sm:inline">{ctaLabel}</span>
@@ -63,7 +63,7 @@ export function PublicSiteHeader({
             <summary className="flex h-9 list-none items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3 text-xs font-semibold !text-white">
               Menu
             </summary>
-            <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-56 rounded-2xl border border-white/10 bg-[#111C33] p-2 shadow-[0_18px_40px_rgba(15,23,42,0.28)]">
+            <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-56 rounded-xl border border-white/10 bg-[#111C33] p-2 shadow-md">
               <div className="grid gap-1">
                 {navLinks.map((item) => (
                   <Link

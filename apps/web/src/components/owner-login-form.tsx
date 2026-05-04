@@ -82,7 +82,7 @@ export function RoleLoginForm({
         <input
           value={login}
           onChange={(event) => setLogin(event.target.value)}
-          className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition focus:border-emerald-400 focus:bg-white"
+          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-950 outline-none transition focus:border-emerald-400 focus:bg-white"
           placeholder={loginPlaceholder}
           autoComplete={expectedRole === "STUDENT" ? "username" : "email"}
         />
@@ -92,7 +92,7 @@ export function RoleLoginForm({
         <input
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition focus:border-emerald-400 focus:bg-white"
+          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-950 outline-none transition focus:border-emerald-400 focus:bg-white"
           placeholder={passwordPlaceholder}
           type="password"
           autoComplete="current-password"
@@ -100,12 +100,12 @@ export function RoleLoginForm({
       </label>
       {helperText ? <p className="text-sm leading-6 text-slate-500">{helperText}</p> : null}
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
-      {showSeedHint ? <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">
+      {showSeedHint ? <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-6 text-slate-500">
         Seed login works only if API and database are running with demo seed data.
       </div> : null}
       <button
         disabled={submitting}
-        className="rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#0F172A] shadow-[0_12px_28px_rgba(16,185,129,0.18)] transition hover:bg-emerald-300 disabled:opacity-60"
+        className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#0F172A] shadow-sm transition hover:bg-emerald-300 disabled:opacity-60"
       >
         {submitting ? "Signing in..." : submitLabel}
       </button>
