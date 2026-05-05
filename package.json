@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "build": "npm run build -w @librarypro/api && npm run build -w @librarypro/web",
+    "start": "npm run migrate -w @librarypro/api && npm run start -w @librarypro/api",
     "test": "npm run test -w @librarypro/api",
     "ci": "npm run test && npm run build",
     "e2e:smoke": "node scripts/e2e-smoke.mjs",
