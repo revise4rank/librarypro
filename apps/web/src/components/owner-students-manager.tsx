@@ -18,6 +18,10 @@ type StudentRow = {
   student_email: string | null;
   student_phone: string | null;
   seat_number: string | null;
+  shift_id: string | null;
+  shift_name: string | null;
+  shift_start_time: string | null;
+  shift_end_time: string | null;
   student_plan_id: string | null;
   plan_name: string;
   plan_price: string;
@@ -46,6 +50,15 @@ type OwnerSeatOption = {
   seat_number: string;
   status: string;
   assignment_id: string | null;
+};
+
+type ShiftConfig = {
+  id: string;
+  name: string;
+  start_time: string;
+  end_time: string;
+  is_default: boolean;
+  is_active: boolean;
 };
 
 type StudentPlanConfig = {
@@ -188,6 +201,8 @@ export function OwnerStudentsManager() {
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [seats, setSeats] = useState<OwnerSeatOption[]>([]);
   const [plans, setPlans] = useState<StudentPlanConfig[]>([]);
+  const [shifts, setShifts] = useState<ShiftConfig[]>([]);
+  const [selectedShiftId, setSelectedShiftId] = useState("");
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const [selectedSeatId, setSelectedSeatId] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -203,14 +218,21 @@ export function OwnerStudentsManager() {
   async function loadStudents() {
     setLoading(true);
     try {
-      const [studentsResponse, seatsResponse, plansResponse] = await Promise.all([
+      const [studentsResponse, plansResponse, shiftsResponse] = await Promise.all([
         apiFetch<{ success: boolean; data: StudentRow[] }>("/owner/students"),
-        apiFetch<{ success: boolean; data: OwnerSeatOption[] }>("/owner/seats"),
         apiFetch<{ success: boolean; data: StudentPlanConfig[] }>("/owner/student-plans"),
+        apiFetch<{ success: boolean; data: ShiftConfig[] }>("/owner/shifts"),
       ]);
+      const activeShifts = shiftsResponse.data.filter((shift) => shift.is_active);
+      const nextShiftId = selectedShiftId || activeShifts.find((shift) => shift.is_default)?.id || activeShifts[0]?.id || "";
+      const seatsResponse = await apiFetch<{ success: boolean; data: OwnerSeatOption[] }>(`/owner/seats${nextShiftId ? `?shiftId=${encodeURIComponent(nextShiftId)}` : ""}`);
       setRows(studentsResponse.data);
       setSeats(seatsResponse.data);
       setPlans(plansResponse.data);
+      setShifts(activeShifts);
+      if (nextShiftId && nextShiftId !== selectedShiftId) {
+        setSelectedShiftId(nextShiftId);
+      }
       setSelectedAssignmentId((current) => current ?? studentsResponse.data[0]?.assignment_id ?? null);
       setError(null);
     } catch (loadError) {
@@ -223,11 +245,14 @@ export function OwnerStudentsManager() {
 
   useEffect(() => {
     void loadStudents();
-  }, []);
+  }, [selectedShiftId]);
 
   useEffect(() => {
     setForm(buildInitialForm(selectedStudent));
     setSelectedSeatId("");
+    if (selectedStudent?.shift_id && selectedStudent.shift_id !== selectedShiftId) {
+      setSelectedShiftId(selectedStudent.shift_id);
+    }
     setEditorMode("summary");
   }, [selectedStudent]);
 
@@ -308,7 +333,7 @@ export function OwnerStudentsManager() {
     try {
       await apiFetch(`/owner/students/${selectedStudent.assignment_id}/seat-allot`, {
         method: "POST",
-        body: JSON.stringify({ seatId: selectedSeatId }),
+        body: JSON.stringify({ seatId: selectedSeatId, shiftId: selectedShiftId || selectedStudent.shift_id || undefined }),
       });
       setMessage("Seat allotted successfully.");
       await loadStudents();
@@ -365,9 +390,16 @@ export function OwnerStudentsManager() {
               <p className="text-base font-bold tracking-tight text-[var(--lp-text)]">Roster</p>
               <p className="mt-0.5 text-xs text-[var(--lp-text-soft)]">Select a student to manage seat or plan.</p>
             </div>
-            <Link href="/owner/admissions" className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] transition hover:bg-emerald-100">
-              New admission
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={selectedShiftId} onChange={(event) => setSelectedShiftId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--lp-text)] outline-none">
+                {shifts.map((shift) => (
+                  <option key={shift.id} value={shift.id}>{shift.name}</option>
+                ))}
+              </select>
+              <Link href="/owner/admissions" className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] transition hover:bg-emerald-100">
+                New admission
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 2xl:grid-cols-5">
@@ -399,6 +431,7 @@ export function OwnerStudentsManager() {
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-[var(--lp-text-soft)]">
                   <span>{student.plan_name}</span>
+                  <span>{student.shift_name ?? "Shift not set"}</span>
                   <span>{student.payment_status}</span>
                   <span>Due Rs. {Number(student.due_amount).toLocaleString("en-IN")}</span>
                 </div>
@@ -418,7 +451,7 @@ export function OwnerStudentsManager() {
                   <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Current seat</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.seat_number ?? "Unallotted"}</p></div>
                   <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Plan</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.plan_name}</p></div>
                   <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Fee status</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.payment_status}</p></div>
-                  <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Validity</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.ends_at}</p></div>
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Shift</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.shift_name ?? "Default"}</p></div>
                 </div>
 
                 <div className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 md:grid-cols-[1fr_auto_auto]">

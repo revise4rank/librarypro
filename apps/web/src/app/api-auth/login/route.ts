@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const UPSTREAM_LOGIN_URL = "https://librarypro-api.onrender.com/v1/auth/login";
+const DEFAULT_UPSTREAM_ORIGIN = "https://librarypro-api.onrender.com";
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
 const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 15;
+const UPSTREAM_TIMEOUT_MS = 12_000;
 
 type UpstreamLoginResponse = {
   success: boolean;
@@ -53,22 +54,79 @@ function isSecure(request: NextRequest) {
   return request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
 }
 
+function getUpstreamOrigin() {
+  const configured =
+    process.env.API_PROXY_TARGET ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    DEFAULT_UPSTREAM_ORIGIN;
+
+  const normalized = configured.replace(/\/$/, "");
+  return normalized.endsWith("/v1") ? normalized.slice(0, -3) : normalized;
+}
+
+function getUpstreamLoginUrl() {
+  return `${getUpstreamOrigin()}/v1/auth/login`;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
-  const upstreamResponse = await fetch(UPSTREAM_LOGIN_URL, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json",
-    },
-    body,
-    cache: "no-store",
-  });
+  let upstreamResponse: Response;
 
-  const payload = (await upstreamResponse.json()) as UpstreamLoginResponse;
+  try {
+    upstreamResponse = await fetchWithTimeout(getUpstreamLoginUrl(), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body,
+      cache: "no-store",
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "AUTH_UPSTREAM_UNAVAILABLE",
+          message: "Login service is not reachable. Please try again in a moment.",
+        },
+      },
+      { status: 503 },
+    );
+  }
+
+  let payload: UpstreamLoginResponse;
+  try {
+    payload = (await upstreamResponse.json()) as UpstreamLoginResponse;
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "AUTH_UPSTREAM_INVALID_RESPONSE",
+          message: "Login service returned an unexpected response.",
+        },
+      },
+      { status: 502 },
+    );
+  }
   const response = NextResponse.json(payload, { status: upstreamResponse.status });
 
   if (!upstreamResponse.ok || !payload.success) {

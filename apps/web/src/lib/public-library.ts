@@ -7,6 +7,14 @@ export type PublicLibraryProfile = {
   brand_logo_url: string | null;
   hero_banner_url?: string | null;
   available_seats: number;
+  shift_availability?: Array<{
+    id: string;
+    name: string;
+    start_time: string;
+    end_time: string;
+    total_seats: number;
+    available_seats: number;
+  }>;
   starting_price: string;
   offer_text: string | null;
   subdomain: string;

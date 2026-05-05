@@ -63,6 +63,7 @@ export const createOwnerAdmissionBodySchema = z.object({
   phone: z.string().trim().max(20).optional().or(z.literal("")),
   emergencyContact: z.string().trim().max(20).optional().or(z.literal("")),
   studentPlanId: z.string().uuid(),
+  shiftId: z.string().uuid().optional().or(z.literal("")),
   planAmountOverride: z.coerce.number().nonnegative().optional(),
   durationMonthsOverride: z.coerce.number().int().min(1).max(60).optional(),
   couponCode: z.string().trim().max(60).optional().or(z.literal("")),
@@ -70,6 +71,16 @@ export const createOwnerAdmissionBodySchema = z.object({
   aadhaarDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   schoolIdDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
+});
+
+export const ownerShiftBodySchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  startTime: z.string().trim().regex(/^\d{2}:\d{2}$/),
+  endTime: z.string().trim().regex(/^\d{2}:\d{2}$/),
+  daysOfWeek: z.array(z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"])).min(1).max(7).optional(),
+  isDefault: z.boolean().optional().default(false),
+  isActive: z.boolean().optional().default(true),
+  sortOrder: z.coerce.number().int().min(0).max(1000).optional().default(0),
 });
 
 export const updatePlatformMarketplaceSettingsBodySchema = z.object({
@@ -117,6 +128,7 @@ export const createOwnerNotificationBodySchema = z.object({
 export const assignSeatBodySchema = z.object({
   assignmentId: z.string().uuid(),
   seatId: z.string().uuid(),
+  shiftId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export const createOwnerFloorBodySchema = z.object({
@@ -154,6 +166,7 @@ export const updateOwnerSeatBodySchema = z.object({
   posX: z.coerce.number().int().min(0).max(1000).optional(),
   posY: z.coerce.number().int().min(0).max(1000).optional(),
   markFree: z.boolean().optional().default(false),
+  shiftId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export const payStudentPaymentBodySchema = z.object({
@@ -283,6 +296,7 @@ export const approveJoinRequestBodySchema = z.object({
   phone: z.string().trim().max(20).optional().or(z.literal("")),
   emergencyContact: z.string().trim().max(20).optional().or(z.literal("")),
   studentPlanId: z.string().uuid(),
+  shiftId: z.string().uuid().optional().or(z.literal("")),
   planAmountOverride: z.coerce.number().nonnegative().optional(),
   durationMonthsOverride: z.coerce.number().int().min(1).max(60).optional(),
   couponCode: z.string().trim().max(60).optional().or(z.literal("")),
@@ -290,6 +304,10 @@ export const approveJoinRequestBodySchema = z.object({
   aadhaarDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   schoolIdDocumentUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
+});
+
+export const ownerSeatsQuerySchema = z.object({
+  shiftId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export const rejectJoinRequestBodySchema = z.object({

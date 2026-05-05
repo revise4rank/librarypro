@@ -41,6 +41,7 @@ import {
   listOwnerAdmins,
   listOwnerAuditLogs,
   listOwnerCoupons,
+  listOwnerShifts,
   listOwnerJoinRequests,
   listStudentJoinRequests,
   listOwnerNotificationsPage,
@@ -61,6 +62,8 @@ import {
   updateOwnerAdminPermissions,
   updateOwnerCoupon,
   updateOwnerFloor,
+  createOwnerShift,
+  updateOwnerShift,
   updateOwnerStudentPlan,
   updateStudentFocusGoals,
   updateOwnerSettings,
@@ -76,6 +79,7 @@ import {
 import {
   createOwnerAdmissionBodySchema,
   assignSeatBodySchema,
+  ownerShiftBodySchema,
   createStudentFocusSessionBodySchema,
   createStudentFocusSubjectBodySchema,
   createOwnerFloorBodySchema,
@@ -104,6 +108,7 @@ import {
   updateOwnerAdminPermissionsBodySchema,
   payStudentPaymentBodySchema,
   ownerCheckinsQuerySchema,
+  ownerSeatsQuerySchema,
   sendDueRecoveryBodySchema,
   studentNotificationsQuerySchema,
   studentLibrarySearchQuerySchema,
@@ -241,6 +246,65 @@ export async function updateOwnerCouponController(req: Request, res: Response) {
   res.json({ success: true, data });
 }
 
+export async function listOwnerShiftsController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const data = await listOwnerShifts(libraryId);
+  res.json({ success: true, data });
+}
+
+export async function createOwnerShiftController(req: Request, res: Response) {
+  const { libraryId, actorUserId } = requireOwnerContext(req);
+  const parsed = ownerShiftBodySchema.parse(req.body);
+  const data = await createOwnerShift({
+    libraryId,
+    name: parsed.name,
+    startTime: parsed.startTime,
+    endTime: parsed.endTime,
+    daysOfWeek: parsed.daysOfWeek,
+    isDefault: parsed.isDefault,
+    isActive: parsed.isActive,
+    sortOrder: parsed.sortOrder,
+  });
+  await createAuditLog({
+    actorUserId,
+    libraryId,
+    action: "owner.shift.create",
+    entityType: "library_shift",
+    entityId: data.id,
+    metadata: { name: parsed.name, isDefault: parsed.isDefault },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateOwnerShiftController(req: Request, res: Response) {
+  const { libraryId, actorUserId } = requireOwnerContext(req);
+  const parsed = ownerShiftBodySchema.parse(req.body);
+  const data = await updateOwnerShift({
+    libraryId,
+    shiftId: paramValue(req.params.shiftId),
+    name: parsed.name,
+    startTime: parsed.startTime,
+    endTime: parsed.endTime,
+    daysOfWeek: parsed.daysOfWeek,
+    isDefault: parsed.isDefault,
+    isActive: parsed.isActive,
+    sortOrder: parsed.sortOrder,
+  });
+  await createAuditLog({
+    actorUserId,
+    libraryId,
+    action: "owner.shift.update",
+    entityType: "library_shift",
+    entityId: data.id,
+    metadata: { name: parsed.name, isDefault: parsed.isDefault, isActive: parsed.isActive },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.json({ success: true, data });
+}
+
 export async function getOwnerDashboardController(req: Request, res: Response) {
   const { libraryId } = requireOwnerContext(req);
   const data = await getOwnerDashboard({ libraryId });
@@ -346,6 +410,7 @@ export async function approveOwnerJoinRequestController(req: Request, res: Respo
     phone: parsed.phone || undefined,
     emergencyContact: parsed.emergencyContact || undefined,
     studentPlanId: parsed.studentPlanId,
+    shiftId: parsed.shiftId || undefined,
     planAmountOverride: parsed.planAmountOverride,
     durationMonthsOverride: parsed.durationMonthsOverride,
     couponCode: parsed.couponCode || undefined,
@@ -425,6 +490,7 @@ export async function createOwnerAdmissionController(req: Request, res: Response
     phone: parsed.phone || undefined,
     emergencyContact: parsed.emergencyContact || undefined,
     studentPlanId: parsed.studentPlanId,
+    shiftId: parsed.shiftId || undefined,
     planAmountOverride: parsed.planAmountOverride,
     durationMonthsOverride: parsed.durationMonthsOverride,
     couponCode: parsed.couponCode || undefined,
@@ -811,7 +877,8 @@ export async function regenerateOwnerQrController(req: Request, res: Response) {
 
 export async function listOwnerSeatsController(req: Request, res: Response) {
   const { libraryId } = requireOwnerContext(req);
-  const rows = await listOwnerSeats(libraryId);
+  const parsed = ownerSeatsQuerySchema.parse(req.query);
+  const rows = await listOwnerSeats(libraryId, parsed.shiftId || undefined);
   res.json({ success: true, data: rows });
 }
 
@@ -956,6 +1023,7 @@ export async function assignOwnerSeatController(req: Request, res: Response) {
     libraryId,
     assignmentId: parsed.assignmentId,
     seatId: parsed.seatId,
+    shiftId: parsed.shiftId || undefined,
   });
 
   await createAuditLog({
@@ -982,11 +1050,13 @@ export async function assignOwnerStudentSeatController(req: Request, res: Respon
   const parsed = assignSeatBodySchema.parse({
     assignmentId: paramValue(req.params.assignmentId),
     seatId: req.body?.seatId,
+    shiftId: req.body?.shiftId,
   });
   const result = await assignSeatToStudent({
     libraryId,
     assignmentId: parsed.assignmentId,
     seatId: parsed.seatId,
+    shiftId: parsed.shiftId || undefined,
   });
 
   await createAuditLog({
@@ -1048,6 +1118,7 @@ export async function updateOwnerSeatController(req: Request, res: Response) {
     posX: parsed.posX,
     posY: parsed.posY,
     markFree: parsed.markFree,
+    shiftId: parsed.shiftId || undefined,
   });
 
   await createAuditLog({

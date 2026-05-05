@@ -65,6 +65,7 @@ import {
   createOwnerCouponController,
   createOwnerPaymentController,
   createOwnerSeatsController,
+  createOwnerShiftController,
   createOwnerStudentController,
   createOwnerStudentPlanController,
   createStudentJoinRequestByLibraryController,
@@ -97,6 +98,7 @@ import {
   listStudentJoinRequestsController,
   listOwnerPaymentsController,
   listOwnerSeatsController,
+  listOwnerShiftsController,
   listOwnerStudentPlansController,
   listOwnerStudentsController,
   listAdminLibrariesController,
@@ -118,6 +120,7 @@ import {
   updateOwnerCouponController,
   updateOwnerFloorController,
   updateOwnerSeatController,
+  updateOwnerShiftController,
   updateOwnerStudentController,
   updateOwnerStudentPlanController,
   createStudentFocusSessionController,
@@ -179,6 +182,9 @@ router.patch("/owner/student-plans/:planId", requireRole(["LIBRARY_OWNER"]), asy
 router.get("/owner/coupons", requireRole(["LIBRARY_OWNER"]), asyncHandler(listOwnerCouponsController));
 router.post("/owner/coupons", requireRole(["LIBRARY_OWNER"]), asyncHandler(createOwnerCouponController));
 router.patch("/owner/coupons/:couponId", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerCouponController));
+router.get("/owner/shifts", requireRole(["LIBRARY_OWNER"]), asyncHandler(listOwnerShiftsController));
+router.post("/owner/shifts", requireRole(["LIBRARY_OWNER"]), asyncHandler(createOwnerShiftController));
+router.patch("/owner/shifts/:shiftId", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerShiftController));
 router.patch("/owner/leads/:leadId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(updateOwnerLeadController));
 router.post("/owner/offers", requireRole(["LIBRARY_OWNER"]), asyncHandler(createOwnerOfferController));
 router.get("/owner/students", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("students"), asyncHandler(listOwnerStudentsController));

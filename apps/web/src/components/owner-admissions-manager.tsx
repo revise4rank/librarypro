@@ -40,6 +40,15 @@ type CouponConfig = {
   is_active: boolean;
 };
 
+type ShiftConfig = {
+  id: string;
+  name: string;
+  start_time: string;
+  end_time: string;
+  is_default: boolean;
+  is_active: boolean;
+};
+
 type AdmissionResult = {
   assignmentId: string;
   paymentId: string;
@@ -47,6 +56,7 @@ type AdmissionResult = {
   temporaryPassword: string | null;
   planName: string;
   finalAmount: number;
+  shiftName?: string;
 };
 
 type AdmissionFormState = {
@@ -59,6 +69,7 @@ type AdmissionFormState = {
   phone: string;
   emergencyContact: string;
   studentPlanId: string;
+  shiftId: string;
   planAmountOverride: string;
   durationMonthsOverride: string;
   couponCode: string;
@@ -79,6 +90,7 @@ function createEmptyForm(): AdmissionFormState {
     phone: "",
     emergencyContact: "",
     studentPlanId: "",
+    shiftId: "",
     planAmountOverride: "",
     durationMonthsOverride: "",
     couponCode: "",
@@ -171,6 +183,7 @@ export function OwnerAdmissionsManager() {
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [plans, setPlans] = useState<StudentPlanConfig[]>([]);
   const [coupons, setCoupons] = useState<CouponConfig[]>([]);
+  const [shifts, setShifts] = useState<ShiftConfig[]>([]);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [form, setForm] = useState<AdmissionFormState>(createEmptyForm());
   const [saving, setSaving] = useState(false);
@@ -181,17 +194,23 @@ export function OwnerAdmissionsManager() {
 
   async function load() {
     try {
-      const [requestsResponse, plansResponse, couponsResponse] = await Promise.all([
+      const [requestsResponse, plansResponse, couponsResponse, shiftsResponse] = await Promise.all([
         apiFetch<{ success: boolean; data: JoinRequest[] }>("/owner/join-requests"),
         apiFetch<{ success: boolean; data: StudentPlanConfig[] }>("/owner/student-plans"),
         apiFetch<{ success: boolean; data: CouponConfig[] }>("/owner/coupons"),
+        apiFetch<{ success: boolean; data: ShiftConfig[] }>("/owner/shifts"),
       ]);
       setRequests(requestsResponse.data);
       setPlans(plansResponse.data.filter((plan) => plan.is_active));
       setCoupons(couponsResponse.data.filter((coupon) => coupon.is_active));
+      const activeShifts = shiftsResponse.data.filter((shift) => shift.is_active);
+      setShifts(activeShifts);
       setSelectedRequestId((current) => current ?? requestsResponse.data[0]?.id ?? null);
       if (!form.studentPlanId && plansResponse.data[0]?.id) {
         setForm((current) => ({ ...current, studentPlanId: plansResponse.data[0]?.id ?? "" }));
+      }
+      if (!form.shiftId && activeShifts[0]?.id) {
+        setForm((current) => ({ ...current, shiftId: activeShifts.find((shift) => shift.is_default)?.id ?? activeShifts[0]?.id ?? "" }));
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load admissions workspace.");
@@ -254,6 +273,7 @@ export function OwnerAdmissionsManager() {
         phone: form.phone,
         emergencyContact: form.emergencyContact,
         studentPlanId: form.studentPlanId,
+        shiftId: form.shiftId || undefined,
         planAmountOverride: form.planAmountOverride ? Number(form.planAmountOverride) : undefined,
         durationMonthsOverride: form.durationMonthsOverride ? Number(form.durationMonthsOverride) : undefined,
         couponCode: form.couponCode || undefined,
@@ -271,7 +291,7 @@ export function OwnerAdmissionsManager() {
 
       setResult(response.data);
       setMessage(mode === "requests" ? "Join request approved and student added to roster." : "Desk admission created and added to roster.");
-      setForm((current) => ({ ...createEmptyForm(), studentPlanId: current.studentPlanId }));
+      setForm((current) => ({ ...createEmptyForm(), studentPlanId: current.studentPlanId, shiftId: current.shiftId }));
       await load();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to save admission.");
@@ -393,6 +413,12 @@ export function OwnerAdmissionsManager() {
                 <option key={plan.id} value={plan.id}>{plan.name} • Rs. {Number(plan.base_amount).toLocaleString("en-IN")}</option>
               ))}
             </select>
+            <select value={form.shiftId} onChange={(event) => setForm((current) => ({ ...current, shiftId: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
+              <option value="">Select shift</option>
+              {shifts.map((shift) => (
+                <option key={shift.id} value={shift.id}>{shift.name} | {shift.start_time.slice(0, 5)}-{shift.end_time.slice(0, 5)}</option>
+              ))}
+            </select>
             <input value={form.couponCode} onChange={(event) => setForm((current) => ({ ...current, couponCode: event.target.value.toUpperCase() }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Coupon code (optional)" />
             <input type="number" min="0" value={form.planAmountOverride} onChange={(event) => setForm((current) => ({ ...current, planAmountOverride: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Manual fee override" />
             <input type="number" min="1" value={form.durationMonthsOverride} onChange={(event) => setForm((current) => ({ ...current, durationMonthsOverride: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration override (months)" />
@@ -441,7 +467,7 @@ export function OwnerAdmissionsManager() {
           {result ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
               <p className="font-semibold">Assignment {result.assignmentId} created. Payment {result.paymentId} added.</p>
-              <p className="mt-1">Plan: {result.planName} • Final amount Rs. {result.finalAmount.toLocaleString("en-IN")}</p>
+              <p className="mt-1">Plan: {result.planName}{result.shiftName ? ` | Shift: ${result.shiftName}` : ""} | Final amount Rs. {result.finalAmount.toLocaleString("en-IN")}</p>
               {result.temporaryPassword ? (
                 <div className="mt-3 rounded-lg border border-emerald-200 bg-white/75 p-3">
                   <p className="font-semibold text-emerald-950">Student portal credentials</p>
@@ -469,7 +495,7 @@ export function OwnerAdmissionsManager() {
             </button>
             <button
               type="button"
-              onClick={() => setForm((current) => ({ ...createEmptyForm(), studentPlanId: current.studentPlanId }))}
+              onClick={() => setForm((current) => ({ ...createEmptyForm(), studentPlanId: current.studentPlanId, shiftId: current.shiftId }))}
               className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
             >
               Reset form

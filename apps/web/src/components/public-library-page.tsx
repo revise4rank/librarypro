@@ -215,6 +215,20 @@ export function PublicLibraryPage({
                 <MiniStat label="Hours" value={profile.business_hours ?? "Daily"} />
                 <MiniStat label="Rating" value={`${rating}/5`} />
               </div>
+              {profile.shift_availability?.length ? (
+                <div className="grid gap-2 border-t border-white/10 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">Shift availability</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {profile.shift_availability.slice(0, 4).map((shift) => (
+                      <div key={shift.id} className="min-w-[9rem] rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-white">
+                        <p className="truncate text-xs font-black">{shift.name}</p>
+                        <p className="mt-1 text-[10px] text-white/62">{shift.start_time.slice(0, 5)}-{shift.end_time.slice(0, 5)}</p>
+                        <p className="mt-2 text-sm font-black">{shift.available_seats}/{shift.total_seats} seats</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

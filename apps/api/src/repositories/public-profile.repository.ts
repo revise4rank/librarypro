@@ -10,6 +10,7 @@ export type PublicLibrarySearchRow = {
   latitude: string | null;
   longitude: string | null;
   available_seats: number;
+  shift_availability?: unknown;
   starting_price: string;
   offer_text: string | null;
   status: string;
@@ -405,6 +406,39 @@ export class PublicProfileRepository {
         l.latitude::text,
         l.longitude::text,
         l.available_seats,
+        COALESCE((
+          SELECT jsonb_agg(
+            jsonb_build_object(
+              'id', ls.id,
+              'name', ls.name,
+              'start_time', ls.start_time::text,
+              'end_time', ls.end_time::text,
+              'total_seats', COALESCE(availability.total_seats, 0),
+              'available_seats', COALESCE(availability.available_seats, 0)
+            )
+            ORDER BY ls.is_default DESC, ls.sort_order, ls.start_time
+          )
+          FROM library_shifts ls
+          LEFT JOIN LATERAL (
+            SELECT
+              COUNT(*) FILTER (WHERE s.status <> 'DISABLED')::int AS total_seats,
+              COUNT(*) FILTER (
+                WHERE s.status IN ('AVAILABLE', 'OCCUPIED')
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM student_assignments sa
+                    WHERE sa.library_id = l.id
+                      AND sa.seat_id = s.id
+                      AND sa.shift_id = ls.id
+                      AND sa.status = 'ACTIVE'
+                  )
+              )::int AS available_seats
+            FROM seats s
+            WHERE s.library_id = l.id
+          ) availability ON TRUE
+          WHERE ls.library_id = l.id
+            AND ls.is_active = TRUE
+        ), '[]'::jsonb) AS shift_availability,
         l.starting_price::text,
         l.offer_text,
         l.status,
