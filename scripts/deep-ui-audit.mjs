@@ -169,6 +169,9 @@ async function auditPage(context, outputDir, spec) {
     if (request.url.includes("/socket.io/") && request.error === "net::ERR_ABORTED") {
       return false;
     }
+    if (request.url.includes("_rsc=") && request.error === "net::ERR_ABORTED") {
+      return false;
+    }
     return true;
   });
 
