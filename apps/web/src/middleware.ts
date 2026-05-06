@@ -19,6 +19,30 @@ function getTenantSlug(host: string) {
   return RESERVED.has(slug) ? null : slug;
 }
 
+function publicUrl(request: NextRequest, path: string) {
+  const url = request.nextUrl.clone();
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const forwardedHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+
+  if (forwardedProto) {
+    url.protocol = `${forwardedProto.replace(/:$/, "")}:`;
+  }
+  if (forwardedHost) {
+    url.host = forwardedHost;
+  }
+  url.pathname = path;
+  return url;
+}
+
+function internalRewriteUrl(request: NextRequest, path: string) {
+  const url = request.nextUrl.clone();
+  url.protocol = "http:";
+  url.hostname = "localhost";
+  url.port = "3000";
+  url.pathname = path;
+  return url;
+}
+
 export function middleware(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").toLowerCase();
   const tenantSlug = getTenantSlug(host);
@@ -44,17 +68,16 @@ export function middleware(request: NextRequest) {
         continue;
       }
       if (!hasSession || !role || role !== route.role) {
-        url.pathname = route.loginPath;
-        url.searchParams.set("next", request.nextUrl.pathname);
-        return NextResponse.redirect(url);
+        const loginUrl = publicUrl(request, route.loginPath);
+        loginUrl.searchParams.set("next", request.nextUrl.pathname);
+        return NextResponse.redirect(loginUrl);
       }
     }
   }
 
   if (host.startsWith("admin.")) {
     if (url.pathname === "/") {
-      url.pathname = "/admin";
-      return NextResponse.rewrite(url);
+      return NextResponse.redirect(publicUrl(request, "/admin"));
     }
 
     return NextResponse.next();
@@ -62,8 +85,7 @@ export function middleware(request: NextRequest) {
 
   if (host === (process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "booklib.in").toLowerCase() || host.startsWith("www.")) {
     if (url.pathname === "/") {
-      url.pathname = "/marketplace";
-      return NextResponse.rewrite(url);
+      return NextResponse.redirect(publicUrl(request, "/marketplace"));
     }
 
     return NextResponse.next();
@@ -77,13 +99,11 @@ export function middleware(request: NextRequest) {
     }
 
     if (url.pathname === "/") {
-      url.pathname = "/library-site";
-      return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+      return NextResponse.rewrite(internalRewriteUrl(request, "/library-site"), { request: { headers: requestHeaders } });
     }
 
     if (url.pathname === "/about" || url.pathname === "/pricing" || url.pathname === "/contact") {
-      url.pathname = `/library-site${url.pathname}`;
-      return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+      return NextResponse.rewrite(internalRewriteUrl(request, `/library-site${url.pathname}`), { request: { headers: requestHeaders } });
     }
 
     return NextResponse.next({
