@@ -27,6 +27,7 @@ export const studentNav = [
   { href: "/student/feed", label: "Feed", shortLabel: "FED" },
   { href: "/student/offers", label: "Offers", shortLabel: "OFF" },
   { href: "/student/focus-mode", label: "Focus Mode", shortLabel: "ZEN" },
+  { href: "/student/settings", label: "Settings", shortLabel: "SET" },
 ];
 
 export const adminNav = [

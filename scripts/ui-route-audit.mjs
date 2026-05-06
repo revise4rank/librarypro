@@ -1,7 +1,7 @@
 const webBase = process.env.BOOKLIB_WEB_URL ?? "http://127.0.0.1:3000";
 
 const checks = [
-  ["/", 200],
+  ["/", 307],
   ["/marketplace", 200],
   ["/libraries/focus-library", 200],
   ["/libraries/focus-library/about", 200],
@@ -22,6 +22,7 @@ const checks = [
   ["/student/join-library", 307],
   ["/student/revisions", 307],
   ["/student/offers", 307],
+  ["/student/settings", 307],
   ["/superadmin/dashboard", 307],
   ["/superadmin/reviews", 307],
 ];

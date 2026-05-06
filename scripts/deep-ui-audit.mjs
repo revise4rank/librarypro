@@ -5,8 +5,8 @@ import { chromium } from "playwright";
 const webBase = process.env.BOOKLIB_WEB_URL ?? "http://127.0.0.1:3000";
 
 const credentials = {
-  owner: { login: "owner@booklib.demo", password: "owner123", path: "/owner/login", button: /login as owner/i },
-  student: { login: "student@booklib.demo", password: "student123", path: "/student/login?library=focuslibrary", button: /login as student/i },
+  owner: { login: "owner@booklib.demo", password: "owner123", path: "/owner/login", button: /open library workspace/i },
+  student: { login: "student@booklib.demo", password: "student123", path: "/student/login?library=focuslibrary", button: /open student portal/i },
   admin: { login: "admin@booklib.demo", password: "admin123", path: "/superadmin/login", button: /login as super admin/i },
 };
 
@@ -43,6 +43,7 @@ const auditedPages = [
   { key: "student-rewards", auth: "student", path: "/student/rewards" },
   { key: "student-payments", auth: "student", path: "/student/payments" },
   { key: "student-notifications", auth: "student", path: "/student/notifications" },
+  { key: "student-settings", auth: "student", path: "/student/settings" },
   { key: "student-qr", auth: "student", path: "/student/qr" },
   { key: "student-seat", auth: "student", path: "/student/seat" },
   { key: "student-focus-mode", auth: "student", path: "/student/focus-mode" },

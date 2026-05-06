@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   ShieldCheck,
   Store,
+  UserRound,
   UserPlus,
   Users,
   Wallet,
@@ -41,6 +42,7 @@ const navIconMap: Record<string, LucideIcon> = {
   "/student/payments": IndianRupee,
   "/student/notifications": Send,
   "/student/focus": BarChart3,
+  "/student/settings": UserRound,
   "/superadmin/dashboard": LayoutDashboard,
   "/superadmin/libraries": Store,
   "/superadmin/marketplace": Megaphone,
@@ -57,7 +59,7 @@ export function navIconFor(item: DashboardNavItem) {
 
 export function settingsPathForRole(role?: string, tab?: string) {
   if (role === "LIBRARY_OWNER") return `/owner/settings${tab ? `?tab=${tab}` : ""}`;
-  if (role === "STUDENT") return "/student/dashboard";
+  if (role === "STUDENT") return `/student/settings${tab ? `?tab=${tab}` : ""}`;
   if (role === "SUPER_ADMIN") return "/superadmin/dashboard";
   return "/owner/login";
 }
