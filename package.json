@@ -12,6 +12,7 @@
     "e2e:smoke": "node scripts/e2e-smoke.mjs",
     "audit:routes": "node scripts/ui-route-audit.mjs",
     "audit:deep-ui": "node scripts/deep-ui-audit.mjs",
+    "audit:buttons": "node scripts/button-visibility-audit.mjs",
     "perf:smoke": "node scripts/perf-scale-smoke.mjs",
     "qa:mobile": "node scripts/mobile-qa.mjs"
   },

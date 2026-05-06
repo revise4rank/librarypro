@@ -53,7 +53,7 @@ export function SuperadminReviewsManager() {
               key={preset}
               type="button"
               onClick={() => setReasonPreset(preset)}
-              className={`rounded-full px-3 py-2 text-xs font-bold ${reasonPreset === preset ? "bg-slate-950 text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-muted)]"}`}
+              className={`rounded-full px-3 py-2 text-xs font-bold ${reasonPreset === preset ? "lp-active-dark" : "border border-[var(--lp-border)] bg-white text-[var(--lp-muted)]"}`}
             >
               {preset}
             </button>

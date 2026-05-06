@@ -394,7 +394,7 @@ export function MarketplaceSearch() {
                   }}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
                     active
-                      ? "bg-[#0F172A] text-white"
+                      ? "lp-active-dark"
                       : "border border-[var(--lp-border)] bg-white text-[var(--lp-muted)] hover:bg-slate-50"
                   }`}
                 >

@@ -56,17 +56,19 @@ body {
   border-color: var(--lp-border);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
 }
 
 img,
@@ -189,11 +191,24 @@ button:disabled {
 .lp-button-primary {
   border-color: #0f172a;
   background: #0f172a;
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 .lp-button-primary:hover {
   background: #1e293b;
+}
+
+.lp-button-primary *,
+.lp-control-on-dark,
+.lp-control-on-dark *,
+.lp-active-dark,
+.lp-active-dark * {
+  color: #ffffff !important;
+}
+
+.lp-active-dark {
+  border-color: #0f172a !important;
+  background: #0f172a !important;
 }
 
 .lp-button-accent {
