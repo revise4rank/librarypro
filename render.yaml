@@ -37,7 +37,7 @@ services:
       - key: REDIS_URL
         sync: false
       - key: UPLOADS_PROVIDER
-        value: local
+        value: supabase
       - key: UPLOADS_DIR
         value: uploads
       - key: SUPABASE_URL
