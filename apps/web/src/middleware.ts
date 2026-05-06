@@ -19,6 +19,17 @@ function getTenantSlug(host: string) {
   return RESERVED.has(slug) ? null : slug;
 }
 
+function normalizePublicHost(host: string) {
+  const trimmed = host.trim();
+  const hostname = trimmed.split(":")[0].toLowerCase();
+
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]") {
+    return trimmed;
+  }
+
+  return trimmed.replace(/:(3000|4000)$/, "");
+}
+
 function publicUrl(request: NextRequest, path: string) {
   const url = request.nextUrl.clone();
   const forwardedProto = request.headers.get("x-forwarded-proto");
@@ -28,7 +39,13 @@ function publicUrl(request: NextRequest, path: string) {
     url.protocol = `${forwardedProto.replace(/:$/, "")}:`;
   }
   if (forwardedHost) {
-    url.host = forwardedHost;
+    url.host = normalizePublicHost(forwardedHost);
+  }
+  if (url.protocol === "https:" && url.port === "443") {
+    url.port = "";
+  }
+  if (url.protocol === "http:" && url.port === "80") {
+    url.port = "";
   }
   url.pathname = path;
   return url;
