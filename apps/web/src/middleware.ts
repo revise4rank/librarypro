@@ -21,13 +21,30 @@ function getTenantSlug(host: string) {
 
 function normalizePublicHost(host: string) {
   const trimmed = host.trim();
-  const hostname = trimmed.split(":")[0].toLowerCase();
+  const hostname = trimmed.startsWith("[")
+    ? trimmed.slice(0, trimmed.indexOf("]") + 1).toLowerCase()
+    : trimmed.split(":")[0].toLowerCase();
 
   if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]") {
     return trimmed;
   }
 
   return trimmed.replace(/:(3000|4000)$/, "");
+}
+
+function splitPublicHost(host: string) {
+  const normalized = normalizePublicHost(host);
+
+  if (normalized.startsWith("[")) {
+    const match = normalized.match(/^(\[[^\]]+\])(?::(\d+))?$/);
+    return {
+      hostname: match?.[1] ?? normalized,
+      port: match?.[2] ?? "",
+    };
+  }
+
+  const [hostname, port = ""] = normalized.split(":");
+  return { hostname, port };
 }
 
 function publicUrl(request: NextRequest, path: string) {
@@ -39,7 +56,9 @@ function publicUrl(request: NextRequest, path: string) {
     url.protocol = `${forwardedProto.replace(/:$/, "")}:`;
   }
   if (forwardedHost) {
-    url.host = normalizePublicHost(forwardedHost);
+    const publicHost = splitPublicHost(forwardedHost);
+    url.hostname = publicHost.hostname;
+    url.port = publicHost.port;
   }
   if (url.protocol === "https:" && url.port === "443") {
     url.port = "";
