@@ -5,6 +5,25 @@ const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
 const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 15;
 
+function getCookieDomain(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.host;
+  const normalizedHost = host.toLowerCase().split(":")[0];
+  if (
+    normalizedHost === "localhost" ||
+    normalizedHost === "127.0.0.1" ||
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(normalizedHost)
+  ) {
+    return undefined;
+  }
+
+  const parts = normalizedHost.split(".");
+  if (parts.length < 2) {
+    return undefined;
+  }
+
+  return `.${parts.slice(-2).join(".")}`;
+}
+
 function getUpstreamOrigin() {
   const configured =
     process.env.API_PROXY_TARGET ??
@@ -104,6 +123,7 @@ export async function POST(request: NextRequest) {
   const accessToken = readCookieValue(upstreamCookies, ACCESS_COOKIE_NAME);
   const csrfToken = readCookieValue(upstreamCookies, CSRF_COOKIE_NAME) ?? payload.data?.csrfToken ?? null;
   const secure = isSecure(request);
+  const domain = getCookieDomain(request);
 
   if (accessToken) {
     response.cookies.set({
@@ -112,6 +132,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       sameSite: "lax",
       secure,
+      domain,
       path: "/",
       maxAge: ACCESS_COOKIE_MAX_AGE_SECONDS,
     });
@@ -124,6 +145,7 @@ export async function POST(request: NextRequest) {
       httpOnly: false,
       sameSite: "lax",
       secure,
+      domain,
       path: "/",
       maxAge: ACCESS_COOKIE_MAX_AGE_SECONDS,
     });

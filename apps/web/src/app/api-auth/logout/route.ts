@@ -4,6 +4,25 @@ const DEFAULT_UPSTREAM_ORIGIN = "https://api.booklib.in";
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
 
+function getCookieDomain(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.host;
+  const normalizedHost = host.toLowerCase().split(":")[0];
+  if (
+    normalizedHost === "localhost" ||
+    normalizedHost === "127.0.0.1" ||
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(normalizedHost)
+  ) {
+    return undefined;
+  }
+
+  const parts = normalizedHost.split(".");
+  if (parts.length < 2) {
+    return undefined;
+  }
+
+  return `.${parts.slice(-2).join(".")}`;
+}
+
 function getUpstreamOrigin() {
   const configured =
     process.env.API_PROXY_TARGET ??
@@ -52,12 +71,14 @@ export async function POST(request: NextRequest) {
   });
 
   const secure = isSecure(request);
+  const domain = getCookieDomain(request);
   response.cookies.set({
     name: ACCESS_COOKIE_NAME,
     value: "",
     httpOnly: true,
     sameSite: "lax",
     secure,
+    domain,
     path: "/",
     maxAge: 0,
   });
@@ -67,6 +88,7 @@ export async function POST(request: NextRequest) {
     httpOnly: false,
     sameSite: "lax",
     secure,
+    domain,
     path: "/",
     maxAge: 0,
   });
