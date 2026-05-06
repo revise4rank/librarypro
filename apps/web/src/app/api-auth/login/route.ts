@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const UPSTREAM_LOGIN_URL = "https://librarypro-api.onrender.com/v1/auth/login";
+const DEFAULT_UPSTREAM_ORIGIN = "https://librarypro-api.onrender.com";
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
 const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 15;
+
+function getUpstreamOrigin() {
+  const configured =
+    process.env.API_PROXY_TARGET ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    DEFAULT_UPSTREAM_ORIGIN;
+
+  const normalized = configured.replace(/\/$/, "");
+  return normalized.endsWith("/v1") ? normalized.slice(0, -3) : normalized;
+}
 
 type UpstreamLoginResponse = {
   success: boolean;
@@ -58,15 +68,30 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
-  const upstreamResponse = await fetch(UPSTREAM_LOGIN_URL, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json",
-    },
-    body,
-    cache: "no-store",
-  });
+  let upstreamResponse: Response;
+  try {
+    upstreamResponse = await fetch(`${getUpstreamOrigin()}/v1/auth/login`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body,
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "AUTH_UPSTREAM_UNREACHABLE",
+          message: "Login service is not reachable. Please try again in a moment.",
+        },
+      },
+      { status: 503 },
+    );
+  }
 
   const payload = (await upstreamResponse.json()) as UpstreamLoginResponse;
   const response = NextResponse.json(payload, { status: upstreamResponse.status });

@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const UPSTREAM_LOGOUT_URL = "https://librarypro-api.onrender.com/v1/auth/logout";
+const DEFAULT_UPSTREAM_ORIGIN = "https://librarypro-api.onrender.com";
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
+
+function getUpstreamOrigin() {
+  const configured =
+    process.env.API_PROXY_TARGET ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    DEFAULT_UPSTREAM_ORIGIN;
+
+  const normalized = configured.replace(/\/$/, "");
+  return normalized.endsWith("/v1") ? normalized.slice(0, -3) : normalized;
+}
 
 function isSecure(request: NextRequest) {
   return request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
@@ -15,14 +25,23 @@ export async function POST(request: NextRequest) {
   const csrfToken = request.headers.get("x-csrf-token");
   const cookieHeader = request.headers.get("cookie");
 
-  const upstreamResponse = await fetch(UPSTREAM_LOGOUT_URL, {
-    method: "POST",
-    headers: {
-      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-      ...(cookieHeader ? { cookie: cookieHeader } : {}),
-    },
-    cache: "no-store",
-  });
+  let upstreamResponse: Response;
+  try {
+    upstreamResponse = await fetch(`${getUpstreamOrigin()}/v1/auth/logout`, {
+      method: "POST",
+      headers: {
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        ...(cookieHeader ? { cookie: cookieHeader } : {}),
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    upstreamResponse = new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }
 
   const text = await upstreamResponse.text();
   const response = new NextResponse(text, {

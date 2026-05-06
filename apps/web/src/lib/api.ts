@@ -22,7 +22,10 @@ function getDefaultApiOrigin() {
 }
 
 export const API_URL = (() => {
-  const raw = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || getDefaultApiOrigin();
+  const raw =
+    typeof window !== "undefined"
+      ? getDefaultApiOrigin()
+      : process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || getDefaultApiOrigin();
   return raw.endsWith("/v1") ? raw : `${raw}/v1`;
 })();
 
@@ -87,7 +90,10 @@ function readCookie(name: string) {
 }
 
 export function getApiBaseUrl() {
-  const raw = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || getDefaultApiOrigin();
+  const raw =
+    typeof window !== "undefined"
+      ? getDefaultApiOrigin()
+      : process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || getDefaultApiOrigin();
   return raw.endsWith("/v1") ? raw.slice(0, -3) : raw;
 }
 
