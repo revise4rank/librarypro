@@ -3070,13 +3070,14 @@ export class OwnerOperationsRepository {
         name,
         slug,
         city,
+        address,
         total_seats,
         available_seats,
         starting_price,
         offer_text,
         qr_secret_hash
       )
-      VALUES ($1, $2, $3, $4, 0, 0, 0, 'Setup pending', $5)
+      VALUES ($1, $2, $3, $4, $5, 0, 0, 0, 'Setup pending', $6)
       RETURNING id::text
       `,
       [
@@ -3084,6 +3085,7 @@ export class OwnerOperationsRepository {
         input.name,
         input.slug,
         input.city || "Setup pending",
+        input.city ? `${input.city} - setup pending` : "Setup pending",
         input.qrSecretHash,
       ],
     );
