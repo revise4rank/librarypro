@@ -10,7 +10,7 @@ export default function OwnerSettingsPage({ searchParams }: { searchParams?: { t
 
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Settings"
       title="Settings"
       description="Manage library profile, pricing plans, coupons, account, website, team access, and billing from one settings hub."

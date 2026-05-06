@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEFAULT_UPSTREAM_ORIGIN = "https://librarypro-api.onrender.com";
+const DEFAULT_UPSTREAM_ORIGIN = "https://api.booklib.in";
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
 

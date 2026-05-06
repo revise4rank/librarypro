@@ -128,8 +128,8 @@ export function OwnerWebsiteBuilder({
       }
     };
 
-    window.addEventListener("nextlib:owner-website-action", handler as EventListener);
-    return () => window.removeEventListener("nextlib:owner-website-action", handler as EventListener);
+    window.addEventListener("booklib:owner-website-action", handler as EventListener);
+    return () => window.removeEventListener("booklib:owner-website-action", handler as EventListener);
   });
 
   return (

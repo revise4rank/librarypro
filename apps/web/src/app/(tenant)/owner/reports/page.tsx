@@ -6,7 +6,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerReportsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Reports"
       title="Review revenue, attendance, expenses, and exports from one report app."
       description="A cleaner reporting workspace for business snapshots, export files, and operational previews."

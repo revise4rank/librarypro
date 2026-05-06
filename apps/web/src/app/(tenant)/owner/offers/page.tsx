@@ -5,7 +5,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerOffersPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Marketing"
       title="Offers"
       description="Marketing surfaces are grouped together so offers and visibility work stay in one module."

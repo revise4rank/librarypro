@@ -6,7 +6,7 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentFeedPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Library Feed"
       title="Progress sharing with privacy control, motivation, and clean accountability."
       description="This feed stays intentionally lightweight so students can share progress responsibly without turning the app into a distraction loop."

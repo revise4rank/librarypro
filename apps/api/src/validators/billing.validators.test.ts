@@ -4,8 +4,8 @@ import { createHmac } from "node:crypto";
 import { billingRenewBodySchema } from "./billing.validators";
 
 process.env.NODE_ENV = "test";
-process.env.JWT_SECRET = "test-jwt-secret-for-librarypro";
-process.env.INTERNAL_TENANT_HEADER_SECRET = "test-internal-tenant-secret-for-librarypro";
+process.env.JWT_SECRET = "test-jwt-secret-for-booklib";
+process.env.INTERNAL_TENANT_HEADER_SECRET = "test-internal-tenant-secret-for-booklib";
 process.env.RAZORPAY_WEBHOOK_SECRET = "test-razorpay-webhook-secret";
 
 const { verifyRazorpayWebhookSignature } = await import("../services/razorpay-webhook.service");

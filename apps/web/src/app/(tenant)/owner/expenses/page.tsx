@@ -5,7 +5,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerExpensesPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Expense Desk"
       title="Track daily expenses and monthly profit without leaving the owner app."
       description="Review outgoing costs, compare them against revenue, and keep profitability visible from the same operating workspace."

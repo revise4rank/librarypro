@@ -2,10 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const webBase = process.env.LIBRARYPRO_WEB_URL ?? "http://127.0.0.1:3000";
+const webBase = process.env.BOOKLIB_WEB_URL ?? "http://127.0.0.1:3000";
 
-const ownerCredentials = { login: "owner@librarypro.demo", password: "owner123" };
-const studentCredentials = { login: "student@librarypro.demo", password: "student123" };
+const ownerCredentials = { login: "owner@booklib.demo", password: "owner123" };
+const studentCredentials = { login: "student@booklib.demo", password: "student123" };
 
 const viewports = [
   { name: "320", width: 320, height: 900 },

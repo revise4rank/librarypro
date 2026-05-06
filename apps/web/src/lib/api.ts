@@ -1,6 +1,6 @@
 "use client";
 
-const PRODUCTION_API_ORIGIN = "https://librarypro-api.onrender.com";
+const PRODUCTION_API_ORIGIN = "https://api.booklib.in";
 const CLIENT_PROXY_ORIGIN = "/api-proxy";
 const CLIENT_AUTH_LOGIN_PATH = "/api-auth/login";
 const CLIENT_AUTH_LOGOUT_PATH = "/api-auth/logout";
@@ -44,7 +44,7 @@ export type SessionState = {
   csrfToken?: string;
 };
 
-const SESSION_KEY = "nextlib_session";
+const SESSION_KEY = "booklib_session";
 const COOKIE_ROLE = "lp_role";
 const COOKIE_SESSION = "lp_session";
 const LEGACY_COOKIE_TOKEN = "lp_token";

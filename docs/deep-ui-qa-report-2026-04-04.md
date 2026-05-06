@@ -19,8 +19,8 @@ The audit covered:
 - Superadmin screens
 
 Verification commands run:
-- `npm run build -w @librarypro/web`
-- `npm run test -w @librarypro/api`
+- `npm run build -w @booklib/web`
+- `npm run test -w @booklib/api`
 - `npm run audit:routes`
 - `npm run audit:deep-ui`
 - `npm run e2e:smoke`

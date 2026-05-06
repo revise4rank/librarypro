@@ -4,7 +4,7 @@ import { PublicSiteHeader } from "../../components/public-site-header";
 const sections = [
   {
     title: "Information we handle",
-    text: "LibraryPro may handle account details, library profile data, student admission records, payment status, seat activity, and support messages required to run the platform.",
+    text: "BookLib may handle account details, library profile data, student admission records, payment status, seat activity, and support messages required to run the platform.",
   },
   {
     title: "How we use it",
@@ -12,11 +12,11 @@ const sections = [
   },
   {
     title: "Data control",
-    text: "Library owners control their operational records. Students can contact their library operator or LibraryPro support for access, correction, or account help.",
+    text: "Library owners control their operational records. Students can contact their library operator or BookLib support for access, correction, or account help.",
   },
   {
     title: "Contact",
-    text: "For privacy questions, contact support@librarypro.in.",
+    text: "For privacy questions, contact support@booklib.in.",
   },
 ];
 
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Legal</p>
         <h1 className="mt-3 text-[clamp(2rem,5vw,4rem)] font-black tracking-[-0.055em]">Privacy Policy</h1>
         <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-          This page explains the practical privacy approach for LibraryPro users, operators, and students.
+          This page explains the practical privacy approach for BookLib users, operators, and students.
           Last updated: April 27, 2026.
         </p>
 

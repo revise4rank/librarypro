@@ -5,7 +5,7 @@ import { adminNav } from "../../../lib/role-nav";
 export default function SuperadminMarketplacePage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Marketplace"
       title="Marketplace control"
       description="Edit public discovery headline and rotating banner content."

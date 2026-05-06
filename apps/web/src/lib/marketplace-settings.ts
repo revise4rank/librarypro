@@ -16,7 +16,7 @@ export type PlatformMarketplaceSettings = {
   updated_by_name?: string | null;
 };
 
-const PRODUCTION_API_ORIGIN = "https://librarypro-api.onrender.com";
+const PRODUCTION_API_ORIGIN = "https://api.booklib.in";
 
 export const defaultMarketplaceSettings: PlatformMarketplaceSettings = {
   headline: "Discover the right library without the noise.",

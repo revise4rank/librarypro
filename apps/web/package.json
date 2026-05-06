@@ -1,5 +1,5 @@
 {
-  "name": "@librarypro/web",
+  "name": "@booklib/web",
   "private": true,
   "scripts": {
     "dev": "next dev",

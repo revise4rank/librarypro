@@ -48,11 +48,11 @@ async function main() {
     await transporter.sendMail({
       from: reportFromEmail,
       to: owner.owner_email!,
-      subject: `LibraryPro weekly report | ${owner.library_name}`,
+      subject: `BookLib weekly report | ${owner.library_name}`,
       text: [
         `Hello ${owner.owner_name},`,
         ``,
-        `Here is your latest LibraryPro business snapshot for ${owner.library_name}.`,
+        `Here is your latest BookLib business snapshot for ${owner.library_name}.`,
         `Paid revenue: Rs. ${summary.metrics.paidRevenue.toLocaleString("en-IN")}`,
         `Due revenue: Rs. ${summary.metrics.dueRevenue.toLocaleString("en-IN")}`,
         `Expenses: Rs. ${summary.metrics.expenses.toLocaleString("en-IN")}`,

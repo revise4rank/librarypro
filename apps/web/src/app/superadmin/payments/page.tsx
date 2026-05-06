@@ -5,7 +5,7 @@ import { adminNav } from "../../../lib/role-nav";
 export default function SuperAdminPaymentsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Platform Payments"
       title="Platform payments"
       description="Subscription ledger, failed recovery, and renewal visibility."

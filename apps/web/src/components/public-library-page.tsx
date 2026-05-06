@@ -3,11 +3,11 @@ import Link from "next/link";
 import { ArrowRight, BadgeCheck, Clock3, MapPin, QrCode, Sparkles, Star, UsersRound, Wifi } from "lucide-react";
 import { ContactActions } from "./contact-actions";
 import { formatLibraryHost } from "../lib/domain";
-import { PublicLibraryProfile, PublicLibraryReview, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
+import { PublicLibrarySite, PublicLibraryReview, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
 import { LibraryReviewsPanel } from "./library-reviews-panel";
 
 type PublicLibraryPageProps = {
-  profile: PublicLibraryProfile;
+  profile: PublicLibrarySite;
   reviews?: PublicLibraryReview[];
   page: "home" | "about" | "pricing" | "contact";
   links: {
@@ -75,7 +75,7 @@ function initials(value: string) {
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
-    .join("") || "LP";
+    .join("") || "BL";
 }
 
 export function PublicLibraryPage({
@@ -298,7 +298,7 @@ export function PublicLibraryPage({
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">About</p>
               <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-white">{profile.library_name}</h2>
               <p className="mt-4 text-sm leading-7 text-white/70">
-                {profile.about_text ?? "A premium LibraryPro-powered library website for students to discover, contact, log in, and continue daily study actions."}
+                {profile.about_text ?? "A premium BookLib-powered library website for students to discover, contact, log in, and continue daily study actions."}
               </p>
             </SiteCard>
             <SiteCard>

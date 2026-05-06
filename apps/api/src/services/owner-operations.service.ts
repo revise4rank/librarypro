@@ -1290,7 +1290,7 @@ export async function exportOwnerPaymentReceipt(input: {
 }) {
   const receipt = await getOwnerPaymentReceipt(input);
   return buildPdfBuffer({
-    title: "LibraryPro Payment Receipt",
+    title: "BookLib Payment Receipt",
     subtitle: receipt.receiptNo,
     summary: [
       { label: "Student", value: receipt.studentName },
@@ -1696,7 +1696,7 @@ export async function exportOwnerReport(input: {
   }
 
   const buffer = await buildPdfBuffer({
-    title: `${title} | LibraryPro`,
+    title: `${title} | BookLib`,
     subtitle: `Range ${input.fromDate ?? "start"} to ${input.toDate ?? "today"}`,
     summary: [
       { label: "Paid revenue", value: formatCurrency(report.metrics.paidRevenue) },

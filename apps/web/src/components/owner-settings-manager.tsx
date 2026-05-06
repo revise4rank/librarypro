@@ -184,7 +184,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
   }, [initialTab]);
 
   useEffect(() => {
-    const session = typeof window !== "undefined" ? window.sessionStorage.getItem("nextlib_session") : null;
+    const session = typeof window !== "undefined" ? window.sessionStorage.getItem("booklib_session") : null;
     if (!session) return;
 
     try {

@@ -9,7 +9,7 @@ export const revalidate = 0;
 export default function OwnerSeatsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Seatmap"
       title="Manage floors, seats, and assignment flow from one cleaner seat app."
       description="Built for fast setup, quick layout edits, and simpler daily seat operations."

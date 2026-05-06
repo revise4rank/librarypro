@@ -16,7 +16,7 @@ type SeedStudent = {
 const seedStudents: SeedStudent[] = [
   {
     fullName: "Riya Sharma",
-    email: "student@librarypro.demo",
+    email: "student@booklib.demo",
     phone: "+919877766554",
     password: "student123",
     seatNumber: "A2",
@@ -27,7 +27,7 @@ const seedStudents: SeedStudent[] = [
   },
   {
     fullName: "Aman Singh",
-    email: "aman@librarypro.demo",
+    email: "aman@booklib.demo",
     phone: "+919877700111",
     password: "changeme123",
     seatNumber: "A3",
@@ -38,7 +38,7 @@ const seedStudents: SeedStudent[] = [
   },
   {
     fullName: "Tanya Verma",
-    email: "tanya@librarypro.demo",
+    email: "tanya@booklib.demo",
     phone: "+919877700222",
     password: "changeme123",
     seatNumber: "A5",
@@ -49,7 +49,7 @@ const seedStudents: SeedStudent[] = [
   },
   {
     fullName: "Dev Patel",
-    email: "dev@librarypro.demo",
+    email: "dev@booklib.demo",
     phone: "+919877700333",
     password: "changeme123",
     seatNumber: "B1",
@@ -60,7 +60,7 @@ const seedStudents: SeedStudent[] = [
   },
   {
     fullName: "Priya Joshi",
-    email: "priya@librarypro.demo",
+    email: "priya@booklib.demo",
     phone: "+919877700444",
     password: "changeme123",
     seatNumber: "B3",
@@ -121,7 +121,7 @@ async function main() {
 
     const ownerId = await upsertUser(pool, {
       fullName: "Vikram Jain",
-      email: "owner@librarypro.demo",
+      email: "owner@booklib.demo",
       phone: "+919988711223",
       passwordHash: await hashPassword("owner123"),
       role: "LIBRARY_OWNER",
@@ -129,7 +129,7 @@ async function main() {
 
     const adminId = await upsertUser(pool, {
       fullName: "Platform Admin",
-      email: "admin@librarypro.demo",
+      email: "admin@booklib.demo",
       phone: "+919911122233",
       passwordHash: await hashPassword("admin123"),
       role: "SUPER_ADMIN",
@@ -137,7 +137,7 @@ async function main() {
 
     const secondOwnerId = await upsertUser(pool, {
       fullName: "Megha Soni",
-      email: "owner2@librarypro.demo",
+      email: "owner2@booklib.demo",
       phone: "+919900110022",
       passwordHash: await hashPassword("owner123"),
       role: "LIBRARY_OWNER",
@@ -226,7 +226,7 @@ async function main() {
         '6:00 AM - 11:00 PM',
         '["AC","WiFi","Girls Only Zone","QR Entry","Power Backup"]'::jsonb,
         '["/uploads/public-profiles/demo-1.jpg","/uploads/public-profiles/demo-2.jpg"]'::jsonb,
-        'Focus Library Vijay Nagar Indore | AC Study Hall | LibraryPro',
+        'Focus Library Vijay Nagar Indore | AC Study Hall | BookLib',
         'Affordable silent reading hall in Vijay Nagar with flexible plans, QR entry, and real-time seat availability.',
         TRUE, TRUE, TRUE, 3500, 'Free trial day + first week discount', NOW()
       )
@@ -263,7 +263,7 @@ async function main() {
       INSERT INTO library_settings (library_id, wifi_name, wifi_password, notice_message)
       VALUES (
         $1,
-        'LibraryPro_StudyZone',
+        'BookLib_StudyZone',
         'study@2026',
         'Silence hours from 8 PM to 10 PM. Carry your ID card and use QR check-in during entry and exit.'
       )
@@ -641,9 +641,9 @@ async function main() {
     await pool.query("COMMIT");
 
     console.info("Demo seed complete with floors, seats, assignments, payments, and notifications.");
-    console.info("Owner login: owner@librarypro.demo / owner123");
-    console.info("Student login: student@librarypro.demo / student123");
-    console.info("Admin login: admin@librarypro.demo / admin123");
+    console.info("Owner login: owner@booklib.demo / owner123");
+    console.info("Student login: student@booklib.demo / student123");
+    console.info("Admin login: admin@booklib.demo / admin123");
   } catch (error) {
     await pool.query("ROLLBACK");
     throw error;

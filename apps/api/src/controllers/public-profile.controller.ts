@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { createAuditLog } from "../lib/audit";
-import { checkSubdomainAvailability, createPublicLibraryContactLead, createStudentLibraryReview, getOwnerPublicProfile, getPublicLibraryProfile, listAdminReviewReports, listOwnerLeads, listPublicLibraryReviews, moderateLibraryReview, publishOwnerPublicProfile, reportLibraryReview, saveOwnerPublicProfile, searchMarketplaceLibraries, searchMarketplaceSuggestions, updateOwnerLead } from "../services/public-profile.service";
+import { checkSubdomainAvailability, createPublicLibraryContactLead, createStudentLibraryReview, getOwnerPublicProfile, getPublicLibrarySite, listAdminReviewReports, listOwnerLeads, listPublicLibraryReviews, moderateLibraryReview, publishOwnerPublicProfile, reportLibraryReview, saveOwnerPublicProfile, searchMarketplaceLibraries, searchMarketplaceSuggestions, updateOwnerLead } from "../services/public-profile.service";
 import { createContactLeadBodySchema, createLibraryReviewBodySchema, librarySuggestionsQuerySchema, moderateLibraryReviewBodySchema, ownerLeadsQuerySchema, publishPublicProfileBodySchema, reportLibraryReviewBodySchema, savePublicProfileBodySchema, searchLibrariesQuerySchema, subdomainAvailabilitySchema, updateOwnerLeadBodySchema } from "../validators/public-profile.validators";
 import { AppError } from "../lib/errors";
 
@@ -31,11 +31,11 @@ export async function searchMarketplaceSuggestionsController(req: Request, res: 
   res.json({ success: true, data: results });
 }
 
-export async function getPublicLibraryProfileController(req: Request, res: Response) {
+export async function getPublicLibrarySiteController(req: Request, res: Response) {
   const value = Array.isArray(req.params.slugOrSubdomain)
     ? req.params.slugOrSubdomain[0]
     : req.params.slugOrSubdomain;
-  const profile = await getPublicLibraryProfile(value);
+  const profile = await getPublicLibrarySite(value);
   res.json({ success: true, data: profile });
 }
 

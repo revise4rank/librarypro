@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { PublicLibraryPage } from "../../../components/public-library-page";
-import { loadPublicLibraryProfile, loadPublicLibraryReviews } from "../../../lib/public-library";
+import { loadPublicLibrarySite, loadPublicLibraryReviews } from "../../../lib/public-library";
 
 function UnavailableLibrarySite() {
   return (
@@ -40,7 +40,7 @@ export async function renderTenantLibraryPage(
     return <UnavailableLibrarySite />;
   }
 
-  const profile = await loadPublicLibraryProfile(slugOrSubdomain);
+  const profile = await loadPublicLibrarySite(slugOrSubdomain);
 
   if (!profile) {
     return <UnavailableLibrarySite />;

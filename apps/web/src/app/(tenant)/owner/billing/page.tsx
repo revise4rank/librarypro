@@ -5,7 +5,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerBillingPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Billing"
       title="Billing"
       description="Plan and renewal status."

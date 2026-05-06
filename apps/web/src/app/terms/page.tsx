@@ -4,7 +4,7 @@ import { PublicSiteHeader } from "../../components/public-site-header";
 const sections = [
   {
     title: "Platform use",
-    text: "LibraryPro provides software for library operators to manage admissions, seats, payments, student access, public pages, and marketplace discovery.",
+    text: "BookLib provides software for library operators to manage admissions, seats, payments, student access, public pages, and marketplace discovery.",
   },
   {
     title: "Operator responsibility",
@@ -16,7 +16,7 @@ const sections = [
   },
   {
     title: "Support",
-    text: "For service, billing, or access questions, contact support@librarypro.in.",
+    text: "For service, billing, or access questions, contact support@booklib.in.",
   },
 ];
 
@@ -28,7 +28,7 @@ export default function TermsPage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Legal</p>
         <h1 className="mt-3 text-[clamp(2rem,5vw,4rem)] font-black tracking-[-0.055em]">Terms of Service</h1>
         <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-          These terms describe the expected use of LibraryPro by library owners, teams, and students.
+          These terms describe the expected use of BookLib by library owners, teams, and students.
           Last updated: April 27, 2026.
         </p>
 

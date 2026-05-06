@@ -104,8 +104,8 @@ const footerColumns = [
   {
     title: "Company",
     links: [
-      { label: "About LibraryPro", href: "/#features" },
-      { label: "Contact support", href: "mailto:support@librarypro.in" },
+      { label: "About BookLib", href: "/#features" },
+      { label: "Contact support", href: "mailto:support@booklib.in" },
     ],
   },
   {
@@ -255,7 +255,7 @@ export default function HomePage() {
                 Follow the library journey from setup to growth.
               </h2>
               <p className="mt-4 text-base leading-7 text-slate-300">
-                This is how LibraryPro works in practice. Each step in the journey becomes visible as the page moves,
+                This is how BookLib works in practice. Each step in the journey becomes visible as the page moves,
                 keeping the story simple and product-first.
               </p>
             </motion.div>
@@ -385,11 +385,11 @@ export default function HomePage() {
                 <div>
                   <Link href="/" className="inline-flex items-center gap-3">
                     <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-[#0F172A]">
-                      LP
+                      BL
                     </span>
                     <span>
                       <span className="block text-[12px] font-semibold uppercase tracking-[0.28em] text-emerald-300">
-                        LibraryPro
+                        BookLib
                       </span>
                       <span className="mt-1 block text-sm text-slate-300">
                         Library growth and operations platform
@@ -402,9 +402,9 @@ export default function HomePage() {
                   </p>
 
                   <div className="mt-5 grid gap-3 text-sm text-slate-300">
-                    <a href="mailto:support@librarypro.in" className="inline-flex items-center gap-2 transition hover:text-white">
+                    <a href="mailto:support@booklib.in" className="inline-flex items-center gap-2 transition hover:text-white">
                       <Mail className="h-4 w-4 text-emerald-300" />
-                      support@librarypro.in
+                      support@booklib.in
                     </a>
                     <p className="inline-flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-emerald-300" />
@@ -446,7 +446,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <p className="text-xs leading-6 text-slate-400 md:text-right">
-                    (c) 2026 LibraryPro. All rights reserved.
+                    (c) 2026 BookLib. All rights reserved.
                     <br />
                     Secure owner workflows, student access, and public discovery.
                   </p>

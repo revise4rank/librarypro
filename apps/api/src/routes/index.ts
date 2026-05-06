@@ -11,7 +11,7 @@ import {
   createStudentLibraryReviewController,
   listAdminReviewReportsController,
   getOwnerPublicProfileController,
-  getPublicLibraryProfileController,
+  getPublicLibrarySiteController,
   listPublicLibraryReviewsController,
   listOwnerLeadsController,
   moderateLibraryReviewController,
@@ -156,7 +156,7 @@ router.get("/offers/categories", asyncHandler(listOfferCategoriesController));
 router.get("/offers", asyncHandler(listOffersController));
 router.post("/offers/click", asyncHandler(trackOfferClickController));
 router.post("/offers/:offerId/view", asyncHandler(trackOfferViewController));
-router.get("/public/libraries/:slugOrSubdomain", asyncHandler(getPublicLibraryProfileController));
+router.get("/public/libraries/:slugOrSubdomain", asyncHandler(getPublicLibrarySiteController));
 router.get("/public/libraries/:slugOrSubdomain/reviews", asyncHandler(listPublicLibraryReviewsController));
 router.post("/public/libraries/:slugOrSubdomain/contact", asyncHandler(createPublicLibraryContactLeadController));
 router.post("/public/reviews/:reviewId/report", asyncHandler(reportLibraryReviewController));

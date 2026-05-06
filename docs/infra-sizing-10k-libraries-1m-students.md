@@ -1,4 +1,4 @@
-# LibraryPro Infra Sizing for 10k Libraries / 1M Students
+# BookLib Infra Sizing for 10k Libraries / 1M Students
 
 ## Assumptions
 

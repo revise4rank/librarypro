@@ -1,4 +1,4 @@
-# LibraryPro API Surface
+# BookLib API Surface
 
 Base prefix: `/v1`
 

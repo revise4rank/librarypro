@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function OwnerPaymentsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Revenue"
       title="Track collections, dues, and manual entries from one cleaner revenue desk."
       description="Designed for quick cash or UPI entries, due recovery, and a calmer mobile ledger."

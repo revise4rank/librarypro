@@ -1,13 +1,13 @@
 {
-  "name": "librarypro",
+  "name": "booklib",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @librarypro/api && npm run build -w @librarypro/web",
-    "test": "npm run test -w @librarypro/api",
+    "build": "npm run build -w @booklib/api && npm run build -w @booklib/web",
+    "test": "npm run test -w @booklib/api",
     "ci": "npm run test && npm run build",
     "e2e:smoke": "node scripts/e2e-smoke.mjs",
     "audit:routes": "node scripts/ui-route-audit.mjs",

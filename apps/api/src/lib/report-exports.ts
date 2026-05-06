@@ -9,8 +9,8 @@ export async function buildXlsxBuffer(input: {
   }>;
 }) {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "LibraryPro";
-  workbook.company = "LibraryPro";
+  workbook.creator = "BookLib";
+  workbook.company = "BookLib";
   workbook.title = input.workbookTitle;
 
   for (const sheet of input.sheets) {

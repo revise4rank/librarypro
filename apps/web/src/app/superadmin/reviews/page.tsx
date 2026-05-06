@@ -5,7 +5,7 @@ import { adminNav } from "../../../lib/role-nav";
 export default function SuperadminReviewsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Reviews"
       title="Review moderation"
       description="Reported reviews and marketplace trust actions."

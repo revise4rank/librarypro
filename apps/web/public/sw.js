@@ -1,6 +1,6 @@
-const CACHE_NAME = "librarypro-shell-v1";
+const CACHE_NAME = "booklib-shell-v1";
 const OFFLINE_URL = "/offline.html";
-const SHELL_ASSETS = ["/", "/marketplace", OFFLINE_URL, "/icons/librarypro-icon.svg"];
+const SHELL_ASSETS = ["/", "/marketplace", OFFLINE_URL, "/icons/booklib-icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

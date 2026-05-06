@@ -6,7 +6,7 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentRewardsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Rewards"
       title="See streaks, badges, and momentum signals in one compact rewards view."
       description="Keep motivation visible with earned milestones, long-term consistency, and a simple timeline of progress."

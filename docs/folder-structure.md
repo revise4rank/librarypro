@@ -1,7 +1,7 @@
-# LibraryPro Folder Structure
+# BookLib Folder Structure
 
 ```text
-librarypro/
+booklib/
 ├─ apps/
 │  ├─ api/
 │  │  ├─ src/

@@ -1,4 +1,4 @@
-# LibraryPro Production Checklist
+# BookLib Production Checklist
 
 ## Security
 
@@ -15,8 +15,8 @@
 
 - Provision PostgreSQL and verify `DATABASE_URL`
 - Tune `DB_POOL_MAX`, `DB_POOL_IDLE_TIMEOUT_MS`, and `DB_POOL_CONNECTION_TIMEOUT_MS` for production traffic
-- Run `npm run migrate -w @librarypro/api`
-- Run `npm run seed -w @librarypro/api` only in demo/staging, not production
+- Run `npm run migrate -w @booklib/api`
+- Run `npm run seed -w @booklib/api` only in demo/staging, not production
 - Configure `REDIS_URL` for Socket.IO fanout and readiness checks
 - Configure `UPLOADS_PROVIDER=supabase` with Supabase credentials if cloud assets are required
 - Keep `API_COMPRESSION_ENABLED=true` for public-heavy traffic

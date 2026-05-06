@@ -5,7 +5,7 @@ import { adminNav } from "../../../lib/role-nav";
 export default function SuperAdminDashboardPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Super Admin"
       title="Platform overview"
       description="Revenue, tenant health, renewals, and billing risk."

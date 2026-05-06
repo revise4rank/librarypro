@@ -42,8 +42,8 @@ loadLocalEnvFile();
 const appEnv = process.env.NODE_ENV ?? "development";
 const isTestEnv = appEnv === "test";
 const isProductionEnv = appEnv === "production";
-const defaultJwtSecret = isTestEnv ? "test-jwt-secret-for-librarypro" : "";
-const defaultInternalTenantSecret = isTestEnv ? "test-internal-tenant-secret-for-librarypro" : "";
+const defaultJwtSecret = isTestEnv ? "test-jwt-secret-for-booklib" : "";
+const defaultInternalTenantSecret = isTestEnv ? "test-internal-tenant-secret-for-booklib" : "";
 const defaultRazorpayWebhookSecret = isTestEnv ? "test-razorpay-webhook-secret" : "";
 
 const envSchema = z.object({
@@ -53,7 +53,7 @@ const envSchema = z.object({
   jwtSecret: z.string().min(1, "JWT_SECRET is required."),
   jwtAccessTtl: z.string().min(1).default("15m"),
   internalTenantHeaderSecret: z.string().min(1, "INTERNAL_TENANT_HEADER_SECRET is required."),
-  baseDomain: z.string().min(1).default("librarypro.com"),
+  baseDomain: z.string().min(1).default("booklib.in"),
   webAppUrl: z.string().url().default("http://127.0.0.1:3000"),
   apiPublicUrl: z.string().default(""),
   apiTrustedProxyCount: z.coerce.number().int().min(0).default(1),
@@ -64,13 +64,13 @@ const envSchema = z.object({
   razorpayWebhookSecret: z.string().default(""),
   redisUrl: z.string().default(""),
   sentryDsn: z.string().default(""),
-  otelServiceName: z.string().min(1).default("librarypro-api"),
+  otelServiceName: z.string().min(1).default("booklib-api"),
   otelExporterOtlpEndpoint: z.string().default(""),
   uploadsDir: z.string().min(1).default("uploads"),
   uploadsProvider: z.enum(["local", "supabase"]).default("local"),
   supabaseUrl: z.string().default(""),
   supabaseServiceRoleKey: z.string().default(""),
-  supabaseBucket: z.string().min(1).default("librarypro-assets"),
+  supabaseBucket: z.string().min(1).default("booklib-assets"),
 }).superRefine((value, context) => {
   if (isProductionEnv && value.jwtSecret.length < 32) {
     context.addIssue({
@@ -120,7 +120,7 @@ export const env = envSchema.parse({
   jwtSecret: process.env.JWT_SECRET ?? defaultJwtSecret,
   jwtAccessTtl: process.env.JWT_ACCESS_TTL ?? "15m",
   internalTenantHeaderSecret: process.env.INTERNAL_TENANT_HEADER_SECRET ?? defaultInternalTenantSecret,
-  baseDomain: process.env.BASE_DOMAIN ?? "librarypro.com",
+  baseDomain: process.env.BASE_DOMAIN ?? "booklib.in",
   webAppUrl: process.env.WEB_APP_URL ?? "http://127.0.0.1:3000",
   apiPublicUrl: process.env.API_PUBLIC_URL ?? "",
   apiTrustedProxyCount: process.env.API_TRUSTED_PROXY_COUNT ?? 1,
@@ -131,11 +131,11 @@ export const env = envSchema.parse({
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET ?? defaultRazorpayWebhookSecret,
   redisUrl: process.env.REDIS_URL ?? "",
   sentryDsn: process.env.SENTRY_DSN ?? "",
-  otelServiceName: process.env.OTEL_SERVICE_NAME ?? "librarypro-api",
+  otelServiceName: process.env.OTEL_SERVICE_NAME ?? "booklib-api",
   otelExporterOtlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? "",
   uploadsDir: process.env.UPLOADS_DIR ?? "uploads",
   uploadsProvider: process.env.UPLOADS_PROVIDER ?? "local",
   supabaseUrl: process.env.SUPABASE_URL ?? "",
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
-  supabaseBucket: process.env.SUPABASE_BUCKET ?? "librarypro-assets",
+  supabaseBucket: process.env.SUPABASE_BUCKET ?? "booklib-assets",
 });

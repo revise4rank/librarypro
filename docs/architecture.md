@@ -1,16 +1,16 @@
-# LibraryPro Architecture
+# BookLib Architecture
 
 ## 1. Architecture Diagram
 
 ```text
                                       +----------------------+
                                       |   Super Admin Panel  |
-                                      |  admin.librarypro    |
+                                      |  admin.booklib    |
                                       +----------+-----------+
                                                  |
 +---------------------+                +---------v----------+              +----------------------+
 | Public Marketplace  |                |   Next.js Web App  |              | Student PWA          |
-| www.librarypro.com  +--------------->+  Owner / Student   +<------------>+ tenant subdomain     |
+| www.booklib.in  +--------------->+  Owner / Student   +<------------>+ tenant subdomain     |
 | Search + discovery  |                |  SSR + API client  |              | offline check-in     |
 +----------+----------+                +---------+----------+              +----------+-----------+
            |                                     |                                    |
@@ -157,15 +157,15 @@ Guardrails:
 
 ### DNS
 
-- `*.librarypro.com` CNAME to Vercel.
-- `admin.librarypro.com` for super admin.
-- `www.librarypro.com` for the public marketplace.
-- `api.librarypro.com` for the backend.
+- `*.booklib.in` CNAME to Vercel.
+- `admin.booklib.in` for super admin.
+- `www.booklib.in` for the public marketplace.
+- `api.booklib.in` for the backend.
 
 ### Next.js Tenant Detection
 
 - Parse the `Host` header in edge middleware.
-- Rewrite `tenant.librarypro.com/*` to an internal tenant app path while injecting `x-tenant-slug`.
+- Rewrite `tenant.booklib.in/*` to an internal tenant app path while injecting `x-tenant-slug`.
 - Keep `admin` and `www` on separate route groups.
 
 ### Backend Resolution
@@ -289,7 +289,7 @@ Guardrails:
 ### Frontend
 
 - Deploy `apps/web` to Vercel.
-- Configure wildcard domain for `*.librarypro.com`.
+- Configure wildcard domain for `*.booklib.in`.
 
 ### Backend
 

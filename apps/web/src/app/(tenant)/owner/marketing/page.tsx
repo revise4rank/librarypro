@@ -5,7 +5,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerMarketingPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Marketing"
       title="Marketing"
       description="Leads, campaigns, and offers now share one compact conversion workspace."

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEFAULT_UPSTREAM_ORIGIN = "https://librarypro-api.onrender.com";
+const DEFAULT_UPSTREAM_ORIGIN = "https://api.booklib.in";
 const HOP_BY_HOP_HEADERS = new Set([
   "connection",
   "content-length",

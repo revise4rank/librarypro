@@ -22,7 +22,7 @@ function runScenario(title, options) {
 }
 
 async function main() {
-  console.log("LibraryPro performance smoke");
+  console.log("BookLib performance smoke");
   console.log(`API: ${API_BASE}`);
   console.log(`WEB: ${WEB_BASE}`);
 

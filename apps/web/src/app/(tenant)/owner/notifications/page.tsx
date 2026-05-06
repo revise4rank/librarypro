@@ -5,7 +5,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 export default function OwnerNotificationsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Broadcasts"
       title="Broadcasts"
       description="Send notices and reminders."

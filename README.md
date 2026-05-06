@@ -1,6 +1,6 @@
-# LibraryPro
+# BookLib
 
-LibraryPro is a multi-tenant SaaS for digital libraries with:
+BookLib is a multi-tenant SaaS for digital libraries with:
 
 - central marketplace on the main domain
 - owner-managed public library websites on subdomains
@@ -24,16 +24,16 @@ LibraryPro is a multi-tenant SaaS for digital libraries with:
    - copy values from `.env.example`
    - optional production sample: `.env.production.example`
 3. Run database migration
-   - `npm run migrate -w @librarypro/api`
+   - `npm run migrate -w @booklib/api`
    - migration runner now records applied versions in `schema_migrations`
    - legacy baseline comes from `docs/schema.sql`
    - incremental SQL migrations can be added under `apps/api/migrations`
 4. Seed demo data
-   - `npm run seed -w @librarypro/api`
+   - `npm run seed -w @booklib/api`
 5. Start API
-   - `npm run dev -w @librarypro/api`
+   - `npm run dev -w @booklib/api`
 6. Start web app
-   - `npm run dev -w @librarypro/web`
+   - `npm run dev -w @booklib/web`
 
 ## Local URLs
 
@@ -44,13 +44,13 @@ LibraryPro is a multi-tenant SaaS for digital libraries with:
 
 ## Demo logins
 
-- Owner: `owner@librarypro.demo / owner123`
-- Student: `student@librarypro.demo / student123`
-- Admin: `admin@librarypro.demo / admin123`
+- Owner: `owner@booklib.demo / owner123`
+- Student: `student@booklib.demo / student123`
+- Admin: `admin@booklib.demo / admin123`
 
 ## Quality gates
 
-- API tests: `npm run test -w @librarypro/api`
+- API tests: `npm run test -w @booklib/api`
 - Full build: `npm run build`
 - CI shortcut: `npm run ci`
 - Local API/Web smoke: `npm run e2e:smoke`

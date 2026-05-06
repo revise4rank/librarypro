@@ -1,4 +1,4 @@
-const DEFAULT_BASE_DOMAIN = "librarypro.com";
+const DEFAULT_BASE_DOMAIN = "booklib.in";
 
 export function getBaseDomain() {
   return process.env.NEXT_PUBLIC_BASE_DOMAIN ?? DEFAULT_BASE_DOMAIN;

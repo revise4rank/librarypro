@@ -1,4 +1,4 @@
-const webBase = process.env.LIBRARYPRO_WEB_URL ?? "http://127.0.0.1:3000";
+const webBase = process.env.BOOKLIB_WEB_URL ?? "http://127.0.0.1:3000";
 
 const checks = [
   ["/", 200],

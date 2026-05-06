@@ -1,4 +1,4 @@
-# LibraryPro Distributed Load-Test Plan
+# BookLib Distributed Load-Test Plan
 
 ## Goal
 
@@ -163,7 +163,7 @@ Recommended tools:
 
 ## Exit criteria
 
-LibraryPro is scale-ready for rollout only if:
+BookLib is scale-ready for rollout only if:
 - all steady-state SLOs pass
 - burst error budget stays inside limits
 - no runaway DB connection exhaustion

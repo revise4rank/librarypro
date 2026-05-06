@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "LibraryPro",
-  description: "LibraryPro is a multi-tenant library marketplace, owner workspace, and student productivity platform.",
+  title: "BookLib",
+  description: "BookLib is a multi-tenant library marketplace, owner workspace, and student productivity platform.",
   manifest: "/manifest.webmanifest",
 };
 

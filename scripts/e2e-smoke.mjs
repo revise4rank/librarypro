@@ -1,10 +1,10 @@
-const apiBase = process.env.LIBRARYPRO_API_URL ?? "http://127.0.0.1:4000/v1";
-const webBase = process.env.LIBRARYPRO_WEB_URL ?? "http://127.0.0.1:3000";
+const apiBase = process.env.BOOKLIB_API_URL ?? "http://127.0.0.1:4000/v1";
+const webBase = process.env.BOOKLIB_WEB_URL ?? "http://127.0.0.1:3000";
 
 const credentials = {
-  owner: { login: "owner@librarypro.demo", password: "owner123" },
-  student: { login: "student@librarypro.demo", password: "student123" },
-  admin: { login: "admin@librarypro.demo", password: "admin123" },
+  owner: { login: "owner@booklib.demo", password: "owner123" },
+  student: { login: "student@booklib.demo", password: "student123" },
+  admin: { login: "admin@booklib.demo", password: "admin123" },
 };
 
 async function expectJson(response, label) {
@@ -54,7 +54,7 @@ async function checkWeb(path, expectedStatus = 200) {
 }
 
 async function main() {
-  console.info("Running LibraryPro E2E smoke...");
+  console.info("Running BookLib E2E smoke...");
 
   await checkWeb("/", 200);
   await checkWeb("/marketplace", 200);

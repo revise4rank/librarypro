@@ -1,6 +1,6 @@
 # Free-Tier Deploy Guide
 
-This is the fastest low-cost way to put `LibraryPro` online for real infra testing.
+This is the fastest low-cost way to put `BookLib` online for real infra testing.
 
 ## Recommended stack
 
@@ -26,8 +26,8 @@ This repo now includes [render.yaml](C:\Users\vikki\Downloads\library\render.yam
 1. Push this repo to GitHub.
 2. In Render, create a new Blueprint deploy from the repo.
 3. Render will detect `render.yaml` and create:
-   - `librarypro-api`
-   - `librarypro-db`
+   - `booklib-api`
+   - `booklib-db`
 4. After first deploy, fill the unsynced env vars in the Render dashboard.
 
 ### Required API envs
@@ -60,8 +60,8 @@ Run once from local machine against the deployed database:
 
 ```powershell
 $env:DATABASE_URL="your_render_or_supabase_database_url"
-npm run migrate -w @librarypro/api
-npm run seed -w @librarypro/api
+npm run migrate -w @booklib/api
+npm run seed -w @booklib/api
 ```
 
 ## 2. Deploy Web on Vercel
@@ -74,7 +74,7 @@ Create a Vercel project pointing to:
 
 - Framework preset: `Next.js`
 - Install command: `npm install`
-- Build command: `npm run build -w @librarypro/web`
+- Build command: `npm run build -w @booklib/web`
 
 ### Required Vercel envs
 
@@ -98,13 +98,13 @@ Create a free Supabase project.
 
 Create bucket:
 
-- `librarypro-assets`
+- `booklib-assets`
 
 Set API envs:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_BUCKET=librarypro-assets`
+- `SUPABASE_BUCKET=booklib-assets`
 
 ## 5. Verify after deploy
 
@@ -128,9 +128,9 @@ Open:
 
 Seeded demo users:
 
-- Owner: `owner@librarypro.demo / owner123`
-- Student: `student@librarypro.demo / student123`
-- Super Admin: `admin@librarypro.demo / admin123`
+- Owner: `owner@booklib.demo / owner123`
+- Student: `student@booklib.demo / student123`
+- Super Admin: `admin@booklib.demo / admin123`
 
 ## 6. Free-tier limitations
 

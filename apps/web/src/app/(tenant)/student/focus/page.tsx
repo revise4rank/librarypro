@@ -6,7 +6,7 @@ import { studentNav } from "../../../../lib/role-nav";
 export default function StudentFocusPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Focus Tracker"
       title="Pomodoro, subjects, goals, and long-term study tracking in one student workspace."
       description="Keep the app useful beyond the library visit: set daily targets, log sessions, and track study consistency over time."

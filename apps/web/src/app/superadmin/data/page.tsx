@@ -5,7 +5,7 @@ import { adminNav } from "../../../lib/role-nav";
 export default function SuperadminDataPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Data"
       title="Platform data"
       description="Read-only operational data overview for super admin decisions."

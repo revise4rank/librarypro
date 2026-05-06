@@ -20,7 +20,7 @@ Use:
 UPLOADS_PROVIDER=supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-SUPABASE_BUCKET=librarypro-assets
+SUPABASE_BUCKET=booklib-assets
 ```
 
 Object path convention:
@@ -38,7 +38,7 @@ libraries/0c4f.../public-profile/1711909220000-study-hall.jpg
 ## Bucket Recommendation
 
 Bucket:
-- `librarypro-assets`
+- `booklib-assets`
 
 Public bucket is simplest for public microsite/gallery images.
 
@@ -58,10 +58,10 @@ For authenticated uploads via service role only:
 Suggested production split:
 
 ```text
-Frontend: app.librarypro.com
-API: api.librarypro.com
-Tenant microsites: <subdomain>.librarypro.com
-Marketplace: librarypro.com
+Frontend: app.booklib.in
+API: api.booklib.in
+Tenant microsites: <subdomain>.booklib.in
+Marketplace: booklib.in
 ```
 
 ## WebSocket URL
@@ -69,7 +69,7 @@ Marketplace: librarypro.com
 Set:
 
 ```env
-NEXT_PUBLIC_WS_URL=wss://api.librarypro.com
+NEXT_PUBLIC_WS_URL=wss://api.booklib.in
 ```
 
 The frontend socket client automatically uses this when present.

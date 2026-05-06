@@ -17,7 +17,7 @@ export default async function StudentLoginPage({
   const params = await searchParams;
   const libraryKey = params?.library?.trim();
   const loginLibraryKey = libraryKey || "student-portal";
-  const friendlyLibraryName = libraryKey ? titleCaseLibraryKey(libraryKey) : "LibraryPro Student";
+  const friendlyLibraryName = libraryKey ? titleCaseLibraryKey(libraryKey) : "BookLib Student";
   const initialBrand = {
     library_name: friendlyLibraryName,
     subdomain: libraryKey ?? "",

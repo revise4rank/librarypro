@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: librarypro-api
+    name: booklib-api
     runtime: node
     rootDir: .
     plan: free
-    buildCommand: npm install && npm run build -w @librarypro/api
-    startCommand: npm run migrate -w @librarypro/api && npm run start -w @librarypro/api
+    buildCommand: npm install && npm run build -w @booklib/api
+    startCommand: npm run migrate -w @booklib/api && npm run start -w @booklib/api
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
@@ -14,7 +14,7 @@ services:
         value: 10000
       - key: DATABASE_URL
         fromDatabase:
-          name: librarypro-db
+          name: booklib-db
           property: connectionString
       - key: BASE_DOMAIN
         sync: false
@@ -45,7 +45,7 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: SUPABASE_BUCKET
-        value: librarypro-assets
+        value: booklib-assets
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
@@ -55,7 +55,7 @@ services:
       - key: SENTRY_DSN
         sync: false
       - key: OTEL_SERVICE_NAME
-        value: librarypro-api
+        value: booklib-api
       - key: OTEL_EXPORTER_OTLP_ENDPOINT
         sync: false
       - key: NOTIFICATION_WEBHOOK_URL
@@ -72,5 +72,5 @@ services:
         sync: false
 
 databases:
-  - name: librarypro-db
+  - name: booklib-db
     plan: free

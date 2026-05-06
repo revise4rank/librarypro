@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { PublicLibraryPage } from "../../../components/public-library-page";
-import { loadPublicLibraryProfile } from "../../../lib/public-library";
+import { loadPublicLibrarySite } from "../../../lib/public-library";
 
 export default async function LibraryDetailPage({
   params,
@@ -8,7 +8,7 @@ export default async function LibraryDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const profile = await loadPublicLibraryProfile(slug);
+  const profile = await loadPublicLibrarySite(slug);
 
   if (!profile) {
     notFound();

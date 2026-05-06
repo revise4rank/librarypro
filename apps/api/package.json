@@ -1,5 +1,5 @@
 {
-  "name": "@librarypro/api",
+  "name": "@booklib/api",
   "private": true,
   "type": "module",
   "scripts": {

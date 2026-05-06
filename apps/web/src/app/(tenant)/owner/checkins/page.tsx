@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function OwnerCheckinsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Attendance"
       title="Track live attendance, who is inside, and overstay risk from one clean register."
       description="Designed for daily QR attendance checks, fast search, and a calmer inside/outside register view."

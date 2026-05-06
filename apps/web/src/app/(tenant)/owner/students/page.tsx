@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function OwnerStudentsPage() {
   return (
     <DashboardShell
-      productLabel="LibraryPro"
+      productLabel="BookLib"
       panelLabel="Students"
       title="Students"
       description="Roster and seat allotment."

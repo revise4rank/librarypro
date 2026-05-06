@@ -70,7 +70,7 @@ export async function getOwnerPublicProfile(libraryId: string) {
   return repository().findOwnerProfileByLibraryId(libraryId);
 }
 
-export async function getPublicLibraryProfile(value: string) {
+export async function getPublicLibrarySite(value: string) {
   const cacheKey = `public-profile:${value}`;
   const cached = await getCacheJson<PublicLibrarySearchRow | null>(cacheKey);
   if (cached) {

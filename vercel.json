@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
   "installCommand": "npm install",
-  "buildCommand": "npm run build -w @librarypro/web",
+  "buildCommand": "npm run build -w @booklib/web",
   "outputDirectory": "apps/web/.next"
 }

@@ -22,7 +22,7 @@ type NotificationRow = {
 type ListResponse = { success: boolean; data: NotificationRow[] };
 
 export function OwnerNotificationsManager() {
-  const TEMPLATE_KEY = "nextlib_owner_notification_template";
+  const TEMPLATE_KEY = "booklib_owner_notification_template";
   const [rows, setRows] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [liveStatus, setLiveStatus] = useState("Connecting");

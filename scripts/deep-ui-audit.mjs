@@ -2,12 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const webBase = process.env.LIBRARYPRO_WEB_URL ?? "http://127.0.0.1:3000";
+const webBase = process.env.BOOKLIB_WEB_URL ?? "http://127.0.0.1:3000";
 
 const credentials = {
-  owner: { login: "owner@librarypro.demo", password: "owner123", path: "/owner/login", button: /login as owner/i },
-  student: { login: "student@librarypro.demo", password: "student123", path: "/student/login?library=focuslibrary", button: /login as student/i },
-  admin: { login: "admin@librarypro.demo", password: "admin123", path: "/superadmin/login", button: /login as super admin/i },
+  owner: { login: "owner@booklib.demo", password: "owner123", path: "/owner/login", button: /login as owner/i },
+  student: { login: "student@booklib.demo", password: "student123", path: "/student/login?library=focuslibrary", button: /login as student/i },
+  admin: { login: "admin@booklib.demo", password: "admin123", path: "/superadmin/login", button: /login as super admin/i },
 };
 
 const auditedPages = [
@@ -77,7 +77,7 @@ async function loginContext(browser, auth) {
       const bodyText = document.body.innerText || "";
       const hasSession = (() => {
         try {
-          return Boolean(window.localStorage.getItem("nextlib_session") || window.sessionStorage.getItem("nextlib_session"));
+          return Boolean(window.localStorage.getItem("booklib_session") || window.sessionStorage.getItem("booklib_session"));
         } catch {
           return document.cookie.includes("lp_session=1");
         }

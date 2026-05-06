@@ -1,4 +1,4 @@
-export type PublicLibraryProfile = {
+export type PublicLibrarySite = {
   library_name: string;
   library_slug: string;
   city: string;
@@ -45,9 +45,9 @@ export type PublicLibraryReview = {
   created_at: string;
 };
 
-type PublicLibraryProfileResponse = {
+type PublicLibrarySiteResponse = {
   success: boolean;
-  data: PublicLibraryProfile;
+  data: PublicLibrarySite;
 };
 
 type PublicLibraryReviewsResponse = {
@@ -55,7 +55,7 @@ type PublicLibraryReviewsResponse = {
   data: PublicLibraryReview[];
 };
 
-const PRODUCTION_API_ORIGIN = "https://librarypro-api.onrender.com";
+const PRODUCTION_API_ORIGIN = "https://api.booklib.in";
 const demoAssetFallbacks: Record<string, string> = {
   "/uploads/public-profiles/demo-1.jpg": "/library-gallery/study-hall.svg",
   "/uploads/public-profiles/demo-2.jpg": "/library-gallery/reading-zone.svg",
@@ -104,7 +104,7 @@ export function getGalleryUrl(value: string, index: number) {
   return fallbacks[index % fallbacks.length];
 }
 
-export async function loadPublicLibraryProfile(slugOrSubdomain: string) {
+export async function loadPublicLibrarySite(slugOrSubdomain: string) {
   const response = await fetch(`${getApiBaseUrl()}/public/libraries/${encodeURIComponent(slugOrSubdomain)}`, {
     cache: "no-store",
   });
@@ -113,7 +113,7 @@ export async function loadPublicLibraryProfile(slugOrSubdomain: string) {
     return null;
   }
 
-  const json = (await response.json()) as PublicLibraryProfileResponse;
+  const json = (await response.json()) as PublicLibrarySiteResponse;
   return json.data;
 }
 
