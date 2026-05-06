@@ -14,8 +14,6 @@ type AssignmentRecord = {
   libraryId: string;
   seatId: string | null;
   seatNumber: string | null;
-  shiftId: string | null;
-  shiftName: string | null;
   status: "ACTIVE" | "EXPIRED" | "CANCELLED" | "PENDING";
   paymentStatus: "PENDING" | "PAID" | "DUE" | "FAILED" | "REFUNDED";
   startsAt: string;
@@ -41,8 +39,6 @@ async function getActiveAssignment(
     library_id: string;
     seat_id: string | null;
     seat_number: string | null;
-    shift_id: string | null;
-    shift_name: string | null;
     status: AssignmentRecord["status"];
     payment_status: AssignmentRecord["paymentStatus"];
     starts_at: string;
@@ -56,8 +52,6 @@ async function getActiveAssignment(
         sa.library_id,
         sa.seat_id,
         seats.seat_number,
-        sa.shift_id,
-        library_shifts.name AS shift_name,
         sa.status::text AS status,
         sa.payment_status::text AS payment_status,
         sa.starts_at::text AS starts_at,
@@ -67,7 +61,6 @@ async function getActiveAssignment(
       FROM student_assignments sa
       INNER JOIN libraries ON libraries.id = sa.library_id
       LEFT JOIN seats ON seats.id = sa.seat_id
-      LEFT JOIN library_shifts ON library_shifts.id = sa.shift_id
       WHERE sa.library_id = $1
         AND sa.student_user_id = $2
         AND sa.status = 'ACTIVE'
@@ -87,8 +80,6 @@ async function getActiveAssignment(
     libraryId: row.library_id,
     seatId: row.seat_id,
     seatNumber: row.seat_number,
-    shiftId: row.shift_id,
-    shiftName: row.shift_name,
     status: row.status,
     paymentStatus: row.payment_status,
     startsAt: row.starts_at,
@@ -154,7 +145,6 @@ async function insertCheckin(input: {
   studentUserId: string;
   assignmentId: string;
   seatId: string | null;
-  shiftId: string | null;
   clientEventId?: string;
   scannedAtDevice?: string;
   qrKeyId: string;
@@ -216,7 +206,6 @@ async function insertCheckin(input: {
         student_user_id,
         assignment_id,
         seat_id,
-        shift_id,
         mode,
         client_event_id,
         checked_in_at,
@@ -228,12 +217,11 @@ async function insertCheckin(input: {
         $2,
         $3,
         $4,
-        $5,
-        $6::checkin_mode,
-        $7::uuid,
+        $5::checkin_mode,
+        $6::uuid,
         NOW(),
-        $8::timestamptz,
-        $9::uuid
+        $7::timestamptz,
+        $8::uuid
       )
       RETURNING id, checked_in_at::text
     `,
@@ -242,7 +230,6 @@ async function insertCheckin(input: {
       input.studentUserId,
       input.assignmentId,
       input.seatId,
-      input.shiftId,
       input.mode,
       input.clientEventId ?? null,
       input.scannedAtDevice ?? null,
@@ -255,7 +242,6 @@ async function insertCheckin(input: {
     checkedInAt: result.rows[0].checked_in_at,
     assignmentId: input.assignmentId,
     seatId: input.seatId,
-    shiftId: input.shiftId,
     qrKeyId: input.qrKeyId,
     mode: input.mode,
     clientEventId: input.clientEventId ?? null,
@@ -404,7 +390,6 @@ export async function scanCheckIn(input: ScanCheckInInput) {
     studentUserId: input.studentUserId,
     assignmentId: assignment.id,
     seatId: assignment.seatId,
-    shiftId: assignment.shiftId,
     clientEventId: input.clientEventId,
     scannedAtDevice: input.scannedAtDevice,
     qrKeyId: assignment.qrKeyId,

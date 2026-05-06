@@ -56,24 +56,11 @@ type CouponConfig = {
   created_at: string;
 };
 
-type ShiftConfig = {
-  id: string;
-  name: string;
-  start_time: string;
-  end_time: string;
-  days_of_week: string[];
-  is_default: boolean;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-};
-
-export type OwnerSettingsTab = "profile" | "plans" | "shifts" | "account" | "website" | "team" | "billing";
+export type OwnerSettingsTab = "profile" | "plans" | "account" | "website" | "team" | "billing";
 
 const settingsTabs: Array<{ id: OwnerSettingsTab; label: string; summary: string }> = [
   { id: "profile", label: "Library Setup", summary: "Core library profile, QR access, WiFi, and notices." },
   { id: "plans", label: "Plans & Coupons", summary: "Reusable admission plans, pricing overrides, and coupon rules." },
-  { id: "shifts", label: "Shifts", summary: "Morning, evening, or full-day seat capacity rules." },
   { id: "account", label: "Account", summary: "Personal profile, password, and current session controls." },
   { id: "website", label: "Website", summary: "Public site editing and publishing inside the same setup desk." },
   { id: "team", label: "Team", summary: "Head admin access, permissions, and audit visibility." },
@@ -86,7 +73,7 @@ const settingsGroups: Array<{
   summary: string;
   tabs: OwnerSettingsTab[];
 }> = [
-  { id: "setup", label: "Library Setup", summary: "Core library identity, QR access, shifts, and public website controls.", tabs: ["profile", "shifts", "website"] },
+  { id: "setup", label: "Library Setup", summary: "Core library identity, QR access, and public website controls.", tabs: ["profile", "website"] },
   { id: "pricing", label: "Plans & Coupons", summary: "Admission pricing, reusable plans, and coupon rules.", tabs: ["plans"] },
   { id: "account", label: "Account", summary: "Owner profile, password, and session controls.", tabs: ["account"] },
   { id: "team", label: "Team", summary: "Admin access and operator permissions.", tabs: ["team"] },
@@ -142,7 +129,6 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
   const [data, setData] = useState<SettingsResponse["data"] | null>(null);
   const [plans, setPlans] = useState<StudentPlanConfig[]>([]);
   const [coupons, setCoupons] = useState<CouponConfig[]>([]);
-  const [shifts, setShifts] = useState<ShiftConfig[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -150,11 +136,9 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [planSaving, setPlanSaving] = useState(false);
   const [couponSaving, setCouponSaving] = useState(false);
-  const [shiftSaving, setShiftSaving] = useState(false);
   const [account, setAccount] = useState<SessionUser | null>(null);
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
-  const [editingShiftId, setEditingShiftId] = useState<string | null>(null);
   const [form, setForm] = useState({
     libraryName: "",
     address: "",
@@ -194,15 +178,6 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
     usageLimit: "",
     isActive: true,
   });
-  const [shiftForm, setShiftForm] = useState({
-    name: "Full Day",
-    startTime: "08:00",
-    endTime: "20:00",
-    daysOfWeek: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
-    isDefault: false,
-    isActive: true,
-    sortOrder: "0",
-  });
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -227,16 +202,14 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
 
   async function loadSettings() {
     try {
-      const [settingsResponse, plansResponse, couponsResponse, shiftsResponse] = await Promise.all([
+      const [settingsResponse, plansResponse, couponsResponse] = await Promise.all([
         apiFetch<SettingsResponse>("/owner/settings"),
         apiFetch<{ success: boolean; data: StudentPlanConfig[] }>("/owner/student-plans"),
         apiFetch<{ success: boolean; data: CouponConfig[] }>("/owner/coupons"),
-        apiFetch<{ success: boolean; data: ShiftConfig[] }>("/owner/shifts"),
       ]);
       setData(settingsResponse.data);
       setPlans(plansResponse.data);
       setCoupons(couponsResponse.data);
-      setShifts(shiftsResponse.data);
       setForm({
         libraryName: settingsResponse.data.library_name,
         address: settingsResponse.data.address,
@@ -408,41 +381,6 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
     }
   }
 
-  async function saveShift(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setShiftSaving(true);
-    try {
-      await apiFetch(editingShiftId ? `/owner/shifts/${editingShiftId}` : "/owner/shifts", {
-        method: editingShiftId ? "PATCH" : "POST",
-        body: JSON.stringify({
-          name: shiftForm.name,
-          startTime: shiftForm.startTime,
-          endTime: shiftForm.endTime,
-          daysOfWeek: shiftForm.daysOfWeek,
-          isDefault: shiftForm.isDefault,
-          isActive: shiftForm.isActive,
-          sortOrder: Number(shiftForm.sortOrder || "0"),
-        }),
-      });
-      setMessage(editingShiftId ? "Shift updated." : "Shift created.");
-      setEditingShiftId(null);
-      setShiftForm({
-        name: "Full Day",
-        startTime: "08:00",
-        endTime: "20:00",
-        daysOfWeek: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
-        isDefault: false,
-        isActive: true,
-        sortOrder: "0",
-      });
-      await loadSettings();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unable to save shift.");
-    } finally {
-      setShiftSaving(false);
-    }
-  }
-
   const planPreview = useMemo(
     () => computePreviewAmount(planForm.baseAmount, planForm.defaultDiscountType, planForm.defaultDiscountValue),
     [planForm.baseAmount, planForm.defaultDiscountType, planForm.defaultDiscountValue],
@@ -536,124 +474,6 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
               <button onClick={() => void regenerateQr()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
                 Regenerate QR key
               </button>
-            </div>
-          </DashboardCard>
-        </div>
-      ) : null}
-
-      {activeTab === "shifts" ? (
-        <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-          <DashboardCard title="Shift setup" subtitle="Create time slots so the same seat can be reused safely across batches.">
-            <form className="grid gap-3" onSubmit={saveShift}>
-              <div className="grid gap-3 md:grid-cols-2">
-                <input value={shiftForm.name} onChange={(event) => setShiftForm((current) => ({ ...current, name: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Shift name" />
-                <input type="number" min="0" value={shiftForm.sortOrder} onChange={(event) => setShiftForm((current) => ({ ...current, sortOrder: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Sort order" />
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="grid gap-1.5 text-sm font-medium text-[var(--lp-text-soft)]">
-                  Start time
-                  <input type="time" value={shiftForm.startTime} onChange={(event) => setShiftForm((current) => ({ ...current, startTime: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
-                </label>
-                <label className="grid gap-1.5 text-sm font-medium text-[var(--lp-text-soft)]">
-                  End time
-                  <input type="time" value={shiftForm.endTime} onChange={(event) => setShiftForm((current) => ({ ...current, endTime: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
-                </label>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((day) => {
-                  const active = shiftForm.daysOfWeek.includes(day);
-                  return (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() =>
-                        setShiftForm((current) => ({
-                          ...current,
-                          daysOfWeek: active ? current.daysOfWeek.filter((item) => item !== day) : [...current.daysOfWeek, day],
-                        }))
-                      }
-                      className={`rounded-lg border px-3 py-2 text-xs font-semibold ${active ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"}`}
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="grid gap-2 md:grid-cols-2">
-                <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
-                  <input type="checkbox" checked={shiftForm.isDefault} onChange={(event) => setShiftForm((current) => ({ ...current, isDefault: event.target.checked }))} />
-                  Default admission shift
-                </label>
-                <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
-                  <input type="checkbox" checked={shiftForm.isActive} onChange={(event) => setShiftForm((current) => ({ ...current, isActive: event.target.checked }))} />
-                  Active
-                </label>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button disabled={shiftSaving || shiftForm.daysOfWeek.length === 0} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-                  {shiftSaving ? "Saving..." : editingShiftId ? "Update shift" : "Create shift"}
-                </button>
-                {editingShiftId ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingShiftId(null);
-                      setShiftForm({
-                        name: "Full Day",
-                        startTime: "08:00",
-                        endTime: "20:00",
-                        daysOfWeek: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
-                        isDefault: false,
-                        isActive: true,
-                        sortOrder: "0",
-                      });
-                    }}
-                    className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
-                  >
-                    Reset
-                  </button>
-                ) : null}
-              </div>
-            </form>
-          </DashboardCard>
-
-          <DashboardCard title="Active shift capacity" subtitle="Seatmap and admissions now use these shifts for allotment.">
-            <div className="grid gap-3">
-              {shifts.map((shift) => (
-                <div key={shift.id} className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[var(--lp-text)]">{shift.name}</p>
-                      <p className="text-sm text-[var(--lp-text-soft)]">{shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)} | {shift.days_of_week.join(", ")}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {shift.is_default ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Default</span> : null}
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${shift.is_active ? "bg-slate-100 text-slate-700" : "bg-rose-50 text-rose-600"}`}>
-                        {shift.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingShiftId(shift.id);
-                      setShiftForm({
-                        name: shift.name,
-                        startTime: shift.start_time.slice(0, 5),
-                        endTime: shift.end_time.slice(0, 5),
-                        daysOfWeek: shift.days_of_week,
-                        isDefault: shift.is_default,
-                        isActive: shift.is_active,
-                        sortOrder: String(shift.sort_order),
-                      });
-                    }}
-                    className="mt-3 rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]"
-                  >
-                    Edit shift
-                  </button>
-                </div>
-              ))}
-              {shifts.length === 0 ? <p className="text-sm text-[var(--lp-text-soft)]">No shifts yet. A default Full Day shift will be created automatically.</p> : null}
             </div>
           </DashboardCard>
         </div>

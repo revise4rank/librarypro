@@ -17,9 +17,6 @@ type SeatRow = {
   pos_x: number;
   pos_y: number;
   status: string;
-  physical_status?: string;
-  shift_id?: string | null;
-  shift_name?: string | null;
   reserved_until?: string | null;
   assignment_id: string | null;
   student_name: string | null;
@@ -37,18 +34,7 @@ type StudentRow = {
   plan_name: string;
   payment_status: string;
   ends_at: string;
-  shift_id?: string | null;
-  shift_name?: string | null;
   admission_status?: "SEAT_UNALLOTTED" | "SEAT_ALLOTTED";
-};
-
-type ShiftConfig = {
-  id: string;
-  name: string;
-  start_time: string;
-  end_time: string;
-  is_default: boolean;
-  is_active: boolean;
 };
 
 type FloorRow = {
@@ -446,8 +432,6 @@ export function OwnerSeatsManager() {
   const [seats, setSeats] = useState<SeatRow[]>([]);
   const [floors, setFloors] = useState<FloorRow[]>([]);
   const [students, setStudents] = useState<StudentRow[]>([]);
-  const [shifts, setShifts] = useState<ShiftConfig[]>([]);
-  const [selectedShiftId, setSelectedShiftId] = useState("");
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
   const [selectedSeatId, setSelectedSeatId] = useState<string | null>(null);
   const [selectedFloorId, setSelectedFloorId] = useState("");
@@ -499,21 +483,14 @@ export function OwnerSeatsManager() {
   async function loadData() {
     setLoading(true);
     try {
-      const [studentResponse, floorResponse, shiftsResponse] = await Promise.all([
+      const [seatResponse, studentResponse, floorResponse] = await Promise.all([
+        apiFetch<{ success: boolean; data: SeatRow[] }>("/owner/seats"),
         apiFetch<{ success: boolean; data: StudentRow[] }>("/owner/students"),
         apiFetch<{ success: boolean; data: FloorRow[] }>("/owner/floors"),
-        apiFetch<{ success: boolean; data: ShiftConfig[] }>("/owner/shifts"),
       ]);
-      const activeShifts = shiftsResponse.data.filter((shift) => shift.is_active);
-      const nextShiftId = selectedShiftId || activeShifts.find((shift) => shift.is_default)?.id || activeShifts[0]?.id || "";
-      const seatResponse = await apiFetch<{ success: boolean; data: SeatRow[] }>(`/owner/seats${nextShiftId ? `?shiftId=${encodeURIComponent(nextShiftId)}` : ""}`);
       setSeats(seatResponse.data);
       setStudents(studentResponse.data);
       setFloors(floorResponse.data);
-      setShifts(activeShifts);
-      if (nextShiftId && nextShiftId !== selectedShiftId) {
-        setSelectedShiftId(nextShiftId);
-      }
       setError(null);
     } catch (loadError) {
       setSeats([]);
@@ -527,7 +504,7 @@ export function OwnerSeatsManager() {
 
   useEffect(() => {
     void loadData();
-  }, [selectedShiftId]);
+  }, []);
 
   useEffect(() => {
     const nextDrafts: FloorDrafts = {};
@@ -691,14 +668,8 @@ export function OwnerSeatsManager() {
   }, [selectedSeat]);
 
   const unallottedStudents = useMemo(
-    () =>
-      students.filter(
-        (student) =>
-          student.assignment_id &&
-          (!selectedShiftId || !student.shift_id || student.shift_id === selectedShiftId) &&
-          (student.admission_status ? student.admission_status === "SEAT_UNALLOTTED" : !student.seat_number),
-      ),
-    [selectedShiftId, students],
+    () => students.filter((student) => student.assignment_id && (student.admission_status ? student.admission_status === "SEAT_UNALLOTTED" : !student.seat_number)),
+    [students],
   );
   const selectedAssignmentStudent = useMemo(
     () => students.find((student) => student.assignment_id === selectedAssignmentId) ?? null,
@@ -828,7 +799,6 @@ export function OwnerSeatsManager() {
         body: JSON.stringify({
           assignmentId: selectedAssignmentId,
           seatId,
-          shiftId: selectedShiftId || undefined,
         }),
       });
       setMessage("Seat assignment saved.");
@@ -1062,7 +1032,6 @@ export function OwnerSeatsManager() {
           posX: selectedSeat.pos_x,
           posY: selectedSeat.pos_y,
           markFree,
-          shiftId: selectedShiftId || undefined,
         }),
       });
       setMessage("Seat updated successfully.");
@@ -1328,20 +1297,6 @@ export function OwnerSeatsManager() {
           </div>
         </div>
       </section>
-      <DashboardCard title="Shift view" subtitle="Seat occupancy is calculated inside the selected shift, so the same desk can be reused by another batch.">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <select value={selectedShiftId} onChange={(event) => setSelectedShiftId(event.target.value)} className="min-w-[220px] rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text)] outline-none">
-            {shifts.map((shift) => (
-              <option key={shift.id} value={shift.id}>
-                {shift.name} | {shift.start_time.slice(0, 5)}-{shift.end_time.slice(0, 5)}
-              </option>
-            ))}
-          </select>
-          <a href="/owner/settings?tab=shifts" className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]">
-            Manage shifts
-          </a>
-        </div>
-      </DashboardCard>
       <DashboardCard title="Workspace mode" subtitle="Assignment stays primary. Setup and layout open only when the hall needs structural changes.">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">

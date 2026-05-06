@@ -5,7 +5,7 @@ import { ownerNav } from "../../../../lib/role-nav";
 
 export default function OwnerSettingsPage({ searchParams }: { searchParams?: { tab?: string } }) {
   const requestedTab = searchParams?.tab;
-  const allowedTabs = new Set<OwnerSettingsTab>(["profile", "plans", "shifts", "account", "website", "team", "billing"]);
+  const allowedTabs = new Set<OwnerSettingsTab>(["profile", "plans", "account", "website", "team", "billing"]);
   const initialTab = allowedTabs.has(requestedTab as OwnerSettingsTab) ? (requestedTab as OwnerSettingsTab) : "profile";
 
   return (

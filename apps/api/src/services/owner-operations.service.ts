@@ -90,25 +90,6 @@ function computeDiscountedAmount(baseAmount: number, discountType?: string | nul
   };
 }
 
-const defaultShiftDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-
-async function resolveOwnerShift(input: {
-  repo: OwnerOperationsRepository;
-  client: PoolClient;
-  libraryId: string;
-  shiftId?: string | null;
-}) {
-  if (input.shiftId) {
-    const shift = await input.repo.findShiftById(input.client, input.libraryId, input.shiftId);
-    if (!shift || !shift.is_active) {
-      throw new AppError(404, "Shift not found or inactive", "SHIFT_NOT_FOUND");
-    }
-    return shift;
-  }
-
-  return input.repo.ensureDefaultShift(input.client, input.libraryId);
-}
-
 async function resolveAdmissionPricing(input: {
   repo: OwnerOperationsRepository;
   client: PoolClient;
@@ -179,7 +160,6 @@ async function createAdmissionRecord(input: {
   phone?: string;
   emergencyContact?: string;
   studentPlanId: string;
-  shiftId?: string;
   planAmountOverride?: number;
   durationMonthsOverride?: number;
   couponCode?: string;
@@ -206,12 +186,6 @@ async function createAdmissionRecord(input: {
       couponCode: input.couponCode,
       planAmountOverride: input.planAmountOverride,
       durationMonthsOverride: input.durationMonthsOverride,
-    });
-    const shift = await resolveOwnerShift({
-      repo,
-      client,
-      libraryId: input.libraryId,
-      shiftId: input.shiftId,
     });
 
     let student =
@@ -265,7 +239,6 @@ async function createAdmissionRecord(input: {
       libraryId: input.libraryId,
       studentUserId: student.id,
       seatId: null,
-      shiftId: shift.id,
       fatherName: input.fatherName,
       address: input.address,
       className: input.className,
@@ -330,8 +303,6 @@ async function createAdmissionRecord(input: {
       temporaryPassword: isNewStudent ? temporaryPassword : null,
       planName: pricing.plan.name,
       finalAmount: pricing.pricing.finalAmount,
-      shiftId: shift.id,
-      shiftName: shift.name,
     };
   } catch (error) {
     await client.query("ROLLBACK");
@@ -407,113 +378,6 @@ export async function listOwnerCoupons(libraryId: string) {
   return repository().listCoupons(libraryId);
 }
 
-export async function listOwnerShifts(libraryId: string) {
-  const db = requireDb();
-  const repo = repository();
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-    await repo.ensureDefaultShift(client, libraryId);
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
-
-  return repo.listShifts(libraryId);
-}
-
-export async function createOwnerShift(input: {
-  libraryId: string;
-  name: string;
-  startTime: string;
-  endTime: string;
-  daysOfWeek?: string[];
-  isDefault: boolean;
-  isActive: boolean;
-  sortOrder: number;
-}) {
-  const db = requireDb();
-  const repo = repository();
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-    const shift = await repo.createShift(client, {
-      libraryId: input.libraryId,
-      name: input.name,
-      startTime: input.startTime,
-      endTime: input.endTime,
-      daysOfWeek: input.daysOfWeek?.length ? input.daysOfWeek : defaultShiftDays,
-      isDefault: input.isDefault,
-      isActive: input.isActive,
-      sortOrder: input.sortOrder,
-    });
-    await repo.refreshLibrarySeatCounts(client, input.libraryId);
-    await client.query("COMMIT");
-    return shift;
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
-}
-
-export async function updateOwnerShift(input: {
-  libraryId: string;
-  shiftId: string;
-  name: string;
-  startTime: string;
-  endTime: string;
-  daysOfWeek?: string[];
-  isDefault: boolean;
-  isActive: boolean;
-  sortOrder: number;
-}) {
-  const db = requireDb();
-  const repo = repository();
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-    const existing = await repo.findShiftById(client, input.libraryId, input.shiftId);
-    if (!existing) {
-      throw new AppError(404, "Shift not found", "SHIFT_NOT_FOUND");
-    }
-    if (existing.is_default && !input.isDefault) {
-      const otherShifts = await repo.listShifts(input.libraryId);
-      const nextDefault = otherShifts.find((shift) => shift.id !== input.shiftId && shift.is_active);
-      if (!nextDefault) {
-        input.isDefault = true;
-      }
-    }
-
-    const shift = await repo.updateShift(client, {
-      libraryId: input.libraryId,
-      shiftId: input.shiftId,
-      name: input.name,
-      startTime: input.startTime,
-      endTime: input.endTime,
-      daysOfWeek: input.daysOfWeek?.length ? input.daysOfWeek : defaultShiftDays,
-      isDefault: input.isDefault,
-      isActive: input.isActive,
-      sortOrder: input.sortOrder,
-    });
-    if (!shift) {
-      throw new AppError(404, "Shift not found", "SHIFT_NOT_FOUND");
-    }
-    await repo.refreshLibrarySeatCounts(client, input.libraryId);
-    await client.query("COMMIT");
-    return shift;
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
-}
-
 export async function createOwnerCoupon(input: {
   libraryId: string;
   studentPlanId?: string;
@@ -584,7 +448,6 @@ export async function createOwnerAdmission(input: {
   phone?: string;
   emergencyContact?: string;
   studentPlanId: string;
-  shiftId?: string;
   planAmountOverride?: number;
   durationMonthsOverride?: number;
   couponCode?: string;
@@ -665,7 +528,6 @@ export async function createOwnerStudent(input: {
       libraryId: input.libraryId,
       studentUserId: student.id,
       seatId: null,
-      shiftId: (await repo.ensureDefaultShift(client, input.libraryId)).id,
       fatherName: input.fatherName,
       address: input.address,
       className: input.className,
@@ -792,6 +654,9 @@ export async function deleteOwnerStudent(input: {
     }
 
     await repo.cancelAssignment(client, input.assignmentId);
+    if (assignment.seat_id) {
+      await repo.updateSeatStatus(client, assignment.seat_id, "AVAILABLE");
+    }
     await repo.refreshLibrarySeatCounts(client, input.libraryId);
 
     await client.query("COMMIT");
@@ -905,8 +770,8 @@ export async function updateOwnerPayment(input: {
   }
 }
 
-export async function listOwnerSeats(libraryId: string, shiftId?: string | null) {
-  return repository().listSeats(libraryId, shiftId);
+export async function listOwnerSeats(libraryId: string) {
+  return repository().listSeats(libraryId);
 }
 
 export async function listOwnerFloors(libraryId: string) {
@@ -1037,7 +902,6 @@ export async function assignSeatToStudent(input: {
   libraryId: string;
   assignmentId: string;
   seatId: string;
-  shiftId?: string;
 }) {
   const db = requireDb();
   const repo = repository();
@@ -1049,12 +913,6 @@ export async function assignSeatToStudent(input: {
     if (!assignment) {
       throw new AppError(404, "Student assignment not found", "ASSIGNMENT_NOT_FOUND");
     }
-    const shift = await resolveOwnerShift({
-      repo,
-      client,
-      libraryId: input.libraryId,
-      shiftId: input.shiftId ?? assignment.shift_id,
-    });
 
     const seat = await repo.findSeatById(client, input.libraryId, input.seatId);
     if (!seat) {
@@ -1064,16 +922,21 @@ export async function assignSeatToStudent(input: {
       throw new AppError(409, "Disabled seat cannot be assigned", "SEAT_DISABLED");
     }
 
-    const occupant = await repo.findActiveAssignmentBySeatId(client, input.libraryId, input.seatId, shift.id);
+    const occupant = await repo.findActiveAssignmentBySeatId(client, input.libraryId, input.seatId);
     if (occupant && occupant.id !== input.assignmentId) {
-      throw new AppError(409, "Seat is already assigned in this shift", "SEAT_ALREADY_OCCUPIED");
+      throw new AppError(409, "Seat is already assigned", "SEAT_ALREADY_OCCUPIED");
     }
 
-    await repo.updateAssignmentSeat(client, input.assignmentId, input.seatId, shift.id);
+    if (assignment.seat_id && assignment.seat_id !== input.seatId) {
+      await repo.updateSeatStatus(client, assignment.seat_id, "AVAILABLE");
+    }
+
+    await repo.updateSeatStatus(client, input.seatId, "OCCUPIED");
+    await repo.updateAssignmentSeat(client, input.assignmentId, input.seatId);
     await repo.refreshLibrarySeatCounts(client, input.libraryId);
 
     await client.query("COMMIT");
-    return { seatId: input.seatId, assignmentId: input.assignmentId, shiftId: shift.id, shiftName: shift.name };
+    return { seatId: input.seatId, assignmentId: input.assignmentId };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -1097,6 +960,7 @@ export async function unassignSeatFromStudent(input: {
       throw new AppError(404, "Student assignment not found", "ASSIGNMENT_NOT_FOUND");
     }
     if (assignment.seat_id) {
+      await repo.updateSeatStatus(client, assignment.seat_id, "AVAILABLE");
       await repo.clearAssignmentSeat(client, input.assignmentId);
       await repo.refreshLibrarySeatCounts(client, input.libraryId);
     }
@@ -1120,7 +984,6 @@ export async function updateOwnerSeat(input: {
   posX?: number;
   posY?: number;
   markFree?: boolean;
-  shiftId?: string;
 }) {
   const db = requireDb();
   const repo = repository();
@@ -1134,13 +997,7 @@ export async function updateOwnerSeat(input: {
     }
 
     if (input.markFree) {
-      const shift = await resolveOwnerShift({
-        repo,
-        client,
-        libraryId: input.libraryId,
-        shiftId: input.shiftId,
-      });
-      const assignment = await repo.findActiveAssignmentBySeatId(client, input.libraryId, input.seatId, shift.id);
+      const assignment = await repo.findActiveAssignmentBySeatId(client, input.libraryId, input.seatId);
       if (assignment) {
         await repo.clearAssignmentSeat(client, assignment.id);
       }
@@ -2348,7 +2205,6 @@ export async function approveOwnerJoinRequest(input: {
   phone?: string;
   emergencyContact?: string;
   studentPlanId: string;
-  shiftId?: string;
   planAmountOverride?: number;
   durationMonthsOverride?: number;
   couponCode?: string;
@@ -2384,7 +2240,6 @@ export async function approveOwnerJoinRequest(input: {
       phone: input.phone || request.student_phone || undefined,
       emergencyContact: input.emergencyContact,
       studentPlanId: input.studentPlanId,
-      shiftId: input.shiftId,
       planAmountOverride: input.planAmountOverride,
       durationMonthsOverride: input.durationMonthsOverride,
       couponCode: input.couponCode,

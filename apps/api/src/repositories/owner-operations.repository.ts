@@ -13,10 +13,6 @@ export type OwnerStudentRow = {
   student_email: string | null;
   student_phone: string | null;
   seat_number: string | null;
-  shift_id: string | null;
-  shift_name: string | null;
-  shift_start_time: string | null;
-  shift_end_time: string | null;
   student_plan_id: string | null;
   plan_name: string;
   plan_price: string;
@@ -62,19 +58,6 @@ export type OwnerCouponRow = {
   usage_limit: number | null;
   used_count: number;
   is_active: boolean;
-  created_at: string;
-};
-
-export type OwnerShiftRow = {
-  id: string;
-  library_id: string;
-  name: string;
-  start_time: string;
-  end_time: string;
-  days_of_week: string[];
-  is_default: boolean;
-  is_active: boolean;
-  sort_order: number;
   created_at: string;
 };
 
@@ -179,9 +162,6 @@ export type OwnerSeatRow = {
   pos_x: number;
   pos_y: number;
   status: string;
-  physical_status?: string;
-  shift_id?: string | null;
-  shift_name?: string | null;
   reserved_until?: string | null;
   assignment_id: string | null;
   student_name: string | null;
@@ -335,211 +315,6 @@ export type PageResult<T> = {
 export class OwnerOperationsRepository {
   constructor(private readonly pool: Pool) {}
 
-  async listShifts(libraryId: string) {
-    const result = await this.pool.query<OwnerShiftRow>(
-      `
-      SELECT
-        id,
-        library_id,
-        name,
-        start_time::text,
-        end_time::text,
-        days_of_week,
-        is_default,
-        is_active,
-        sort_order,
-        created_at::text
-      FROM library_shifts
-      WHERE library_id = $1
-      ORDER BY is_default DESC, sort_order, start_time, created_at
-      `,
-      [libraryId],
-    );
-
-    return result.rows;
-  }
-
-  async ensureDefaultShift(client: PoolClient, libraryId: string) {
-    const existing = await client.query<OwnerShiftRow>(
-      `
-      SELECT
-        id,
-        library_id,
-        name,
-        start_time::text,
-        end_time::text,
-        days_of_week,
-        is_default,
-        is_active,
-        sort_order,
-        created_at::text
-      FROM library_shifts
-      WHERE library_id = $1 AND is_default = TRUE
-      ORDER BY sort_order, created_at
-      LIMIT 1
-      `,
-      [libraryId],
-    );
-
-    if (existing.rows[0]) {
-      return existing.rows[0];
-    }
-
-    const created = await client.query<OwnerShiftRow>(
-      `
-      INSERT INTO library_shifts (library_id, name, start_time, end_time, is_default, is_active, sort_order)
-      VALUES ($1, 'Full Day', '08:00', '20:00', TRUE, TRUE, 0)
-      RETURNING
-        id,
-        library_id,
-        name,
-        start_time::text,
-        end_time::text,
-        days_of_week,
-        is_default,
-        is_active,
-        sort_order,
-        created_at::text
-      `,
-      [libraryId],
-    );
-
-    return created.rows[0];
-  }
-
-  async findShiftById(client: PoolClient, libraryId: string, shiftId: string) {
-    const result = await client.query<OwnerShiftRow>(
-      `
-      SELECT
-        id,
-        library_id,
-        name,
-        start_time::text,
-        end_time::text,
-        days_of_week,
-        is_default,
-        is_active,
-        sort_order,
-        created_at::text
-      FROM library_shifts
-      WHERE id = $1 AND library_id = $2
-      LIMIT 1
-      `,
-      [shiftId, libraryId],
-    );
-
-    return result.rows[0] ?? null;
-  }
-
-  async createShift(client: PoolClient, input: {
-    libraryId: string;
-    name: string;
-    startTime: string;
-    endTime: string;
-    daysOfWeek: string[];
-    isDefault: boolean;
-    isActive: boolean;
-    sortOrder: number;
-  }) {
-    if (input.isDefault) {
-      await client.query(
-        `UPDATE library_shifts SET is_default = FALSE, updated_at = NOW() WHERE library_id = $1`,
-        [input.libraryId],
-      );
-    }
-
-    const result = await client.query<OwnerShiftRow>(
-      `
-      INSERT INTO library_shifts (
-        library_id, name, start_time, end_time, days_of_week, is_default, is_active, sort_order
-      )
-      VALUES ($1, $2, $3::time, $4::time, $5::jsonb, $6, $7, $8)
-      RETURNING
-        id,
-        library_id,
-        name,
-        start_time::text,
-        end_time::text,
-        days_of_week,
-        is_default,
-        is_active,
-        sort_order,
-        created_at::text
-      `,
-      [
-        input.libraryId,
-        input.name,
-        input.startTime,
-        input.endTime,
-        JSON.stringify(input.daysOfWeek),
-        input.isDefault,
-        input.isActive,
-        input.sortOrder,
-      ],
-    );
-
-    return result.rows[0];
-  }
-
-  async updateShift(client: PoolClient, input: {
-    libraryId: string;
-    shiftId: string;
-    name: string;
-    startTime: string;
-    endTime: string;
-    daysOfWeek: string[];
-    isDefault: boolean;
-    isActive: boolean;
-    sortOrder: number;
-  }) {
-    if (input.isDefault) {
-      await client.query(
-        `UPDATE library_shifts SET is_default = FALSE, updated_at = NOW() WHERE library_id = $1 AND id <> $2`,
-        [input.libraryId, input.shiftId],
-      );
-    }
-
-    const result = await client.query<OwnerShiftRow>(
-      `
-      UPDATE library_shifts
-      SET
-        name = $3,
-        start_time = $4::time,
-        end_time = $5::time,
-        days_of_week = $6::jsonb,
-        is_default = $7,
-        is_active = $8,
-        sort_order = $9,
-        updated_at = NOW()
-      WHERE library_id = $1 AND id = $2
-      RETURNING
-        id,
-        library_id,
-        name,
-        start_time::text,
-        end_time::text,
-        days_of_week,
-        is_default,
-        is_active,
-        sort_order,
-        created_at::text
-      `,
-      [
-        input.libraryId,
-        input.shiftId,
-        input.name,
-        input.startTime,
-        input.endTime,
-        JSON.stringify(input.daysOfWeek),
-        input.isDefault,
-        input.isActive,
-        input.sortOrder,
-      ],
-    );
-
-    return result.rows[0] ?? null;
-  }
-
   async listStudents(libraryId: string) {
     const result = await this.pool.query<OwnerStudentRow>(
       `
@@ -556,10 +331,6 @@ export class OwnerOperationsRepository {
         u.email AS student_email,
         u.phone AS student_phone,
         s.seat_number,
-        sa.shift_id,
-        ls.name AS shift_name,
-        ls.start_time::text AS shift_start_time,
-        ls.end_time::text AS shift_end_time,
         sa.student_plan_id,
         sa.plan_name,
         sa.plan_price::text,
@@ -588,7 +359,6 @@ export class OwnerOperationsRepository {
       FROM student_assignments sa
       INNER JOIN users u ON u.id = sa.student_user_id
       LEFT JOIN seats s ON s.id = sa.seat_id
-      LEFT JOIN library_shifts ls ON ls.id = sa.shift_id
       WHERE sa.library_id = $1
         AND sa.status IN ('ACTIVE', 'PENDING', 'EXPIRED')
       ORDER BY sa.created_at DESC
@@ -617,10 +387,6 @@ export class OwnerOperationsRepository {
           u.email AS student_email,
           u.phone AS student_phone,
           s.seat_number,
-          sa.shift_id,
-          ls.name AS shift_name,
-          ls.start_time::text AS shift_start_time,
-          ls.end_time::text AS shift_end_time,
           sa.student_plan_id,
           sa.plan_name,
           sa.plan_price::text,
@@ -649,7 +415,6 @@ export class OwnerOperationsRepository {
         FROM student_assignments sa
         INNER JOIN users u ON u.id = sa.student_user_id
         LEFT JOIN seats s ON s.id = sa.seat_id
-        LEFT JOIN library_shifts ls ON ls.id = sa.shift_id
         WHERE sa.library_id = $1
           AND sa.status IN ('ACTIVE', 'PENDING', 'EXPIRED')
         ORDER BY sa.created_at DESC
@@ -1030,7 +795,6 @@ export class OwnerOperationsRepository {
     libraryId: string;
     studentUserId: string;
     seatId: string | null;
-    shiftId?: string | null;
     fatherName?: string | null;
     address?: string | null;
     className?: string | null;
@@ -1058,19 +822,18 @@ export class OwnerOperationsRepository {
     const result = await client.query<{ id: string }>(
       `
       INSERT INTO student_assignments (
-        library_id, student_user_id, seat_id, shift_id, father_name, address, class_name, preparing_for, emergency_contact,
+        library_id, student_user_id, seat_id, father_name, address, class_name, preparing_for, emergency_contact,
         student_plan_id, plan_name, plan_price, base_amount, discount_type, discount_value, coupon_code, final_amount,
         duration_months, next_due_date, starts_at, ends_at, status, payment_status, assigned_by,
         aadhaar_document_url, school_id_document_url, admission_source, notes
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, 'ACTIVE', $22, $23, $24, $25, $26, $27)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'ACTIVE', $21, $22, $23, $24, $25, $26)
       RETURNING id
       `,
       [
         input.libraryId,
         input.studentUserId,
         input.seatId,
-        input.shiftId ?? null,
         input.fatherName ?? null,
         input.address ?? null,
         input.className ?? null,
@@ -1106,11 +869,10 @@ export class OwnerOperationsRepository {
       library_id: string;
       student_user_id: string;
       seat_id: string | null;
-      shift_id: string | null;
       status: string;
     }>(
       `
-      SELECT id, library_id, student_user_id, seat_id, shift_id, status::text
+      SELECT id, library_id, student_user_id, seat_id, status::text
       FROM student_assignments
       WHERE id = $1 AND library_id = $2
       LIMIT 1
@@ -1460,14 +1222,14 @@ export class OwnerOperationsRepository {
     );
   }
 
-  async updateAssignmentSeat(client: PoolClient, assignmentId: string, seatId: string | null, shiftId?: string | null) {
+  async updateAssignmentSeat(client: PoolClient, assignmentId: string, seatId: string | null) {
     await client.query(
       `
       UPDATE student_assignments
-      SET seat_id = $2, shift_id = COALESCE($3, shift_id), updated_at = NOW()
+      SET seat_id = $2, updated_at = NOW()
       WHERE id = $1
       `,
-      [assignmentId, seatId, shiftId ?? null],
+      [assignmentId, seatId],
     );
   }
 
@@ -1535,9 +1297,6 @@ export class OwnerOperationsRepository {
     const result = await client.query<{
       assignment_id: string;
       seat_number: string | null;
-      shift_name: string | null;
-      shift_start_time: string | null;
-      shift_end_time: string | null;
       plan_name: string;
       father_name: string | null;
       duration_months: number;
@@ -1549,9 +1308,6 @@ export class OwnerOperationsRepository {
       SELECT
         sa.id AS assignment_id,
         s.seat_number,
-        ls.name AS shift_name,
-        ls.start_time::text AS shift_start_time,
-        ls.end_time::text AS shift_end_time,
         sa.plan_name,
         sa.father_name,
         sa.duration_months,
@@ -1560,7 +1316,6 @@ export class OwnerOperationsRepository {
         sa.payment_status::text
       FROM student_assignments sa
       LEFT JOIN seats s ON s.id = sa.seat_id
-      LEFT JOIN library_shifts ls ON ls.id = sa.shift_id
       WHERE sa.library_id = $1
         AND sa.student_user_id = $2
         AND sa.status = 'ACTIVE'
@@ -2179,21 +1934,9 @@ export class OwnerOperationsRepository {
     }
   }
 
-  async listSeats(libraryId: string, shiftId?: string | null) {
+  async listSeats(libraryId: string) {
     const result = await this.pool.query<OwnerSeatRow>(
       `
-      WITH selected_shift AS (
-        SELECT COALESCE(
-          $2::uuid,
-          (
-            SELECT id
-            FROM library_shifts
-            WHERE library_id = $1 AND is_default = TRUE
-            ORDER BY sort_order, created_at
-            LIMIT 1
-          )
-        ) AS id
-      )
       SELECT
         s.id,
         s.floor_id,
@@ -2204,16 +1947,8 @@ export class OwnerOperationsRepository {
         s.col_no,
         s.pos_x,
         s.pos_y,
-        s.status::text AS physical_status,
-        CASE
-          WHEN s.status = 'DISABLED' THEN 'DISABLED'
-          WHEN s.status = 'RESERVED' THEN 'RESERVED'
-          WHEN sa.id IS NOT NULL THEN 'OCCUPIED'
-          ELSE 'AVAILABLE'
-        END AS status,
+        s.status::text,
         s.reserved_until::text,
-        selected_shift.id AS shift_id,
-        ls.name AS shift_name,
         sa.id AS assignment_id,
         u.full_name AS student_name,
         u.id AS student_user_id,
@@ -2225,24 +1960,20 @@ export class OwnerOperationsRepository {
           FROM checkins c
           WHERE c.library_id = s.library_id
             AND c.seat_id = s.id
-            AND c.shift_id = selected_shift.id
           ORDER BY c.checked_in_at DESC
           LIMIT 1
         ) AS last_check_in_at
       FROM seats s
-      CROSS JOIN selected_shift
       LEFT JOIN library_floors lf ON lf.id = s.floor_id
-      LEFT JOIN library_shifts ls ON ls.id = selected_shift.id
       LEFT JOIN student_assignments sa
         ON sa.seat_id = s.id
        AND sa.library_id = s.library_id
        AND sa.status = 'ACTIVE'
-       AND sa.shift_id = selected_shift.id
       LEFT JOIN users u ON u.id = sa.student_user_id
       WHERE s.library_id = $1
       ORDER BY COALESCE(lf.floor_number, 0), s.pos_y, s.pos_x, s.row_no, s.col_no, s.seat_number
       `,
-      [libraryId, shiftId ?? null],
+      [libraryId],
     );
 
     return result.rows;
@@ -2416,18 +2147,15 @@ export class OwnerOperationsRepository {
     return result.rows[0] ?? null;
   }
 
-  async findActiveAssignmentBySeatId(client: PoolClient, libraryId: string, seatId: string, shiftId?: string | null) {
+  async findActiveAssignmentBySeatId(client: PoolClient, libraryId: string, seatId: string) {
     const result = await client.query<{ id: string; student_user_id: string }>(
       `
       SELECT id, student_user_id
       FROM student_assignments
-      WHERE library_id = $1
-        AND seat_id = $2
-        AND status = 'ACTIVE'
-        AND shift_id = $3
+      WHERE library_id = $1 AND seat_id = $2 AND status = 'ACTIVE'
       LIMIT 1
       `,
-      [libraryId, seatId, shiftId ?? null],
+      [libraryId, seatId],
     );
 
     return result.rows[0] ?? null;
@@ -2442,32 +2170,13 @@ export class OwnerOperationsRepository {
         available_seats = seat_totals.available_count,
         updated_at = NOW()
       FROM (
-        WITH active_shifts AS (
-          SELECT id
-          FROM library_shifts
-          WHERE library_id = $1 AND is_active = TRUE
-        ),
-        seat_shift_pairs AS (
-          SELECT s.library_id, s.id AS seat_id, s.status, active_shifts.id AS shift_id
-          FROM seats s
-          CROSS JOIN active_shifts
-          WHERE s.library_id = $1
-        )
         SELECT
-          $1::uuid AS library_id,
-          COUNT(*) FILTER (WHERE status <> 'DISABLED')::int AS total_count,
-          COUNT(*) FILTER (
-            WHERE status IN ('AVAILABLE', 'OCCUPIED')
-              AND NOT EXISTS (
-                SELECT 1
-                FROM student_assignments sa
-                WHERE sa.library_id = $1
-                  AND sa.seat_id = seat_shift_pairs.seat_id
-                  AND sa.shift_id = seat_shift_pairs.shift_id
-                  AND sa.status = 'ACTIVE'
-              )
-          )::int AS available_count
-        FROM seat_shift_pairs
+          library_id,
+          COUNT(*)::int AS total_count,
+          COUNT(*) FILTER (WHERE status = 'AVAILABLE')::int AS available_count
+        FROM seats
+        WHERE library_id = $1
+        GROUP BY library_id
       ) AS seat_totals
       WHERE libraries.id = seat_totals.library_id
       `,
