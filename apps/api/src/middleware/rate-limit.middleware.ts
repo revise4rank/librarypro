@@ -28,7 +28,7 @@ function getRedisStore(prefix: string) {
 
 export const apiRateLimitMiddleware = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 200,
+  limit: env.apiRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
   passOnStoreError: true,
@@ -40,7 +40,7 @@ export const apiRateLimitMiddleware = rateLimit({
 
 export const publicReadRateLimitMiddleware = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 2_000,
+  limit: env.publicReadRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
   passOnStoreError: true,
@@ -49,7 +49,7 @@ export const publicReadRateLimitMiddleware = rateLimit({
 
 export const authRateLimitMiddleware = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  limit: env.authRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
   passOnStoreError: true,

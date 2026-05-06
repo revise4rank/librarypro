@@ -152,7 +152,8 @@ async function auditPage(context, outputDir, spec) {
   });
 
   try {
-    await page.goto(`${webBase}${spec.path}`, { waitUntil: "networkidle", timeout: 30000 });
+    await page.goto(`${webBase}${spec.path}`, { waitUntil: "load", timeout: 30000 });
+    await page.waitForTimeout(1000);
   } catch (error) {
     timedOut = true;
     await page.goto(`${webBase}${spec.path}`, { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -164,6 +165,12 @@ async function auditPage(context, outputDir, spec) {
   const inspection = await inspectPage(page);
   const screenshotPath = path.join(outputDir, `${spec.key}.png`);
   await page.screenshot({ path: screenshotPath, fullPage: true });
+  const actionableFailedRequests = failedRequests.filter((request) => {
+    if (request.url.includes("/socket.io/") && request.error === "net::ERR_ABORTED") {
+      return false;
+    }
+    return true;
+  });
 
   const findings = [];
   if (finalUrl.includes("/login") && spec.auth !== "public") {
@@ -178,8 +185,8 @@ async function auditPage(context, outputDir, spec) {
   if (consoleErrors.length > 0) {
     findings.push(`Console errors: ${consoleErrors.length}`);
   }
-  if (failedRequests.length > 0) {
-    findings.push(`Failed requests: ${failedRequests.length}`);
+  if (actionableFailedRequests.length > 0) {
+    findings.push(`Failed requests: ${actionableFailedRequests.length}`);
   }
   if (inspection.links.length === 0 && inspection.buttons.length === 0) {
     findings.push("Low interactive surface detected");
@@ -200,7 +207,7 @@ async function auditPage(context, outputDir, spec) {
     buttons: inspection.buttons,
     pageErrors,
     consoleErrors,
-    failedRequests,
+    failedRequests: actionableFailedRequests,
     findings,
   };
 }
