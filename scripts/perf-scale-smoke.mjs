@@ -30,7 +30,7 @@ async function main() {
 
   results.push(
     await runScenario("Marketplace search", {
-      url: `${API_BASE}/v1/public/libraries/search?q=focus&city=Jaipur&limit=12&page=1`,
+      url: `${API_BASE}/v1/public/libraries/search?q=focus&city=Indore&limit=12&page=1`,
       connections: Number(process.env.PERF_CONNECTIONS ?? 50),
       duration: Number(process.env.PERF_DURATION_SECONDS ?? 20),
       pipelining: 1,
@@ -62,10 +62,17 @@ async function main() {
     throughputKBps: Math.round(result.throughput.average / 1024),
     errors: result.errors,
     timeouts: result.timeouts,
+    non2xx: result.non2xx ?? 0,
+    statusCodes: result.statusCodeStats ?? {},
   }));
 
   console.log("\nScale smoke summary:");
   console.log(JSON.stringify(summary, null, 2));
+
+  const failed = summary.filter((result) => result.errors > 0 || result.timeouts > 0 || result.non2xx > 0);
+  if (failed.length > 0) {
+    throw new Error(`Performance smoke saw non-successful responses: ${JSON.stringify(failed)}`);
+  }
 }
 
 main().catch((error) => {

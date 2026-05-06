@@ -16,14 +16,18 @@ const viewports = [
 
 const pages = [
   { key: "marketplace", path: "/marketplace", auth: "public" },
-  { key: "library_home", path: "/libraries/focuslibrary", auth: "public" },
+  { key: "library_home", path: "/libraries/focus-library", auth: "public" },
   { key: "library_site", path: "/library-site?slug=focuslibrary", auth: "public" },
+  { key: "owner_dashboard", path: "/owner/dashboard", auth: "owner" },
   { key: "owner_reports", path: "/owner/reports", auth: "owner" },
   { key: "owner_payments", path: "/owner/payments", auth: "owner" },
   { key: "owner_seats", path: "/owner/seats", auth: "owner" },
+  { key: "owner_settings", path: "/owner/settings", auth: "owner" },
+  { key: "student_dashboard", path: "/student/dashboard", auth: "student" },
   { key: "student_focus", path: "/student/focus", auth: "student" },
   { key: "student_syllabus", path: "/student/syllabus", auth: "student" },
   { key: "student_revisions", path: "/student/revisions", auth: "student" },
+  { key: "student_settings", path: "/student/settings", auth: "student" },
 ];
 
 async function ensureDir(dir) {
@@ -90,14 +94,17 @@ async function runForContext(browser, auth, outputDir) {
     const credentials = auth === "owner" ? ownerCredentials : studentCredentials;
     const loginPath = auth === "owner" ? "/owner/login" : "/student/login?library=focuslibrary";
 
-    await page.goto(`${webBase}${loginPath}`, { waitUntil: "networkidle" });
+    await page.goto(`${webBase}${loginPath}`, { waitUntil: "load" });
     await page.getByPlaceholder(/email|phone|student id|mobile/i).fill(credentials.login);
     await page.getByPlaceholder(/password/i).fill(credentials.password);
     await page.getByRole("button", {
-      name: auth === "owner" ? /login as owner/i : /login as student/i,
+      name: auth === "owner" ? /open library workspace/i : /open student portal/i,
     }).click();
-    await page.waitForLoadState("networkidle");
-    await page.waitForFunction(() => document.cookie.includes("lp_session=1"));
+    await page
+      .waitForFunction(() => document.cookie.includes("lp_session=1"), { timeout: 20000 })
+      .catch(() => {
+        throw new Error(`Login did not complete for ${auth}`);
+      });
     await page.close();
   }
   return { context, outputDir };
@@ -122,7 +129,8 @@ async function main() {
           for (const viewport of viewports) {
             const page = await context.newPage({ viewport: { width: viewport.width, height: viewport.height } });
             const url = `${webBase}${pageSpec.path}`;
-            await page.goto(url, { waitUntil: "networkidle" });
+            await page.goto(url, { waitUntil: "load", timeout: 30000 });
+            await page.waitForTimeout(800);
             await page.screenshot({
               path: path.join(outputDir, `${pageSpec.key}-${viewport.name}.png`),
               fullPage: true,
