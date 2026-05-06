@@ -25,7 +25,7 @@ export function PublicSiteHeader({
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[rgba(15,23,42,0.9)] backdrop-blur">
       <div className="mx-auto flex h-[50px] w-full max-w-[1120px] items-center justify-between gap-4 px-4">
-        <Link href="/" className="flex min-w-0 items-center gap-3">
+        <Link href="/" className="flex min-w-0 items-center gap-3 text-white">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-sm font-black text-[#0F172A]">
             BL
           </div>

@@ -41,8 +41,10 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 function SiteCard({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const backgroundClass = /\bbg-/.test(className) ? "" : "bg-white/92";
+
   return (
-    <section className={`rounded-xl border border-slate-200 bg-white/92 p-4 shadow-sm backdrop-blur ${className}`}>
+    <section className={`rounded-xl border border-slate-200 ${backgroundClass} p-4 shadow-sm backdrop-blur ${className}`}>
       {children}
     </section>
   );
@@ -129,7 +131,7 @@ export function PublicLibraryPage({
 
         <header className="relative z-10 border-b border-white/10 bg-slate-950/40 backdrop-blur">
           <div className="mx-auto flex h-[58px] max-w-[1180px] items-center justify-between gap-3 px-4">
-            <Link href={links.home} className="flex min-w-0 items-center gap-3">
+            <Link href={links.home} className="flex min-w-0 items-center gap-3 text-white">
               {brandLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={brandLogoUrl} alt={profile.library_name} className="h-10 w-10 rounded-2xl object-cover ring-1 ring-white/18" />
