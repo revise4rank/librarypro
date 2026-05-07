@@ -9,6 +9,7 @@ import {
   Settings as SettingsIcon,
   UserRound,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -114,7 +115,16 @@ export function DashboardShell({
           <div className="flex h-[50px] items-center border-b border-[var(--lp-border)] px-2">
             <div className={`flex w-full items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
               {sidebarExpanded ? (
-                <span className="truncate text-sm font-semibold tracking-tight text-[var(--lp-primary)]">{productLabel}</span>
+                <Link href={dashboardPathForRole(sessionUser?.role ?? "LIBRARY_OWNER")} className="flex min-w-0 items-center gap-2">
+                  <Image
+                    src="/icons/booklib-mark.png"
+                    alt="BookLib"
+                    width={88}
+                    height={44}
+                    className="h-8 w-10 rounded-lg bg-white object-contain p-1 ring-1 ring-[var(--lp-border)]"
+                  />
+                  <span className="truncate text-sm font-semibold tracking-tight text-[var(--lp-primary)]">{productLabel}</span>
+                </Link>
               ) : null}
               <button
                 type="button"
@@ -122,7 +132,15 @@ export function DashboardShell({
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-xs font-bold text-[var(--lp-primary)]"
                 aria-label={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
               >
-                {sidebarExpanded ? "<" : ">"}
+                {sidebarExpanded ? "<" : (
+                  <Image
+                    src="/icons/booklib-mark.png"
+                    alt="BookLib"
+                    width={88}
+                    height={44}
+                    className="h-6 w-7 object-contain"
+                  />
+                )}
               </button>
             </div>
           </div>
@@ -163,7 +181,13 @@ export function DashboardShell({
                   {mobileMenuOpen ? "X" : "="}
                 </button>
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--lp-primary)] sm:hidden">
-                  {productLabel}
+                  <Image
+                    src="/icons/booklib-mark.png"
+                    alt={productLabel}
+                    width={88}
+                    height={44}
+                    className="h-7 w-9 rounded-md bg-white object-contain p-0.5 ring-1 ring-[var(--lp-border)]"
+                  />
                 </span>
                 <h1 className="max-w-[44rem] truncate text-[1.15rem] font-semibold tracking-tight text-[var(--lp-text)]">
                   {title}

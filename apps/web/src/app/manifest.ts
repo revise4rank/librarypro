@@ -7,13 +7,18 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "BookLib brings together a library marketplace, owner dashboard, student portal, and QR-based attendance in one installable web app.",
     start_url: "/",
     display: "standalone",
-    background_color: "#fbf6ee",
-    theme_color: "#d2723d",
+    background_color: "#ffffff",
+    theme_color: "#071636",
     icons: [
       {
-        src: "/icons/booklib-icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
       },
     ],
   };

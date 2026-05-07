@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { PublicSiteHeader } from "../components/public-site-header";
 
@@ -384,9 +385,13 @@ export default function HomePage() {
               <div className="grid gap-6 lg:grid-cols-[1.2fr_1.8fr]">
                 <div>
                   <Link href="/" className="inline-flex items-center gap-3">
-                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-[#0F172A]">
-                      BL
-                    </span>
+                    <Image
+                      src="/icons/booklib-logo.png"
+                      alt="BookLib"
+                      width={143}
+                      height={116}
+                      className="h-14 w-20 rounded-2xl bg-white object-contain p-1.5"
+                    />
                     <span>
                       <span className="block text-[12px] font-semibold uppercase tracking-[0.28em] text-emerald-300">
                         BookLib

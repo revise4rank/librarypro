@@ -1,6 +1,6 @@
-const CACHE_NAME = "booklib-shell-v1";
+const CACHE_NAME = "booklib-shell-v2";
 const OFFLINE_URL = "/offline.html";
-const SHELL_ASSETS = ["/", "/marketplace", OFFLINE_URL, "/icons/booklib-icon.svg"];
+const SHELL_ASSETS = ["/", "/marketplace", OFFLINE_URL, "/favicon.ico", "/icons/booklib-logo.png", "/android-chrome-192x192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
