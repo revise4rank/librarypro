@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PublicLibraryPage } from "../../../../components/public-library-page";
 import { loadPublicLibrarySite } from "../../../../lib/public-library";
 
-export default async function LibraryPricingPage({
+export default async function LibraryFeaturesPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -17,7 +17,7 @@ export default async function LibraryPricingPage({
   return (
     <PublicLibraryPage
       profile={profile}
-      page="pricing"
+      page="features"
       links={{
         home: `/libraries/${profile.library_slug}`,
         about: `/libraries/${profile.library_slug}/about`,
@@ -30,3 +30,4 @@ export default async function LibraryPricingPage({
     />
   );
 }
+

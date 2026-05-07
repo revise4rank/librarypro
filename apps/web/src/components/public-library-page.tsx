@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Clock3, MapPin, QrCode, Sparkles, Star, UsersRound, Wifi } from "lucide-react";
+import { ArrowRight, BadgeCheck, IndianRupee, MapPin, QrCode, ShieldCheck, Sparkles, Star, Wifi, Zap } from "lucide-react";
 import { ContactActions } from "./contact-actions";
 import { formatLibraryHost } from "../lib/domain";
 import { PublicLibrarySite, PublicLibraryReview, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
@@ -9,10 +9,12 @@ import { LibraryReviewsPanel } from "./library-reviews-panel";
 type PublicLibraryPageProps = {
   profile: PublicLibrarySite;
   reviews?: PublicLibraryReview[];
-  page: "home" | "about" | "pricing" | "contact";
+  page: "home" | "about" | "features" | "gallery" | "pricing" | "contact";
   links: {
     home: string;
     about: string;
+    features: string;
+    gallery: string;
     pricing: string;
     contact: string;
   };
@@ -31,7 +33,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       href={item.href}
       className={`rounded-full px-3 py-2 text-xs font-semibold transition sm:text-sm ${
         active
-          ? "bg-emerald-300 text-slate-950 shadow-sm"
+          ? "bg-white text-slate-950 shadow-sm"
           : "text-white/78 hover:bg-white/10 hover:text-white"
       }`}
     >
@@ -96,15 +98,43 @@ export function PublicLibraryPage({
     : ["/library-gallery/study-hall.svg", "/library-gallery/reading-zone.svg", "/library-gallery/reception.svg"]).map(
     getGalleryUrl,
   );
-  const navItems: NavItem[] = [
-    { href: links.home, label: "Home", page: "home" },
-    { href: links.about, label: "About", page: "about" },
-    { href: links.pricing, label: "Pricing", page: "pricing" },
-    { href: links.contact, label: "Contact", page: "contact" },
-  ];
   const amenities = profile.amenities?.length
     ? profile.amenities
     : ["Silent study zone", "Comfort seating", "Owner managed", "Student access"];
+  const navItems: NavItem[] = [
+    { href: links.home, label: "Home", page: "home" },
+    { href: links.features, label: "Features", page: "features" },
+    { href: links.gallery, label: "Gallery", page: "gallery" },
+    { href: links.pricing, label: "Pricing", page: "pricing" },
+    { href: links.about, label: "About", page: "about" },
+    { href: links.contact, label: "Contact", page: "contact" },
+  ];
+  const premiumFeatures = [
+    {
+      icon: <Wifi className="h-5 w-5" />,
+      title: amenities[0] ?? "Silent study zones",
+      detail: "Owner-managed facilities are published directly from the BookLib website editor.",
+    },
+    {
+      icon: <QrCode className="h-5 w-5" />,
+      title: "Student access",
+      detail: "Students can use the same subdomain for login, QR entry, dues, notices, and daily actions.",
+    },
+    {
+      icon: <ShieldCheck className="h-5 w-5" />,
+      title: "Verified owner presence",
+      detail: "Contact details, hours, pricing, offers, gallery, and marketplace presence stay in sync.",
+    },
+    {
+      icon: <Zap className="h-5 w-5" />,
+      title: "Fast joining flow",
+      detail: "Prospective students can explore the site, call, WhatsApp, and reach the correct library portal.",
+    },
+  ];
+  const galleryHighlights = gallery.map((item, index) => ({
+    src: item,
+    label: index === 0 ? "Main study hall" : index === 1 ? "Reading zone" : index === 2 ? "Reception and entry" : `Gallery view ${index + 1}`,
+  }));
   const rating = profile.rating ?? "0.0";
   const reviewCount = profile.reviews ?? "0";
   const pageStyle = {
@@ -127,7 +157,7 @@ export function PublicLibraryPage({
             backgroundPosition: "center",
           }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(16,185,129,0.32),transparent_24%),radial-gradient(circle_at_86%_20%,rgba(251,191,36,0.18),transparent_22%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.12),rgba(2,6,23,0.42))]" />
 
         <header className="relative z-10 border-b border-white/10 bg-slate-950/40 backdrop-blur">
           <div className="mx-auto flex h-[58px] max-w-[1180px] items-center justify-between gap-3 px-4">
@@ -175,7 +205,7 @@ export function PublicLibraryPage({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-2 text-xs font-bold text-emerald-200 backdrop-blur">
               <Sparkles className="h-4 w-4" />
-              Premium library website
+              BookLib powered website
             </div>
             <h1 className="mt-5 max-w-3xl text-balance text-[clamp(2rem,4.8vw,3.75rem)] font-bold leading-[1.05] tracking-[-0.04em] text-white">
               {profile.hero_title}
@@ -250,10 +280,9 @@ export function PublicLibraryPage({
                   {profile.about_text ?? "This library website gives students one clean place to discover facilities, check pricing, contact the owner, log in, and continue daily study actions."}
                 </p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <FacilityCard icon={<UsersRound className="h-5 w-5" />} title="Student-first" detail="Simple access for login, QR, dues, and notices." />
-                  <FacilityCard icon={<QrCode className="h-5 w-5" />} title="QR ready" detail="Supports digital entry and owner-managed attendance." />
-                  <FacilityCard icon={<Wifi className="h-5 w-5" />} title="Amenities" detail={`${amenities.slice(0, 2).join(", ")}${amenities.length > 2 ? " and more" : ""}.`} />
-                  <FacilityCard icon={<Clock3 className="h-5 w-5" />} title="Clear hours" detail={profile.business_hours ?? "Daily study schedule shared by owner."} />
+                  {premiumFeatures.map((feature) => (
+                    <FacilityCard key={feature.title} icon={feature.icon} title={feature.title} detail={feature.detail} />
+                  ))}
                 </div>
               </SiteCard>
 
@@ -280,15 +309,103 @@ export function PublicLibraryPage({
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Visual tour</p>
                   <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950">See the study space before you visit.</h2>
                 </div>
-                <Link href={links.contact} className="text-sm font-black text-emerald-700">Book a visit</Link>
+                <Link href={links.gallery} className="text-sm font-black text-emerald-700">Open gallery</Link>
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
-                {gallery.slice(0, 3).map((item, index) => (
-                  <div key={`${item}-${index}`} className="aspect-[16/11] overflow-hidden rounded-xl bg-slate-100">
+                {galleryHighlights.slice(0, 3).map((item, index) => (
+                  <div key={`${item.src}-${index}`} className="aspect-[16/11] overflow-hidden rounded-xl bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item} alt={`${profile.library_name} gallery ${index + 1}`} className="h-full w-full object-cover transition duration-500 hover:scale-105" />
+                    <img src={item.src} alt={`${profile.library_name} ${item.label}`} className="h-full w-full object-cover transition duration-500 hover:scale-105" />
                   </div>
                 ))}
+              </div>
+            </SiteCard>
+          </div>
+        ) : null}
+
+        {page === "features" ? (
+          <div className="grid gap-5">
+            <SiteCard>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Features</p>
+                  <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-slate-950">Everything students expect from a serious study space.</h2>
+                </div>
+                <Link href={links.contact} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">
+                  Enquire now
+                </Link>
+              </div>
+              <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {premiumFeatures.map((feature) => (
+                  <FacilityCard key={feature.title} icon={feature.icon} title={feature.title} detail={feature.detail} />
+                ))}
+              </div>
+            </SiteCard>
+
+            <div className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
+              <SiteCard className="bg-slate-950 text-white">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Student flow</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-white">Explore, contact, join, and continue from one website.</h2>
+                <div className="mt-5 grid gap-3">
+                  {["Browse facilities and photos", "Check pricing and offers", "Contact owner by call or WhatsApp", "Use student login after joining"].map((item, index) => (
+                    <div key={item} className="flex gap-3 rounded-xl border border-white/12 bg-white/10 p-3">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-sm font-black text-slate-950">{index + 1}</span>
+                      <p className="text-sm font-bold leading-6 text-white/78">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </SiteCard>
+              <SiteCard>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Facilities list</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {amenities.map((amenity) => (
+                    <div key={amenity} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800">
+                      {amenity}
+                    </div>
+                  ))}
+                </div>
+              </SiteCard>
+            </div>
+          </div>
+        ) : null}
+
+        {page === "gallery" ? (
+          <div className="grid gap-5">
+            <SiteCard>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Gallery</p>
+                  <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-slate-950">A full visual tour before students visit.</h2>
+                </div>
+                <Link href={links.contact} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">
+                  Book visit
+                </Link>
+              </div>
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                {galleryHighlights.map((item, index) => (
+                  <figure key={`${item.src}-${index}`} className={index === 0 ? "md:col-span-2 md:row-span-2" : ""}>
+                    <div className="overflow-hidden rounded-xl bg-slate-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.src} alt={`${profile.library_name} ${item.label}`} className={`${index === 0 ? "aspect-[16/10]" : "aspect-[4/3]"} w-full object-cover transition duration-500 hover:scale-105`} />
+                    </div>
+                    <figcaption className="mt-2 text-sm font-bold text-slate-600">{item.label}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </SiteCard>
+
+            <SiteCard className="bg-slate-950 text-white">
+              <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Visit</p>
+                  <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-white">{profile.area ?? profile.city} study space with owner-managed access.</h2>
+                </div>
+                <ContactActions
+                  slugOrSubdomain={profile.subdomain}
+                  phone={profile.contact_phone}
+                  whatsappPhone={profile.whatsapp_phone}
+                  sourcePage="LIBRARY_SITE"
+                />
               </div>
             </SiteCard>
           </div>
@@ -320,7 +437,7 @@ export function PublicLibraryPage({
           <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
             <SiteCard className="bg-[linear-gradient(135deg,#0F172A,#115E59)] text-white">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Starting plan</p>
-              <p className="mt-4 text-3xl font-bold tracking-[-0.04em] text-white">Rs. {profile.starting_price}</p>
+              <p className="mt-4 flex items-center gap-2 text-3xl font-bold tracking-[-0.04em] text-white"><IndianRupee className="h-7 w-7" /> {profile.starting_price}</p>
               <p className="mt-3 text-sm leading-7 text-white/70">Starting monthly seat pricing shared by the owner. Final plan and discounts are confirmed during admission.</p>
               <div className="mt-5 rounded-2xl border border-white/12 bg-white/10 p-4 text-sm font-bold text-white">
                 {visibleOffer ?? "Ask owner for active discount offers and seat combinations."}
@@ -362,10 +479,10 @@ export function PublicLibraryPage({
             <SiteCard>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Visit preview</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {gallery.slice(0, 4).map((item, index) => (
-                  <div key={`${item}-${index}`} className="aspect-[16/11] overflow-hidden rounded-xl bg-slate-100">
+                {galleryHighlights.slice(0, 4).map((item, index) => (
+                  <div key={`${item.src}-${index}`} className="aspect-[16/11] overflow-hidden rounded-xl bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item} alt={`${profile.library_name} contact preview ${index + 1}`} className="h-full w-full object-cover" />
+                    <img src={item.src} alt={`${profile.library_name} contact preview ${index + 1}`} className="h-full w-full object-cover" />
                   </div>
                 ))}
               </div>

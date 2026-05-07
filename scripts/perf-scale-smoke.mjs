@@ -55,6 +55,15 @@ async function main() {
     }),
   );
 
+  results.push(
+    await runScenario("Public library website", {
+      url: `${WEB_BASE}/libraries/focus-library/features`,
+      connections: Math.max(10, Number(process.env.PERF_CONNECTIONS ?? 50) / 2),
+      duration: Number(process.env.PERF_DURATION_SECONDS ?? 20),
+      pipelining: 1,
+    }),
+  );
+
   const summary = results.map((result) => ({
     url: result.url,
     reqPerSec: Math.round(result.requests.average),

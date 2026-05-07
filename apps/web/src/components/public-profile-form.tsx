@@ -67,13 +67,22 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
 
   const amenitiesInput = useMemo(() => values.amenities.join(", "), [values.amenities]);
   const galleryInput = useMemo(() => values.galleryImages.join(", "), [values.galleryImages]);
+  const siteHost = values.subdomain ? formatLibraryHost(values.subdomain) : "";
+  const sitePages = [
+    { label: "Home", path: "/", source: "Hero, offer, quick gallery" },
+    { label: "Features", path: "/features", source: "Amenities and student flow" },
+    { label: "Gallery", path: "/gallery", source: "Uploaded photos" },
+    { label: "Pricing", path: "/pricing", source: "Starting price and offer" },
+    { label: "About", path: "/about", source: "About text and facilities" },
+    { label: "Contact", path: "/contact", source: "Phone, WhatsApp, address" },
+  ];
   const sections = [
     ["identity", "Identity"],
     ["hero", "Hero"],
     ["theme", "Theme"],
     ["contact", "Contact"],
     ["seo", "SEO"],
-    ["gallery", "Gallery"],
+    ["gallery", "Pages & Gallery"],
   ] as const;
 
   useEffect(() => {
@@ -212,6 +221,21 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
         </div>
         {statusMessage ? <p className="text-sm font-semibold text-emerald-700">{statusMessage}</p> : null}
         {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
+        {siteHost ? (
+          <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3 lg:grid-cols-6">
+            {sitePages.map((item) => (
+              <a
+                key={item.label}
+                href={`https://${siteHost}${item.path === "/" ? "" : item.path}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:border-[var(--lp-accent)] hover:text-[var(--lp-accent-strong)]"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
@@ -417,17 +441,28 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
 
       {activeSection === "gallery" ? (
         <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
-          <h2 className="text-2xl font-black text-slate-950">Amenities and gallery</h2>
+          <h2 className="text-2xl font-black text-slate-950">Pages, amenities and gallery</h2>
           <div className="mt-6 grid gap-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {sitePages.map((item) => (
+                <div key={item.label} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-black text-slate-950">{item.label}</p>
+                  <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{item.source}</p>
+                  <p className="mt-3 truncate text-xs font-bold text-[var(--lp-accent-strong)]">{siteHost ? `${siteHost}${item.path === "/" ? "" : item.path}` : "Add subdomain first"}</p>
+                </div>
+              ))}
+            </div>
             <textarea
               value={amenitiesInput}
               onChange={(event) => updateValue("amenities", event.target.value.split(",").map((item) => item.trim()).filter(Boolean))}
               className="min-h-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none"
+              placeholder="Amenities for Features/About pages, comma separated"
             />
             <textarea
               value={galleryInput}
               onChange={(event) => updateValue("galleryImages", event.target.value.split(",").map((item) => item.trim()).filter(Boolean))}
               className="min-h-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none"
+              placeholder="Gallery image URLs for Gallery/Home/Contact pages, comma separated"
             />
             <PublicProfileImageUpload
               label="Upload gallery photo"

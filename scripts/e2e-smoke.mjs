@@ -124,6 +124,9 @@ async function main() {
   await checkHomePage();
   await checkWeb("/marketplace", 200);
   await checkWeb("/libraries/focus-library", 200);
+  await checkWeb("/libraries/focus-library/features", 200);
+  await checkWeb("/libraries/focus-library/gallery", 200);
+  await checkWeb("/libraries/focus-library/pricing", 200);
   await checkWeb("/owner/login", 200);
   await checkWeb("/student/login?library=focuslibrary", 200);
   await checkWeb("/student/settings", 307);

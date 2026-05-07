@@ -28,7 +28,7 @@ function UnavailableLibrarySite() {
 }
 
 export async function renderTenantLibraryPage(
-  page: "home" | "about" | "pricing" | "contact",
+  page: "home" | "about" | "features" | "gallery" | "pricing" | "contact",
   searchParams?: Promise<{ slug?: string }>,
 ) {
   const headerStore = await headers();
@@ -52,12 +52,16 @@ export async function renderTenantLibraryPage(
     ? {
         home: "/",
         about: "/about",
+        features: "/features",
+        gallery: "/gallery",
         pricing: "/pricing",
         contact: "/contact",
       }
     : {
         home: `/library-site?slug=${profile.subdomain}`,
         about: `/libraries/${profile.library_slug}/about`,
+        features: `/libraries/${profile.library_slug}/features`,
+        gallery: `/libraries/${profile.library_slug}/gallery`,
         pricing: `/libraries/${profile.library_slug}/pricing`,
         contact: `/libraries/${profile.library_slug}/contact`,
       };

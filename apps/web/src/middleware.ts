@@ -134,7 +134,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(internalRewriteUrl(request, "/library-site"), { request: { headers: requestHeaders } });
     }
 
-    if (url.pathname === "/about" || url.pathname === "/pricing" || url.pathname === "/contact") {
+    if (url.pathname === "/about" || url.pathname === "/features" || url.pathname === "/gallery" || url.pathname === "/pricing" || url.pathname === "/contact") {
       return NextResponse.rewrite(internalRewriteUrl(request, `/library-site${url.pathname}`), { request: { headers: requestHeaders } });
     }
 

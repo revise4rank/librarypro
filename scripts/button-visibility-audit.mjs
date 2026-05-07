@@ -14,6 +14,8 @@ const auditedPages = [
   { key: "public-home", auth: "public", path: "/" },
   { key: "marketplace", auth: "public", path: "/marketplace" },
   { key: "library-slug-home", auth: "public", path: "/libraries/focus-library" },
+  { key: "library-slug-features", auth: "public", path: "/libraries/focus-library/features" },
+  { key: "library-slug-gallery", auth: "public", path: "/libraries/focus-library/gallery" },
   { key: "library-slug-pricing", auth: "public", path: "/libraries/focus-library/pricing" },
   { key: "library-slug-contact", auth: "public", path: "/libraries/focus-library/contact" },
   { key: "owner-dashboard", auth: "owner", path: "/owner/dashboard" },

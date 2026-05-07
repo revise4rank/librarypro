@@ -21,6 +21,8 @@ export default async function LibraryAboutPage({
       links={{
         home: `/libraries/${profile.library_slug}`,
         about: `/libraries/${profile.library_slug}/about`,
+        features: `/libraries/${profile.library_slug}/features`,
+        gallery: `/libraries/${profile.library_slug}/gallery`,
         pricing: `/libraries/${profile.library_slug}/pricing`,
         contact: `/libraries/${profile.library_slug}/contact`,
       }}
