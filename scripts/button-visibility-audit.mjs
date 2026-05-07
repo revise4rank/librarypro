@@ -11,11 +11,14 @@ const credentials = {
 };
 
 const auditedPages = [
+  { key: "public-home", auth: "public", path: "/" },
   { key: "marketplace", auth: "public", path: "/marketplace" },
   { key: "library-slug-home", auth: "public", path: "/libraries/focus-library" },
   { key: "library-slug-pricing", auth: "public", path: "/libraries/focus-library/pricing" },
   { key: "library-slug-contact", auth: "public", path: "/libraries/focus-library/contact" },
   { key: "owner-dashboard", auth: "owner", path: "/owner/dashboard" },
+  { key: "owner-plans", auth: "owner", path: "/owner/plans" },
+  { key: "owner-coupons", auth: "owner", path: "/owner/coupons" },
   { key: "owner-admissions", auth: "owner", path: "/owner/admissions" },
   { key: "owner-admins", auth: "owner", path: "/owner/admins" },
   { key: "owner-students", auth: "owner", path: "/owner/students" },

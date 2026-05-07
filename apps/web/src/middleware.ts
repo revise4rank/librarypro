@@ -120,10 +120,6 @@ export function middleware(request: NextRequest) {
   }
 
   if (host === (process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "booklib.in").toLowerCase() || host.startsWith("www.")) {
-    if (url.pathname === "/") {
-      return NextResponse.redirect(publicUrl(request, "/marketplace"));
-    }
-
     return NextResponse.next();
   }
 

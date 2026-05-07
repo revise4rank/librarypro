@@ -15,10 +15,12 @@ const viewports = [
 ];
 
 const pages = [
+  { key: "public_home", path: "/", auth: "public" },
   { key: "marketplace", path: "/marketplace", auth: "public" },
   { key: "library_home", path: "/libraries/focus-library", auth: "public" },
   { key: "library_site", path: "/library-site?slug=focuslibrary", auth: "public" },
   { key: "owner_dashboard", path: "/owner/dashboard", auth: "owner" },
+  { key: "owner_plans", path: "/owner/plans", auth: "owner" },
   { key: "owner_reports", path: "/owner/reports", auth: "owner" },
   { key: "owner_payments", path: "/owner/payments", auth: "owner" },
   { key: "owner_seats", path: "/owner/seats", auth: "owner" },

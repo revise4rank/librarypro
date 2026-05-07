@@ -105,12 +105,23 @@ async function checkWeb(path, expectedStatus = 200) {
   if (response.status !== expectedStatus) {
     throw new Error(`Web route ${path} expected ${expectedStatus} but got ${response.status}`);
   }
+  return response;
+}
+
+async function checkHomePage() {
+  const response = await checkWeb("/", 200);
+  const body = await response.text();
+  for (const required of ['id="features"', 'id="pricing"', "Start Free Trial", "Explore Libraries"]) {
+    if (!body.includes(required)) {
+      throw new Error(`Homepage missing required landing content: ${required}`);
+    }
+  }
 }
 
 async function main() {
   console.info("Running BookLib E2E smoke...");
 
-  await checkWeb("/", 307);
+  await checkHomePage();
   await checkWeb("/marketplace", 200);
   await checkWeb("/libraries/focus-library", 200);
   await checkWeb("/owner/login", 200);

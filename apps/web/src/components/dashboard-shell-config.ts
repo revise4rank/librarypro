@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   ShieldCheck,
   Store,
+  Tags,
   UserRound,
   UserPlus,
   Users,
@@ -26,6 +27,8 @@ export type DashboardNavItem = {
 
 const navIconMap: Record<string, LucideIcon> = {
   "/owner/dashboard": LayoutDashboard,
+  "/owner/plans": CreditCard,
+  "/owner/coupons": Tags,
   "/owner/students": Users,
   "/owner/seats": Armchair,
   "/owner/checkins": CalendarCheck,
