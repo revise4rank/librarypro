@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { formatLibraryHost } from "../lib/domain";
+import { resolvePublicAssetUrl } from "../lib/public-library";
 import { PublicProfileImageUpload } from "./public-profile-image-upload";
 
 type PublicProfileFormProps = {
@@ -184,6 +185,8 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
   const normalizedPages = useMemo(() => normalizeSitePages(values.sitePages), [values.sitePages]);
   const currentPage = normalizedPages[activePage] ?? defaultPageConfigs[activePage];
   const enabledPageCount = pageOrder.filter((item) => normalizedPages[item.key]?.enabled !== false).length;
+  const brandLogoPreviewUrl = resolvePublicAssetUrl(values.brandLogoUrl);
+  const heroBannerPreviewUrl = resolvePublicAssetUrl(values.heroBannerUrl);
   const sections = [
     ["identity", "Identity"],
     ["hero", "Hero"],
@@ -440,10 +443,10 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
             <div className="mt-6 grid gap-4">
               <div className="rounded-xl bg-[#fff7ef] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-primary)]">Brand logo</p>
-                {values.brandLogoUrl ? (
+                {brandLogoPreviewUrl ? (
                   <div className="mt-3 flex items-center gap-4 rounded-2xl border border-[var(--lp-border)] bg-white p-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={values.brandLogoUrl} alt="Brand logo preview" className="h-16 w-16 rounded-2xl object-cover ring-1 ring-slate-200" />
+                    <img src={brandLogoPreviewUrl} alt="Brand logo preview" className="h-16 w-16 rounded-2xl object-cover ring-1 ring-slate-200" />
                     <div className="min-w-0">
                       <p className="text-sm font-black text-slate-950">Logo ready</p>
                       <p className="truncate text-xs font-semibold text-slate-500">{values.brandLogoUrl}</p>
@@ -466,10 +469,10 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
               </div>
               <div className="rounded-xl bg-[#eef7f5] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-accent)]">Hero banner</p>
-                {values.heroBannerUrl ? (
+                {heroBannerPreviewUrl ? (
                   <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--lp-border)] bg-white p-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={values.heroBannerUrl} alt="Hero banner preview" className="aspect-[16/7] w-full rounded-xl object-cover" />
+                    <img src={heroBannerPreviewUrl} alt="Hero banner preview" className="aspect-[16/7] w-full rounded-xl object-cover" />
                   </div>
                 ) : null}
                 <input
@@ -499,9 +502,9 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Hero image</p>
               <div className="mt-3 overflow-hidden rounded-xl bg-slate-100">
-                {values.heroBannerUrl ? (
+                {heroBannerPreviewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={values.heroBannerUrl} alt="Hero banner preview" className="aspect-[16/10] w-full object-cover" />
+                  <img src={heroBannerPreviewUrl} alt="Hero banner preview" className="aspect-[16/10] w-full object-cover" />
                 ) : (
                   <div className="grid aspect-[16/10] place-items-center px-4 text-center text-sm font-semibold text-slate-500">
                     Upload a wide banner to make the public site look premium.
@@ -753,7 +756,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                     <div key={`${url}-${index}`} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                       <div className="aspect-[4/3] bg-slate-100">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt={`Gallery ${index + 1}`} className="h-full w-full object-cover" />
+                        <img src={resolvePublicAssetUrl(url) ?? url} alt={`Gallery ${index + 1}`} className="h-full w-full object-cover" />
                       </div>
                       <div className="grid gap-3 p-4">
                         <p className="truncate text-sm font-semibold text-slate-600">{url}</p>
