@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import type { user_role } from "../types/generated";
 
-type UserRow = {
+export type UserRow = {
   id: string;
   full_name: string;
   email: string | null;
@@ -78,6 +78,20 @@ export class AuthRepository {
       LIMIT 1
       `,
       [userId],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async findUserByEmail(email: string) {
+    const result = await this.pool.query<UserRow>(
+      `
+      SELECT id, full_name, email, phone, student_code, password_hash, global_role, session_version
+      FROM users
+      WHERE LOWER(email) = LOWER($1)
+      LIMIT 1
+      `,
+      [email],
     );
 
     return result.rows[0] ?? null;

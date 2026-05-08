@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiFetch, saveSession } from "../lib/api";
+import { GoogleOAuthButton } from "./owner-login-form";
 
 export function OwnerRegisterManager() {
   const router = useRouter();
@@ -55,7 +56,14 @@ export function OwnerRegisterManager() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
+    <div className="grid gap-4">
+      <GoogleOAuthButton role="LIBRARY_OWNER" next="/owner/settings" />
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <span className="h-px bg-slate-200" />
+        <span>Create with email</span>
+        <span className="h-px bg-slate-200" />
+      </div>
+      <form onSubmit={onSubmit} className="grid gap-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <input
           value={fullName}
@@ -120,6 +128,7 @@ export function OwnerRegisterManager() {
           I already have access
         </Link>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }

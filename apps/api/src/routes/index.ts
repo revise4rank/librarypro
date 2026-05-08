@@ -1,5 +1,20 @@
 import { Router } from "express";
-import { changePasswordController, loginController, logoutController, meController, ownerRegisterController, studentRegisterController, updateMeController } from "../controllers/auth.controller";
+import {
+  changePasswordController,
+  forgotPasswordController,
+  googleOAuthCallbackController,
+  googleOAuthCompleteController,
+  googleOAuthStartController,
+  googleOAuthStatusController,
+  googleOAuthTicketController,
+  loginController,
+  logoutController,
+  meController,
+  ownerRegisterController,
+  resetPasswordController,
+  studentRegisterController,
+  updateMeController,
+} from "../controllers/auth.controller";
 import { razorpayWebhookController } from "../controllers/billing.controller";
 import {
   getBillingSubscriptionController,
@@ -136,6 +151,13 @@ import { requireRole } from "../middleware/require-role.middleware";
 export const router = Router();
 
 router.post("/auth/login", asyncHandler(loginController));
+router.post("/auth/forgot-password", asyncHandler(forgotPasswordController));
+router.post("/auth/reset-password", asyncHandler(resetPasswordController));
+router.get("/auth/google/status", asyncHandler(googleOAuthStatusController));
+router.get("/auth/google/start", asyncHandler(googleOAuthStartController));
+router.get("/auth/google/callback", asyncHandler(googleOAuthCallbackController));
+router.get("/auth/google/ticket", asyncHandler(googleOAuthTicketController));
+router.post("/auth/google/complete", asyncHandler(googleOAuthCompleteController));
 router.post("/auth/owner/register", asyncHandler(ownerRegisterController));
 router.post("/auth/student/register", asyncHandler(studentRegisterController));
 router.post("/auth/logout", asyncHandler(logoutController));

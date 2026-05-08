@@ -74,6 +74,14 @@ const envSchema = z.object({
   supabaseUrl: z.string().default(""),
   supabaseServiceRoleKey: z.string().default(""),
   supabaseBucket: z.string().min(1).default("booklib-assets"),
+  googleOAuthClientId: z.string().default(""),
+  googleOAuthClientSecret: z.string().default(""),
+  googleOAuthRedirectUrl: z.string().default(""),
+  smtpHost: z.string().default(""),
+  smtpPort: z.coerce.number().int().positive().default(587),
+  smtpUser: z.string().default(""),
+  smtpPass: z.string().default(""),
+  reportFromEmail: z.string().default(""),
 }).superRefine((value, context) => {
   if (isProductionEnv && value.jwtSecret.length < 32) {
     context.addIssue({
@@ -144,4 +152,12 @@ export const env = envSchema.parse({
   supabaseUrl: process.env.SUPABASE_URL ?? "",
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   supabaseBucket: process.env.SUPABASE_BUCKET ?? "booklib-assets",
+  googleOAuthClientId: process.env.GOOGLE_OAUTH_CLIENT_ID ?? "",
+  googleOAuthClientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? "",
+  googleOAuthRedirectUrl: process.env.GOOGLE_OAUTH_REDIRECT_URL ?? "",
+  smtpHost: process.env.SMTP_HOST ?? "",
+  smtpPort: process.env.SMTP_PORT ?? 587,
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPass: process.env.SMTP_PASS ?? "",
+  reportFromEmail: process.env.REPORT_FROM_EMAIL ?? "",
 });

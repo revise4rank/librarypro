@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiFetch, saveSession } from "../lib/api";
+import { GoogleOAuthButton } from "./owner-login-form";
 
 export function StudentRegisterManager() {
   const router = useRouter();
@@ -48,7 +49,14 @@ export function StudentRegisterManager() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-8 grid gap-4">
+    <div className="mt-8 grid gap-4">
+      <GoogleOAuthButton role="STUDENT" next="/student/join-library" />
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <span className="h-px bg-slate-200" />
+        <span>Create with email</span>
+        <span className="h-px bg-slate-200" />
+      </div>
+      <form onSubmit={onSubmit} className="grid gap-4">
       <input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Full name" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Phone" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
@@ -65,6 +73,7 @@ export function StudentRegisterManager() {
           Find student portal
         </Link>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }

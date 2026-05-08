@@ -52,6 +52,12 @@ services:
         sync: false
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_REDIRECT_URL
+        sync: false
       - key: SENTRY_DSN
         sync: false
       - key: OTEL_SERVICE_NAME

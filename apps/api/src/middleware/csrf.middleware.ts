@@ -2,6 +2,14 @@ import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../lib/errors";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const PUBLIC_AUTH_PATHS = new Set([
+  "/v1/auth/login",
+  "/v1/auth/forgot-password",
+  "/v1/auth/reset-password",
+  "/v1/auth/google/complete",
+  "/v1/auth/owner/register",
+  "/v1/auth/student/register",
+]);
 
 function readCookie(headerValue: string | undefined, name: string) {
   if (!headerValue) {
@@ -22,6 +30,11 @@ function readCookie(headerValue: string | undefined, name: string) {
 
 export function csrfProtectionMiddleware(req: Request, _res: Response, next: NextFunction) {
   if (SAFE_METHODS.has(req.method.toUpperCase())) {
+    req.csrf = { required: false, validated: true };
+    return next();
+  }
+
+  if (PUBLIC_AUTH_PATHS.has(req.path)) {
     req.csrf = { required: false, validated: true };
     return next();
   }

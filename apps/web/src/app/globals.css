@@ -362,6 +362,15 @@ button:disabled {
     font-size: 13px;
   }
 
+  .lp-density-surface {
+    --lp-mobile-card-pad: 0.75rem;
+    --lp-mobile-tight-pad: 0.625rem;
+  }
+
+  .lp-density-surface .lp-shell-container {
+    max-width: 100%;
+  }
+
   .lp-title-xl {
     font-size: clamp(1.9rem, 12vw, 3rem);
   }
@@ -375,10 +384,42 @@ button:disabled {
     border-radius: 0.9rem !important;
   }
 
+  .lp-density-surface [class*="rounded-2xl"],
+  .lp-density-surface [class*="rounded-xl"] {
+    border-radius: 0.65rem !important;
+  }
+
+  .lp-density-surface [class*="p-4"],
+  .lp-density-surface [class*="p-5"],
+  .lp-density-surface [class*="p-6"],
+  .lp-density-surface [class*="px-4"][class*="py-4"],
+  .lp-density-surface [class*="px-5"][class*="py-5"] {
+    padding: var(--lp-mobile-card-pad) !important;
+  }
+
+  .lp-density-surface [class*="px-4"][class*="py-3"],
+  .lp-density-surface [class*="px-4"][class*="py-2"],
+  .lp-density-surface [class*="px-5"][class*="py-3"] {
+    padding-inline: var(--lp-mobile-tight-pad) !important;
+  }
+
   [class*="p-8"],
   [class*="p-10"],
   [class*="p-12"] {
     padding: 1.25rem !important;
+  }
+
+  .lp-density-surface [class*="gap-4"],
+  .lp-density-surface [class*="gap-5"],
+  .lp-density-surface [class*="gap-6"] {
+    gap: 0.75rem !important;
+  }
+
+  .lp-density-surface [class*="mt-6"],
+  .lp-density-surface [class*="mt-8"],
+  .lp-density-surface [class*="mt-10"],
+  .lp-density-surface [class*="mt-12"] {
+    margin-top: 1rem !important;
   }
 
   [class*="py-20"],
@@ -397,5 +438,58 @@ button:disabled {
   [class*="tracking-[0.2"],
   [class*="tracking-[0.3"] {
     letter-spacing: 0.08em !important;
+  }
+
+  .lp-density-surface [class*="text-2xl"],
+  .lp-density-surface [class*="text-3xl"],
+  .lp-density-surface [class*="text-4xl"] {
+    font-size: clamp(1.2rem, 6vw, 1.55rem) !important;
+    line-height: 1.12 !important;
+  }
+
+  .lp-density-surface [class*="text-xl"] {
+    font-size: 1.05rem !important;
+    line-height: 1.18 !important;
+  }
+
+  .lp-density-surface p,
+  .lp-density-surface span,
+  .lp-density-surface h1,
+  .lp-density-surface h2,
+  .lp-density-surface h3,
+  .lp-density-surface h4,
+  .lp-density-surface a,
+  .lp-density-surface button,
+  .lp-density-surface td,
+  .lp-density-surface th {
+    overflow-wrap: anywhere;
+  }
+
+  .lp-density-surface input,
+  .lp-density-surface select,
+  .lp-density-surface textarea {
+    min-height: 2.55rem;
+    padding-inline: 0.75rem !important;
+  }
+
+  .lp-density-surface button,
+  .lp-density-surface .lp-button,
+  .lp-density-surface a[class*="px-4"] {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .lp-density-surface [class*="grid-cols-["] {
+    min-width: 0;
+  }
+
+  .lp-density-surface [class*="overflow-hidden"][class*="border"] {
+    overflow-x: auto;
+  }
+
+  .lp-density-surface [class*="w-72"],
+  .lp-density-surface [class*="w-80"],
+  .lp-density-surface [class*="w-96"] {
+    width: min(100vw - 1.5rem, 22rem) !important;
   }
 }

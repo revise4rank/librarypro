@@ -16,7 +16,7 @@ export default async function MarketplacePage() {
   const bannerSlides = marketplaceSettings.bannerSlides;
 
   return (
-    <main className="min-h-screen bg-[#FAFAFA] text-[#0F172A]">
+    <main className="lp-density-surface min-h-screen bg-[#FAFAFA] text-[#0F172A]">
       <PublicSiteHeader activeLabel="Features" />
 
       <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
@@ -59,7 +59,7 @@ export default async function MarketplacePage() {
         </div>
       </section>
 
-      <section id="marketplace-search" className="mx-auto max-w-[1280px] px-4 py-5 pb-16">
+      <section id="marketplace-search" className="mx-auto w-full max-w-[1280px] px-3 py-4 pb-16 sm:px-4 sm:py-5">
         <Suspense fallback={<div className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,251,245,0.96)] p-6 text-sm font-medium text-[var(--lp-muted)]">Loading marketplace search...</div>}>
           <MarketplaceSearch />
         </Suspense>

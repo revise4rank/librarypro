@@ -5,6 +5,43 @@ export const loginBodySchema = z.object({
   password: z.string().min(6),
 });
 
+export const forgotPasswordBodySchema = z.object({
+  login: z.string().trim().min(3).max(180),
+});
+
+export const resetPasswordBodySchema = z.object({
+  token: z.string().trim().min(20),
+  password: z.string().min(6).max(120),
+});
+
+export const googleOAuthRoleSchema = z.enum(["LIBRARY_OWNER", "STUDENT"]);
+
+export const googleOAuthStatusQuerySchema = z.object({});
+
+export const googleOAuthStartQuerySchema = z.object({
+  role: googleOAuthRoleSchema,
+  next: z.string().trim().max(300).optional().or(z.literal("")),
+  library: z.string().trim().max(80).optional().or(z.literal("")),
+});
+
+export const googleOAuthCallbackQuerySchema = z.object({
+  code: z.string().trim().min(1).optional(),
+  state: z.string().trim().min(1).optional(),
+  error: z.string().trim().max(200).optional(),
+});
+
+export const googleOAuthTicketQuerySchema = z.object({
+  ticket: z.string().trim().min(20),
+});
+
+export const googleOAuthCompleteBodySchema = z.object({
+  ticket: z.string().trim().min(20),
+  fullName: z.string().trim().min(2).max(150).optional().or(z.literal("")),
+  phone: z.string().trim().min(6).max(20).optional().or(z.literal("")),
+  libraryName: z.string().trim().min(2).max(180).optional().or(z.literal("")),
+  city: z.string().trim().min(2).max(120).optional().or(z.literal("")),
+});
+
 export const studentRegisterBodySchema = z.object({
   fullName: z.string().trim().min(2).max(150),
   email: z.string().trim().email().optional().or(z.literal("")),

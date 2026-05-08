@@ -310,9 +310,9 @@ export function MarketplaceSearch() {
   );
 
   return (
-    <div className="grid gap-4 pb-24 xl:pb-0">
-      <div className="grid gap-4">
-        <section className="sticky top-[50px] z-20 rounded-xl border border-[var(--lp-border)] bg-[rgba(255,255,255,0.96)] p-3 shadow-sm backdrop-blur">
+    <div className="grid min-w-0 gap-4 pb-24 xl:pb-0">
+      <div className="grid min-w-0 gap-4">
+        <section className="sticky top-[50px] z-20 min-w-0 rounded-xl border border-[var(--lp-border)] bg-[rgba(255,255,255,0.96)] p-3 shadow-sm backdrop-blur">
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(180px,0.55fr)_minmax(150px,0.45fr)_auto] xl:items-end">
             <div className="relative">
               <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
@@ -405,7 +405,7 @@ export function MarketplaceSearch() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-sm">
+        <section className="min-w-0 rounded-xl border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="lp-label text-[var(--lp-accent)]">Libraries</p>
@@ -442,8 +442,8 @@ export function MarketplaceSearch() {
         ) : null}
 
         {!loading ? (
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid min-w-0 gap-4">
+            <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {visibleResults.map((library, index) => (
                 <Link
                   key={`${library.subdomain}-${library.library_slug}`}

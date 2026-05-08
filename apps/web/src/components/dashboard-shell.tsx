@@ -287,7 +287,7 @@ export function DashboardShell({
             </div>
           </header>
 
-          <section className="lp-shell-container px-3 py-3 pb-24 sm:px-4 lg:py-4 lg:pb-6">{children}</section>
+          <section className="lp-shell-container px-2.5 py-2.5 pb-24 sm:px-4 sm:py-3 lg:py-4 lg:pb-6">{children}</section>
         </div>
       </div>
 
@@ -383,7 +383,7 @@ export function DashboardCard({
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
-    <section className={`rounded-lg border border-[var(--lp-border)] p-4 shadow-sm ${tone}`}>
+    <section className={`rounded-lg border border-[var(--lp-border)] p-3 shadow-sm sm:p-4 ${tone}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-[var(--lp-text)]">{title}</h3>
