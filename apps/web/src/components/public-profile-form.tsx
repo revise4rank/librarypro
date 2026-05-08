@@ -29,6 +29,7 @@ type PublicProfileFormProps = {
     themeSurface: string;
     amenities: string[];
     galleryImages: string[];
+    sitePages: SitePagesConfig;
     published: boolean;
   };
   requestedAction?: "save-draft" | "publish" | null;
@@ -44,6 +45,92 @@ type SaveResponse = {
   };
 };
 
+type SitePageKey = "home" | "features" | "gallery" | "pricing" | "about" | "contact";
+
+type SitePageConfig = {
+  enabled: boolean;
+  navLabel: string;
+  title: string;
+  subtitle: string;
+  body: string;
+  layout: "classic" | "split" | "spotlight" | "compact";
+  items: { title: string; detail: string }[];
+};
+
+type SitePagesConfig = Partial<Record<SitePageKey, SitePageConfig>>;
+
+const pageOrder: { key: SitePageKey; label: string; path: string; source: string }[] = [
+  { key: "home", label: "Home", path: "/", source: "Landing copy, offer, quick gallery" },
+  { key: "features", label: "Features", path: "/features", source: "Facilities, student flow, feature cards" },
+  { key: "gallery", label: "Gallery", path: "/gallery", source: "Photo tour headline and layout" },
+  { key: "pricing", label: "Pricing", path: "/pricing", source: "Plan cards and offer explanation" },
+  { key: "about", label: "About", path: "/about", source: "Library story and trust points" },
+  { key: "contact", label: "Contact", path: "/contact", source: "Contact page intro and visit CTA" },
+];
+
+const defaultPageConfigs: Record<SitePageKey, SitePageConfig> = {
+  home: {
+    enabled: true,
+    navLabel: "Home",
+    title: "Why students choose us",
+    subtitle: "A calmer study day, from seat to check-in.",
+    body: "",
+    layout: "split",
+    items: [],
+  },
+  features: {
+    enabled: true,
+    navLabel: "Features",
+    title: "Everything students expect from a serious study space.",
+    subtitle: "Facilities, access, and daily student workflows are published from this page.",
+    body: "",
+    layout: "classic",
+    items: [
+      { title: "Silent study zone", detail: "Focused seating and a calm study environment." },
+      { title: "Student access", detail: "Login, QR entry, dues, and notices from the same subdomain." },
+    ],
+  },
+  gallery: {
+    enabled: true,
+    navLabel: "Gallery",
+    title: "A full visual tour before students visit.",
+    subtitle: "Show reception, desks, reading areas, and exterior photos.",
+    body: "",
+    layout: "spotlight",
+    items: [],
+  },
+  pricing: {
+    enabled: true,
+    navLabel: "Pricing",
+    title: "Starting plans and current offers",
+    subtitle: "Students can understand the starting price before contacting the owner.",
+    body: "",
+    layout: "split",
+    items: [
+      { title: "Monthly seat", detail: "Owner confirms exact plan and availability during admission." },
+      { title: "Included access", detail: "Student login, QR entry support, and notices." },
+    ],
+  },
+  about: {
+    enabled: true,
+    navLabel: "About",
+    title: "About the library",
+    subtitle: "Tell students what makes this study space reliable.",
+    body: "",
+    layout: "classic",
+    items: [],
+  },
+  contact: {
+    enabled: true,
+    navLabel: "Contact",
+    title: "Talk to the library owner.",
+    subtitle: "Students can call, WhatsApp, or visit after checking the address.",
+    body: "",
+    layout: "compact",
+    items: [],
+  },
+};
+
 function moveImage(images: string[], index: number, direction: -1 | 1) {
   const nextIndex = index + direction;
   if (nextIndex < 0 || nextIndex >= images.length) {
@@ -56,37 +143,59 @@ function moveImage(images: string[], index: number, direction: -1 | 1) {
   return next;
 }
 
+function normalizeSitePages(input: SitePagesConfig = {}): SitePagesConfig {
+  return pageOrder.reduce<SitePagesConfig>((acc, page) => {
+    acc[page.key] = {
+      ...defaultPageConfigs[page.key],
+      ...(input[page.key] ?? {}),
+      items: input[page.key]?.items?.length ? input[page.key]?.items ?? [] : defaultPageConfigs[page.key].items,
+    };
+    return acc;
+  }, {});
+}
+
+function itemsToLines(items: SitePageConfig["items"]) {
+  return items.map((item) => `${item.title} | ${item.detail}`).join("\n");
+}
+
+function linesToItems(value: string) {
+  return value
+    .split("\n")
+    .map((line) => {
+      const [title, ...detailParts] = line.split("|");
+      return { title: title.trim(), detail: detailParts.join("|").trim() };
+    })
+    .filter((item) => item.title || item.detail);
+}
+
 export function PublicProfileForm({ initialValues, requestedAction = null, onActionHandled }: PublicProfileFormProps) {
-  const [values, setValues] = useState(initialValues);
+  const [values, setValues] = useState({ ...initialValues, sitePages: normalizeSitePages(initialValues.sitePages) });
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
   const [subdomainState, setSubdomainState] = useState<"unknown" | "available" | "taken">("unknown");
-  const [activeSection, setActiveSection] = useState<"identity" | "hero" | "theme" | "contact" | "seo" | "gallery">("identity");
+  const [activeSection, setActiveSection] = useState<"identity" | "hero" | "pages" | "theme" | "contact" | "seo" | "gallery">("identity");
+  const [activePage, setActivePage] = useState<SitePageKey>("home");
 
   const amenitiesInput = useMemo(() => values.amenities.join(", "), [values.amenities]);
   const galleryInput = useMemo(() => values.galleryImages.join(", "), [values.galleryImages]);
   const siteHost = values.subdomain ? formatLibraryHost(values.subdomain) : "";
-  const sitePages = [
-    { label: "Home", path: "/", source: "Hero, offer, quick gallery" },
-    { label: "Features", path: "/features", source: "Amenities and student flow" },
-    { label: "Gallery", path: "/gallery", source: "Uploaded photos" },
-    { label: "Pricing", path: "/pricing", source: "Starting price and offer" },
-    { label: "About", path: "/about", source: "About text and facilities" },
-    { label: "Contact", path: "/contact", source: "Phone, WhatsApp, address" },
-  ];
+  const normalizedPages = useMemo(() => normalizeSitePages(values.sitePages), [values.sitePages]);
+  const currentPage = normalizedPages[activePage] ?? defaultPageConfigs[activePage];
+  const enabledPageCount = pageOrder.filter((item) => normalizedPages[item.key]?.enabled !== false).length;
   const sections = [
     ["identity", "Identity"],
     ["hero", "Hero"],
+    ["pages", "Pages"],
     ["theme", "Theme"],
     ["contact", "Contact"],
     ["seo", "SEO"],
-    ["gallery", "Pages & Gallery"],
+    ["gallery", "Gallery"],
   ] as const;
 
   useEffect(() => {
-    setValues(initialValues);
+    setValues({ ...initialValues, sitePages: normalizeSitePages(initialValues.sitePages) });
   }, [initialValues]);
 
   useEffect(() => {
@@ -101,6 +210,19 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
 
   function updateValue<Key extends keyof typeof values>(key: Key, value: (typeof values)[Key]) {
     setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function updatePageValue<Key extends keyof SitePageConfig>(key: SitePageKey, field: Key, value: SitePageConfig[Key]) {
+    setValues((current) => ({
+      ...current,
+      sitePages: {
+        ...normalizeSitePages(current.sitePages),
+        [key]: {
+          ...(normalizeSitePages(current.sitePages)[key] ?? defaultPageConfigs[key]),
+          [field]: value,
+        },
+      },
+    }));
   }
 
   function parseBudget(value: string) {
@@ -164,6 +286,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
           themePrimary: values.themePrimary,
           themeAccent: values.themeAccent,
           themeSurface: values.themeSurface,
+          sitePages: normalizedPages,
         }),
       });
 
@@ -215,23 +338,27 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
             <p className="mt-2 text-sm font-bold text-slate-950">Rs. {values.adBudget || "0"}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Active section</p>
-            <p className="mt-2 text-sm font-bold text-slate-950">{sections.find(([key]) => key === activeSection)?.[1]}</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Pages</p>
+            <p className="mt-2 text-sm font-bold text-slate-950">{enabledPageCount} active / {pageOrder.length} total</p>
           </div>
         </div>
         {statusMessage ? <p className="text-sm font-semibold text-emerald-700">{statusMessage}</p> : null}
         {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
         {siteHost ? (
           <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3 lg:grid-cols-6">
-            {sitePages.map((item) => (
+            {pageOrder.map((item) => (
               <a
-                key={item.label}
+                key={item.key}
                 href={`https://${siteHost}${item.path === "/" ? "" : item.path}`}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:border-[var(--lp-accent)] hover:text-[var(--lp-accent-strong)]"
+                className={`rounded-lg border px-3 py-2 text-xs font-black transition ${
+                  normalizedPages[item.key]?.enabled === false
+                    ? "border-slate-200 bg-slate-100 text-slate-400"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-[var(--lp-accent)] hover:text-[var(--lp-accent-strong)]"
+                }`}
               >
-                {item.label}
+                {normalizedPages[item.key]?.navLabel || item.label}
               </a>
             ))}
           </div>
@@ -382,6 +509,139 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
         </section>
       ) : null}
 
+      {activeSection === "pages" ? (
+        <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-2xl font-black text-slate-950">Public website pages</h2>
+              <p className="mt-1 text-sm text-slate-500">Set each page copy, nav label, cards, and layout before publishing to the subdomain.</p>
+            </div>
+            <div className="rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+              Editing {currentPage.navLabel || pageOrder.find((item) => item.key === activePage)?.label}
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-5 xl:grid-cols-[280px_1fr]">
+            <div className="grid gap-2 self-start rounded-xl border border-slate-200 bg-white p-3">
+              {pageOrder.map((item) => {
+                const pageConfig = normalizedPages[item.key] ?? defaultPageConfigs[item.key];
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setActivePage(item.key)}
+                    className={`rounded-xl border px-3 py-3 text-left transition ${
+                      activePage === item.key ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]" : "border-slate-200 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-black text-slate-950">{pageConfig.navLabel || item.label}</span>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase ${pageConfig.enabled ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                        {pageConfig.enabled ? "On" : "Off"}
+                      </span>
+                    </span>
+                    <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{item.source}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-[1fr_170px_150px]">
+                <label className="grid gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Navigation label</span>
+                  <input
+                    value={currentPage.navLabel}
+                    onChange={(event) => updatePageValue(activePage, "navLabel", event.target.value)}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-950 outline-none"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Layout</span>
+                  <select
+                    value={currentPage.layout}
+                    onChange={(event) => updatePageValue(activePage, "layout", event.target.value as SitePageConfig["layout"])}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-950 outline-none"
+                  >
+                    <option value="classic">Classic</option>
+                    <option value="split">Split</option>
+                    <option value="spotlight">Spotlight</option>
+                    <option value="compact">Compact</option>
+                  </select>
+                </label>
+                <label className="flex items-end gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={currentPage.enabled}
+                    onChange={(event) => updatePageValue(activePage, "enabled", event.target.checked)}
+                    className="h-5 w-5 rounded border-slate-300"
+                  />
+                  <span className="text-sm font-black text-slate-800">Show page</span>
+                </label>
+              </div>
+
+              <label className="grid gap-2">
+                <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Page heading</span>
+                <input
+                  value={currentPage.title}
+                  onChange={(event) => updatePageValue(activePage, "title", event.target.value)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-black text-slate-950 outline-none"
+                />
+              </label>
+              <label className="grid gap-2">
+                <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Subtitle</span>
+                <textarea
+                  value={currentPage.subtitle}
+                  onChange={(event) => updatePageValue(activePage, "subtitle", event.target.value)}
+                  className="min-h-24 rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                />
+              </label>
+              <label className="grid gap-2">
+                <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Main body</span>
+                <textarea
+                  value={currentPage.body}
+                  onChange={(event) => updatePageValue(activePage, "body", event.target.value)}
+                  className="min-h-32 rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                  placeholder="Optional longer copy for this page."
+                />
+              </label>
+              <label className="grid gap-2">
+                <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Cards / bullets</span>
+                <textarea
+                  value={itemsToLines(currentPage.items)}
+                  onChange={(event) => updatePageValue(activePage, "items", linesToItems(event.target.value))}
+                  className="min-h-32 rounded-2xl border border-slate-200 bg-white px-4 py-4 font-mono text-sm outline-none"
+                  placeholder="Title | Detail, one item per line"
+                />
+              </label>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Live page preview</p>
+                <div className={`mt-4 grid gap-4 ${currentPage.layout === "split" ? "md:grid-cols-[1fr_0.8fr]" : ""}`}>
+                  <div className={currentPage.layout === "spotlight" ? "rounded-xl bg-slate-950 p-5 text-white" : "rounded-xl bg-slate-50 p-5"}>
+                    <h3 className="text-xl font-black">{currentPage.title || "Page heading"}</h3>
+                    <p className={`mt-2 text-sm leading-6 ${currentPage.layout === "spotlight" ? "text-white/70" : "text-slate-600"}`}>
+                      {currentPage.subtitle || "Subtitle preview appears here."}
+                    </p>
+                    {currentPage.body ? <p className={`mt-3 text-sm leading-6 ${currentPage.layout === "spotlight" ? "text-white/70" : "text-slate-600"}`}>{currentPage.body}</p> : null}
+                  </div>
+                  {currentPage.items.length ? (
+                    <div className={`grid gap-3 ${currentPage.layout === "compact" ? "sm:grid-cols-2" : ""}`}>
+                      {currentPage.items.slice(0, 4).map((item, index) => (
+                        <div key={`${item.title}-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <p className="text-sm font-black text-slate-950">{item.title || `Item ${index + 1}`}</p>
+                          <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{item.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {activeSection === "theme" ? (
         <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
           <h2 className="text-2xl font-black text-slate-950">Theme builder</h2>
@@ -441,12 +701,12 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
 
       {activeSection === "gallery" ? (
         <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
-          <h2 className="text-2xl font-black text-slate-950">Pages, amenities and gallery</h2>
+          <h2 className="text-2xl font-black text-slate-950">Amenities and gallery</h2>
           <div className="mt-6 grid gap-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {sitePages.map((item) => (
-                <div key={item.label} className="rounded-xl border border-slate-200 bg-white p-4">
-                  <p className="text-sm font-black text-slate-950">{item.label}</p>
+              {pageOrder.map((item) => (
+                <div key={item.key} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-black text-slate-950">{normalizedPages[item.key]?.navLabel || item.label}</p>
                   <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{item.source}</p>
                   <p className="mt-3 truncate text-xs font-bold text-[var(--lp-accent-strong)]">{siteHost ? `${siteHost}${item.path === "/" ? "" : item.path}` : "Add subdomain first"}</p>
                 </div>

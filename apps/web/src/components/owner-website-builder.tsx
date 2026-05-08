@@ -28,8 +28,23 @@ type PublicProfileFormValues = {
   themeSurface: string;
   amenities: string[];
   galleryImages: string[];
+  sitePages: SitePagesConfig;
   published: boolean;
 };
+
+type SitePageKey = "home" | "features" | "gallery" | "pricing" | "about" | "contact";
+
+type SitePageConfig = {
+  enabled: boolean;
+  navLabel: string;
+  title: string;
+  subtitle: string;
+  body: string;
+  layout: "classic" | "split" | "spotlight" | "compact";
+  items: { title: string; detail: string }[];
+};
+
+type SitePagesConfig = Partial<Record<SitePageKey, SitePageConfig>>;
 
 type OwnerPublicProfileResponse = {
   success: boolean;
@@ -56,6 +71,7 @@ type OwnerPublicProfileResponse = {
     theme_surface: string | null;
     amenities: string[] | null;
     gallery_images: string[] | null;
+    site_pages: SitePagesConfig | null;
     is_published: boolean;
   } | null;
 };
@@ -84,6 +100,7 @@ function mapProfileToFormValues(profile: NonNullable<OwnerPublicProfileResponse[
     themeSurface: profile.theme_surface ?? "#fff9f0",
     amenities: profile.amenities ?? [],
     galleryImages: profile.gallery_images ?? [],
+    sitePages: profile.site_pages ?? {},
     published: profile.is_published,
   };
 }

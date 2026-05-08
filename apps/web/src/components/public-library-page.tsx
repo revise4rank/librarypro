@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, BadgeCheck, IndianRupee, MapPin, QrCode, ShieldCheck, Sparkles, Star, Wifi, Zap } from "lucide-react";
 import { ContactActions } from "./contact-actions";
 import { formatLibraryHost } from "../lib/domain";
-import { PublicLibrarySite, PublicLibraryReview, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
+import { PublicLibrarySite, PublicLibraryReview, SitePageConfig, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
 import { LibraryReviewsPanel } from "./library-reviews-panel";
 
 type PublicLibraryPageProps = {
@@ -82,6 +82,36 @@ function initials(value: string) {
     .join("") || "BL";
 }
 
+const fallbackPageLabels: Record<PublicLibraryPageProps["page"], string> = {
+  home: "Home",
+  features: "Features",
+  gallery: "Gallery",
+  pricing: "Pricing",
+  about: "About",
+  contact: "Contact",
+};
+
+function pageConfig(profile: PublicLibrarySite, key: PublicLibraryPageProps["page"]): SitePageConfig {
+  return profile.site_pages?.[key] ?? {};
+}
+
+function pageHeading(config: SitePageConfig, fallback: string) {
+  return config.title?.trim() || fallback;
+}
+
+function pageSubtitle(config: SitePageConfig, fallback: string) {
+  return config.subtitle?.trim() || fallback;
+}
+
+function pageBody(config: SitePageConfig, fallback: string) {
+  return config.body?.trim() || fallback;
+}
+
+function pageItems(config: SitePageConfig, fallback: { title: string; detail: string }[]) {
+  const items = config.items?.filter((item) => item.title || item.detail) ?? [];
+  return items.length ? items.map((item) => ({ title: item.title ?? "", detail: item.detail ?? "" })) : fallback;
+}
+
 export function PublicLibraryPage({
   profile,
   reviews = [],
@@ -101,14 +131,15 @@ export function PublicLibraryPage({
   const amenities = profile.amenities?.length
     ? profile.amenities
     : ["Silent study zone", "Comfort seating", "Owner managed", "Student access"];
-  const navItems: NavItem[] = [
-    { href: links.home, label: "Home", page: "home" },
-    { href: links.features, label: "Features", page: "features" },
-    { href: links.gallery, label: "Gallery", page: "gallery" },
-    { href: links.pricing, label: "Pricing", page: "pricing" },
-    { href: links.about, label: "About", page: "about" },
-    { href: links.contact, label: "Contact", page: "contact" },
-  ];
+  const currentPageConfig = pageConfig(profile, page);
+  const navItems = ([
+    { href: links.home, label: pageConfig(profile, "home").navLabel || fallbackPageLabels.home, page: "home" },
+    { href: links.features, label: pageConfig(profile, "features").navLabel || fallbackPageLabels.features, page: "features" },
+    { href: links.gallery, label: pageConfig(profile, "gallery").navLabel || fallbackPageLabels.gallery, page: "gallery" },
+    { href: links.pricing, label: pageConfig(profile, "pricing").navLabel || fallbackPageLabels.pricing, page: "pricing" },
+    { href: links.about, label: pageConfig(profile, "about").navLabel || fallbackPageLabels.about, page: "about" },
+    { href: links.contact, label: pageConfig(profile, "contact").navLabel || fallbackPageLabels.contact, page: "contact" },
+  ] satisfies NavItem[]).filter((item) => pageConfig(profile, item.page).enabled !== false || item.page === "home");
   const premiumFeatures = [
     {
       icon: <Wifi className="h-5 w-5" />,
@@ -131,6 +162,16 @@ export function PublicLibraryPage({
       detail: "Prospective students can explore the site, call, WhatsApp, and reach the correct library portal.",
     },
   ];
+  const featureCards = pageItems(
+    pageConfig(profile, "features"),
+    premiumFeatures.map((feature) => ({ title: feature.title, detail: feature.detail })),
+  );
+  const pricingCards = pageItems(pageConfig(profile, "pricing"), [
+    { title: "Owner-issued student login", detail: "Students get access after joining." },
+    { title: "Seat assignment and validity tracking", detail: "Plans are confirmed during admission." },
+    { title: "QR entry support", detail: "Daily library actions can run from the same subdomain." },
+    { title: "Payment reminders and notices", detail: "Student communication stays organized." },
+  ]);
   const galleryHighlights = gallery.map((item, index) => ({
     src: item,
     label: index === 0 ? "Main study hall" : index === 1 ? "Reading zone" : index === 2 ? "Reception and entry" : `Gallery view ${index + 1}`,
@@ -270,14 +311,25 @@ export function PublicLibraryPage({
       </section>
 
       <section className="mx-auto max-w-[1180px] px-4 py-8 md:py-10">
-        {page === "home" ? (
+        {currentPageConfig.enabled === false && page !== "home" ? (
+          <SiteCard>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Page hidden</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950">This page is not published right now.</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">The library owner can enable it from the website editor.</p>
+            <Link href={links.home} className="mt-5 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">
+              Go to home
+            </Link>
+          </SiteCard>
+        ) : null}
+
+        {currentPageConfig.enabled !== false && page === "home" ? (
           <div className="grid gap-5">
             <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
               <SiteCard>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Why students choose us</p>
-                <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-slate-950">A calmer study day, from seat to check-in.</h2>
+                <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-slate-950">{pageHeading(pageConfig(profile, "home"), "A calmer study day, from seat to check-in.")}</h2>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  {profile.about_text ?? "This library website gives students one clean place to discover facilities, check pricing, contact the owner, log in, and continue daily study actions."}
+                  {pageBody(pageConfig(profile, "home"), profile.about_text ?? "This library website gives students one clean place to discover facilities, check pricing, contact the owner, log in, and continue daily study actions.")}
                 </p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {premiumFeatures.map((feature) => (
@@ -323,21 +375,22 @@ export function PublicLibraryPage({
           </div>
         ) : null}
 
-        {page === "features" ? (
+        {currentPageConfig.enabled !== false && page === "features" ? (
           <div className="grid gap-5">
             <SiteCard>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Features</p>
-                  <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-slate-950">Everything students expect from a serious study space.</h2>
+                  <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-slate-950">{pageHeading(pageConfig(profile, "features"), "Everything students expect from a serious study space.")}</h2>
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{pageSubtitle(pageConfig(profile, "features"), "Facilities, access, and student workflows are published from the owner website editor.")}</p>
                 </div>
                 <Link href={links.contact} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">
                   Enquire now
                 </Link>
               </div>
               <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {premiumFeatures.map((feature) => (
-                  <FacilityCard key={feature.title} icon={feature.icon} title={feature.title} detail={feature.detail} />
+                {featureCards.map((feature, index) => (
+                  <FacilityCard key={`${feature.title}-${index}`} icon={premiumFeatures[index % premiumFeatures.length].icon} title={feature.title} detail={feature.detail} />
                 ))}
               </div>
             </SiteCard>
@@ -369,13 +422,14 @@ export function PublicLibraryPage({
           </div>
         ) : null}
 
-        {page === "gallery" ? (
+        {currentPageConfig.enabled !== false && page === "gallery" ? (
           <div className="grid gap-5">
             <SiteCard>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Gallery</p>
-                  <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-slate-950">A full visual tour before students visit.</h2>
+                  <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-slate-950">{pageHeading(pageConfig(profile, "gallery"), "A full visual tour before students visit.")}</h2>
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{pageSubtitle(pageConfig(profile, "gallery"), "See the study hall, reading zones, reception, and location before visiting.")}</p>
                 </div>
                 <Link href={links.contact} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">
                   Book visit
@@ -411,13 +465,13 @@ export function PublicLibraryPage({
           </div>
         ) : null}
 
-        {page === "about" ? (
+        {currentPageConfig.enabled !== false && page === "about" ? (
           <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
             <SiteCard className="bg-slate-950 text-white">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">About</p>
-              <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-white">{profile.library_name}</h2>
+              <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-white">{pageHeading(pageConfig(profile, "about"), profile.library_name)}</h2>
               <p className="mt-4 text-sm leading-7 text-white/70">
-                {profile.about_text ?? "A premium BookLib-powered library website for students to discover, contact, log in, and continue daily study actions."}
+                {pageBody(pageConfig(profile, "about"), profile.about_text ?? "A premium BookLib-powered library website for students to discover, contact, log in, and continue daily study actions.")}
               </p>
             </SiteCard>
             <SiteCard>
@@ -433,12 +487,14 @@ export function PublicLibraryPage({
           </div>
         ) : null}
 
-        {page === "pricing" ? (
+        {currentPageConfig.enabled !== false && page === "pricing" ? (
           <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
             <SiteCard className="bg-[linear-gradient(135deg,#0F172A,#115E59)] text-white">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Starting plan</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-white">{pageHeading(pageConfig(profile, "pricing"), "Starting plans and current offers")}</h2>
+              <p className="mt-3 text-sm leading-7 text-white/70">{pageSubtitle(pageConfig(profile, "pricing"), "Starting monthly seat pricing shared by the owner. Final plan and discounts are confirmed during admission.")}</p>
               <p className="mt-4 flex items-center gap-2 text-3xl font-bold tracking-[-0.04em] text-white"><IndianRupee className="h-7 w-7" /> {profile.starting_price}</p>
-              <p className="mt-3 text-sm leading-7 text-white/70">Starting monthly seat pricing shared by the owner. Final plan and discounts are confirmed during admission.</p>
+              {pageConfig(profile, "pricing").body ? <p className="mt-3 text-sm leading-7 text-white/70">{pageConfig(profile, "pricing").body}</p> : null}
               <div className="mt-5 rounded-2xl border border-white/12 bg-white/10 p-4 text-sm font-bold text-white">
                 {visibleOffer ?? "Ask owner for active discount offers and seat combinations."}
               </div>
@@ -446,9 +502,10 @@ export function PublicLibraryPage({
             <SiteCard>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Included access</p>
               <div className="mt-4 grid gap-3">
-                {["Owner-issued student login", "Seat assignment and validity tracking", "QR entry support", "Payment reminders and notices"].map((item) => (
-                  <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800">
-                    {item}
+                {pricingCards.map((item) => (
+                  <div key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-sm font-bold text-slate-800">{item.title}</p>
+                    {item.detail ? <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{item.detail}</p> : null}
                   </div>
                 ))}
               </div>
@@ -456,11 +513,12 @@ export function PublicLibraryPage({
           </div>
         ) : null}
 
-        {page === "contact" ? (
+        {currentPageConfig.enabled !== false && page === "contact" ? (
           <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
             <SiteCard>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Contact</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-slate-950">Talk to the library owner.</h2>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-slate-950">{pageHeading(pageConfig(profile, "contact"), "Talk to the library owner.")}</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{pageSubtitle(pageConfig(profile, "contact"), "Students can call, WhatsApp, or visit after checking the address.")}</p>
               <div className="mt-5 grid gap-3">
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Contact person</p>

@@ -20,6 +20,7 @@ export type PublicLibrarySite = {
   email?: string | null;
   amenities: string[] | null;
   gallery_images: string[] | null;
+  site_pages?: SitePagesConfig | null;
   business_hours: string | null;
   landmark: string | null;
   seo_title?: string | null;
@@ -34,6 +35,20 @@ export type PublicLibrarySite = {
   rating?: string | null;
   reviews?: string | null;
 };
+
+export type SitePageKey = "home" | "features" | "gallery" | "pricing" | "about" | "contact";
+
+export type SitePageConfig = {
+  enabled?: boolean;
+  navLabel?: string;
+  title?: string;
+  subtitle?: string;
+  body?: string;
+  layout?: "classic" | "split" | "spotlight" | "compact";
+  items?: { title?: string; detail?: string }[];
+};
+
+export type SitePagesConfig = Partial<Record<SitePageKey, SitePageConfig>>;
 
 export type PublicLibraryReview = {
   id: string;

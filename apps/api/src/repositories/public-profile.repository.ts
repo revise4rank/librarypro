@@ -26,6 +26,7 @@ export type PublicLibrarySearchRow = {
   email?: string | null;
   amenities: unknown;
   gallery_images: unknown;
+  site_pages?: unknown;
   business_hours: string | null;
   landmark: string | null;
   seo_title?: string | null;
@@ -93,6 +94,7 @@ export type OwnerPublicProfileRow = {
   business_hours: string | null;
   amenities: unknown;
   gallery_images: unknown;
+  site_pages: unknown;
   seo_title: string | null;
   seo_description: string | null;
   meta_keywords: string | null;
@@ -133,6 +135,7 @@ export type SavePublicProfileInput = {
   businessHours: string;
   amenities: string[];
   galleryImages: string[];
+  sitePages: Record<string, unknown>;
   seoTitle: string;
   seoDescription: string;
   metaKeywords: string;
@@ -254,14 +257,14 @@ export class PublicProfileRepository {
       INSERT INTO libraries_public_profiles (
         library_id, subdomain, brand_logo_url, hero_title, hero_tagline, about_text, contact_name, contact_phone,
         whatsapp_phone, email, address_text, latitude, longitude, landmark, business_hours, amenities,
-        gallery_images, seo_title, seo_description, meta_keywords, show_in_marketplace,
+        gallery_images, site_pages, seo_title, seo_description, meta_keywords, show_in_marketplace,
         allow_direct_contact, ad_budget, highlight_offer, offer_expires_at, hero_banner_url, theme_primary, theme_accent, theme_surface, updated_at
       )
       VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8,
         $9, $10, $11, $12, $13, $14, $15, $16::jsonb,
-        $17::jsonb, $18, $19, $20, $21,
-        $22, $23, $24, $25, $26, $27, $28, $29, NOW()
+        $17::jsonb, $18::jsonb, $19, $20, $21, $22,
+        $23, $24, $25, $26, $27, $28, $29, $30, NOW()
       )
       ON CONFLICT (library_id) DO UPDATE SET
         subdomain = EXCLUDED.subdomain,
@@ -280,6 +283,7 @@ export class PublicProfileRepository {
         business_hours = EXCLUDED.business_hours,
         amenities = EXCLUDED.amenities,
         gallery_images = EXCLUDED.gallery_images,
+        site_pages = EXCLUDED.site_pages,
         seo_title = EXCLUDED.seo_title,
         seo_description = EXCLUDED.seo_description,
         meta_keywords = EXCLUDED.meta_keywords,
@@ -313,6 +317,7 @@ export class PublicProfileRepository {
         input.businessHours,
         JSON.stringify(input.amenities),
         JSON.stringify(input.galleryImages),
+        JSON.stringify(input.sitePages),
         input.seoTitle,
         input.seoDescription,
         input.metaKeywords,
@@ -370,6 +375,7 @@ export class PublicProfileRepository {
         business_hours,
         amenities,
         gallery_images,
+        site_pages,
         seo_title,
         seo_description,
         meta_keywords,
@@ -421,6 +427,7 @@ export class PublicProfileRepository {
         p.email,
         p.amenities,
         p.gallery_images,
+        p.site_pages,
         p.business_hours,
         p.landmark,
         p.seo_title,

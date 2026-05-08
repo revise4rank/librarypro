@@ -757,6 +757,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
             themeSurface: "#fff9f0",
             amenities: [],
             galleryImages: [],
+            sitePages: {},
             published: false,
           }}
         />

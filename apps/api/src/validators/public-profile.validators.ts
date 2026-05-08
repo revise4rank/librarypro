@@ -35,6 +35,32 @@ export const subdomainAvailabilitySchema = z.object({
     .regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/),
 });
 
+const publicSitePageItemSchema = z.object({
+  title: z.string().trim().max(120).optional().default(""),
+  detail: z.string().trim().max(700).optional().default(""),
+});
+
+const publicSitePageSchema = z.object({
+  enabled: z.boolean().optional().default(true),
+  navLabel: z.string().trim().max(40).optional().default(""),
+  title: z.string().trim().max(220).optional().default(""),
+  subtitle: z.string().trim().max(800).optional().default(""),
+  body: z.string().trim().max(4000).optional().default(""),
+  layout: z.enum(["classic", "split", "spotlight", "compact"]).optional().default("classic"),
+  items: z.array(publicSitePageItemSchema).max(12).optional().default([]),
+});
+
+export const publicSitePagesSchema = z
+  .object({
+    home: publicSitePageSchema.optional(),
+    features: publicSitePageSchema.optional(),
+    gallery: publicSitePageSchema.optional(),
+    pricing: publicSitePageSchema.optional(),
+    about: publicSitePageSchema.optional(),
+    contact: publicSitePageSchema.optional(),
+  })
+  .default({});
+
 export const savePublicProfileBodySchema = z.object({
   subdomain: z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/),
   brandLogoUrl: z.string().trim().max(1000).optional().default(""),
@@ -64,6 +90,7 @@ export const savePublicProfileBodySchema = z.object({
   themePrimary: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).default("#d2723d"),
   themeAccent: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).default("#2f8f88"),
   themeSurface: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).default("#fff9f0"),
+  sitePages: publicSitePagesSchema.optional().default({}),
 });
 
 export const publishPublicProfileBodySchema = z.object({
