@@ -440,6 +440,16 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
             <div className="mt-6 grid gap-4">
               <div className="rounded-xl bg-[#fff7ef] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-primary)]">Brand logo</p>
+                {values.brandLogoUrl ? (
+                  <div className="mt-3 flex items-center gap-4 rounded-2xl border border-[var(--lp-border)] bg-white p-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={values.brandLogoUrl} alt="Brand logo preview" className="h-16 w-16 rounded-2xl object-cover ring-1 ring-slate-200" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-slate-950">Logo ready</p>
+                      <p className="truncate text-xs font-semibold text-slate-500">{values.brandLogoUrl}</p>
+                    </div>
+                  </div>
+                ) : null}
                 <input
                   value={values.brandLogoUrl}
                   onChange={(event) => updateValue("brandLogoUrl", event.target.value)}
@@ -456,6 +466,12 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
               </div>
               <div className="rounded-xl bg-[#eef7f5] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--lp-accent)]">Hero banner</p>
+                {values.heroBannerUrl ? (
+                  <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--lp-border)] bg-white p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={values.heroBannerUrl} alt="Hero banner preview" className="aspect-[16/7] w-full rounded-xl object-cover" />
+                  </div>
+                ) : null}
                 <input
                   value={values.heroBannerUrl}
                   onChange={(event) => updateValue("heroBannerUrl", event.target.value)}

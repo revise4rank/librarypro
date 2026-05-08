@@ -27,8 +27,9 @@ export async function uploadPublicProfileAssetController(req: Request, res: Resp
     libraryId,
     action: "public_profile.asset.uploaded",
     entityType: "public_profile_asset",
-    entityId: stored.fileName,
+    entityId: libraryId,
     metadata: {
+      fileName: stored.fileName,
       mimeType: req.file.mimetype,
       size: req.file.size,
       path: stored.url,
@@ -74,8 +75,9 @@ export async function uploadAdmissionDocumentController(req: Request, res: Respo
     libraryId,
     action: "admission.document.uploaded",
     entityType: "admission_document",
-    entityId: stored.fileName,
+    entityId: libraryId,
     metadata: {
+      fileName: stored.fileName,
       mimeType: req.file.mimetype,
       size: req.file.size,
       path: stored.url,
