@@ -31,6 +31,19 @@ type CompleteResponse = {
   };
 };
 
+function safeNextForRole(next: string | undefined, role: string) {
+  if (role === "LIBRARY_OWNER") {
+    return next?.startsWith("/owner") ? next : "/owner/dashboard";
+  }
+  if (role === "STUDENT") {
+    return next?.startsWith("/student") ? next : "/student/dashboard";
+  }
+  if (role === "SUPER_ADMIN") {
+    return "/superadmin/dashboard";
+  }
+  return "/student/dashboard";
+}
+
 function GoogleOAuthCompleteManager() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,7 +77,7 @@ function GoogleOAuthCompleteManager() {
       );
 
       saveSession(result.data);
-      router.push(result.data.next || (result.data.user.role === "LIBRARY_OWNER" ? "/owner/dashboard" : "/student/dashboard"));
+      router.push(safeNextForRole(result.data.next, result.data.user.role));
       router.refresh();
     } catch (completeError) {
       setError(completeError instanceof Error ? completeError.message : "Google sign-in could not be completed.");

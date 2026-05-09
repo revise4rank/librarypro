@@ -385,7 +385,13 @@ export async function resetPasswordWithToken(input: { token: string; password: s
 }
 
 function normalizeNextPath(next: string | undefined, role: GoogleOAuthRole) {
-  if (next && next.startsWith("/") && !next.startsWith("//") && next.length <= 300) {
+  const allowedPrefix = role === "LIBRARY_OWNER" ? "/owner" : "/student";
+  if (
+    next &&
+    next.startsWith(allowedPrefix) &&
+    !next.startsWith("//") &&
+    next.length <= 300
+  ) {
     return next;
   }
 
