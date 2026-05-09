@@ -1,6 +1,6 @@
-import crypto from "node:crypto";
 import { env } from "../config/env";
 import { requireDb } from "../lib/db";
+import { AppError } from "../lib/errors";
 import { BillingRepository } from "../repositories/billing.repository";
 
 const PLAN_CATALOG = {
@@ -10,6 +10,53 @@ const PLAN_CATALOG = {
 
 function repository() {
   return new BillingRepository(requireDb());
+}
+
+type RazorpayOrderResponse = {
+  id?: string;
+  error?: {
+    description?: string;
+  };
+};
+
+function ensureRazorpayConfigured() {
+  if (!env.razorpayKeyId || !env.razorpayKeySecret) {
+    throw new AppError(503, "Razorpay is not configured yet", "RAZORPAY_NOT_CONFIGURED");
+  }
+}
+
+async function createRazorpayOrder(input: {
+  libraryId: string;
+  subscriptionId: string;
+  amount: number;
+  currency: string;
+  planName: string;
+}) {
+  ensureRazorpayConfigured();
+  const auth = Buffer.from(`${env.razorpayKeyId}:${env.razorpayKeySecret}`).toString("base64");
+  const response = await fetch("https://api.razorpay.com/v1/orders", {
+    method: "POST",
+    headers: {
+      authorization: `Basic ${auth}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      amount: input.amount * 100,
+      currency: input.currency,
+      receipt: `booklib_${input.subscriptionId.slice(0, 24)}`,
+      notes: {
+        libraryId: input.libraryId,
+        subscriptionId: input.subscriptionId,
+        planName: input.planName,
+      },
+    }),
+  });
+  const payload = (await response.json()) as RazorpayOrderResponse;
+  if (!response.ok || !payload.id) {
+    throw new AppError(502, payload.error?.description ?? "Razorpay order could not be created", "RAZORPAY_ORDER_FAILED");
+  }
+
+  return payload.id;
 }
 
 export async function getBillingSubscription(libraryId: string) {
@@ -35,7 +82,13 @@ export async function createSubscriptionRenewal(input: {
       currency: plan.currency,
     });
 
-    const razorpayOrderId = `order_booklib_${crypto.randomUUID().replace(/-/g, "").slice(0, 20)}`;
+    const razorpayOrderId = await createRazorpayOrder({
+      libraryId: input.libraryId,
+      subscriptionId,
+      amount: plan.amount,
+      currency: plan.currency,
+      planName: plan.name,
+    });
     const paymentId = await repository().createRenewalPayment(client, {
       libraryId: input.libraryId,
       subscriptionId,
