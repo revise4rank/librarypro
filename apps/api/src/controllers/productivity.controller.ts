@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import ExcelJS from "exceljs";
+import * as XLSX from "xlsx";
 import { AppError } from "../lib/errors";
 import {
   createOwnerStudentInterventionNote,
@@ -120,39 +120,25 @@ function rowsFromCsv(buffer: Buffer) {
   });
 }
 
-async function rowsFromXlsx(buffer: Buffer) {
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
-  const worksheet = workbook.worksheets[0];
-  if (!worksheet) return [];
-  const headerRow = worksheet.getRow(1);
-  const headers = headerRow.values as unknown[];
-  const headerByColumn = new Map<number, string>();
-  headers.forEach((value, index) => {
-    const header = normalizeHeader(value);
-    if (header) headerByColumn.set(index, header);
+function rowsFromSpreadsheet(buffer: Buffer) {
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) return [];
+  const worksheet = workbook.Sheets[firstSheetName];
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
+    defval: "",
+    raw: false,
   });
-
-  const rows: Array<Record<string, unknown>> = [];
-  worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return;
-    const item: Record<string, unknown> = {};
-    headerByColumn.forEach((header, columnNumber) => {
-      const cellValue = row.getCell(columnNumber).value;
-      item[header] = typeof cellValue === "object" && cellValue && "text" in cellValue ? cellValue.text : cellValue;
-    });
-    if (Object.values(item).some((value) => String(value ?? "").trim())) {
-      rows.push({
-        className: item.className,
-        subjectTitle: item.subjectTitle,
-        topicTitle: item.topicTitle,
-        estimatedMinutes: item.estimatedMinutes || 60,
-        topicOrder: item.topicOrder || rows.length,
-        colorHex: item.colorHex || "",
-      });
-    }
-  });
-  return rows;
+  return rows
+    .filter((row) => Object.values(row).some((value) => String(value ?? "").trim()))
+    .map((row, index) => ({
+      className: normalizeHeader(row.className),
+      subjectTitle: normalizeHeader(row.subjectTitle),
+      topicTitle: normalizeHeader(row.topicTitle),
+      estimatedMinutes: normalizeHeader(row.estimatedMinutes) || 60,
+      topicOrder: normalizeHeader(row.topicOrder) || index,
+      colorHex: normalizeHeader(row.colorHex),
+    }));
 }
 
 export async function listStudentSyllabusTemplatesController(req: Request, res: Response) {
@@ -321,13 +307,9 @@ export async function uploadAdminSyllabusTemplatesController(req: Request, res: 
   }
 
   const fileName = req.file.originalname.toLowerCase();
-  if (fileName.endsWith(".xls") && !fileName.endsWith(".xlsx")) {
-    throw new AppError(400, "Legacy .xls is not supported yet. Please save the sheet as .xlsx or CSV and upload again.", "LEGACY_XLS_UNSUPPORTED");
-  }
-
   const rawRows = fileName.endsWith(".csv") || req.file.mimetype.toLowerCase().includes("csv")
     ? rowsFromCsv(req.file.buffer)
-    : await rowsFromXlsx(req.file.buffer);
+    : rowsFromSpreadsheet(req.file.buffer);
 
   const parsed = adminSyllabusImportBodySchema.parse({ rows: rawRows });
   const data = await importGlobalSyllabusRows({
