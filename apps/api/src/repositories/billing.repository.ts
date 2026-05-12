@@ -83,6 +83,7 @@ export class BillingRepository {
     planName: string;
     amount: number;
     currency: string;
+    durationMonths: number;
   }) {
     const result = await client.query<{ id: string }>(
       `
@@ -107,8 +108,8 @@ export class BillingRepository {
           $5,
           'PAST_DUE',
           NOW(),
-          NOW() + INTERVAL '30 days',
-          NOW() + INTERVAL '30 days',
+          NOW() + ($6::int * INTERVAL '1 month'),
+          NOW() + ($6::int * INTERVAL '1 month'),
           NOW() + INTERVAL '3 days',
           NOW()
         )
@@ -121,7 +122,7 @@ export class BillingRepository {
           updated_at = NOW()
         RETURNING id::text
       `,
-      [input.libraryId, input.planCode, input.planName, input.amount, input.currency],
+      [input.libraryId, input.planCode, input.planName, input.amount, input.currency, input.durationMonths],
     );
 
     return result.rows[0].id;

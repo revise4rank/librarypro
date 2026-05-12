@@ -1,12 +1,8 @@
 import { env } from "../config/env";
 import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
+import { getPlatformPlanConfig, listPlatformPlanConfigs, type PaidPlanCode } from "../lib/platform-plans";
 import { BillingRepository } from "../repositories/billing.repository";
-
-const PLAN_CATALOG = {
-  STARTER_499: { code: "STARTER_499", name: "Starter 499", amount: 499, currency: "INR" },
-  GROWTH_999: { code: "GROWTH_999", name: "Growth 999", amount: 999, currency: "INR" },
-} as const;
 
 function repository() {
   return new BillingRepository(requireDb());
@@ -60,12 +56,16 @@ async function createRazorpayOrder(input: {
 }
 
 export async function getBillingSubscription(libraryId: string) {
-  return repository().getOwnerSubscription(libraryId);
+  const [billing, plans] = await Promise.all([repository().getOwnerSubscription(libraryId), listPlatformPlanConfigs()]);
+  return {
+    ...billing,
+    availablePlans: plans.filter((plan) => plan.code !== "TRIAL_25"),
+  };
 }
 
 export async function createSubscriptionRenewal(input: {
   libraryId: string;
-  planCode: keyof typeof PLAN_CATALOG;
+  planCode: PaidPlanCode;
 }) {
   const db = requireDb();
   const client = await db.connect();
@@ -73,13 +73,14 @@ export async function createSubscriptionRenewal(input: {
   try {
     await client.query("BEGIN");
 
-    const plan = PLAN_CATALOG[input.planCode];
+    const plan = await getPlatformPlanConfig(input.planCode);
     const subscriptionId = await repository().ensureSubscription(client, {
       libraryId: input.libraryId,
       planCode: plan.code,
       planName: plan.name,
       amount: plan.amount,
       currency: plan.currency,
+      durationMonths: plan.durationMonths,
     });
 
     const razorpayOrderId = await createRazorpayOrder({

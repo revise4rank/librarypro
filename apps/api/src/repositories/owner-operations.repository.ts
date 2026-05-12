@@ -2299,21 +2299,31 @@ export class OwnerOperationsRepository {
       plan_code: string;
       plan_name: string;
       amount: string;
+      duration_months: string;
+      seat_limit: string | null;
+      referral_bonus: string;
+      features: Record<string, unknown> | null;
       tenants: string;
       active_tenants: string;
       past_due_tenants: string;
     }>(
       `
       SELECT
-        s.plan_code,
-        s.plan_name,
-        MAX(s.amount)::text AS amount,
-        COUNT(*)::text AS tenants,
-        COUNT(*) FILTER (WHERE s.status = 'ACTIVE')::text AS active_tenants,
-        COUNT(*) FILTER (WHERE s.status IN ('PAST_DUE', 'EXPIRED'))::text AS past_due_tenants
-      FROM subscriptions s
-      GROUP BY s.plan_code, s.plan_name
-      ORDER BY MAX(s.amount) DESC, s.plan_name
+        COALESCE(p.plan_code, s.plan_code) AS plan_code,
+        COALESCE(p.plan_name, s.plan_name) AS plan_name,
+        COALESCE(MAX(p.amount), MAX(s.amount))::text AS amount,
+        COALESCE(MAX(p.duration_months), 0)::text AS duration_months,
+        MAX(p.seat_limit)::text AS seat_limit,
+        COALESCE(MAX(p.referral_bonus), 0)::text AS referral_bonus,
+        (MAX(p.features::text))::jsonb AS features,
+        COUNT(s.id)::text AS tenants,
+        COUNT(s.id) FILTER (WHERE s.status = 'ACTIVE')::text AS active_tenants,
+        COUNT(s.id) FILTER (WHERE s.status IN ('PAST_DUE', 'EXPIRED'))::text AS past_due_tenants
+      FROM platform_plan_configs p
+      FULL OUTER JOIN subscriptions s ON s.plan_code = p.plan_code
+      WHERE p.is_active = TRUE OR p.plan_code IS NULL
+      GROUP BY COALESCE(p.plan_code, s.plan_code), COALESCE(p.plan_name, s.plan_name), p.sort_order
+      ORDER BY COALESCE(p.sort_order, 999), COALESCE(MAX(p.amount), MAX(s.amount)) DESC
       `,
     );
 
@@ -3110,11 +3120,11 @@ export class OwnerOperationsRepository {
       )
       VALUES (
         $1,
-        'STARTER_TRIAL',
-        'Starter Trial',
+        'TRIAL_25',
+        'Trial 25 Seats',
         0,
         'INR',
-        'ACTIVE',
+        'TRIALING',
         NOW(),
         NOW() + INTERVAL '14 days',
         NOW() + INTERVAL '14 days',

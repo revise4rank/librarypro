@@ -37,6 +37,14 @@ type BillingResponse = {
       razorpay_payment_id: string | null;
       created_at: string;
     }>;
+    availablePlans: Array<{
+      code: "STARTER_449_2M" | "GROWTH_999_6M";
+      name: string;
+      amount: number;
+      currency: string;
+      durationMonths: number;
+      referralBonus: number;
+    }>;
   };
 };
 
@@ -47,7 +55,7 @@ type RenewResponse = {
     paymentId: string;
     razorpayOrderId: string;
     plan: {
-      code: string;
+      code: "STARTER_449_2M" | "GROWTH_999_6M";
       name: string;
       amount: number;
       currency: string;
@@ -77,7 +85,7 @@ export function OwnerBillingManager() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [renewing, setRenewing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<"STARTER_499" | "GROWTH_999">("GROWTH_999");
+  const [selectedPlan, setSelectedPlan] = useState<"STARTER_449_2M" | "GROWTH_999_6M">("GROWTH_999_6M");
 
   useEffect(() => {
     if (typeof window === "undefined" || window.Razorpay) {
@@ -195,20 +203,25 @@ export function OwnerBillingManager() {
       <Surface title="Renew plan">
         <div className="grid gap-4">
           <div className="grid gap-3 md:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setSelectedPlan("STARTER_499")}
-              className={`rounded-xl border px-4 py-4 text-left ${selectedPlan === "STARTER_499" ? "border-[var(--lp-primary)] bg-[#fff1e5]" : "border-[var(--lp-border)] bg-white"}`}
-            >
-              <p className="text-lg font-black text-slate-950">Starter 499</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedPlan("GROWTH_999")}
-              className={`rounded-xl border px-4 py-4 text-left ${selectedPlan === "GROWTH_999" ? "border-[var(--lp-primary)] bg-[#fff1e5]" : "border-[var(--lp-border)] bg-white"}`}
-            >
-              <p className="text-lg font-black text-slate-950">Growth 999</p>
-            </button>
+            {(data?.availablePlans ?? [
+              { code: "STARTER_449_2M", name: "Starter 449 - 2 Months", amount: 449, currency: "INR", durationMonths: 2, referralBonus: 100 },
+              { code: "GROWTH_999_6M", name: "Growth 999 - 6 Months", amount: 999, currency: "INR", durationMonths: 6, referralBonus: 300 },
+            ]).map((plan) => (
+              <button
+                key={plan.code}
+                type="button"
+                onClick={() => setSelectedPlan(plan.code)}
+                className={`rounded-xl border px-4 py-4 text-left ${selectedPlan === plan.code ? "border-[var(--lp-primary)] bg-[#fff1e5]" : "border-[var(--lp-border)] bg-white"}`}
+              >
+                <p className="text-lg font-black text-slate-950">{plan.name}</p>
+                <p className="mt-2 text-sm font-semibold text-slate-600">
+                  Rs. {plan.amount} for {plan.durationMonths} months
+                </p>
+                <p className="mt-1 text-xs font-bold text-emerald-700">
+                  Referral bonus Rs. {plan.referralBonus}
+                </p>
+              </button>
+            ))}
           </div>
           <button
             type="button"

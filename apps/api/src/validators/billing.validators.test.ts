@@ -14,12 +14,12 @@ const TEST_WEBHOOK_SECRET = "test-razorpay-webhook-secret";
 
 test("billingRenewBodySchema defaults to growth plan", () => {
   const parsed = billingRenewBodySchema.parse({});
-  assert.equal(parsed.planCode, "GROWTH_999");
+  assert.equal(parsed.planCode, "GROWTH_999_6M");
 });
 
 test("billingRenewBodySchema accepts starter plan", () => {
-  const parsed = billingRenewBodySchema.parse({ planCode: "STARTER_499" });
-  assert.equal(parsed.planCode, "STARTER_499");
+  const parsed = billingRenewBodySchema.parse({ planCode: "STARTER_449_2M" });
+  assert.equal(parsed.planCode, "STARTER_449_2M");
 });
 
 test("verifyRazorpayWebhookSignature accepts valid signature", () => {

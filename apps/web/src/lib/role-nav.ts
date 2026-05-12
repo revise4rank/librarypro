@@ -10,6 +10,7 @@ export const ownerNav = [
   { href: "/owner/reports", label: "Reports", shortLabel: "RPT" },
   { href: "/owner/expenses", label: "Expenses", shortLabel: "EXP" },
   { href: "/owner/marketing", label: "Marketing", shortLabel: "MKT" },
+  { href: "/owner/website", label: "Website", shortLabel: "WEB" },
   { href: "/owner/notifications", label: "Notices", shortLabel: "NTC" },
   { href: "/owner/billing", label: "Billing", shortLabel: "BIL" },
   { href: "/owner/settings", label: "Settings", shortLabel: "SET" },

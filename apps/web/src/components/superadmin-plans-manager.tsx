@@ -8,6 +8,10 @@ type PlanRow = {
   plan_code: string;
   plan_name: string;
   amount: string;
+  duration_months?: string;
+  seat_limit?: string | null;
+  referral_bonus?: string;
+  features?: Record<string, boolean> | null;
   tenants: string;
   active_tenants: string;
   past_due_tenants: string;
@@ -38,9 +42,17 @@ export function SuperadminPlansManager() {
         <DashboardCard key={plan.plan_code} title={plan.plan_name} subtitle={plan.plan_code}>
           <div className="space-y-3 text-sm leading-7 text-slate-700">
             <p><span className="font-black text-slate-950">Price:</span> {plan.amount === "Custom" ? "Custom" : `Rs. ${plan.amount}`}</p>
+            <p><span className="font-black text-slate-950">Duration:</span> {plan.duration_months ?? "0"} months</p>
+            <p><span className="font-black text-slate-950">Seat limit:</span> {plan.seat_limit ?? "Unlimited"}</p>
+            <p><span className="font-black text-slate-950">Referral:</span> Rs. {plan.referral_bonus ?? "0"}</p>
             <p><span className="font-black text-slate-950">Tenants:</span> {plan.tenants}</p>
             <p><span className="font-black text-slate-950">Active:</span> {plan.active_tenants}</p>
             <p><span className="font-black text-slate-950">Past Due:</span> {plan.past_due_tenants}</p>
+            {plan.features ? (
+              <p className="text-xs leading-6 text-slate-500">
+                Enabled: {Object.entries(plan.features).filter(([, enabled]) => enabled).map(([feature]) => feature.replaceAll("_", " ")).join(", ")}
+              </p>
+            ) : null}
           </div>
         </DashboardCard>
       ))}

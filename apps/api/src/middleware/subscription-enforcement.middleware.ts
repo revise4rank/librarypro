@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
+import { type EntitlementFeature, getLibraryEntitlements } from "../lib/platform-plans";
 
 const ALLOWLIST = [
   /^\/v1\/auth\//,
@@ -13,6 +14,15 @@ type SubscriptionSnapshot = {
   status: "TRIALING" | "ACTIVE" | "PAST_DUE" | "EXPIRED" | "CANCELLED";
   graceUntil?: string | null;
 };
+
+const FEATURE_GATES: Array<{ pattern: RegExp; methods?: string[]; feature: EntitlementFeature }> = [
+  { pattern: /^\/v1\/owner\/public-profile(?:\/uploads)?$/, methods: ["POST", "PATCH"], feature: "website_builder" },
+  { pattern: /^\/v1\/owner\/admins(?:\/|$)/, methods: ["POST", "DELETE", "PATCH"], feature: "admin_creation" },
+  { pattern: /^\/v1\/owner\/coupons(?:\/|$)/, methods: ["POST", "PATCH"], feature: "coupons" },
+  { pattern: /^\/v1\/owner\/offers$/, methods: ["POST"], feature: "offers" },
+  { pattern: /^\/v1\/owner\/reports\/export$/, methods: ["GET"], feature: "reports_export" },
+  { pattern: /^\/v1\/owner\/campaigns\/due-recovery$/, methods: ["POST"], feature: "ads" },
+];
 
 async function getTenantSubscription(_libraryId: string): Promise<SubscriptionSnapshot> {
   const result = await requireDb().query<{
@@ -28,7 +38,8 @@ async function getTenantSubscription(_libraryId: string): Promise<SubscriptionSn
     [_libraryId],
   );
 
-  return result.rows[0] ?? { status: "EXPIRED", graceUntil: null };
+  const row = result.rows[0];
+  return row ? { status: row.status, graceUntil: row.grace_until } : { status: "EXPIRED", graceUntil: null };
 }
 
 export async function subscriptionEnforcementMiddleware(
@@ -47,6 +58,21 @@ export async function subscriptionEnforcementMiddleware(
 
     if (ALLOWLIST.some((pattern) => pattern.test(req.path))) {
       return next();
+    }
+
+    const gate = FEATURE_GATES.find((candidate) => {
+      const methodMatches = !candidate.methods || candidate.methods.includes(req.method);
+      return methodMatches && candidate.pattern.test(req.path);
+    });
+    if (gate) {
+      const entitlements = await getLibraryEntitlements(req.tenant.libraryId);
+      if (!entitlements.features[gate.feature]) {
+        throw new AppError(
+          403,
+          `This feature is not available on ${entitlements.plan.name}. Upgrade your plan to continue.`,
+          "PLAN_FEATURE_REQUIRED",
+        );
+      }
     }
 
     const subscription = await getTenantSubscription(req.tenant.libraryId);
