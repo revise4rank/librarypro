@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import type { PoolClient } from "pg";
 import { env } from "../config/env";
 import { requireDb } from "../lib/db";
+import { qualifyReferralForPaidPlatformPayment } from "./referral.service";
 import { AppError } from "../lib/errors";
 
 export function verifyRazorpayWebhookSignature(rawBody: Buffer, signatureHeader?: string) {
@@ -259,6 +260,10 @@ export async function processRazorpayWebhook(event: RazorpayWebhookEvent) {
         break;
       case "payment.captured":
         touchedPayments = await updatePlatformPayment(client, snapshot, "PAID");
+        await qualifyReferralForPaidPlatformPayment(client, {
+          razorpayOrderId: snapshot.orderId,
+          razorpayPaymentId: snapshot.paymentId,
+        });
         if (snapshot.subscriptionId) {
           touchedSubscriptions = await updateSubscriptionState(client, snapshot, "ACTIVE");
         }

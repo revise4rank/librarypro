@@ -148,6 +148,7 @@ export async function registerOwnerUser(input: {
   phone?: string;
   city?: string;
   password: string;
+  referralCode?: string;
 }) {
   const db = requireDb();
   const repo = ownerRepository();
@@ -180,6 +181,29 @@ export async function registerOwnerUser(input: {
 
     await repo.ensureOwnerRole(client, owner.id, library.id);
     await repo.createStarterSubscription(client, library.id);
+
+    if (input.referralCode?.trim()) {
+      const referrer = await client.query<{ id: string }>(
+        `
+        SELECT id::text
+        FROM libraries
+        WHERE lower(slug) = lower($1)
+          AND id <> $2
+        LIMIT 1
+        `,
+        [input.referralCode.trim(), library.id],
+      );
+      if (referrer.rows[0]) {
+        await client.query(
+          `
+          INSERT INTO library_referrals (referrer_library_id, referred_library_id, referral_code)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (referred_library_id) DO NOTHING
+          `,
+          [referrer.rows[0].id, library.id, input.referralCode.trim()],
+        );
+      }
+    }
 
     await client.query("COMMIT");
     createdUserId = owner.id;

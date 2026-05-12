@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch, saveSession } from "../lib/api";
 import { GoogleOAuthButton } from "./owner-login-form";
 
@@ -14,8 +14,14 @@ export function OwnerRegisterManager() {
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const code = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("ref") : null;
+    if (code) setReferralCode(code);
+  }, []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,7 +46,7 @@ export function OwnerRegisterManager() {
         "/auth/owner/register",
         {
           method: "POST",
-          body: JSON.stringify({ fullName, libraryName, email, phone, city, password }),
+          body: JSON.stringify({ fullName, libraryName, email, phone, city, password, referralCode }),
         },
         false,
       );
@@ -109,6 +115,13 @@ export function OwnerRegisterManager() {
           className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
         />
       </div>
+
+      <input
+        value={referralCode}
+        onChange={(event) => setReferralCode(event.target.value)}
+        placeholder="Referral code (optional)"
+        className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3"
+      />
 
       <p className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-900">
         After signup, you will land in Settings to finish library profile, plans, coupons, QR, and marketplace setup.

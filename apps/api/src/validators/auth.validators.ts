@@ -57,6 +57,7 @@ export const ownerRegisterBodySchema = z
     phone: z.string().trim().max(20).optional().or(z.literal("")),
     city: z.string().trim().max(120).optional().or(z.literal("")),
     password: z.string().min(6).max(120),
+    referralCode: z.string().trim().max(120).optional().or(z.literal("")),
   })
   .refine((value) => Boolean(value.email || value.phone), {
     message: "Either email or phone is required",

@@ -275,6 +275,7 @@ export async function ownerRegisterController(req: Request, res: Response) {
     phone: parsed.phone || undefined,
     city: parsed.city || undefined,
     password: parsed.password,
+    referralCode: parsed.referralCode || undefined,
   });
 
   const result = await loginUser({

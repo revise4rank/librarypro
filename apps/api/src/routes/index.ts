@@ -21,6 +21,11 @@ import {
   renewBillingSubscriptionController,
 } from "../controllers/billing-subscription.controller";
 import {
+  getOwnerReferralsController,
+  listAdminReferralsController,
+  updateAdminReferralStatusController,
+} from "../controllers/referral.controller";
+import {
   createStudentBookRequestController,
   listOwnerBookRequestsController,
   listStudentBookRequestsController,
@@ -180,6 +185,7 @@ router.post("/auth/change-password", asyncHandler(changePasswordController));
 router.post("/billing/razorpay/webhook", asyncHandler(razorpayWebhookController));
 router.get("/billing/subscription", requireRole(["LIBRARY_OWNER"]), asyncHandler(getBillingSubscriptionController));
 router.post("/billing/subscription/renew", requireRole(["LIBRARY_OWNER"]), asyncHandler(renewBillingSubscriptionController));
+router.get("/owner/referrals", requireRole(["LIBRARY_OWNER"]), asyncHandler(getOwnerReferralsController));
 router.get("/student/entry-qr", requireRole(["STUDENT"]), asyncHandler(getStudentEntryQrController));
 router.post("/checkins/scan", requireRole(["STUDENT"]), asyncHandler(scanCheckInController));
 router.post("/checkins/checkout", requireRole(["STUDENT"]), asyncHandler(scanCheckOutController));
@@ -298,6 +304,8 @@ router.get("/admin/libraries", requireRole(["SUPER_ADMIN"]), asyncHandler(listAd
 router.get("/admin/plans", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPlanSummariesController));
 router.patch("/admin/plans/:planCode", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminPlanConfigController));
 router.get("/admin/payments", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPaymentsController));
+router.get("/admin/referrals", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminReferralsController));
+router.patch("/admin/referrals/:referralId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminReferralStatusController));
 router.get("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminMarketplaceSettingsController));
 router.patch("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminMarketplaceSettingsController));
 router.get("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminOffersController));
