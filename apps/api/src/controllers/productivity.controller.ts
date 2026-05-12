@@ -15,6 +15,9 @@ import {
   getStudentAnalytics,
   getStudentFocusLeaderboard,
   getStudentSyllabus,
+  importGlobalSyllabusRows,
+  importSyllabusTemplateForStudent,
+  listGlobalSyllabusTemplates,
   listStudentLibraries,
   setActiveStudentLibrary,
   updateStudentFeedVisibility,
@@ -28,6 +31,8 @@ import {
   createStudentInterventionNoteBodySchema,
   createSyllabusSubjectBodySchema,
   createSyllabusTopicBodySchema,
+  adminSyllabusImportBodySchema,
+  importSyllabusTemplateBodySchema,
   updateFeedVisibilityBodySchema,
   updateStudentInterventionStatusBodySchema,
   updateTopicProgressBodySchema,
@@ -87,6 +92,26 @@ export async function createSyllabusSubjectController(req: Request, res: Respons
     studentUserId,
     title: parsed.title,
     colorHex: parsed.colorHex || null,
+    className: parsed.className || null,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function listStudentSyllabusTemplatesController(req: Request, res: Response) {
+  requireStudentContext(req);
+  const rawClassName = Array.isArray(req.query.className) ? req.query.className[0] : req.query.className;
+  const className = typeof rawClassName === "string" && rawClassName.trim() ? rawClassName.trim() : null;
+  const data = await listGlobalSyllabusTemplates(className);
+  res.json({ success: true, data });
+}
+
+export async function importStudentSyllabusTemplateController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const parsed = importSyllabusTemplateBodySchema.parse(req.body);
+  const data = await importSyllabusTemplateForStudent({
+    studentUserId,
+    className: parsed.className,
+    subjectTitle: parsed.subjectTitle || undefined,
   });
   res.status(201).json({ success: true, data });
 }
@@ -201,6 +226,32 @@ export async function getStudentFocusLeaderboardController(req: Request, res: Re
   const window = rawWindow === "30d" ? "30d" : "7d";
   const data = await getStudentFocusLeaderboard(libraryId, window);
   res.json({ success: true, data });
+}
+
+export async function listAdminSyllabusTemplatesController(req: Request, res: Response) {
+  const rawClassName = Array.isArray(req.query.className) ? req.query.className[0] : req.query.className;
+  const className = typeof rawClassName === "string" && rawClassName.trim() ? rawClassName.trim() : null;
+  const data = await listGlobalSyllabusTemplates(className);
+  res.json({ success: true, data });
+}
+
+export async function importAdminSyllabusTemplatesController(req: Request, res: Response) {
+  if (!req.auth) {
+    throw new AppError(401, "Super admin authentication required", "SUPER_ADMIN_AUTH_REQUIRED");
+  }
+  const parsed = adminSyllabusImportBodySchema.parse(req.body);
+  const data = await importGlobalSyllabusRows({
+    createdByUserId: req.auth.userId,
+    rows: parsed.rows.map((row) => ({
+      className: row.className,
+      subjectTitle: row.subjectTitle,
+      topicTitle: row.topicTitle,
+      estimatedMinutes: row.estimatedMinutes,
+      topicOrder: row.topicOrder,
+      colorHex: row.colorHex || null,
+    })),
+  });
+  res.status(201).json({ success: true, data });
 }
 
 function requireOwnerContext(req: Request) {

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const createSyllabusSubjectBodySchema = z.object({
   title: z.string().trim().min(2).max(120),
   colorHex: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).optional().or(z.literal("")),
+  className: z.string().trim().max(80).optional().or(z.literal("")),
 });
 
 export const createSyllabusTopicBodySchema = z.object({
@@ -10,6 +11,24 @@ export const createSyllabusTopicBodySchema = z.object({
   title: z.string().trim().min(2).max(180),
   estimatedMinutes: z.coerce.number().int().min(15).max(1440).default(60),
   topicOrder: z.coerce.number().int().min(0).max(5000).optional().default(0),
+});
+
+export const importSyllabusTemplateBodySchema = z.object({
+  className: z.string().trim().min(1).max(80),
+  subjectTitle: z.string().trim().max(120).optional().or(z.literal("")),
+});
+
+export const adminSyllabusImportBodySchema = z.object({
+  rows: z.array(
+    z.object({
+      className: z.string().trim().min(1).max(80),
+      subjectTitle: z.string().trim().min(1).max(120),
+      topicTitle: z.string().trim().min(1).max(180),
+      estimatedMinutes: z.coerce.number().int().min(15).max(1440).optional().default(60),
+      topicOrder: z.coerce.number().int().min(0).max(5000).optional().default(0),
+      colorHex: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).optional().or(z.literal("")),
+    }),
+  ).min(1).max(2000),
 });
 
 export const updateTopicProgressBodySchema = z.object({

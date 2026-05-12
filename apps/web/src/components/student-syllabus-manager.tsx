@@ -1,30 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+
+type TopicStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+
+type SyllabusSubject = {
+  id: string;
+  title: string;
+  class_name: string | null;
+  color_hex: string | null;
+  total_topics: number;
+  completed_topics: number;
+  completion_percent: number;
+  topics: Array<{
+    id: string;
+    subject_id: string;
+    title: string;
+    topic_order: number;
+    estimated_minutes: number;
+    status: TopicStatus;
+    progress_percent: number;
+    completed_at: string | null;
+  }>;
+};
 
 type SyllabusResponse = {
   success: boolean;
   data: {
-    subjects: Array<{
-      id: string;
-      title: string;
-      color_hex: string | null;
-      total_topics: number;
-      completed_topics: number;
-      completion_percent: number;
-      topics: Array<{
-        id: string;
-        subject_id: string;
-        title: string;
-        topic_order: number;
-        estimated_minutes: number;
-        status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
-        progress_percent: number;
-        completed_at: string | null;
-      }>;
-    }>;
+    subjects: SyllabusSubject[];
     analytics: {
       totalSubjects: number;
       totalTopics: number;
@@ -34,19 +39,47 @@ type SyllabusResponse = {
   };
 };
 
+type TemplateSubject = {
+  id: string;
+  class_name: string;
+  subject_title: string;
+  color_hex: string | null;
+  topics: Array<{
+    id: string;
+    topic_title: string;
+    topic_order: number;
+    estimated_minutes: number;
+  }>;
+};
+
+type TemplatesResponse = {
+  success: boolean;
+  data: TemplateSubject[];
+};
+
 const topicStatusOptions = [
   { value: "NOT_STARTED", label: "Not started" },
   { value: "IN_PROGRESS", label: "In progress" },
   { value: "COMPLETED", label: "Completed" },
 ] as const;
 
+function uniqueSorted(values: Array<string | null | undefined>) {
+  return Array.from(new Set(values.map((value) => value?.trim()).filter(Boolean) as string[])).sort((a, b) =>
+    a.localeCompare(b),
+  );
+}
+
 export function StudentSyllabusManager() {
   const [data, setData] = useState<SyllabusResponse["data"] | null>(null);
+  const [templates, setTemplates] = useState<TemplateSubject[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [subjectForm, setSubjectForm] = useState({ title: "", colorHex: "#d2723d" });
+  const [subjectForm, setSubjectForm] = useState({ title: "", className: "", colorHex: "#d2723d" });
   const [topicForm, setTopicForm] = useState({ subjectId: "", title: "", estimatedMinutes: "90" });
+  const [templateForm, setTemplateForm] = useState({ className: "", subjectTitle: "" });
+  const [classFilter, setClassFilter] = useState("");
   const [savingTopicId, setSavingTopicId] = useState<string | null>(null);
+  const [templateLoading, setTemplateLoading] = useState(false);
   const [showSubjectForm, setShowSubjectForm] = useState(false);
   const [showTopicForm, setShowTopicForm] = useState(false);
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
@@ -64,9 +97,35 @@ export function StudentSyllabusManager() {
     }
   }
 
+  async function loadTemplates(className?: string) {
+    try {
+      const query = className ? `?className=${encodeURIComponent(className)}` : "";
+      const response = await apiFetch<TemplatesResponse>(`/student/syllabus/templates${query}`);
+      setTemplates(response.data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load syllabus templates.");
+    }
+  }
+
   useEffect(() => {
     void loadSyllabus();
+    void loadTemplates();
   }, []);
+
+  const classOptions = useMemo(
+    () => uniqueSorted([...(data?.subjects.map((subject) => subject.class_name) ?? []), ...templates.map((template) => template.class_name)]),
+    [data?.subjects, templates],
+  );
+
+  const filteredSubjects = useMemo(() => {
+    if (!data) return [];
+    return data.subjects.filter((subject) => !classFilter || subject.class_name === classFilter);
+  }, [classFilter, data]);
+
+  const templateSubjectOptions = useMemo(
+    () => templates.filter((template) => !templateForm.className || template.class_name === templateForm.className),
+    [templates, templateForm.className],
+  );
 
   async function createSubject() {
     try {
@@ -74,14 +133,34 @@ export function StudentSyllabusManager() {
         method: "POST",
         body: JSON.stringify({
           title: subjectForm.title,
+          className: subjectForm.className,
           colorHex: subjectForm.colorHex,
         }),
       });
-      setSubjectForm({ title: "", colorHex: "#d2723d" });
+      setSubjectForm((current) => ({ ...current, title: "" }));
       setMessage("Subject created.");
       await loadSyllabus();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to create subject.");
+    }
+  }
+
+  async function importTemplate() {
+    try {
+      setTemplateLoading(true);
+      await apiFetch("/student/syllabus/import-template", {
+        method: "POST",
+        body: JSON.stringify({
+          className: templateForm.className,
+          subjectTitle: templateForm.subjectTitle,
+        }),
+      });
+      setMessage(templateForm.subjectTitle ? "Template subject imported." : "Class syllabus imported.");
+      await loadSyllabus();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Unable to import template.");
+    } finally {
+      setTemplateLoading(false);
     }
   }
 
@@ -105,7 +184,7 @@ export function StudentSyllabusManager() {
     }
   }
 
-  async function updateTopic(topicId: string, status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED", progressPercent: number) {
+  async function updateTopic(topicId: string, status: TopicStatus, progressPercent: number) {
     try {
       setSavingTopicId(topicId);
       await apiFetch(`/student/syllabus/topics/${topicId}/progress`, {
@@ -135,37 +214,117 @@ export function StudentSyllabusManager() {
 
       <section className="grid gap-4 md:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Subjects</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Subjects</p>
           <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.totalSubjects}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Topics</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Topics</p>
           <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.totalTopics}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Completed</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Completed</p>
           <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.completedTopics}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Today</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Today</p>
           <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.dailyCompletedTopics}</p>
         </div>
       </section>
 
+      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <DashboardCard title="Import syllabus" subtitle="Pick a class template uploaded by super admin.">
+          <div className="grid gap-4">
+            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+              <select
+                value={templateForm.className}
+                onChange={(event) => {
+                  const className = event.target.value;
+                  setTemplateForm({ className, subjectTitle: "" });
+                  setSubjectForm((current) => ({ ...current, className }));
+                  void loadTemplates(className);
+                }}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+              >
+                <option value="">Choose class</option>
+                {classOptions.map((className) => (
+                  <option key={className} value={className}>
+                    {className}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={templateForm.subjectTitle}
+                onChange={(event) => setTemplateForm((current) => ({ ...current, subjectTitle: event.target.value }))}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                disabled={!templateForm.className}
+              >
+                <option value="">All subjects</option>
+                {templateSubjectOptions.map((template) => (
+                  <option key={template.id} value={template.subject_title}>
+                    {template.subject_title} ({template.topics.length})
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => void importTemplate()}
+                disabled={!templateForm.className || templateLoading}
+                className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-50"
+              >
+                Import
+              </button>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              {templateSubjectOptions.length > 0
+                ? `${templateSubjectOptions.length} template subjects available for this class.`
+                : "No template selected yet."}
+            </div>
+          </div>
+        </DashboardCard>
+
+        <DashboardCard title="Class view" subtitle="Filter your tracker without mixing different exam paths.">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setClassFilter("")}
+              className={`rounded-full border px-4 py-2 text-sm font-bold ${!classFilter ? "border-[var(--lp-primary)] bg-[var(--lp-primary)] text-white" : "border-slate-200 bg-white text-slate-700"}`}
+            >
+              All classes
+            </button>
+            {classOptions.map((className) => (
+              <button
+                key={className}
+                type="button"
+                onClick={() => setClassFilter(className)}
+                className={`rounded-full border px-4 py-2 text-sm font-bold ${classFilter === className ? "border-[var(--lp-primary)] bg-[var(--lp-primary)] text-white" : "border-slate-200 bg-white text-slate-700"}`}
+              >
+                {className}
+              </button>
+            ))}
+          </div>
+        </DashboardCard>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <DashboardCard title="Create subject" subtitle="Only open creation panels when actually planning">
+        <DashboardCard title="Create subject" subtitle="Add custom subjects when templates do not cover your plan.">
           <div className="grid gap-4">
             <button type="button" onClick={() => setShowSubjectForm((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
               {showSubjectForm ? "Hide subject creator" : "Show subject creator"}
             </button>
             {showSubjectForm ? (
               <>
-                <div className="grid gap-4 md:grid-cols-[1fr_170px]">
+                <div className="grid gap-4 md:grid-cols-[1fr_160px_120px]">
                   <input
                     value={subjectForm.title}
                     onChange={(event) => setSubjectForm((current) => ({ ...current, title: event.target.value }))}
                     className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
                     placeholder="Physics, Maths, Reasoning..."
+                  />
+                  <input
+                    value={subjectForm.className}
+                    onChange={(event) => setSubjectForm((current) => ({ ...current, className: event.target.value }))}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+                    placeholder="Class 12"
                   />
                   <input
                     value={subjectForm.colorHex}
@@ -186,7 +345,7 @@ export function StudentSyllabusManager() {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Create topic" subtitle="Break subjects into small, finishable blocks">
+        <DashboardCard title="Create topic" subtitle="Break subjects into small, finishable blocks.">
           <div className="grid gap-4">
             <button type="button" onClick={() => setShowTopicForm((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
               {showTopicForm ? "Hide topic creator" : "Show topic creator"}
@@ -202,7 +361,7 @@ export function StudentSyllabusManager() {
                     <option value="">Choose subject</option>
                     {data.subjects.map((subject) => (
                       <option key={subject.id} value={subject.id}>
-                        {subject.title}
+                        {subject.class_name ? `${subject.class_name} - ` : ""}{subject.title}
                       </option>
                     ))}
                   </select>
@@ -235,11 +394,11 @@ export function StudentSyllabusManager() {
       </section>
 
       <section className="grid gap-4">
-        {data.subjects.map((subject) => (
+        {filteredSubjects.map((subject) => (
           <DashboardCard
             key={subject.id}
             title={subject.title}
-            subtitle={`${subject.completed_topics}/${subject.total_topics} topics complete`}
+            subtitle={`${subject.class_name ?? "General"} | ${subject.completed_topics}/${subject.total_topics} topics complete`}
             tone="bg-white"
           >
             <div className="grid gap-4">
@@ -262,7 +421,18 @@ export function StudentSyllabusManager() {
                 <div className="grid gap-3">
                   {subject.topics.map((topic) => (
                     <div key={topic.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="grid gap-3 lg:grid-cols-[auto_1fr_auto] lg:items-center">
+                        <input
+                          type="checkbox"
+                          checked={topic.status === "COMPLETED"}
+                          disabled={savingTopicId === topic.id}
+                          onChange={(event) => {
+                            const checked = event.target.checked;
+                            void updateTopic(topic.id, checked ? "COMPLETED" : "NOT_STARTED", checked ? 100 : 0);
+                          }}
+                          className="h-5 w-5 rounded border-slate-300 accent-[var(--lp-primary)]"
+                          aria-label={`Mark ${topic.title} complete`}
+                        />
                         <div>
                           <p className="font-black text-slate-950">{topic.title}</p>
                           <p className="mt-1 text-sm text-slate-500">
@@ -274,7 +444,7 @@ export function StudentSyllabusManager() {
                           <select
                             value={topic.status}
                             onChange={(event) => {
-                              const nextStatus = event.target.value as "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+                              const nextStatus = event.target.value as TopicStatus;
                               const nextProgress = nextStatus === "COMPLETED" ? 100 : nextStatus === "NOT_STARTED" ? 0 : Math.max(topic.progress_percent, 10);
                               void updateTopic(topic.id, nextStatus, nextProgress);
                             }}
@@ -310,8 +480,8 @@ export function StudentSyllabusManager() {
             </div>
           </DashboardCard>
         ))}
-        {data.subjects.length === 0 ? (
-          <DashboardCard title="No syllabus yet" subtitle="Start by creating your first subject.">
+        {filteredSubjects.length === 0 ? (
+          <DashboardCard title="No syllabus yet" subtitle="Import a template or create your first subject.">
             <p className="text-sm text-slate-500">Build your study plan topic by topic so progress is measurable, not vague.</p>
           </DashboardCard>
         ) : null}

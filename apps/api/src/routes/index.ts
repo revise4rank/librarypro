@@ -51,6 +51,8 @@ import {
 import {
   completeStudentRevisionController,
   createManualRevisionController,
+  importAdminSyllabusTemplatesController,
+  importStudentSyllabusTemplateController,
   createOwnerStudentInterventionNoteController,
   createStudentFeedPostController,
   createSyllabusSubjectController,
@@ -64,7 +66,9 @@ import {
   getStudentFocusLeaderboardController,
   getStudentSyllabusAnalyticsController,
   getStudentSyllabusController,
+  listAdminSyllabusTemplatesController,
   listStudentLibrariesController,
+  listStudentSyllabusTemplatesController,
   setActiveStudentLibraryController,
   updateStudentFeedVisibilityController,
   updateOwnerStudentInterventionStatusController,
@@ -266,6 +270,8 @@ router.post("/student/join-requests/resolve-qr", requireRole(["STUDENT"]), async
 router.get("/student/join-requests", requireRole(["STUDENT"]), asyncHandler(listStudentJoinRequestsController));
 router.get("/student/syllabus", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusController));
 router.get("/student/syllabus/analytics", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusAnalyticsController));
+router.get("/student/syllabus/templates", requireRole(["STUDENT"]), asyncHandler(listStudentSyllabusTemplatesController));
+router.post("/student/syllabus/import-template", requireRole(["STUDENT"]), asyncHandler(importStudentSyllabusTemplateController));
 router.post("/student/syllabus/subjects", requireRole(["STUDENT"]), asyncHandler(createSyllabusSubjectController));
 router.post("/student/syllabus/topics", requireRole(["STUDENT"]), asyncHandler(createSyllabusTopicController));
 router.patch("/student/syllabus/topics/:topicId/progress", requireRole(["STUDENT"]), asyncHandler(updateSyllabusTopicProgressController));
@@ -286,6 +292,8 @@ router.patch("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncH
 router.get("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminOffersController));
 router.post("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(createAdminOfferController));
 router.get("/admin/review-reports", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminReviewReportsController));
+router.get("/admin/syllabus/templates", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminSyllabusTemplatesController));
+router.post("/admin/syllabus/import", requireRole(["SUPER_ADMIN"]), asyncHandler(importAdminSyllabusTemplatesController));
 router.patch("/admin/reviews/:reviewId/moderate", requireRole(["SUPER_ADMIN"]), asyncHandler(moderateLibraryReviewController));
 router.post(
   "/owner/public-profile/uploads",

@@ -26,11 +26,25 @@ export type SyllabusTopicRow = {
 export type SyllabusSubjectRow = {
   id: string;
   title: string;
+  class_name: string | null;
   color_hex: string | null;
   total_topics: number;
   completed_topics: number;
   completion_percent: number;
   topics: SyllabusTopicRow[];
+};
+
+export type GlobalSyllabusSubjectRow = {
+  id: string;
+  class_name: string;
+  subject_title: string;
+  color_hex: string | null;
+  topics: Array<{
+    id: string;
+    topic_title: string;
+    topic_order: number;
+    estimated_minutes: number;
+  }>;
 };
 
 export type StudentBadgeRow = {
@@ -183,16 +197,37 @@ export class ProductivityRepository {
     studentUserId: string;
     title: string;
     colorHex?: string | null;
+    className?: string | null;
   }) {
     const result = await client.query<{ id: string }>(
       `
-      INSERT INTO subjects (student_user_id, title, color_hex)
-      VALUES ($1, $2, $3)
+      INSERT INTO subjects (student_user_id, title, color_hex, class_name)
+      VALUES ($1, $2, $3, $4)
       RETURNING id
       `,
-      [input.studentUserId, input.title, input.colorHex ?? null],
+      [input.studentUserId, input.title, input.colorHex ?? null, input.className ?? null],
     );
     return result.rows[0];
+  }
+
+  async findSubjectByStudentTitleClass(client: PoolClient, input: {
+    studentUserId: string;
+    title: string;
+    className?: string | null;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      SELECT id::text
+      FROM subjects
+      WHERE student_user_id = $1
+        AND lower(title) = lower($2)
+        AND COALESCE(class_name, '') = COALESCE($3, '')
+      ORDER BY created_at ASC
+      LIMIT 1
+      `,
+      [input.studentUserId, input.title, input.className ?? null],
+    );
+    return result.rows[0] ?? null;
   }
 
   async createTopic(client: PoolClient, input: {
@@ -211,6 +246,29 @@ export class ProductivityRepository {
       [input.studentUserId, input.subjectId, input.title, input.estimatedMinutes, input.topicOrder],
     );
     return result.rows[0];
+  }
+
+  async createTopicIfMissing(client: PoolClient, input: {
+    studentUserId: string;
+    subjectId: string;
+    title: string;
+    estimatedMinutes: number;
+    topicOrder: number;
+  }) {
+    const existing = await client.query<{ id: string }>(
+      `
+      SELECT id::text
+      FROM topics
+      WHERE student_user_id = $1
+        AND subject_id = $2
+        AND lower(title) = lower($3)
+      LIMIT 1
+      `,
+      [input.studentUserId, input.subjectId, input.title],
+    );
+    if (existing.rows[0]) return { ...existing.rows[0], created: false };
+    const topic = await this.createTopic(client, input);
+    return { ...topic, created: true };
   }
 
   async updateTopicProgress(client: PoolClient, input: {
@@ -248,6 +306,7 @@ export class ProductivityRepository {
     const subjectsResult = await this.pool.query<{
       id: string;
       title: string;
+      class_name: string | null;
       color_hex: string | null;
       total_topics: string;
       completed_topics: string;
@@ -257,6 +316,7 @@ export class ProductivityRepository {
       SELECT
         s.id::text,
         s.title,
+        s.class_name,
         s.color_hex,
         COUNT(t.id)::text AS total_topics,
         COUNT(*) FILTER (WHERE sp.status = 'COMPLETED')::text AS completed_topics,
@@ -272,7 +332,7 @@ export class ProductivityRepository {
         ON sp.topic_id = t.id
        AND sp.student_user_id = s.student_user_id
       WHERE s.student_user_id = $1
-      GROUP BY s.id, s.title, s.color_hex, s.created_at
+      GROUP BY s.id, s.title, s.class_name, s.color_hex, s.created_at
       ORDER BY s.created_at DESC
       `,
       [studentUserId],
@@ -309,12 +369,117 @@ export class ProductivityRepository {
     return subjectsResult.rows.map((subject) => ({
       id: subject.id,
       title: subject.title,
+      class_name: subject.class_name,
       color_hex: subject.color_hex,
       total_topics: Number(subject.total_topics),
       completed_topics: Number(subject.completed_topics),
       completion_percent: Number(subject.completion_percent),
       topics: topicsBySubject.get(subject.id) ?? [],
     }));
+  }
+
+  async listGlobalSyllabusTemplates(className?: string | null): Promise<GlobalSyllabusSubjectRow[]> {
+    const subjectsResult = await this.pool.query<{
+      id: string;
+      class_name: string;
+      subject_title: string;
+      color_hex: string | null;
+    }>(
+      `
+      SELECT id::text, class_name, subject_title, color_hex
+      FROM global_syllabus_subjects
+      WHERE ($1::text IS NULL OR class_name = $1)
+      ORDER BY class_name ASC, subject_title ASC
+      `,
+      [className || null],
+    );
+
+    if (subjectsResult.rows.length === 0) return [];
+
+    const topicsResult = await this.pool.query<{
+      id: string;
+      global_subject_id: string;
+      topic_title: string;
+      topic_order: number;
+      estimated_minutes: number;
+    }>(
+      `
+      SELECT id::text, global_subject_id::text, topic_title, topic_order, estimated_minutes
+      FROM global_syllabus_topics
+      WHERE global_subject_id = ANY($1::uuid[])
+      ORDER BY topic_order ASC, created_at ASC
+      `,
+      [subjectsResult.rows.map((subject) => subject.id)],
+    );
+
+    const topicsBySubject = new Map<string, GlobalSyllabusSubjectRow["topics"]>();
+    for (const topic of topicsResult.rows) {
+      const current = topicsBySubject.get(topic.global_subject_id) ?? [];
+      current.push({
+        id: topic.id,
+        topic_title: topic.topic_title,
+        topic_order: topic.topic_order,
+        estimated_minutes: topic.estimated_minutes,
+      });
+      topicsBySubject.set(topic.global_subject_id, current);
+    }
+
+    return subjectsResult.rows.map((subject) => ({
+      ...subject,
+      topics: topicsBySubject.get(subject.id) ?? [],
+    }));
+  }
+
+  async importGlobalSyllabusRows(client: PoolClient, input: {
+    createdByUserId: string;
+    rows: Array<{
+      className: string;
+      subjectTitle: string;
+      topicTitle: string;
+      estimatedMinutes: number;
+      topicOrder: number;
+      colorHex?: string | null;
+    }>;
+  }) {
+    let subjectsTouched = 0;
+    let topicsTouched = 0;
+    const touchedSubjects = new Set<string>();
+
+    for (const row of input.rows) {
+      const subjectResult = await client.query<{ id: string }>(
+        `
+        INSERT INTO global_syllabus_subjects (class_name, subject_title, color_hex, created_by_user_id, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (class_name, subject_title)
+        DO UPDATE SET
+          color_hex = COALESCE(EXCLUDED.color_hex, global_syllabus_subjects.color_hex),
+          updated_at = NOW()
+        RETURNING id
+        `,
+        [row.className, row.subjectTitle, row.colorHex ?? null, input.createdByUserId],
+      );
+      const subjectId = subjectResult.rows[0].id;
+      if (!touchedSubjects.has(subjectId)) {
+        touchedSubjects.add(subjectId);
+        subjectsTouched += 1;
+      }
+
+      await client.query(
+        `
+        INSERT INTO global_syllabus_topics (global_subject_id, topic_title, topic_order, estimated_minutes, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (global_subject_id, topic_title)
+        DO UPDATE SET
+          topic_order = EXCLUDED.topic_order,
+          estimated_minutes = EXCLUDED.estimated_minutes,
+          updated_at = NOW()
+        `,
+        [subjectId, row.topicTitle, row.topicOrder, row.estimatedMinutes],
+      );
+      topicsTouched += 1;
+    }
+
+    return { subjectsTouched, topicsTouched };
   }
 
   async getSyllabusAnalytics(studentUserId: string) {

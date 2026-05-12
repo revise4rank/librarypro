@@ -116,12 +116,103 @@ export async function createSyllabusSubject(input: {
   studentUserId: string;
   title: string;
   colorHex?: string | null;
+  className?: string | null;
 }) {
   const db = requireDb();
   const repo = repository();
   const client = await db.connect();
   try {
     return await repo.createSubject(client, input);
+  } finally {
+    client.release();
+  }
+}
+
+export async function listGlobalSyllabusTemplates(className?: string | null) {
+  return repository().listGlobalSyllabusTemplates(className);
+}
+
+export async function importGlobalSyllabusRows(input: {
+  createdByUserId: string;
+  rows: Array<{
+    className: string;
+    subjectTitle: string;
+    topicTitle: string;
+    estimatedMinutes: number;
+    topicOrder: number;
+    colorHex?: string | null;
+  }>;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await repo.importGlobalSyllabusRows(client, input);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function importSyllabusTemplateForStudent(input: {
+  studentUserId: string;
+  className: string;
+  subjectTitle?: string;
+}) {
+  const templates = await repository().listGlobalSyllabusTemplates(input.className);
+  const selectedTemplates = input.subjectTitle
+    ? templates.filter((subject) => subject.subject_title === input.subjectTitle)
+    : templates;
+
+  if (selectedTemplates.length === 0) {
+    throw new AppError(404, "No syllabus template found for this class", "SYLLABUS_TEMPLATE_NOT_FOUND");
+  }
+
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    let subjectsImported = 0;
+    let topicsImported = 0;
+    for (const template of selectedTemplates) {
+      let subject = await repo.findSubjectByStudentTitleClass(client, {
+        studentUserId: input.studentUserId,
+        title: template.subject_title,
+        className: template.class_name,
+      });
+      if (!subject) {
+        subject = await repo.createSubject(client, {
+          studentUserId: input.studentUserId,
+          title: template.subject_title,
+          colorHex: template.color_hex,
+          className: template.class_name,
+        });
+        subjectsImported += 1;
+      }
+      for (const topic of template.topics) {
+        const importedTopic = await repo.createTopicIfMissing(client, {
+          studentUserId: input.studentUserId,
+          subjectId: subject.id,
+          title: topic.topic_title,
+          estimatedMinutes: topic.estimated_minutes,
+          topicOrder: topic.topic_order,
+        });
+        if (importedTopic.created) {
+          topicsImported += 1;
+        }
+      }
+    }
+    await client.query("COMMIT");
+    return { subjectsImported, topicsImported };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
   } finally {
     client.release();
   }
