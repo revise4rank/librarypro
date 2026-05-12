@@ -33,7 +33,8 @@ export async function exportOwnerReport(reportType: string, format: "xlsx" | "pd
   });
 
   if (!response.ok) {
-    throw new Error("Export failed");
+    const message = await response.text().catch(() => "");
+    throw new Error(message || "Export failed");
   }
 
   return response;

@@ -77,7 +77,7 @@ type ReportsResponse = {
   };
 };
 
-type ReportType = "students" | "payments" | "dues" | "paid" | "expenses" | "attendance";
+type ReportType = "summary" | "students" | "payments" | "dues" | "paid" | "expenses" | "attendance";
 
 function toCurrency(value: number) {
   return `Rs. ${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
@@ -101,7 +101,7 @@ export function OwnerReportsManager() {
   const [error, setError] = useState<string | null>(null);
   const [exportingKey, setExportingKey] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [exportsOpen, setExportsOpen] = useState(false);
+  const [exportsOpen, setExportsOpen] = useState(true);
   const [previewsOpen, setPreviewsOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"students" | "payments" | "expenses" | "attendance">("students");
 
@@ -123,14 +123,19 @@ export function OwnerReportsManager() {
     try {
       const response = await exportOwnerReport(reportType, format, fromDate, toDate);
       const blob = await response.blob();
+      if (!blob.size) {
+        throw new Error("Export file was empty.");
+      }
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       const disposition = response.headers.get("Content-Disposition");
       const match = disposition?.match(/filename=\"?([^"]+)\"?/);
       anchor.href = url;
-      anchor.download = match?.[1] ?? `${reportType}.${format}`;
+      anchor.download = match?.[1] ?? `${reportType}-report-${fromDate || "start"}-${toDate || "today"}.${format}`;
+      document.body.appendChild(anchor);
       anchor.click();
-      URL.revokeObjectURL(url);
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 250);
     } catch (exportError) {
       setError(exportError instanceof Error ? exportError.message : "Unable to export report.");
     } finally {
@@ -240,12 +245,12 @@ export function OwnerReportsManager() {
         ))}
       </section>
 
-      <DashboardCard title="Server exports" subtitle="Keep exports tucked away until you actually need a file">
+      <DashboardCard title="Server exports" subtitle="One-click XLSX/PDF files for owner records and accountant handoff.">
         <div className="grid gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
             <div>
               <p className="text-sm font-black text-slate-950">Export center</p>
-              <p className="mt-1 text-sm text-slate-500">True XLSX/PDF download actions.</p>
+              <p className="mt-1 text-sm text-slate-500">Range: {fromDate || "start"} to {toDate || "today"}</p>
             </div>
             <button
               type="button"
@@ -258,6 +263,7 @@ export function OwnerReportsManager() {
           {exportsOpen ? (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {[
+                ["summary", "Business summary"],
                 ["students", "Student list"],
                 ["payments", "All payments"],
                 ["dues", "Due payments"],

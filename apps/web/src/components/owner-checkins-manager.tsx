@@ -27,6 +27,18 @@ type CheckinResponse = {
   };
 };
 
+type OwnerQrSettingsResponse = {
+  success: boolean;
+  data: {
+    library_name: string;
+    city: string;
+    area: string | null;
+    qr_key_id: string;
+    qr_payload: string;
+    allow_offline_checkin: boolean;
+  };
+};
+
 type FilterState = {
   status: "ALL" | "INSIDE" | "COMPLETED" | "OVERSTAY";
   search: string;
@@ -50,8 +62,22 @@ function buildQuery(filters: FilterState) {
   return params.toString();
 }
 
+function buildQrImageUrl(payload: string, size = 640) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=16&data=${encodeURIComponent(payload)}`;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function OwnerCheckinsManager() {
   const [data, setData] = useState<CheckinResponse["data"] | null>(null);
+  const [qrSettings, setQrSettings] = useState<OwnerQrSettingsResponse["data"] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterState>({
@@ -75,11 +101,74 @@ export function OwnerCheckinsManager() {
     }
   }
 
+  async function loadQrSettings() {
+    try {
+      const response = await apiFetch<OwnerQrSettingsResponse>("/owner/settings");
+      setQrSettings(response.data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load library QR.");
+    }
+  }
+
   useEffect(() => {
     void loadCheckins(filters);
+    void loadQrSettings();
   }, []);
 
   const rows = useMemo(() => data?.rows ?? [], [data]);
+
+  function downloadQrImage() {
+    if (!qrSettings?.qr_payload) return;
+    const anchor = document.createElement("a");
+    anchor.href = buildQrImageUrl(qrSettings.qr_payload, 960);
+    anchor.download = `${qrSettings.library_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-library-qr.png`;
+    anchor.rel = "noopener";
+    anchor.target = "_blank";
+    anchor.click();
+  }
+
+  function printQrPoster() {
+    if (!qrSettings?.qr_payload) return;
+    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=720,height=900");
+    if (!printWindow) {
+      setError("Popup blocked. Allow popups to print QR poster.");
+      return;
+    }
+    const qrUrl = buildQrImageUrl(qrSettings.qr_payload, 720);
+    const safeLibraryName = escapeHtml(qrSettings.library_name);
+    const safeLocation = escapeHtml([qrSettings.area, qrSettings.city].filter(Boolean).join(", "));
+    const safeQrKey = escapeHtml(qrSettings.qr_key_id);
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${safeLibraryName} QR</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 36px; color: #0f172a; }
+            .poster { min-height: calc(100vh - 72px); border: 2px solid #0f172a; border-radius: 20px; display: grid; place-items: center; text-align: center; padding: 32px; }
+            h1 { font-size: 38px; margin: 0 0 8px; }
+            p { margin: 0; color: #475569; font-size: 18px; }
+            img { width: min(72vw, 520px); height: min(72vw, 520px); margin: 28px auto; }
+            .key { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #64748b; }
+            .hint { font-weight: 700; color: #0f766e; }
+          </style>
+        </head>
+        <body>
+          <main class="poster">
+            <section>
+              <h1>${safeLibraryName}</h1>
+              <p>${safeLocation}</p>
+              <img src="${qrUrl}" alt="Library QR" />
+              <p class="hint">Students scan this QR from their BookLib app for check-in and check-out.</p>
+              <p class="key">QR Key: ${safeQrKey}</p>
+            </section>
+          </main>
+          <script>window.onload = () => { window.print(); };</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
 
   return (
     <div className="grid gap-5">
@@ -115,6 +204,52 @@ export function OwnerCheckinsManager() {
           <p className="text-4xl font-black text-slate-950">{data?.summary.overstay ?? 0}</p>
         </DashboardCard>
       </section>
+
+      <DashboardCard title="Library QR scanner board" subtitle="Download or print the reception QR that students scan from their app.">
+        <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            {qrSettings?.qr_payload ? (
+              <img
+                src={buildQrImageUrl(qrSettings.qr_payload, 420)}
+                alt={`${qrSettings.library_name} library QR`}
+                className="h-48 w-48 rounded-xl bg-white object-cover"
+              />
+            ) : (
+              <div className="grid h-48 w-48 place-items-center rounded-xl bg-slate-100 text-sm text-slate-500">Loading QR...</div>
+            )}
+          </div>
+          <div className="grid content-start gap-3">
+            <div>
+              <p className="text-xl font-black text-slate-950">{qrSettings?.library_name ?? "Library QR"}</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Place this QR at reception or entry gate. Students can scan it for check-in/check-out and join requests.
+              </p>
+            </div>
+            <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+              <p className="rounded-xl bg-slate-50 px-4 py-3">QR key: <span className="font-black text-slate-950">{qrSettings?.qr_key_id ?? "-"}</span></p>
+              <p className="rounded-xl bg-slate-50 px-4 py-3">Offline sync: <span className="font-black text-slate-950">{qrSettings?.allow_offline_checkin ? "Allowed" : "Disabled"}</span></p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={downloadQrImage}
+                disabled={!qrSettings?.qr_payload}
+                className="rounded-xl bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-black text-[var(--lp-accent)] disabled:opacity-50"
+              >
+                Download QR image
+              </button>
+              <button
+                type="button"
+                onClick={printQrPoster}
+                disabled={!qrSettings?.qr_payload}
+                className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 disabled:opacity-50"
+              >
+                Print QR poster
+              </button>
+            </div>
+          </div>
+        </div>
+      </DashboardCard>
 
       <DashboardCard title="Register filters" subtitle="Search student, seat, date range, or long stays">
         <div className="grid gap-4">

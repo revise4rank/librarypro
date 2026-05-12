@@ -227,7 +227,7 @@ export const studentPaymentsQuerySchema = paginationQuerySchema;
 export const studentNotificationsQuerySchema = paginationQuerySchema;
 
 export const ownerReportExportQuerySchema = ownerReportsQuerySchema.extend({
-  reportType: z.enum(["students", "payments", "dues", "paid", "expenses", "attendance"]).default("students"),
+  reportType: z.enum(["summary", "students", "payments", "dues", "paid", "expenses", "attendance"]).default("students"),
   format: z.enum(["xlsx", "pdf"]).default("xlsx"),
 });
 
