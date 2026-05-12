@@ -95,7 +95,7 @@ const actionCards = [
   { title: "Review join requests", detail: "Approve incoming requests from one queue", href: "/owner/admissions?mode=requests" },
   { title: "Open active roster", detail: "Seat allotment, renewals, and profile edits", href: "/owner/students" },
   { title: "Configure seat inventory", detail: "Floor, room, reserve, and planner setup", href: "/owner/seats" },
-  { title: "Publish library website", detail: "Website tab inside settings", href: "/owner/settings?tab=website" },
+  { title: "Publish library website", detail: "Open dedicated website builder", href: "/owner/website" },
   { title: "Send due reminders", detail: "Notices and reminders", href: "/owner/notifications" },
 ];
 
