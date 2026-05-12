@@ -1,4 +1,5 @@
 import { DashboardShell } from "../../../../components/dashboard-shell";
+import { StudentSectionTabs } from "../../../../components/student-section-tabs";
 import { StudentRewardsManager } from "../../../../components/student-rewards-manager";
 import { StudentWorkspaceActions } from "../../../../components/student-workspace-actions";
 import { studentNav } from "../../../../lib/role-nav";
@@ -13,7 +14,10 @@ export default function StudentRewardsPage() {
       nav={studentNav}
       actions={<StudentWorkspaceActions />}
     >
-      <StudentRewardsManager />
+      <div className="grid gap-4">
+        <StudentSectionTabs active="tools" />
+        <StudentRewardsManager />
+      </div>
     </DashboardShell>
   );
 }

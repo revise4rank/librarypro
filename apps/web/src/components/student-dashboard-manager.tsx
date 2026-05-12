@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { getRealtimeSocket } from "../lib/realtime";
 import { DashboardCard } from "./dashboard-shell";
+import { StudentSectionTabs } from "./student-section-tabs";
 import { StatCard } from "./stat-card";
 
 type DashboardResponse = {
@@ -221,6 +222,7 @@ export function StudentDashboardManager() {
   return (
     <div className="grid gap-4">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+      <StudentSectionTabs active="library" />
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {summaryCards.map((card) => (
           <StatCard

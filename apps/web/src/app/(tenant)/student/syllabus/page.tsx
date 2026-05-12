@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DashboardShell } from "../../../../components/dashboard-shell";
+import { StudentSectionTabs } from "../../../../components/student-section-tabs";
 import { StudentSyllabusManager } from "../../../../components/student-syllabus-manager";
 import { StudentWorkspaceActions } from "../../../../components/student-workspace-actions";
 import { studentNav } from "../../../../lib/role-nav";
@@ -20,7 +21,10 @@ export default function StudentSyllabusPage() {
         </StudentWorkspaceActions>
       }
     >
-      <StudentSyllabusManager />
+      <div className="grid gap-4">
+        <StudentSectionTabs active="study" />
+        <StudentSyllabusManager />
+      </div>
     </DashboardShell>
   );
 }

@@ -1,4 +1,5 @@
 import { DashboardShell } from "../../../../components/dashboard-shell";
+import { StudentSectionTabs } from "../../../../components/student-section-tabs";
 import { StudentFocusManager } from "../../../../components/student-focus-manager";
 import { StudentWorkspaceActions } from "../../../../components/student-workspace-actions";
 import { studentNav } from "../../../../lib/role-nav";
@@ -13,7 +14,10 @@ export default function StudentFocusPage() {
       nav={studentNav}
       actions={<StudentWorkspaceActions />}
     >
-      <StudentFocusManager />
+      <div className="grid gap-4">
+        <StudentSectionTabs active="study" />
+        <StudentFocusManager />
+      </div>
     </DashboardShell>
   );
 }
