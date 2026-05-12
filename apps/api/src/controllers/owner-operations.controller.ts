@@ -889,10 +889,11 @@ export async function updateOwnerFloorController(req: Request, res: Response) {
     layoutColumns: parsed.layoutColumns,
     layoutRows: parsed.layoutRows,
     layoutMeta:
-      parsed.aisleCells || parsed.sectionColors
+      parsed.aisleCells || parsed.sectionColors || parsed.rooms
         ? {
             aisleCells: parsed.aisleCells,
             sectionColors: parsed.sectionColors,
+            rooms: parsed.rooms,
           }
         : null,
   });

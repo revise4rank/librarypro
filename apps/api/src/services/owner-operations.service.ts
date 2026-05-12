@@ -12,6 +12,16 @@ function repository() {
   return new OwnerOperationsRepository(requireDb());
 }
 
+type FloorRoomConfig = {
+  id: string;
+  name: string;
+  type?: "READING_HALL" | "CABIN" | "SILENT_ZONE" | "GROUP_ZONE" | "CUSTOM";
+  color: string;
+  capacityTarget?: number;
+  notes?: string;
+  sortOrder?: number;
+};
+
 function buildStudentCode(fullName: string) {
   const prefix = fullName
     .replace(/[^a-zA-Z]/g, "")
@@ -784,7 +794,7 @@ export async function createOwnerFloor(input: {
   floorNumber: number;
   layoutColumns: number;
   layoutRows: number;
-  layoutMeta?: { aisleCells?: string[]; sectionColors?: Record<string, string> } | null;
+  layoutMeta?: { aisleCells?: string[]; sectionColors?: Record<string, string>; rooms?: FloorRoomConfig[] } | null;
 }) {
   const db = requireDb();
   const repo = repository();
@@ -817,7 +827,7 @@ export async function updateOwnerFloor(input: {
   name?: string;
   layoutColumns?: number;
   layoutRows?: number;
-  layoutMeta?: { aisleCells?: string[]; sectionColors?: Record<string, string> } | null;
+  layoutMeta?: { aisleCells?: string[]; sectionColors?: Record<string, string>; rooms?: FloorRoomConfig[] } | null;
 }) {
   const db = requireDb();
   const repo = repository();

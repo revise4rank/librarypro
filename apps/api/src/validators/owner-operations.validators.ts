@@ -145,6 +145,17 @@ export const updateOwnerFloorBodySchema = z.object({
   layoutRows: z.coerce.number().int().min(1).max(100).optional(),
   aisleCells: z.array(z.string().trim().min(3).max(20)).optional(),
   sectionColors: z.record(z.string().trim().min(1).max(80), z.string().regex(/^#[0-9a-fA-F]{6}$/)).optional(),
+  rooms: z.array(
+    z.object({
+      id: z.string().trim().min(2).max(80),
+      name: z.string().trim().min(1).max(80),
+      type: z.enum(["READING_HALL", "CABIN", "SILENT_ZONE", "GROUP_ZONE", "CUSTOM"]).default("READING_HALL"),
+      color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      capacityTarget: z.coerce.number().int().min(0).max(100000).optional(),
+      notes: z.string().trim().max(240).optional().or(z.literal("")),
+      sortOrder: z.coerce.number().int().min(0).max(1000).optional(),
+    }),
+  ).max(60).optional(),
 });
 
 export const createOwnerSeatsBodySchema = z.object({

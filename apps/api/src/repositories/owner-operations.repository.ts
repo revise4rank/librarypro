@@ -207,7 +207,18 @@ export type OwnerFloorRow = {
   layout_meta?: {
     aisleCells?: string[];
     sectionColors?: Record<string, string>;
+    rooms?: FloorRoomConfig[];
   } | null;
+};
+
+type FloorRoomConfig = {
+  id: string;
+  name: string;
+  type?: "READING_HALL" | "CABIN" | "SILENT_ZONE" | "GROUP_ZONE" | "CUSTOM";
+  color: string;
+  capacityTarget?: number;
+  notes?: string;
+  sortOrder?: number;
 };
 
 export type OwnerCheckinRow = {
@@ -2013,7 +2024,7 @@ export class OwnerOperationsRepository {
     floorNumber: number;
     layoutColumns: number;
     layoutRows: number;
-    layoutMeta?: { aisleCells?: string[]; sectionColors?: Record<string, string> } | null;
+    layoutMeta?: { aisleCells?: string[]; sectionColors?: Record<string, string>; rooms?: FloorRoomConfig[] } | null;
   }) {
     const result = await client.query<OwnerFloorRow>(
       `
@@ -2033,7 +2044,7 @@ export class OwnerOperationsRepository {
     name?: string | null;
     layoutColumns?: number | null;
     layoutRows?: number | null;
-    layoutMeta?: { aisleCells?: string[]; sectionColors?: Record<string, string> } | null;
+    layoutMeta?: { aisleCells?: string[]; sectionColors?: Record<string, string>; rooms?: FloorRoomConfig[] } | null;
   }) {
     const result = await client.query<OwnerFloorRow>(
       `

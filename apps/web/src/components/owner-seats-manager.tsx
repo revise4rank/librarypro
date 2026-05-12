@@ -37,6 +37,16 @@ type StudentRow = {
   admission_status?: "SEAT_UNALLOTTED" | "SEAT_ALLOTTED";
 };
 
+type FloorRoomConfig = {
+  id: string;
+  name: string;
+  type: "READING_HALL" | "CABIN" | "SILENT_ZONE" | "GROUP_ZONE" | "CUSTOM";
+  color: string;
+  capacityTarget?: number;
+  notes?: string;
+  sortOrder?: number;
+};
+
 type FloorRow = {
   id: string;
   name: string;
@@ -46,11 +56,12 @@ type FloorRow = {
   layout_meta?: {
     aisleCells?: string[];
     sectionColors?: Record<string, string>;
+    rooms?: FloorRoomConfig[];
   } | null;
 };
 
 type FloorDrafts = Record<string, { name: string; layoutRows: number; layoutColumns: number }>;
-type FloorMetaDrafts = Record<string, { aisleCells: string[]; sectionColors: Record<string, string> }>;
+type FloorMetaDrafts = Record<string, { aisleCells: string[]; sectionColors: Record<string, string>; rooms: FloorRoomConfig[] }>;
 
 const seatToneClasses: Record<string, string> = {
   AVAILABLE: "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-sm",
@@ -196,6 +207,61 @@ function getZoneAccent(zone: string) {
   if (zone === "Boys Zone") return "#0ea5e9";
   if (zone === "Quiet Zone") return "#8b5cf6";
   return "#10b981";
+}
+
+const roomTypes: Array<{ value: FloorRoomConfig["type"]; label: string }> = [
+  { value: "READING_HALL", label: "Reading hall" },
+  { value: "CABIN", label: "Cabin" },
+  { value: "SILENT_ZONE", label: "Silent zone" },
+  { value: "GROUP_ZONE", label: "Group zone" },
+  { value: "CUSTOM", label: "Custom" },
+];
+
+function roomIdFromName(name: string) {
+  return `room-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section"}`;
+}
+
+function roomFromSection(section: string, color: string, index: number): FloorRoomConfig {
+  return {
+    id: roomIdFromName(section),
+    name: section,
+    type: section.toLowerCase().includes("cabin") ? "CABIN" : section.toLowerCase().includes("silent") || section.toLowerCase().includes("quiet") ? "SILENT_ZONE" : "READING_HALL",
+    color,
+    sortOrder: index,
+  };
+}
+
+function normalizeFloorMeta(meta?: FloorRow["layout_meta"] | null) {
+  const sectionColors = meta?.sectionColors ?? {};
+  const rooms = [...(meta?.rooms ?? [])];
+  const seen = new Set(rooms.map((room) => room.name.trim().toLowerCase()));
+
+  Object.entries(sectionColors).forEach(([section, color], index) => {
+    if (!seen.has(section.trim().toLowerCase())) {
+      rooms.push(roomFromSection(section, color, rooms.length + index));
+    }
+  });
+
+  return {
+    aisleCells: meta?.aisleCells ?? [],
+    sectionColors,
+    rooms,
+  };
+}
+
+function getRoomConfigForSection(rooms: FloorRoomConfig[], sectionName?: string | null) {
+  if (!sectionName) return null;
+  return rooms.find((room) => room.name.trim().toLowerCase() === sectionName.trim().toLowerCase()) ?? null;
+}
+
+function upsertRoomForSection(rooms: FloorRoomConfig[], sectionName: string, color: string) {
+  const sectionKey = sectionName.trim().toLowerCase();
+  if (!sectionKey) return rooms;
+  const existingIndex = rooms.findIndex((room) => room.name.trim().toLowerCase() === sectionKey);
+  if (existingIndex >= 0) {
+    return rooms.map((room, index) => (index === existingIndex ? { ...room, name: sectionName, color } : room));
+  }
+  return [...rooms, roomFromSection(sectionName, color, rooms.length)];
 }
 
 function SeatStatusGlyph({ status }: { status: string }) {
@@ -465,8 +531,14 @@ export function OwnerSeatsManager() {
   const [paintSectionColor, setPaintSectionColor] = useState("#f472b6");
   const [floorMetaDrafts, setFloorMetaDrafts] = useState<FloorMetaDrafts>({});
   const [activeAislePaint, setActiveAislePaint] = useState<{ floorId: string; mode: "add" | "remove" } | null>(null);
+  const [roomDraftId, setRoomDraftId] = useState<string | null>(null);
+  const [roomDraftName, setRoomDraftName] = useState("Reading Hall");
+  const [roomDraftType, setRoomDraftType] = useState<FloorRoomConfig["type"]>("READING_HALL");
+  const [roomDraftColor, setRoomDraftColor] = useState("#10b981");
+  const [roomDraftCapacity, setRoomDraftCapacity] = useState("");
+  const [roomDraftNotes, setRoomDraftNotes] = useState("");
   const [ribbonTab, setRibbonTab] = useState<"floor" | "bank" | "single">("floor");
-  const [plannerRibbonTab, setPlannerRibbonTab] = useState<"templates" | "layout" | "paint" | "students">("templates");
+  const [plannerRibbonTab, setPlannerRibbonTab] = useState<"templates" | "rooms" | "layout" | "paint" | "students">("templates");
   const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("assign");
   const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
   const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
@@ -515,10 +587,7 @@ export function OwnerSeatsManager() {
         layoutRows: floor.layout_rows,
         layoutColumns: floor.layout_columns,
       };
-      nextMetaDrafts[floor.id] = {
-        aisleCells: floor.layout_meta?.aisleCells ?? [],
-        sectionColors: floor.layout_meta?.sectionColors ?? {},
-      };
+      nextMetaDrafts[floor.id] = normalizeFloorMeta(floor.layout_meta);
     }
     setFloorDrafts(nextDrafts);
     setFloorMetaDrafts(nextMetaDrafts);
@@ -562,7 +631,7 @@ export function OwnerSeatsManager() {
       setSetupRibbonOpen(true);
     }
 
-    if (planner === "templates" || planner === "layout" || planner === "paint" || planner === "students") {
+    if (planner === "templates" || planner === "rooms" || planner === "layout" || planner === "paint" || planner === "students") {
       setPlannerRibbonTab(planner);
       setPlannerToolbarOpen(true);
       if (planner === "layout") {
@@ -590,6 +659,7 @@ export function OwnerSeatsManager() {
       void saveFloorMeta(activeAislePaint.floorId, {
         aisleCells: draft?.aisleCells ?? [],
         sectionColors: draft?.sectionColors ?? {},
+        rooms: draft?.rooms ?? [],
       });
       setActiveAislePaint(null);
     };
@@ -877,6 +947,7 @@ export function OwnerSeatsManager() {
           layoutRows: floor.layout_rows,
           aisleCells: nextMeta?.aisleCells ?? [],
           sectionColors: nextMeta?.sectionColors ?? {},
+          rooms: nextMeta?.rooms ?? [],
         }),
       });
       setMessage("Floor painter changes saved.");
@@ -888,7 +959,7 @@ export function OwnerSeatsManager() {
 
   function updateAisleDraft(floorId: string, cellKey: string, mode: "add" | "remove") {
     setFloorMetaDrafts((current) => {
-      const existing = current[floorId] ?? { aisleCells: [], sectionColors: {} };
+      const existing = current[floorId] ?? { aisleCells: [], sectionColors: {}, rooms: [] };
       const nextSet = new Set(existing.aisleCells);
       if (mode === "add") nextSet.add(cellKey);
       else nextSet.delete(cellKey);
@@ -897,25 +968,29 @@ export function OwnerSeatsManager() {
         [floorId]: {
           aisleCells: Array.from(nextSet),
           sectionColors: existing.sectionColors,
+          rooms: existing.rooms,
         },
       };
     });
   }
 
   function deleteSectionColor(floorId: string, sectionName: string) {
-    const draft = floorMetaDrafts[floorId] ?? { aisleCells: [], sectionColors: {} };
+    const draft = floorMetaDrafts[floorId] ?? { aisleCells: [], sectionColors: {}, rooms: [] };
     const nextColors = { ...draft.sectionColors };
     delete nextColors[sectionName];
+    const nextRooms = draft.rooms.filter((room) => room.name !== sectionName);
     setFloorMetaDrafts((current) => ({
       ...current,
       [floorId]: {
         aisleCells: draft.aisleCells,
         sectionColors: nextColors,
+        rooms: nextRooms,
       },
     }));
     void saveFloorMeta(floorId, {
       aisleCells: draft.aisleCells,
       sectionColors: nextColors,
+      rooms: nextRooms,
     });
   }
 
@@ -1160,9 +1235,11 @@ export function OwnerSeatsManager() {
         ),
       );
       if (floorId !== "main-floor") {
+        const existingRooms = floorMetaDrafts[floorId]?.rooms ?? [];
         await saveFloorMeta(floorId, {
           aisleCells: floorMetaDrafts[floorId]?.aisleCells ?? [],
           sectionColors,
+          rooms: upsertRoomForSection(existingRooms, preset.sectionName, preset.sectionColor),
         });
       } else {
         await loadData();
@@ -1198,12 +1275,18 @@ export function OwnerSeatsManager() {
           ...(floorMetaDrafts[floorId]?.sectionColors ?? currentFloor?.layout_meta?.sectionColors ?? {}),
           [paintSectionName]: paintSectionColor,
         },
+        rooms: upsertRoomForSection(
+          floorMetaDrafts[floorId]?.rooms ?? currentFloor?.layout_meta?.rooms ?? [],
+          paintSectionName,
+          paintSectionColor,
+        ),
       };
       setFloorMetaDrafts((current) => ({
         ...current,
         [floorId]: {
           aisleCells: nextMeta.aisleCells ?? [],
           sectionColors: nextMeta.sectionColors ?? {},
+          rooms: nextMeta.rooms ?? [],
         },
       }));
       if (seat.floor_id) {
@@ -1275,6 +1358,101 @@ export function OwnerSeatsManager() {
       },
     }));
   }
+
+  function resetRoomDraft() {
+    setRoomDraftId(null);
+    setRoomDraftName("Reading Hall");
+    setRoomDraftType("READING_HALL");
+    setRoomDraftColor("#10b981");
+    setRoomDraftCapacity("");
+    setRoomDraftNotes("");
+  }
+
+  function editRoomDraft(room: FloorRoomConfig) {
+    setRoomDraftId(room.id);
+    setRoomDraftName(room.name);
+    setRoomDraftType(room.type);
+    setRoomDraftColor(room.color);
+    setRoomDraftCapacity(room.capacityTarget ? String(room.capacityTarget) : "");
+    setRoomDraftNotes(room.notes ?? "");
+  }
+
+  async function saveRoomDraft(floorId: string) {
+    const floor = floors.find((item) => item.id === floorId);
+    if (!floor) return;
+
+    const name = roomDraftName.trim();
+    if (!name) {
+      setError("Room name is required.");
+      return;
+    }
+
+    const currentMeta = floorMetaDrafts[floorId] ?? normalizeFloorMeta(floor.layout_meta);
+    const previousRoom = roomDraftId ? currentMeta.rooms.find((room) => room.id === roomDraftId) : null;
+    const nextRoom: FloorRoomConfig = {
+      id: roomDraftId ?? `${roomIdFromName(name)}-${Date.now().toString(36)}`,
+      name,
+      type: roomDraftType,
+      color: roomDraftColor,
+      capacityTarget: roomDraftCapacity ? Number(roomDraftCapacity) : undefined,
+      notes: roomDraftNotes.trim() || undefined,
+      sortOrder: previousRoom?.sortOrder ?? currentMeta.rooms.length,
+    };
+    const nextRooms = roomDraftId
+      ? currentMeta.rooms.map((room) => (room.id === roomDraftId ? nextRoom : room))
+      : [...currentMeta.rooms, nextRoom];
+    const nextColors = { ...currentMeta.sectionColors };
+    if (previousRoom && previousRoom.name !== nextRoom.name) {
+      delete nextColors[previousRoom.name];
+    }
+    nextColors[nextRoom.name] = nextRoom.color;
+    const nextMeta = {
+      aisleCells: currentMeta.aisleCells,
+      sectionColors: nextColors,
+      rooms: nextRooms,
+    };
+
+    setFloorMetaDrafts((current) => ({
+      ...current,
+      [floorId]: nextMeta,
+    }));
+    await saveFloorMeta(floorId, nextMeta);
+    resetRoomDraft();
+    setMessage(roomDraftId ? "Room updated." : "Room added.");
+  }
+
+  async function deleteRoom(floorId: string, roomId: string) {
+    const floor = floors.find((item) => item.id === floorId);
+    if (!floor) return;
+    const currentMeta = floorMetaDrafts[floorId] ?? normalizeFloorMeta(floor.layout_meta);
+    const room = currentMeta.rooms.find((item) => item.id === roomId);
+    if (!room) return;
+    const nextColors = { ...currentMeta.sectionColors };
+    delete nextColors[room.name];
+    const nextMeta = {
+      aisleCells: currentMeta.aisleCells,
+      sectionColors: nextColors,
+      rooms: currentMeta.rooms.filter((item) => item.id !== roomId),
+    };
+    setFloorMetaDrafts((current) => ({
+      ...current,
+      [floorId]: nextMeta,
+    }));
+    await saveFloorMeta(floorId, nextMeta);
+    if (roomDraftId === roomId) {
+      resetRoomDraft();
+    }
+  }
+
+  const hallSettingsMeta = hallSettingsFloor ? floorMetaDrafts[hallSettingsFloor.floor.id] ?? normalizeFloorMeta(hallSettingsFloor.floor.layout_meta) : null;
+  const hallSettingsRooms = hallSettingsMeta?.rooms ?? [];
+  const hallSettingsRoomCounts = hallSettingsFloor
+    ? hallSettingsFloor.seats.reduce((acc, seat) => {
+        const key = seat.section_name ?? "";
+        if (key) acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    : {};
 
   return (
     <div className="grid gap-5">
@@ -1522,6 +1700,7 @@ export function OwnerSeatsManager() {
                 <div className="flex flex-wrap gap-2">
                   {[
                     ["templates", "Templates"],
+                    ["rooms", "Rooms"],
                     ["layout", "Layout"],
                     ["paint", "Paint"],
                     ["students", "Unallotted"],
@@ -1578,6 +1757,39 @@ export function OwnerSeatsManager() {
                       </div>
                     </button>
                   ))}
+                </div>
+              </div>
+            ) : null}
+
+            {plannerToolbarOpen && plannerRibbonTab === "rooms" ? (
+              <div className="grid gap-3">
+                <div className="flex flex-wrap gap-2">
+                  {(selectedFloorId ? floorMetaDrafts[selectedFloorId]?.rooms ?? [] : []).map((room) => (
+                    <button
+                      key={room.id}
+                      type="button"
+                      onClick={() => {
+                        setPaintSectionName(room.name);
+                        setPaintSectionColor(room.color);
+                        setPlannerTool("paint");
+                        setPlannerRibbonTab("paint");
+                      }}
+                      className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-2 text-left shadow-sm"
+                    >
+                      <span className="inline-flex items-center gap-2 text-sm font-black text-[var(--lp-text)]">
+                        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: room.color }} />
+                        {room.name}
+                      </span>
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lp-muted)]">{room.type.replace(/_/g, " ")}</span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => selectedFloorId && setHallSettingsOpen(selectedFloorId)}
+                    className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-black text-[var(--lp-accent)]"
+                  >
+                    Manage rooms
+                  </button>
                 </div>
               </div>
             ) : null}
@@ -2270,7 +2482,7 @@ export function OwnerSeatsManager() {
 
       {hallSettingsFloor && hallSettingsDraft ? (
         <div className="fixed inset-0 z-50 flex items-end bg-slate-950/20 px-3 pb-3 pt-16 backdrop-blur-sm lg:items-center lg:justify-center lg:p-6">
-          <div className="w-full max-w-lg rounded-lg border border-[var(--lp-border)] bg-white p-4 shadow-sm">
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-y-auto rounded-lg border border-[var(--lp-border)] bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lp-accent)]">Hall settings</p>
@@ -2317,6 +2529,107 @@ export function OwnerSeatsManager() {
                   />
                 </label>
               </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 border-t border-[var(--lp-border)] pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lp-accent)]">Rooms and sections</p>
+                  <p className="mt-1 text-sm text-[var(--lp-muted)]">These names drive section colors, paint tools, and room-wise visibility on the planner.</p>
+                </div>
+                <button type="button" onClick={resetRoomDraft} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-semibold text-[var(--lp-text-soft)]">
+                  New room
+                </button>
+              </div>
+
+              <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] p-3 md:grid-cols-[1.1fr_0.8fr_auto]">
+                <label className="grid gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lp-muted)]">
+                  Room name
+                  <input
+                    value={roomDraftName}
+                    onChange={(event) => setRoomDraftName(event.target.value)}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                    placeholder="Girls Zone"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lp-muted)]">
+                  Type
+                  <select
+                    value={roomDraftType}
+                    onChange={(event) => setRoomDraftType(event.target.value as FloorRoomConfig["type"])}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                  >
+                    {roomTypes.map((type) => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lp-muted)]">
+                  Color
+                  <input
+                    type="color"
+                    value={roomDraftColor}
+                    onChange={(event) => setRoomDraftColor(event.target.value)}
+                    className="h-10 w-full min-w-20 rounded-lg border border-[var(--lp-border)] bg-white p-1"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lp-muted)]">
+                  Target seats
+                  <input
+                    type="number"
+                    min={0}
+                    value={roomDraftCapacity}
+                    onChange={(event) => setRoomDraftCapacity(event.target.value)}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                    placeholder="25"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lp-muted)] md:col-span-2">
+                  Notes
+                  <input
+                    value={roomDraftNotes}
+                    onChange={(event) => setRoomDraftNotes(event.target.value)}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-[var(--lp-text)] outline-none focus:border-[var(--lp-primary)]"
+                    placeholder="Window side, quiet study, AC cabin"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void saveRoomDraft(hallSettingsFloor.floor.id)}
+                  className="self-end rounded-lg bg-[var(--lp-primary)] px-4 py-2.5 text-sm font-semibold text-white"
+                >
+                  {roomDraftId ? "Update room" : "Add room"}
+                </button>
+              </div>
+
+              {hallSettingsRooms.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {hallSettingsRooms.map((room) => (
+                    <div key={room.id} className="rounded-xl border border-[var(--lp-border)] bg-white p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-2 text-sm font-black text-[var(--lp-text)]">
+                            <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: room.color }} />
+                            <span className="truncate">{room.name}</span>
+                          </p>
+                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lp-muted)]">
+                            {room.type.replace(/_/g, " ")} | {hallSettingsRoomCounts[room.name] ?? 0}{room.capacityTarget ? ` / ${room.capacityTarget}` : ""} seats
+                          </p>
+                          {room.notes ? <p className="mt-2 text-xs text-[var(--lp-muted)]">{room.notes}</p> : null}
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <button type="button" onClick={() => editRoomDraft(room)} className="rounded-lg border border-[var(--lp-border)] bg-white px-2.5 py-1.5 text-xs font-semibold text-[var(--lp-primary)]">Edit</button>
+                          <button type="button" onClick={() => void deleteRoom(hallSettingsFloor.floor.id, room.id)} className="rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700">Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-[var(--lp-muted)]">
+                  Add rooms like Girls Zone, Boys Zone, Silent Cabin, or Open Hall before painting seats.
+                </div>
+              )}
             </div>
 
             <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-[var(--lp-border)] pt-4">
