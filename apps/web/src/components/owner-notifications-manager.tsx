@@ -21,9 +21,23 @@ type NotificationRow = {
 
 type ListResponse = { success: boolean; data: NotificationRow[] };
 
+type BookRequest = {
+  id: string;
+  student_name: string | null;
+  title: string;
+  author: string | null;
+  class_name: string | null;
+  subject: string | null;
+  message: string | null;
+  toc_image_url: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "FULFILLED";
+  created_at: string;
+};
+
 export function OwnerNotificationsManager() {
   const TEMPLATE_KEY = "booklib_owner_notification_template";
   const [rows, setRows] = useState<NotificationRow[]>([]);
+  const [bookRequests, setBookRequests] = useState<BookRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [liveStatus, setLiveStatus] = useState("Connecting");
   const [message, setMessage] = useState<string | null>(null);
@@ -55,11 +69,16 @@ export function OwnerNotificationsManager() {
   async function loadNotifications() {
     setLoading(true);
     try {
-      const response = await apiFetch<ListResponse>("/owner/notifications");
+      const [response, bookResponse] = await Promise.all([
+        apiFetch<ListResponse>("/owner/notifications"),
+        apiFetch<{ success: boolean; data: BookRequest[] }>("/owner/book-requests"),
+      ]);
       setRows(response.data);
+      setBookRequests(bookResponse.data);
       setError(null);
     } catch (loadError) {
       setRows([]);
+      setBookRequests([]);
       setError(loadError instanceof Error ? loadError.message : "Unable to load notifications.");
     } finally {
       setLoading(false);
@@ -191,6 +210,19 @@ export function OwnerNotificationsManager() {
     }
   }
 
+  async function updateBookRequest(requestId: string, status: BookRequest["status"]) {
+    try {
+      await apiFetch(`/owner/book-requests/${requestId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      setMessage("Book request updated.");
+      await loadNotifications();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Unable to update book request.");
+    }
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
       {toast ? (
@@ -249,6 +281,43 @@ export function OwnerNotificationsManager() {
             {rows.length === 0 ? <p className="text-sm text-slate-500">No notification campaigns found yet.</p> : null}
           </div>
         ) : null}
+      </DashboardCard>
+
+      <DashboardCard title="Book requests" subtitle="Students can request new books with table-of-content images.">
+        <div className="grid gap-3">
+          {bookRequests.map((request) => (
+            <article key={request.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-black text-slate-950">{request.title}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {request.student_name ?? "Student"} | {[request.author, request.class_name, request.subject].filter(Boolean).join(" | ") || "Book request"}
+                  </p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{request.status}</span>
+              </div>
+              {request.message ? <p className="mt-2 text-sm leading-6 text-slate-700">{request.message}</p> : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {request.toc_image_url ? (
+                  <a href={request.toc_image_url} target="_blank" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                    View TOC
+                  </a>
+                ) : null}
+                {(["APPROVED", "FULFILLED", "REJECTED"] as const).map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => void updateBookRequest(request.id, status)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700"
+                  >
+                    Mark {status.toLowerCase()}
+                  </button>
+                ))}
+              </div>
+            </article>
+          ))}
+          {bookRequests.length === 0 ? <p className="text-sm text-slate-500">No book requests yet.</p> : null}
+        </div>
       </DashboardCard>
     </div>
   );

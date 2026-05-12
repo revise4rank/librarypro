@@ -20,6 +20,12 @@ import {
   getBillingSubscriptionController,
   renewBillingSubscriptionController,
 } from "../controllers/billing-subscription.controller";
+import {
+  createStudentBookRequestController,
+  listOwnerBookRequestsController,
+  listStudentBookRequestsController,
+  updateOwnerBookRequestStatusController,
+} from "../controllers/book-requests.controller";
 import { getStudentEntryQrController, scanCheckInController, scanCheckOutController } from "../controllers/checkin.controller";
 import {
   createPublicLibraryContactLeadController,
@@ -70,6 +76,7 @@ import {
   listStudentLibrariesController,
   listStudentSyllabusTemplatesController,
   setActiveStudentLibraryController,
+  uploadAdminSyllabusTemplatesController,
   updateStudentFeedVisibilityController,
   updateOwnerStudentInterventionStatusController,
   updateSyllabusTopicProgressController,
@@ -150,7 +157,7 @@ import {
 } from "../controllers/owner-operations.controller";
 import { uploadAdmissionDocumentController, uploadPublicProfileAssetController } from "../controllers/upload.controller";
 import { asyncHandler } from "../lib/async-handler";
-import { admissionDocumentUpload, publicProfileUpload } from "../lib/upload";
+import { admissionDocumentUpload, bookRequestTocUpload, publicProfileUpload, syllabusTemplateUpload } from "../lib/upload";
 import { requireOwnerPermission } from "../middleware/owner-permission.middleware";
 import { requireRole } from "../middleware/require-role.middleware";
 
@@ -242,6 +249,8 @@ router.get("/owner/expenses", requireRole(["LIBRARY_OWNER"]), requireOwnerPermis
 router.post("/owner/expenses", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("reports"), asyncHandler(createOwnerExpenseController));
 router.get("/owner/notifications", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("notifications"), asyncHandler(listOwnerNotificationsController));
 router.post("/owner/notifications", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("notifications"), asyncHandler(createOwnerNotificationController));
+router.get("/owner/book-requests", requireRole(["LIBRARY_OWNER"]), asyncHandler(listOwnerBookRequestsController));
+router.patch("/owner/book-requests/:requestId", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerBookRequestStatusController));
 router.get("/owner/settings", requireRole(["LIBRARY_OWNER"]), asyncHandler(getOwnerSettingsController));
 router.patch("/owner/settings", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerSettingsController));
 router.post("/owner/settings/regenerate-qr", requireRole(["LIBRARY_OWNER"]), asyncHandler(regenerateOwnerQrController));
@@ -268,6 +277,8 @@ router.post("/student/join-requests/library", requireRole(["STUDENT"]), asyncHan
 router.post("/student/join-requests/scan", requireRole(["STUDENT"]), asyncHandler(createStudentJoinRequestController));
 router.post("/student/join-requests/resolve-qr", requireRole(["STUDENT"]), asyncHandler(resolveStudentJoinQrController));
 router.get("/student/join-requests", requireRole(["STUDENT"]), asyncHandler(listStudentJoinRequestsController));
+router.get("/student/book-requests", requireRole(["STUDENT"]), asyncHandler(listStudentBookRequestsController));
+router.post("/student/book-requests", requireRole(["STUDENT"]), bookRequestTocUpload.single("tocImage"), asyncHandler(createStudentBookRequestController));
 router.get("/student/syllabus", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusController));
 router.get("/student/syllabus/analytics", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusAnalyticsController));
 router.get("/student/syllabus/templates", requireRole(["STUDENT"]), asyncHandler(listStudentSyllabusTemplatesController));
@@ -294,6 +305,7 @@ router.post("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(createAd
 router.get("/admin/review-reports", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminReviewReportsController));
 router.get("/admin/syllabus/templates", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminSyllabusTemplatesController));
 router.post("/admin/syllabus/import", requireRole(["SUPER_ADMIN"]), asyncHandler(importAdminSyllabusTemplatesController));
+router.post("/admin/syllabus/import-file", requireRole(["SUPER_ADMIN"]), syllabusTemplateUpload.single("file"), asyncHandler(uploadAdminSyllabusTemplatesController));
 router.patch("/admin/reviews/:reviewId/moderate", requireRole(["SUPER_ADMIN"]), asyncHandler(moderateLibraryReviewController));
 router.post(
   "/owner/public-profile/uploads",

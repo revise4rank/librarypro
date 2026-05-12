@@ -84,6 +84,7 @@ export function SuperadminDataManager() {
   );
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -130,6 +131,27 @@ export function SuperadminDataManager() {
       setError(importError instanceof Error ? importError.message : "Unable to import syllabus CSV.");
     } finally {
       setImporting(false);
+    }
+  }
+
+  async function uploadSyllabusFile(file: File) {
+    try {
+      setUploadingFile(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await apiFetch<{ success: boolean; data: { subjectsTouched: number; topicsTouched: number } }>("/admin/syllabus/import-file", {
+        method: "POST",
+        body: formData,
+      });
+      setImportStatus(`${response.data.subjectsTouched} subjects and ${response.data.topicsTouched} topics imported from ${file.name}.`);
+      const templateResponse = await apiFetch<{ success: boolean; data: SyllabusTemplate[] }>("/admin/syllabus/templates");
+      setTemplates(templateResponse.data);
+      setError(null);
+    } catch (uploadError) {
+      setImportStatus(null);
+      setError(uploadError instanceof Error ? uploadError.message : "Unable to upload syllabus file.");
+    } finally {
+      setUploadingFile(false);
     }
   }
 
@@ -198,16 +220,16 @@ export function SuperadminDataManager() {
         <div className="grid gap-4">
           <input
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (!file) return;
-              const reader = new FileReader();
-              reader.onload = () => setSyllabusCsv(String(reader.result ?? ""));
-              reader.readAsText(file);
+              void uploadSyllabusFile(file);
+              event.currentTarget.value = "";
             }}
             className="rounded-xl border border-[var(--lp-border)] bg-white p-3 text-sm font-semibold text-[var(--lp-muted)]"
           />
+          {uploadingFile ? <p className="text-sm font-semibold text-[var(--lp-muted)]">Uploading syllabus file...</p> : null}
           <textarea
             value={syllabusCsv}
             onChange={(event) => setSyllabusCsv(event.target.value)}

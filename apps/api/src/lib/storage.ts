@@ -146,3 +146,16 @@ export async function saveUploadedAdmissionDocument(input: {
 
   return saveToLocal(input.file, objectPath);
 }
+
+export async function saveUploadedBookRequestToc(input: {
+  file: Express.Multer.File;
+  studentUserId: string;
+}) {
+  assertSafeImageUpload(input.file);
+  const objectPath = `students/${input.studentUserId}/book-requests`;
+  if (env.uploadsProvider === "supabase") {
+    return saveToSupabase(input.file, objectPath);
+  }
+
+  return saveToLocal(input.file, objectPath);
+}

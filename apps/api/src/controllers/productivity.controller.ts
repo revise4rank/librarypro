@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import ExcelJS from "exceljs";
 import { AppError } from "../lib/errors";
 import {
   createOwnerStudentInterventionNote,
@@ -95,6 +96,63 @@ export async function createSyllabusSubjectController(req: Request, res: Respons
     className: parsed.className || null,
   });
   res.status(201).json({ success: true, data });
+}
+
+function normalizeHeader(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function rowsFromCsv(buffer: Buffer) {
+  const lines = buffer.toString("utf8").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map((header) => header.trim());
+  return lines.slice(1).map((line, index) => {
+    const values = line.split(",").map((value) => value.trim());
+    const row = Object.fromEntries(headers.map((header, headerIndex) => [header, values[headerIndex] ?? ""]));
+    return {
+      className: row.className,
+      subjectTitle: row.subjectTitle,
+      topicTitle: row.topicTitle,
+      estimatedMinutes: row.estimatedMinutes || 60,
+      topicOrder: row.topicOrder || index,
+      colorHex: row.colorHex || "",
+    };
+  });
+}
+
+async function rowsFromXlsx(buffer: Buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) return [];
+  const headerRow = worksheet.getRow(1);
+  const headers = headerRow.values as unknown[];
+  const headerByColumn = new Map<number, string>();
+  headers.forEach((value, index) => {
+    const header = normalizeHeader(value);
+    if (header) headerByColumn.set(index, header);
+  });
+
+  const rows: Array<Record<string, unknown>> = [];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const item: Record<string, unknown> = {};
+    headerByColumn.forEach((header, columnNumber) => {
+      const cellValue = row.getCell(columnNumber).value;
+      item[header] = typeof cellValue === "object" && cellValue && "text" in cellValue ? cellValue.text : cellValue;
+    });
+    if (Object.values(item).some((value) => String(value ?? "").trim())) {
+      rows.push({
+        className: item.className,
+        subjectTitle: item.subjectTitle,
+        topicTitle: item.topicTitle,
+        estimatedMinutes: item.estimatedMinutes || 60,
+        topicOrder: item.topicOrder || rows.length,
+        colorHex: item.colorHex || "",
+      });
+    }
+  });
+  return rows;
 }
 
 export async function listStudentSyllabusTemplatesController(req: Request, res: Response) {
@@ -240,6 +298,38 @@ export async function importAdminSyllabusTemplatesController(req: Request, res: 
     throw new AppError(401, "Super admin authentication required", "SUPER_ADMIN_AUTH_REQUIRED");
   }
   const parsed = adminSyllabusImportBodySchema.parse(req.body);
+  const data = await importGlobalSyllabusRows({
+    createdByUserId: req.auth.userId,
+    rows: parsed.rows.map((row) => ({
+      className: row.className,
+      subjectTitle: row.subjectTitle,
+      topicTitle: row.topicTitle,
+      estimatedMinutes: row.estimatedMinutes,
+      topicOrder: row.topicOrder,
+      colorHex: row.colorHex || null,
+    })),
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function uploadAdminSyllabusTemplatesController(req: Request, res: Response) {
+  if (!req.auth) {
+    throw new AppError(401, "Super admin authentication required", "SUPER_ADMIN_AUTH_REQUIRED");
+  }
+  if (!req.file) {
+    throw new AppError(400, "File is required", "FILE_REQUIRED");
+  }
+
+  const fileName = req.file.originalname.toLowerCase();
+  if (fileName.endsWith(".xls") && !fileName.endsWith(".xlsx")) {
+    throw new AppError(400, "Legacy .xls is not supported yet. Please save the sheet as .xlsx or CSV and upload again.", "LEGACY_XLS_UNSUPPORTED");
+  }
+
+  const rawRows = fileName.endsWith(".csv") || req.file.mimetype.toLowerCase().includes("csv")
+    ? rowsFromCsv(req.file.buffer)
+    : await rowsFromXlsx(req.file.buffer);
+
+  const parsed = adminSyllabusImportBodySchema.parse({ rows: rawRows });
   const data = await importGlobalSyllabusRows({
     createdByUserId: req.auth.userId,
     rows: parsed.rows.map((row) => ({
