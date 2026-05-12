@@ -28,6 +28,7 @@ export type DashboardNavItem = {
 
 const navIconMap: Record<string, LucideIcon> = {
   "/owner/dashboard": LayoutDashboard,
+  "/owner/listing": Store,
   "/owner/plans": CreditCard,
   "/owner/coupons": Tags,
   "/owner/students": Users,

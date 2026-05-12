@@ -1,5 +1,6 @@
 export const ownerNav = [
   { href: "/owner/dashboard", label: "Home", shortLabel: "HOM" },
+  { href: "/owner/listing", label: "Listing", shortLabel: "LST" },
   { href: "/owner/plans", label: "Plans", shortLabel: "PLN" },
   { href: "/owner/coupons", label: "Coupons", shortLabel: "CPN" },
   { href: "/owner/admissions", label: "Admissions", shortLabel: "ADM" },

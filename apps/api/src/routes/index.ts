@@ -34,6 +34,7 @@ import {
   searchMarketplaceSuggestionsController,
   getSubdomainAvailabilityController,
   publishOwnerPublicProfileController,
+  saveOwnerMarketplaceListingController,
   saveOwnerPublicProfileController,
   searchMarketplaceLibrariesController,
   updateOwnerLeadController,
@@ -183,6 +184,7 @@ router.get("/public/libraries/:slugOrSubdomain/reviews", asyncHandler(listPublic
 router.post("/public/libraries/:slugOrSubdomain/contact", asyncHandler(createPublicLibraryContactLeadController));
 router.post("/public/reviews/:reviewId/report", asyncHandler(reportLibraryReviewController));
 router.get("/owner/public-profile", requireRole(["LIBRARY_OWNER"]), asyncHandler(getOwnerPublicProfileController));
+router.post("/owner/marketplace-listing", requireRole(["LIBRARY_OWNER"]), asyncHandler(saveOwnerMarketplaceListingController));
 router.post("/owner/public-profile", requireRole(["LIBRARY_OWNER"]), asyncHandler(saveOwnerPublicProfileController));
 router.patch("/owner/public-profile/publish", requireRole(["LIBRARY_OWNER"]), asyncHandler(publishOwnerPublicProfileController));
 router.get("/owner/leads", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(listOwnerLeadsController));

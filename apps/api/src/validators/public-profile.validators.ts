@@ -93,6 +93,31 @@ export const savePublicProfileBodySchema = z.object({
   sitePages: publicSitePagesSchema.optional().default({}),
 });
 
+export const saveMarketplaceListingBodySchema = z.object({
+  brandLogoUrl: z.string().trim().max(1000).optional().default(""),
+  heroBannerUrl: z.string().trim().max(1000).optional().default(""),
+  heroTitle: z.string().trim().min(8).max(220),
+  heroTagline: z.string().trim().max(500).optional().default(""),
+  aboutText: z.string().trim().max(2000).optional().default(""),
+  contactName: z.string().trim().max(150).optional().default(""),
+  contactPhone: z.string().trim().max(20).optional().default(""),
+  whatsappPhone: z.string().trim().max(20).optional().default(""),
+  email: z.string().trim().email().optional().or(z.literal("")).default(""),
+  addressText: z.string().trim().min(5).max(1000),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
+  landmark: z.string().trim().max(255).optional().default(""),
+  businessHours: z.string().trim().max(120).optional().default(""),
+  amenities: z.array(z.string().trim().min(1).max(80)).max(30).default([]),
+  galleryImages: z.array(z.string().trim().min(1).max(500)).max(12).default([]),
+  seoTitle: z.string().trim().max(220).optional().default(""),
+  seoDescription: z.string().trim().max(500).optional().default(""),
+  allowDirectContact: z.boolean().default(true),
+  highlightOffer: z.string().trim().max(255).optional().default(""),
+  offerExpiresAt: z.string().trim().optional().or(z.literal("")).default(""),
+  listingPublished: z.boolean().default(true),
+});
+
 export const publishPublicProfileBodySchema = z.object({
   isPublished: z.boolean(),
 });

@@ -8,6 +8,7 @@ import {
   PublicProfileRepository,
   type PublicLibrarySearchResult,
   type PublicLibrarySearchRow,
+  type SaveMarketplaceListingInput,
   type SavePublicProfileInput,
 } from "../repositories/public-profile.repository";
 
@@ -47,6 +48,16 @@ export async function saveOwnerPublicProfile(input: SavePublicProfileInput) {
   await repository().refreshMarketplaceSearchIndex().catch(() => undefined);
   await invalidatePublicProfileCache({
     slugOrSubdomain: input.subdomain,
+    libraryId: input.libraryId,
+  });
+  return saved;
+}
+
+export async function saveOwnerMarketplaceListing(input: SaveMarketplaceListingInput) {
+  const saved = await repository().saveMarketplaceListing(input);
+  await repository().refreshMarketplaceSearchIndex().catch(() => undefined);
+  await invalidatePublicProfileCache({
+    slugOrSubdomain: saved?.subdomain,
     libraryId: input.libraryId,
   });
   return saved;

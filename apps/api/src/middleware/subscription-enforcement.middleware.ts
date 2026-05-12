@@ -16,7 +16,8 @@ type SubscriptionSnapshot = {
 };
 
 const FEATURE_GATES: Array<{ pattern: RegExp; methods?: string[]; feature: EntitlementFeature }> = [
-  { pattern: /^\/v1\/owner\/public-profile(?:\/uploads)?$/, methods: ["POST", "PATCH"], feature: "website_builder" },
+  { pattern: /^\/v1\/owner\/public-profile$/, methods: ["POST", "PATCH"], feature: "website_builder" },
+  { pattern: /^\/v1\/owner\/public-profile\/uploads$/, methods: ["POST"], feature: "listing" },
   { pattern: /^\/v1\/owner\/admins(?:\/|$)/, methods: ["POST", "DELETE", "PATCH"], feature: "admin_creation" },
   { pattern: /^\/v1\/owner\/coupons(?:\/|$)/, methods: ["POST", "PATCH"], feature: "coupons" },
   { pattern: /^\/v1\/owner\/offers$/, methods: ["POST"], feature: "offers" },

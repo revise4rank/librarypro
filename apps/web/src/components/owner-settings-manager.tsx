@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch, clearClientSession, logoutSession, saveSession, type SessionState, type SessionUser } from "../lib/api";
 import { OwnerAdminsManager } from "./owner-admins-manager";
+import { OwnerMarketplaceListingManager } from "./owner-marketplace-listing-manager";
 import { DashboardCard } from "./dashboard-shell";
 import { OwnerWebsiteBuilder } from "./owner-website-builder";
 
@@ -56,10 +57,11 @@ type CouponConfig = {
   created_at: string;
 };
 
-export type OwnerSettingsTab = "profile" | "plans" | "account" | "website" | "team" | "billing";
+export type OwnerSettingsTab = "profile" | "listing" | "plans" | "account" | "website" | "team" | "billing";
 
 const settingsTabs: Array<{ id: OwnerSettingsTab; label: string; summary: string }> = [
   { id: "profile", label: "Library Setup", summary: "Core library profile, QR access, WiFi, and notices." },
+  { id: "listing", label: "Marketplace Listing", summary: "Trial-safe public listing details, photos, contact actions, and search visibility." },
   { id: "plans", label: "Plans & Coupons", summary: "Reusable admission plans, pricing overrides, and coupon rules." },
   { id: "account", label: "Account", summary: "Personal profile, password, and current session controls." },
   { id: "website", label: "Website", summary: "Public site editing and publishing inside the same setup desk." },
@@ -73,7 +75,7 @@ const settingsGroups: Array<{
   summary: string;
   tabs: OwnerSettingsTab[];
 }> = [
-  { id: "setup", label: "Library Setup", summary: "Core library identity, QR access, and public website controls.", tabs: ["profile", "website"] },
+  { id: "setup", label: "Library Setup", summary: "Core library identity, marketplace listing, QR access, and public website controls.", tabs: ["profile", "listing", "website"] },
   { id: "pricing", label: "Plans & Coupons", summary: "Admission pricing, reusable plans, and coupon rules.", tabs: ["plans"] },
   { id: "account", label: "Account", summary: "Owner profile, password, and session controls.", tabs: ["account"] },
   { id: "team", label: "Team", summary: "Admin access and operator permissions.", tabs: ["team"] },
@@ -760,6 +762,15 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
             sitePages: {},
             published: false,
           }}
+        />
+      ) : null}
+
+      {activeTab === "listing" ? (
+        <OwnerMarketplaceListingManager
+          libraryName={data.library_name}
+          address={data.address}
+          city={data.city}
+          area={data.area}
         />
       ) : null}
 

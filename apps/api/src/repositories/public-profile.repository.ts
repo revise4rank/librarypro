@@ -35,6 +35,7 @@ export type PublicLibrarySearchRow = {
   offer_expires_at?: string | null;
   allow_direct_contact?: boolean;
   is_published: boolean;
+  listing_published?: boolean;
   show_in_marketplace: boolean;
   theme_primary?: string | null;
   theme_accent?: string | null;
@@ -99,6 +100,7 @@ export type OwnerPublicProfileRow = {
   seo_description: string | null;
   meta_keywords: string | null;
   is_published: boolean;
+  listing_published: boolean;
   show_in_marketplace: boolean;
   allow_direct_contact: boolean;
   ad_budget: string;
@@ -149,6 +151,32 @@ export type SavePublicProfileInput = {
   themeSurface: string;
 };
 
+export type SaveMarketplaceListingInput = {
+  libraryId: string;
+  brandLogoUrl: string;
+  heroBannerUrl: string;
+  heroTitle: string;
+  heroTagline: string;
+  aboutText: string;
+  contactName: string;
+  contactPhone: string;
+  whatsappPhone: string;
+  email: string;
+  addressText: string;
+  latitude: number | null;
+  longitude: number | null;
+  landmark: string;
+  businessHours: string;
+  amenities: string[];
+  galleryImages: string[];
+  seoTitle: string;
+  seoDescription: string;
+  allowDirectContact: boolean;
+  highlightOffer: string;
+  offerExpiresAt: string;
+  listingPublished: boolean;
+};
+
 export type OwnerLeadRow = {
   id: string;
   channel: string;
@@ -190,7 +218,7 @@ export class PublicProfileRepository {
       WITH suggestions AS (
         SELECT library_name AS suggestion
         FROM marketplace_search_index
-        WHERE is_published = TRUE
+        WHERE listing_published = TRUE
           AND show_in_marketplace = TRUE
           AND library_status = 'ACTIVE'
           AND (
@@ -203,14 +231,14 @@ export class PublicProfileRepository {
         UNION
         SELECT city AS suggestion
         FROM marketplace_search_index
-        WHERE is_published = TRUE
+        WHERE listing_published = TRUE
           AND show_in_marketplace = TRUE
           AND library_status = 'ACTIVE'
           AND city ILIKE $1
         UNION
         SELECT COALESCE(area, '') AS suggestion
         FROM marketplace_search_index
-        WHERE is_published = TRUE
+        WHERE listing_published = TRUE
           AND show_in_marketplace = TRUE
           AND library_status = 'ACTIVE'
           AND COALESCE(area, '') <> ''
@@ -218,7 +246,7 @@ export class PublicProfileRepository {
         UNION
         SELECT subdomain AS suggestion
         FROM marketplace_search_index
-        WHERE is_published = TRUE
+        WHERE listing_published = TRUE
           AND show_in_marketplace = TRUE
           AND library_status = 'ACTIVE'
           AND subdomain ILIKE $1
@@ -336,11 +364,109 @@ export class PublicProfileRepository {
     return result.rows[0];
   }
 
+  async saveMarketplaceListing(input: SaveMarketplaceListingInput) {
+    const result = await this.pool.query(
+      `
+      INSERT INTO libraries_public_profiles (
+        library_id, subdomain, brand_logo_url, hero_title, hero_tagline, about_text, contact_name, contact_phone,
+        whatsapp_phone, email, address_text, latitude, longitude, landmark, business_hours, amenities,
+        gallery_images, seo_title, seo_description, show_in_marketplace, listing_published,
+        allow_direct_contact, ad_budget, highlight_offer, offer_expires_at, hero_banner_url, updated_at
+      )
+      SELECT
+        l.id,
+        COALESCE(existing.subdomain, l.slug),
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13,
+        $14,
+        $15::jsonb,
+        $16::jsonb,
+        $17,
+        $18,
+        TRUE,
+        $19,
+        $20,
+        COALESCE(existing.ad_budget, 0),
+        $21,
+        $22,
+        $23,
+        NOW()
+      FROM libraries l
+      LEFT JOIN libraries_public_profiles existing ON existing.library_id = l.id
+      WHERE l.id = $1
+      ON CONFLICT (library_id) DO UPDATE SET
+        brand_logo_url = EXCLUDED.brand_logo_url,
+        hero_title = EXCLUDED.hero_title,
+        hero_tagline = EXCLUDED.hero_tagline,
+        about_text = EXCLUDED.about_text,
+        contact_name = EXCLUDED.contact_name,
+        contact_phone = EXCLUDED.contact_phone,
+        whatsapp_phone = EXCLUDED.whatsapp_phone,
+        email = EXCLUDED.email,
+        address_text = EXCLUDED.address_text,
+        latitude = EXCLUDED.latitude,
+        longitude = EXCLUDED.longitude,
+        landmark = EXCLUDED.landmark,
+        business_hours = EXCLUDED.business_hours,
+        amenities = EXCLUDED.amenities,
+        gallery_images = EXCLUDED.gallery_images,
+        seo_title = EXCLUDED.seo_title,
+        seo_description = EXCLUDED.seo_description,
+        show_in_marketplace = TRUE,
+        listing_published = EXCLUDED.listing_published,
+        allow_direct_contact = EXCLUDED.allow_direct_contact,
+        highlight_offer = EXCLUDED.highlight_offer,
+        offer_expires_at = EXCLUDED.offer_expires_at,
+        hero_banner_url = EXCLUDED.hero_banner_url,
+        updated_at = NOW()
+      RETURNING *
+      `,
+      [
+        input.libraryId,
+        input.brandLogoUrl,
+        input.heroTitle,
+        input.heroTagline,
+        input.aboutText,
+        input.contactName,
+        input.contactPhone,
+        input.whatsappPhone,
+        input.email,
+        input.addressText,
+        input.latitude,
+        input.longitude,
+        input.landmark,
+        input.businessHours,
+        JSON.stringify(input.amenities),
+        JSON.stringify(input.galleryImages),
+        input.seoTitle,
+        input.seoDescription,
+        input.listingPublished,
+        input.allowDirectContact,
+        input.highlightOffer,
+        input.offerExpiresAt || null,
+        input.heroBannerUrl,
+      ],
+    );
+
+    return result.rows[0];
+  }
+
   async setPublished(libraryId: string, isPublished: boolean) {
     const result = await this.pool.query(
       `
       UPDATE libraries_public_profiles
       SET is_published = $2,
+          listing_published = CASE WHEN $2 THEN TRUE ELSE listing_published END,
           published_at = CASE WHEN $2 THEN NOW() ELSE NULL END,
           updated_at = NOW()
       WHERE library_id = $1
@@ -380,6 +506,7 @@ export class PublicProfileRepository {
         seo_description,
         meta_keywords,
         is_published,
+        listing_published,
         show_in_marketplace,
         allow_direct_contact,
         ad_budget::text,
@@ -436,6 +563,7 @@ export class PublicProfileRepository {
         p.offer_expires_at::text,
         p.allow_direct_contact,
         p.is_published,
+        p.listing_published,
         p.show_in_marketplace,
         p.theme_primary,
         p.theme_accent,
@@ -463,8 +591,11 @@ export class PublicProfileRepository {
         ) visible_reviews
         GROUP BY library_id
       ) rv ON rv.library_id = l.id
-      WHERE p.is_published = TRUE
-        AND (l.slug = $1 OR p.subdomain = $1)
+      WHERE (
+          (l.slug = $1 AND p.listing_published = TRUE)
+          OR
+          (p.subdomain = $1 AND p.is_published = TRUE)
+        )
       LIMIT 1
       `,
       [value],
@@ -488,7 +619,7 @@ export class PublicProfileRepository {
     page: number;
   }): Promise<PublicLibrarySearchResult> {
     const conditions: string[] = [
-      "m.is_published = TRUE",
+      "m.listing_published = TRUE",
       "m.show_in_marketplace = TRUE",
       "m.library_status = 'ACTIVE'",
     ];
@@ -654,6 +785,7 @@ export class PublicProfileRepository {
         m.offer_expires_at::text,
         m.allow_direct_contact,
         m.is_published,
+        m.listing_published,
         m.show_in_marketplace,
         m.theme_primary,
         m.theme_accent,
@@ -712,8 +844,11 @@ export class PublicProfileRepository {
         NOW() + INTERVAL '2 hours'
       FROM libraries l
       INNER JOIN libraries_public_profiles p ON p.library_id = l.id
-      WHERE p.is_published = TRUE
-        AND (l.slug = $1 OR p.subdomain = $1)
+      WHERE (
+          (l.slug = $1 AND p.listing_published = TRUE)
+          OR
+          (p.subdomain = $1 AND p.is_published = TRUE)
+        )
       LIMIT 1
       RETURNING id, library_id, public_profile_id, channel, source_page, created_at
       `,
@@ -748,8 +883,11 @@ export class PublicProfileRepository {
       INNER JOIN libraries l ON l.id = lr.library_id
       INNER JOIN libraries_public_profiles p ON p.library_id = l.id
       INNER JOIN users u ON u.id = lr.student_user_id
-      WHERE p.is_published = TRUE
-        AND (l.slug = $1 OR p.subdomain = $1)
+      WHERE (
+          (l.slug = $1 AND p.listing_published = TRUE)
+          OR
+          (p.subdomain = $1 AND p.is_published = TRUE)
+        )
         AND lr.is_hidden = FALSE
       ORDER BY lr.created_at DESC
       LIMIT 50
