@@ -1456,6 +1456,25 @@ export async function listAdminPlanSummaries() {
   return repository().listAdminPlanSummaries();
 }
 
+export async function updatePlatformPlanConfig(input: {
+  planCode: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  durationMonths: number;
+  seatLimit?: number | null;
+  referralBonus: number;
+  features: Record<string, boolean>;
+  isActive: boolean;
+  sortOrder: number;
+}) {
+  const updated = await repository().updatePlatformPlanConfig(input);
+  if (!updated) {
+    throw new AppError(404, "Platform plan not found", "PLATFORM_PLAN_NOT_FOUND");
+  }
+  return updated;
+}
+
 export async function listAdminPayments() {
   return repository().listAdminPayments();
 }

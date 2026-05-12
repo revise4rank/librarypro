@@ -2299,10 +2299,13 @@ export class OwnerOperationsRepository {
       plan_code: string;
       plan_name: string;
       amount: string;
+      currency: string | null;
       duration_months: string;
       seat_limit: string | null;
       referral_bonus: string;
       features: Record<string, unknown> | null;
+      is_active: boolean | null;
+      sort_order: number | null;
       tenants: string;
       active_tenants: string;
       past_due_tenants: string;
@@ -2312,22 +2315,80 @@ export class OwnerOperationsRepository {
         COALESCE(p.plan_code, s.plan_code) AS plan_code,
         COALESCE(p.plan_name, s.plan_name) AS plan_name,
         COALESCE(MAX(p.amount), MAX(s.amount))::text AS amount,
+        COALESCE(MAX(p.currency), MAX(s.currency)) AS currency,
         COALESCE(MAX(p.duration_months), 0)::text AS duration_months,
         MAX(p.seat_limit)::text AS seat_limit,
         COALESCE(MAX(p.referral_bonus), 0)::text AS referral_bonus,
         (MAX(p.features::text))::jsonb AS features,
+        BOOL_OR(p.is_active) AS is_active,
+        MAX(p.sort_order) AS sort_order,
         COUNT(s.id)::text AS tenants,
         COUNT(s.id) FILTER (WHERE s.status = 'ACTIVE')::text AS active_tenants,
         COUNT(s.id) FILTER (WHERE s.status IN ('PAST_DUE', 'EXPIRED'))::text AS past_due_tenants
       FROM platform_plan_configs p
       FULL OUTER JOIN subscriptions s ON s.plan_code = p.plan_code
-      WHERE p.is_active = TRUE OR p.plan_code IS NULL
       GROUP BY COALESCE(p.plan_code, s.plan_code), COALESCE(p.plan_name, s.plan_name), p.sort_order
       ORDER BY COALESCE(p.sort_order, 999), COALESCE(MAX(p.amount), MAX(s.amount)) DESC
       `,
     );
 
     return result.rows;
+  }
+
+  async updatePlatformPlanConfig(input: {
+    planCode: string;
+    planName: string;
+    amount: number;
+    currency: string;
+    durationMonths: number;
+    seatLimit?: number | null;
+    referralBonus: number;
+    features: Record<string, boolean>;
+    isActive: boolean;
+    sortOrder: number;
+  }) {
+    const result = await this.pool.query(
+      `
+      UPDATE platform_plan_configs
+      SET
+        plan_name = $2,
+        amount = $3,
+        currency = $4,
+        duration_months = $5,
+        seat_limit = $6,
+        referral_bonus = $7,
+        features = $8::jsonb,
+        is_active = $9,
+        sort_order = $10,
+        updated_at = NOW()
+      WHERE plan_code = $1
+      RETURNING
+        plan_code,
+        plan_name,
+        amount::text,
+        currency,
+        duration_months::text,
+        seat_limit::text,
+        referral_bonus::text,
+        features,
+        is_active,
+        sort_order
+      `,
+      [
+        input.planCode,
+        input.planName,
+        input.amount,
+        input.currency,
+        input.durationMonths,
+        input.seatLimit ?? null,
+        input.referralBonus,
+        JSON.stringify(input.features),
+        input.isActive,
+        input.sortOrder,
+      ],
+    );
+
+    return result.rows[0] ?? null;
   }
 
   async listAdminPayments() {

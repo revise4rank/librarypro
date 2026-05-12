@@ -71,6 +71,7 @@ import {
   createStudentFocusSubject,
   unassignSeatFromStudent,
   getPlatformMarketplaceSettings,
+  updatePlatformPlanConfig,
   updatePlatformMarketplaceSettings,
 } from "../services/owner-operations.service";
 import {
@@ -113,6 +114,7 @@ import {
   updateOwnerSeatBodySchema,
   updateOwnerPaymentBodySchema,
   updateOwnerStudentBodySchema,
+  updatePlatformPlanBodySchema,
   updatePlatformMarketplaceSettingsBodySchema,
 } from "../validators/owner-operations.validators";
 
@@ -1364,6 +1366,36 @@ export async function listAdminLibrariesController(_req: Request, res: Response)
 
 export async function listAdminPlanSummariesController(_req: Request, res: Response) {
   const data = await listAdminPlanSummaries();
+  res.json({ success: true, data });
+}
+
+export async function updateAdminPlanConfigController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
+  }
+
+  const planCode = paramValue(req.params.planCode);
+  const parsed = updatePlatformPlanBodySchema.parse(req.body);
+  const data = await updatePlatformPlanConfig({
+    planCode,
+    ...parsed,
+  });
+  await createAuditLog({
+    actorUserId: req.auth.userId,
+    action: "admin.plan_config.update",
+    entityType: "platform_plan_config",
+    entityId: planCode,
+    metadata: {
+      amount: data.amount,
+      durationMonths: data.duration_months,
+      seatLimit: data.seat_limit,
+      referralBonus: data.referral_bonus,
+      isActive: data.is_active,
+      features: data.features,
+    },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
   res.json({ success: true, data });
 }
 

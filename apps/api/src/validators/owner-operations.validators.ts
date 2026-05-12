@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { entitlementFeatures } from "../lib/platform-plans";
 
 const admissionPaymentStatusSchema = z.enum(["PAID", "UNPAID", "DUE"]);
 const discountTypeSchema = z.enum(["PERCENTAGE", "FLAT"]);
@@ -84,6 +85,18 @@ export const updatePlatformMarketplaceSettingsBodySchema = z.object({
       tone: z.enum(["slate", "emerald", "amber", "blue"]).default("slate"),
     }),
   ).min(1).max(4),
+});
+
+export const updatePlatformPlanBodySchema = z.object({
+  planName: z.string().trim().min(3).max(120),
+  amount: z.coerce.number().min(0).max(999999),
+  currency: z.string().trim().min(3).max(8).default("INR"),
+  durationMonths: z.coerce.number().int().min(0).max(120),
+  seatLimit: z.coerce.number().int().positive().max(100000).nullable().optional(),
+  referralBonus: z.coerce.number().min(0).max(999999),
+  features: z.object(Object.fromEntries(entitlementFeatures.map((feature) => [feature, z.boolean()]))),
+  isActive: z.boolean().default(true),
+  sortOrder: z.coerce.number().int().min(0).max(9999),
 });
 
 export const createOwnerPaymentBodySchema = z.object({

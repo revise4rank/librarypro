@@ -142,6 +142,7 @@ import {
   unassignOwnerStudentSeatController,
   updateOwnerAdminPermissionsController,
   updateAdminMarketplaceSettingsController,
+  updateAdminPlanConfigController,
 } from "../controllers/owner-operations.controller";
 import { uploadAdmissionDocumentController, uploadPublicProfileAssetController } from "../controllers/upload.controller";
 import { asyncHandler } from "../lib/async-handler";
@@ -278,6 +279,7 @@ router.get("/admin/dashboard", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdm
 router.get("/admin/data-overview", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminDataOverviewController));
 router.get("/admin/libraries", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminLibrariesController));
 router.get("/admin/plans", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPlanSummariesController));
+router.patch("/admin/plans/:planCode", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminPlanConfigController));
 router.get("/admin/payments", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPaymentsController));
 router.get("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminMarketplaceSettingsController));
 router.patch("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminMarketplaceSettingsController));
