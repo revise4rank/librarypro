@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "../lib/api";
+import { apiFetch, displayApiError } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 
 type AdminsResponse = {
   success: boolean;
@@ -39,15 +40,21 @@ export function OwnerAdminsManager() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const permissionCatalog = ["students", "payments", "reports", "checkins", "notifications", "seat_control", "admissions"];
 
   async function load() {
-    const [adminsResponse, logsResponse] = await Promise.all([
-      apiFetch<AdminsResponse>("/owner/admins"),
-      apiFetch<AuditLogsResponse>("/owner/audit-logs"),
-    ]);
-    setAdmins(adminsResponse.data);
-    setLogs(logsResponse.data);
+    try {
+      const [adminsResponse, logsResponse] = await Promise.all([
+        apiFetch<AdminsResponse>("/owner/admins"),
+        apiFetch<AuditLogsResponse>("/owner/audit-logs"),
+      ]);
+      setAdmins(adminsResponse.data);
+      setLogs(logsResponse.data);
+      setError(null);
+    } catch (loadError) {
+      setError(displayApiError(loadError, "Unable to load admin controls."));
+    }
   }
 
   useEffect(() => {
@@ -55,35 +62,53 @@ export function OwnerAdminsManager() {
   }, []);
 
   async function createAdmin() {
-    const result = await apiFetch<{ success: boolean; data: { temporaryPassword: string } }>("/owner/admins", {
-      method: "POST",
-      body: JSON.stringify({ fullName, email, phone }),
-    });
-    setMessage(`Admin created. Temporary password: ${result.data.temporaryPassword}`);
-    setFullName("");
-    setEmail("");
-    setPhone("");
-    await load();
+    try {
+      const result = await apiFetch<{ success: boolean; data: { temporaryPassword: string } }>("/owner/admins", {
+        method: "POST",
+        body: JSON.stringify({ fullName, email, phone }),
+      });
+      setMessage(`Admin created. Temporary password: ${result.data.temporaryPassword}`);
+      setError(null);
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      await load();
+    } catch (createError) {
+      setError(displayApiError(createError, "Unable to create admin."));
+    }
   }
 
   async function removeAdmin(adminUserId: string) {
-    await apiFetch(`/owner/admins/${adminUserId}`, { method: "DELETE" });
-    await load();
+    try {
+      await apiFetch(`/owner/admins/${adminUserId}`, { method: "DELETE" });
+      await load();
+    } catch (removeError) {
+      setError(displayApiError(removeError, "Unable to remove admin."));
+    }
   }
 
   async function togglePermission(adminUserId: string, permissions: string[], permission: string) {
     const next = permissions.includes(permission)
       ? permissions.filter((item) => item !== permission)
       : [...permissions, permission];
-    await apiFetch(`/owner/admins/${adminUserId}/permissions`, {
-      method: "PATCH",
-      body: JSON.stringify({ permissions: next.length ? next : ["reports"] }),
-    });
-    await load();
+    try {
+      await apiFetch(`/owner/admins/${adminUserId}/permissions`, {
+        method: "PATCH",
+        body: JSON.stringify({ permissions: next.length ? next : ["reports"] }),
+      });
+      await load();
+    } catch (permissionError) {
+      setError(displayApiError(permissionError, "Unable to update permissions."));
+    }
   }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      {error ? (
+        <div className="xl:col-span-2">
+          {isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-rose-600">{error}</p>}
+        </div>
+      ) : null}
       <DashboardCard title="Multi-admin control" subtitle="Head admin creates and removes workspace admins.">
         <div className="grid gap-4">
           {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{message}</div> : null}

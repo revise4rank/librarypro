@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { displayApiError } from "../lib/api";
 import { exportOwnerReport, fetchOwnerReports } from "../lib/owner-finance";
 import { DashboardCard } from "./dashboard-shell";
+import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 import { StatCard } from "./stat-card";
 
 type ReportsResponse = {
@@ -112,7 +114,7 @@ export function OwnerReportsManager() {
       setReports(response.data);
       setError(null);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unable to load reports.");
+      setError(displayApiError(loadError, "Unable to load reports."));
     } finally {
       setLoading(false);
     }
@@ -137,7 +139,7 @@ export function OwnerReportsManager() {
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 250);
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : "Unable to export report.");
+      setError(displayApiError(exportError, "Unable to export report."));
     } finally {
       setExportingKey(null);
     }
@@ -158,11 +160,11 @@ export function OwnerReportsManager() {
   }, [reports]);
 
   if (loading && !reports) {
-    return <p className="text-sm text-slate-500">{error ?? "Loading report center..."}</p>;
+    return error && isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm text-slate-500">{error ?? "Loading report center..."}</p>;
   }
 
   if (!reports) {
-    return <p className="text-sm text-slate-500">{error ?? "Unable to load reports."}</p>;
+    return error && isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm text-slate-500">{error ?? "Unable to load reports."}</p>;
   }
 
   const chartScale = Math.max(...reports.monthlyComparison.map((item) => Math.max(item.revenue, item.expenses, 1)), 1);
@@ -170,7 +172,7 @@ export function OwnerReportsManager() {
 
   return (
     <div className="grid gap-5">
-      {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+      {error ? isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
       <section className="rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

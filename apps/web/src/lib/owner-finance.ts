@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl, readSession } from "./api";
+import { ApiError, apiFetch, getApiBaseUrl, readSession } from "./api";
 
 export async function fetchOwnerFinanceDashboard<T>() {
   return apiFetch<T>("/owner/dashboard");
@@ -33,8 +33,14 @@ export async function exportOwnerReport(reportType: string, format: "xlsx" | "pd
   });
 
   if (!response.ok) {
-    const message = await response.text().catch(() => "");
-    throw new Error(message || "Export failed");
+    const text = await response.text().catch(() => "");
+    try {
+      const json = text ? JSON.parse(text) : null;
+      throw new ApiError(json?.error?.message ?? "Export failed", response.status, json?.error?.code);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new Error(text || "Export failed");
+    }
   }
 
   return response;

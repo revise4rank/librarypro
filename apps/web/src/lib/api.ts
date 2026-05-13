@@ -29,6 +29,29 @@ export const API_URL = (() => {
   return raw.endsWith("/v1") ? raw : `${raw}/v1`;
 })();
 
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export function isPlanAccessError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.code === "PLAN_FEATURE_REQUIRED";
+}
+
+export function displayApiError(error: unknown, fallback: string) {
+  if (isPlanAccessError(error)) {
+    return `${error.message} Open Billing to compare plans and upgrade.`;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
 export type SessionUser = {
   id: string;
   fullName: string;
@@ -229,6 +252,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit, auth = true)
   }
 
   if (!response.ok) {
+    const code = typeof json?.error?.code === "string" ? json.error.code : undefined;
+    const message = json?.error?.message ?? "Request failed";
     if (auth) {
       if (response.status === 402 && typeof window !== "undefined") {
         const next = `${window.location.pathname}${window.location.search}`;
@@ -237,11 +262,11 @@ export async function apiFetch<T>(path: string, init?: RequestInit, auth = true)
         }
       }
 
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401 || (response.status === 403 && code !== "PLAN_FEATURE_REQUIRED")) {
         clearSession();
       }
     }
-    throw new Error(json?.error?.message ?? "Request failed");
+    throw new ApiError(message, response.status, code);
   }
 
   return json as T;

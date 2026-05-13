@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "../lib/api";
+import { apiFetch, displayApiError } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 
 type DiscountType = "PERCENTAGE" | "FLAT";
 
@@ -57,7 +58,7 @@ export function OwnerCouponsManager() {
       setCoupons(couponsResponse.data);
       setError(null);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unable to load coupons.");
+      setError(displayApiError(loadError, "Unable to load coupons."));
     } finally {
       setLoading(false);
     }
@@ -90,7 +91,7 @@ export function OwnerCouponsManager() {
       setCouponForm(emptyCouponForm);
       await loadData();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unable to save coupon.");
+      setError(displayApiError(saveError, "Unable to save coupon."));
     } finally {
       setSaving(false);
     }
@@ -112,7 +113,7 @@ export function OwnerCouponsManager() {
 
   return (
     <div className="grid gap-4">
-      {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
+      {error ? isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
       {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
 
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">

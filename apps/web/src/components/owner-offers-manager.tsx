@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "../lib/api";
+import { apiFetch, displayApiError } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 
 type OfferCategory = { id: string; slug: string; name: string };
 
@@ -22,7 +23,7 @@ export function OwnerOffersManager() {
   useEffect(() => {
     apiFetch<{ success: boolean; data: OfferCategory[] }>("/offers/categories")
       .then((response) => setCategories(response.data))
-      .catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Unable to load categories."));
+      .catch((loadError) => setError(displayApiError(loadError, "Unable to load categories.")));
   }, []);
 
   async function submitOffer() {
@@ -49,7 +50,7 @@ export function OwnerOffersManager() {
         ctaUrl: "",
       });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to submit offer.");
+      setError(displayApiError(submitError, "Unable to submit offer."));
     }
   }
 
@@ -80,7 +81,7 @@ export function OwnerOffersManager() {
           Submit for approval
         </button>
         {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
-        {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+        {error ? isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
       </div>
     </DashboardCard>
   );

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "../lib/api";
+import { apiFetch, displayApiError } from "../lib/api";
 import { formatLibraryHost } from "../lib/domain";
 import { DashboardCard } from "./dashboard-shell";
+import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 
 type CampaignProfile = {
   success: boolean;
@@ -49,7 +50,7 @@ export function OwnerCampaignsManager() {
       setProfile(response.data);
       setError(null);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unable to load campaign profile.");
+      setError(displayApiError(loadError, "Unable to load campaign profile."));
     }
   }
 
@@ -99,7 +100,7 @@ export function OwnerCampaignsManager() {
       });
       setStatus("Campaign settings saved to marketplace and public website.");
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unable to save campaign settings.");
+      setError(displayApiError(saveError, "Unable to save campaign settings."));
     } finally {
       setSaving(false);
     }
@@ -113,12 +114,12 @@ export function OwnerCampaignsManager() {
       });
       setStatus(`Due recovery automation sent to ${response.data.recipientCount} students via ${response.data.channels.join(", ")}.`);
     } catch (triggerError) {
-      setError(triggerError instanceof Error ? triggerError.message : "Unable to trigger due recovery.");
+      setError(displayApiError(triggerError, "Unable to trigger due recovery."));
     }
   }
 
   if (!profile) {
-    return <p className="text-sm text-slate-500">{error ?? "Loading campaign center..."}</p>;
+    return error && isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm text-slate-500">{error ?? "Loading campaign center..."}</p>;
   }
 
   return (
@@ -168,7 +169,7 @@ export function OwnerCampaignsManager() {
             </button>
           </div>
           {status ? <p className="text-sm font-semibold text-emerald-700">{status}</p> : null}
-          {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+          {error ? isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
         </div>
       </DashboardCard>
 
