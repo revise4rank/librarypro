@@ -287,7 +287,7 @@ export function DashboardShell({
             </div>
           </header>
 
-          <section className="lp-shell-container px-2.5 py-2.5 pb-24 sm:px-4 sm:py-3 lg:py-4 lg:pb-6">{children}</section>
+          <section className="lp-shell-container px-1.5 py-2 pb-24 sm:px-4 sm:py-3 lg:py-4 lg:pb-6">{children}</section>
         </div>
       </div>
 
@@ -302,7 +302,7 @@ export function DashboardShell({
         ) : null}
 
         <div
-          className={`fixed bottom-16 left-3 right-3 z-40 rounded-lg border border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] p-3 shadow-md backdrop-blur transition ${
+          className={`fixed bottom-16 left-1.5 right-1.5 z-40 rounded-lg border border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] p-2 shadow-md backdrop-blur transition sm:left-3 sm:right-3 sm:p-3 ${
             mobileMenuOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
           }`}
         >
@@ -342,8 +342,8 @@ export function DashboardShell({
           </div>
         </div>
 
-        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur">
-          <div className="grid grid-cols-5 gap-2">
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-1.5 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-1.5 backdrop-blur sm:px-3 sm:pt-2">
+          <div className="grid grid-cols-5 gap-1 sm:gap-2">
             {primaryMobileNav.map((item) => {
               const active = pathname === item.href;
               const Icon = navIconFor(item);
@@ -351,14 +351,14 @@ export function DashboardShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center rounded-lg px-2 py-2 text-center text-[10px] font-medium ${
+                  className={`flex min-w-0 flex-col items-center justify-center rounded-lg px-1 py-1.5 text-center text-[10px] font-medium sm:px-2 sm:py-2 ${
                     active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "bg-white text-[var(--lp-text)]"
                   }`}
                 >
                   <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/80">
                     <Icon className="h-4 w-4" />
                   </span>
-                  <span className="mt-1 truncate">{item.label}</span>
+                  <span className="mt-1 max-w-full truncate">{item.shortLabel ?? item.label}</span>
                 </Link>
               );
             })}
@@ -383,7 +383,7 @@ export function DashboardCard({
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
-    <section className={`rounded-lg border border-[var(--lp-border)] p-3 shadow-sm sm:p-4 ${tone}`}>
+    <section className={`min-w-0 rounded-lg border border-[var(--lp-border)] p-2.5 shadow-sm sm:p-4 ${tone}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-[var(--lp-text)]">{title}</h3>
@@ -406,7 +406,7 @@ export function DashboardCard({
           </div>
         ) : null}
       </div>
-      <div className="mt-3">{children}</div>
+      <div className="mt-3 min-w-0">{children}</div>
     </section>
   );
 }
