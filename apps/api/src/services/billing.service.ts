@@ -1,7 +1,7 @@
 import { env } from "../config/env";
 import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
-import { getPlatformPlanConfig, listPlatformPlanConfigs } from "../lib/platform-plans";
+import { getLibraryEntitlements, listPlatformPlanConfigs } from "../lib/platform-plans";
 import { BillingRepository } from "../repositories/billing.repository";
 import { getPlatformIntegrationSettings } from "./platform-integrations.service";
 
@@ -58,9 +58,18 @@ async function createRazorpayOrder(input: {
 }
 
 export async function getBillingSubscription(libraryId: string) {
-  const [billing, plans] = await Promise.all([repository().getOwnerSubscription(libraryId), listPlatformPlanConfigs()]);
+  const [billing, plans, entitlements] = await Promise.all([
+    repository().getOwnerSubscription(libraryId),
+    listPlatformPlanConfigs(),
+    getLibraryEntitlements(libraryId),
+  ]);
   return {
     ...billing,
+    currentPlan: entitlements.plan,
+    entitlements: {
+      subscription: entitlements.subscription,
+      features: entitlements.features,
+    },
     availablePlans: plans.filter((plan) => plan.code !== "TRIAL_25"),
   };
 }
@@ -75,7 +84,10 @@ export async function createSubscriptionRenewal(input: {
   try {
     await client.query("BEGIN");
 
-    const plan = await getPlatformPlanConfig(input.planCode);
+    const plan = (await listPlatformPlanConfigs()).find((candidate) => candidate.code === input.planCode);
+    if (!plan) {
+      throw new AppError(400, "Choose an active paid platform plan.", "PAID_PLAN_REQUIRED");
+    }
     if (plan.code === "TRIAL_25" || plan.amount <= 0 || !plan.isActive) {
       throw new AppError(400, "Choose an active paid platform plan.", "PAID_PLAN_REQUIRED");
     }

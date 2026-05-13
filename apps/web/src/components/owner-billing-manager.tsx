@@ -28,6 +28,15 @@ type BillingResponse = {
       grace_until: string | null;
       last_payment_at: string | null;
     } | null;
+    currentPlan: PlatformPlan;
+    entitlements: {
+      subscription: {
+        status: string;
+        graceUntil: string | null;
+        planCode: string;
+      };
+      features: Record<FeatureKey, boolean>;
+    };
     recentPlatformPayments: Array<{
       id: string;
       amount: string;
@@ -43,9 +52,39 @@ type BillingResponse = {
       amount: number;
       currency: string;
       durationMonths: number;
+      seatLimit: number | null;
       referralBonus: number;
+      features: Record<FeatureKey, boolean>;
     }>;
   };
+};
+
+const featureCatalog = [
+  { key: "listing", label: "Marketplace listing", detail: "Library discovery card and public listing visibility." },
+  { key: "seat_management", label: "Seat management", detail: "Seat map, rooms, sections, and student allotment." },
+  { key: "scanner_download", label: "Scanner download", detail: "QR scanner assets and entry posters." },
+  { key: "subdomain", label: "Subdomain", detail: "Public library site on a shareable BookLib address." },
+  { key: "website_builder", label: "Website builder", detail: "Editable public pages, brand assets, sections, and content." },
+  { key: "ads", label: "Ads and campaigns", detail: "Marketing campaigns and promotional recovery actions." },
+  { key: "admin_creation", label: "Admin creation", detail: "Create and manage staff/admin access." },
+  { key: "offers", label: "Offers", detail: "Owner offers shown in growth and public surfaces." },
+  { key: "coupons", label: "Coupons", detail: "Admission coupons and discount rules." },
+  { key: "reports_export", label: "Reports export", detail: "CSV exports for reports and operational records." },
+] as const;
+
+type FeatureKey = (typeof featureCatalog)[number]["key"];
+
+type PlatformPlan = {
+  code: string;
+  name: string;
+  amount: number;
+  currency: string;
+  durationMonths: number;
+  seatLimit: number | null;
+  referralBonus: number;
+  features: Record<FeatureKey, boolean>;
+  isActive: boolean;
+  sortOrder: number;
 };
 
 type RenewResponse = {
@@ -77,6 +116,14 @@ type RenewResponse = {
 
 function compactDate(value?: string | null) {
   return value ? value.slice(0, 10) : "-";
+}
+
+function formatSeats(limit?: number | null) {
+  return limit ? `${limit.toLocaleString("en-IN")} seats` : "Unlimited seats";
+}
+
+function enabledCount(features?: Record<FeatureKey, boolean>) {
+  return featureCatalog.filter((feature) => Boolean(features?.[feature.key])).length;
 }
 
 export function OwnerBillingManager() {
@@ -198,6 +245,46 @@ export function OwnerBillingManager() {
               <p className="mt-2 text-sm font-black text-slate-950">{compactDate(data?.subscription?.grace_until)}</p>
             </div>
           </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-[var(--lp-border)] bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Seat allowance</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{formatSeats(data?.currentPlan?.seatLimit)}</p>
+            </div>
+            <div className="rounded-xl border border-[var(--lp-border)] bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Access enabled</p>
+              <p className="mt-2 text-lg font-black text-slate-950">
+                {enabledCount(data?.entitlements?.features)}/{featureCatalog.length}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[var(--lp-border)] bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Plan source</p>
+              <p className="mt-2 text-sm font-black text-slate-950">Superadmin configured</p>
+            </div>
+          </div>
+        </div>
+      </Surface>
+
+      <Surface title="Plan access preview">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {featureCatalog.map((feature) => {
+            const enabled = Boolean(data?.entitlements?.features?.[feature.key]);
+            return (
+              <div
+                key={feature.key}
+                className={`rounded-xl border px-4 py-3 ${enabled ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-950">{feature.label}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{feature.detail}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${enabled ? "bg-white text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                    {enabled ? "ON" : "LOCKED"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </Surface>
 
@@ -214,6 +301,9 @@ export function OwnerBillingManager() {
                 <p className="text-lg font-black text-slate-950">{plan.name}</p>
                 <p className="mt-2 text-sm font-semibold text-slate-600">
                   Rs. {plan.amount} for {plan.durationMonths} months
+                </p>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  {formatSeats(plan.seatLimit)} | {enabledCount(plan.features)}/{featureCatalog.length} access toggles
                 </p>
                 <p className="mt-1 text-xs font-bold text-emerald-700">
                   Referral bonus Rs. {plan.referralBonus}
