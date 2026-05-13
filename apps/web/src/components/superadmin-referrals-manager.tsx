@@ -18,17 +18,43 @@ type AdminReferral = {
   paid_at: string | null;
 };
 
+type AdminStudentReferral = {
+  id: string;
+  referrer_student_name: string;
+  referrer_student_code: string | null;
+  referred_student_name: string;
+  referred_student_code: string | null;
+  referral_code: string;
+  bonus_amount: string;
+  status: "PENDING" | "QUALIFIED" | "PAID" | "REJECTED";
+  created_at: string;
+};
+
+type ReferralResponse = {
+  libraryReferrals: AdminReferral[];
+  studentReferrals: AdminStudentReferral[];
+};
+
 const statuses = ["PENDING", "QUALIFIED", "PAID", "REJECTED"] as const;
 
 export function SuperadminReferralsManager() {
   const [rows, setRows] = useState<AdminReferral[]>([]);
+  const [studentRows, setStudentRows] = useState<AdminStudentReferral[]>([]);
+  const [studentBonusDrafts, setStudentBonusDrafts] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function loadRows() {
     try {
-      const response = await apiFetch<{ success: boolean; data: AdminReferral[] }>("/admin/referrals");
-      setRows(response.data);
+      const response = await apiFetch<{ success: boolean; data: ReferralResponse | AdminReferral[] }>("/admin/referrals");
+      if (Array.isArray(response.data)) {
+        setRows(response.data);
+        setStudentRows([]);
+      } else {
+        setRows(response.data.libraryReferrals);
+        setStudentRows(response.data.studentReferrals);
+        setStudentBonusDrafts(Object.fromEntries(response.data.studentReferrals.map((row) => [row.id, row.bonus_amount ?? "0"])));
+      }
       setError(null);
     } catch (loadError) {
       setRows([]);
@@ -50,6 +76,19 @@ export function SuperadminReferralsManager() {
       await loadRows();
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Unable to update referral.");
+    }
+  }
+
+  async function updateStudentStatus(referralId: string, status: AdminStudentReferral["status"]) {
+    try {
+      await apiFetch(`/admin/student-referrals/${referralId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, bonusAmount: studentBonusDrafts[referralId] ?? "" }),
+      });
+      setMessage("Student referral status updated.");
+      await loadRows();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Unable to update student referral.");
     }
   }
 
@@ -85,6 +124,43 @@ export function SuperadminReferralsManager() {
             </article>
           ))}
           {rows.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No referrals found yet.</p> : null}
+        </div>
+      </DashboardCard>
+
+      <DashboardCard title="Student referral handling" subtitle="Track student-to-student onboarding and settle rewards manually when enabled.">
+        <div className="grid gap-3">
+          {studentRows.map((row) => (
+            <article key={row.id} className="rounded-xl border border-[var(--lp-border)] bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-black text-[var(--lp-text)]">{row.referrer_student_name} to {row.referred_student_name}</p>
+                  <p className="mt-1 text-sm text-[var(--lp-muted)]">
+                    {row.referral_code} | Rs. {Number(row.bonus_amount).toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <span className="rounded-full bg-[var(--lp-surface-muted)] px-3 py-1 text-xs font-black text-[var(--lp-muted)]">{row.status}</span>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <input
+                  value={studentBonusDrafts[row.id] ?? row.bonus_amount ?? "0"}
+                  onChange={(event) => setStudentBonusDrafts((current) => ({ ...current, [row.id]: event.target.value }))}
+                  className="w-28 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-bold text-[var(--lp-text)]"
+                  placeholder="Bonus"
+                />
+                {statuses.map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => void updateStudentStatus(row.id, status)}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-bold text-[var(--lp-text)]"
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </article>
+          ))}
+          {studentRows.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No student referrals found yet.</p> : null}
         </div>
       </DashboardCard>
     </div>

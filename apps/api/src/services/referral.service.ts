@@ -178,3 +178,115 @@ export async function updateAdminReferralStatus(input: {
   );
   return result.rows[0] ?? null;
 }
+
+export async function getStudentReferralDashboard(studentUserId: string) {
+  const codeResult = await requireDb().query<{ student_code: string | null; full_name: string }>(
+    `SELECT student_code, full_name FROM users WHERE id = $1 LIMIT 1`,
+    [studentUserId],
+  );
+
+  const referrals = await requireDb().query(
+    `
+    SELECT
+      sr.id::text,
+      sr.referral_code,
+      sr.bonus_amount::text,
+      sr.status,
+      sr.qualified_at::text,
+      sr.paid_at::text,
+      sr.created_at::text,
+      referred.full_name AS referred_student_name,
+      referred.student_code AS referred_student_code
+    FROM student_referrals sr
+    INNER JOIN users referred ON referred.id = sr.referred_student_user_id
+    WHERE sr.referrer_student_user_id = $1
+    ORDER BY sr.created_at DESC
+    LIMIT 100
+    `,
+    [studentUserId],
+  );
+
+  const referredBy = await requireDb().query(
+    `
+    SELECT
+      sr.id::text,
+      sr.referral_code,
+      sr.bonus_amount::text,
+      sr.status,
+      sr.created_at::text,
+      referrer.full_name AS referrer_student_name,
+      referrer.student_code AS referrer_student_code
+    FROM student_referrals sr
+    INNER JOIN users referrer ON referrer.id = sr.referrer_student_user_id
+    WHERE sr.referred_student_user_id = $1
+    ORDER BY sr.created_at DESC
+    LIMIT 1
+    `,
+    [studentUserId],
+  );
+
+  const summary = referrals.rows.reduce(
+    (acc, row) => {
+      const amount = Number(row.bonus_amount ?? 0);
+      acc.total += amount;
+      if (row.status === "QUALIFIED") acc.qualified += amount;
+      if (row.status === "PAID") acc.paid += amount;
+      return acc;
+    },
+    { total: 0, qualified: 0, paid: 0 },
+  );
+
+  return {
+    referralCode: codeResult.rows[0]?.student_code ?? "",
+    studentName: codeResult.rows[0]?.full_name ?? "",
+    summary,
+    referrals: referrals.rows,
+    referredBy: referredBy.rows[0] ?? null,
+  };
+}
+
+export async function listAdminStudentReferrals() {
+  const result = await requireDb().query(
+    `
+    SELECT
+      sr.id::text,
+      sr.referral_code,
+      sr.bonus_amount::text,
+      sr.status,
+      sr.qualified_at::text,
+      sr.paid_at::text,
+      sr.created_at::text,
+      referrer.full_name AS referrer_student_name,
+      referrer.student_code AS referrer_student_code,
+      referred.full_name AS referred_student_name,
+      referred.student_code AS referred_student_code
+    FROM student_referrals sr
+    INNER JOIN users referrer ON referrer.id = sr.referrer_student_user_id
+    INNER JOIN users referred ON referred.id = sr.referred_student_user_id
+    ORDER BY sr.created_at DESC
+    LIMIT 200
+    `,
+  );
+  return result.rows;
+}
+
+export async function updateAdminStudentReferralStatus(input: {
+  referralId: string;
+  status: "PENDING" | "QUALIFIED" | "PAID" | "REJECTED";
+  bonusAmount?: number;
+}) {
+  const result = await requireDb().query(
+    `
+    UPDATE student_referrals
+    SET status = $2,
+        bonus_amount = COALESCE($3, bonus_amount),
+        qualified_at = CASE WHEN $2 = 'QUALIFIED' THEN COALESCE(qualified_at, NOW()) ELSE qualified_at END,
+        paid_at = CASE WHEN $2 = 'PAID' THEN NOW() ELSE paid_at END,
+        updated_at = NOW()
+    WHERE id = $1
+    RETURNING id::text, status, bonus_amount::text, paid_at::text
+    `,
+    [input.referralId, input.status, input.bonusAmount ?? null],
+  );
+  return result.rows[0] ?? null;
+}

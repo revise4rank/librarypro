@@ -30,6 +30,7 @@ export const studentNav = [
   { href: "/student/syllabus", label: "Syllabus", shortLabel: "SYL" },
   { href: "/student/revisions", label: "Revision", shortLabel: "REV" },
   { href: "/student/rewards", label: "Rewards", shortLabel: "RWD" },
+  { href: "/student/referrals", label: "Referrals", shortLabel: "REF" },
   { href: "/student/feed", label: "Feed", shortLabel: "FED" },
   { href: "/student/offers", label: "Offers", shortLabel: "OFF" },
   { href: "/student/focus-mode", label: "Focus Mode", shortLabel: "ZEN" },

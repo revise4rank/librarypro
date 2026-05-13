@@ -193,6 +193,7 @@ export async function studentRegisterController(req: Request, res: Response) {
     email: parsed.email || undefined,
     phone: parsed.phone || undefined,
     password: parsed.password,
+    referralCode: parsed.referralCode || undefined,
   });
 
   const result = await loginUser({

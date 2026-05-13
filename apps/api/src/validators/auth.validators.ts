@@ -47,6 +47,7 @@ export const studentRegisterBodySchema = z.object({
   email: z.string().trim().email().optional().or(z.literal("")),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
   password: z.string().min(6).max(120),
+  referralCode: z.string().trim().max(120).optional().or(z.literal("")),
 });
 
 export const ownerRegisterBodySchema = z

@@ -116,6 +116,7 @@ export async function registerStudentUser(input: {
   email?: string;
   phone?: string;
   password: string;
+  referralCode?: string;
 }) {
   const db = requireDb();
   const repo = ownerRepository();
@@ -135,6 +136,30 @@ export async function registerStudentUser(input: {
       studentCode: buildStudentCode(input.fullName),
       passwordHash,
     });
+
+    if (input.referralCode?.trim()) {
+      const referrer = await client.query<{ id: string }>(
+        `
+        SELECT id::text
+        FROM users
+        WHERE lower(COALESCE(student_code, '')) = lower($1)
+          AND id <> $2
+          AND global_role = 'STUDENT'
+        LIMIT 1
+        `,
+        [input.referralCode.trim(), created.id],
+      );
+      if (referrer.rows[0]) {
+        await client.query(
+          `
+          INSERT INTO student_referrals (referrer_student_user_id, referred_student_user_id, referral_code)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (referred_student_user_id) DO NOTHING
+          `,
+          [referrer.rows[0].id, created.id, input.referralCode.trim()],
+        );
+      }
+    }
 
     return getAuthenticatedUser(created.id);
   } finally {

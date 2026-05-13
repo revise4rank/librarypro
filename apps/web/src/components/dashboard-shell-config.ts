@@ -54,6 +54,7 @@ const navIconMap: Record<string, LucideIcon> = {
   "/student/syllabus": Database,
   "/student/revisions": CalendarCheck,
   "/student/rewards": ShieldCheck,
+  "/student/referrals": UserPlus,
   "/student/feed": Send,
   "/student/offers": Tags,
   "/student/qr": CreditCard,

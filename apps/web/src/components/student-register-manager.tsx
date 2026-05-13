@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch, saveSession } from "../lib/api";
 import { GoogleOAuthButton } from "./owner-login-form";
 
@@ -12,7 +12,13 @@ export function StudentRegisterManager() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("ref");
+    if (code) setReferralCode(code);
+  }, []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,7 +42,7 @@ export function StudentRegisterManager() {
         "/auth/student/register",
         {
           method: "POST",
-          body: JSON.stringify({ fullName, email, phone, password }),
+          body: JSON.stringify({ fullName, email, phone, password, referralCode }),
         },
         false,
       );
@@ -61,6 +67,7 @@ export function StudentRegisterManager() {
       <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Phone" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="Password" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
+      <input value={referralCode} onChange={(event) => setReferralCode(event.target.value)} placeholder="Referral code (optional)" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
       <p className="text-sm text-[var(--lp-muted)]">
         Create your student app account first, then search a library, scan QR, or send a join request. Owner review and payment confirmation still happen before roster access and seat allotment.

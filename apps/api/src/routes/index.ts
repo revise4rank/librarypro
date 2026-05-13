@@ -22,7 +22,9 @@ import {
 } from "../controllers/billing-subscription.controller";
 import {
   getOwnerReferralsController,
+  getStudentReferralsController,
   listAdminReferralsController,
+  updateAdminStudentReferralStatusController,
   updateAdminReferralStatusController,
 } from "../controllers/referral.controller";
 import {
@@ -188,6 +190,7 @@ router.post("/billing/razorpay/webhook", asyncHandler(razorpayWebhookController)
 router.get("/billing/subscription", requireRole(["LIBRARY_OWNER"]), asyncHandler(getBillingSubscriptionController));
 router.post("/billing/subscription/renew", requireRole(["LIBRARY_OWNER"]), asyncHandler(renewBillingSubscriptionController));
 router.get("/owner/referrals", requireRole(["LIBRARY_OWNER"]), asyncHandler(getOwnerReferralsController));
+router.get("/student/referrals", requireRole(["STUDENT"]), asyncHandler(getStudentReferralsController));
 router.get("/student/entry-qr", requireRole(["STUDENT"]), asyncHandler(getStudentEntryQrController));
 router.post("/checkins/scan", requireRole(["STUDENT"]), asyncHandler(scanCheckInController));
 router.post("/checkins/checkout", requireRole(["STUDENT"]), asyncHandler(scanCheckOutController));
@@ -308,6 +311,7 @@ router.get("/admin/book-requests", requireRole(["SUPER_ADMIN"]), asyncHandler(li
 router.patch("/admin/book-requests/:requestId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminBookRequestStatusController));
 router.get("/admin/referrals", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminReferralsController));
 router.patch("/admin/referrals/:referralId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminReferralStatusController));
+router.patch("/admin/student-referrals/:referralId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminStudentReferralStatusController));
 router.get("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminMarketplaceSettingsController));
 router.patch("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminMarketplaceSettingsController));
 router.get("/admin/integration-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminIntegrationSettingsController));
