@@ -1,7 +1,7 @@
 "use client";
 
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 
 type ScannerAction = "CHECKED_IN" | "CHECKED_OUT" | "JOIN_REQUEST_CREATED";
@@ -20,28 +20,6 @@ type ScannerResponse = {
     qrKeyId?: string;
   };
 };
-
-function ScannerCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="rounded-xl border border-[var(--lp-border)] bg-white p-4 shadow-sm sm:p-5">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black text-slate-950">{title}</h2>
-          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
-        </div>
-      </div>
-      {children}
-    </section>
-  );
-}
 
 function resultText(data: ScannerResponse["data"]) {
   if (data.action === "CHECKED_IN") {
@@ -153,98 +131,94 @@ export function StudentScannerManager({ compact = false }: { compact?: boolean }
     return () => stopCamera();
   }, []);
 
+  const scanStateLabel = submitting ? "Processing QR..." : cameraActive ? "Camera live" : "Camera off";
+  const scanStateTone = error
+    ? "bg-rose-50 text-rose-700"
+    : message
+      ? "bg-emerald-50 text-emerald-700"
+      : "bg-slate-100 text-slate-700";
+
   return (
-    <div className={compact ? "grid gap-4" : "grid gap-5 xl:grid-cols-[1.05fr_0.95fr]"}>
-      <ScannerCard title="Student QR scanner" subtitle="Scan the library QR for join request, check-in, or check-out.">
-        <div className="grid gap-4">
-          <div className="overflow-hidden rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(180deg,#eef7f3,#dceee9)] p-3 shadow-sm">
-            <div className="relative overflow-hidden rounded-lg bg-[#19332d]">
-              <video ref={videoRef} className={compact ? "h-[min(62vh,30rem)] min-h-80 w-full object-cover" : "h-[min(70vh,28rem)] min-h-72 w-full object-cover"} playsInline muted />
-              {!cameraActive ? (
-                <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(15,23,42,0.88))] px-5 text-center">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-200">Library Scanner</p>
-                    <p className="mt-3 text-2xl font-black text-white">Scan the QR at reception</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-200">
-                      The app will join, check in, or check out automatically.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-              <div className="pointer-events-none absolute inset-[15%] rounded-xl border-2 border-white/80 shadow-sm" />
+    <section className={compact ? "grid gap-3" : "mx-auto grid max-w-3xl gap-4"}>
+      <div className="overflow-hidden rounded-2xl border border-[var(--lp-border)] bg-white p-3 shadow-sm sm:p-4">
+        <div className="relative overflow-hidden rounded-xl bg-[#111827]">
+          <video ref={videoRef} className={compact ? "h-[min(62vh,34rem)] min-h-[24rem] w-full object-cover" : "h-[min(70vh,34rem)] min-h-[24rem] w-full object-cover"} playsInline muted />
+          {!cameraActive ? (
+            <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.7),rgba(15,23,42,0.92))] px-5 text-center">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-200">Library Scanner</p>
+                <p className="mt-3 text-2xl font-black text-white">Camera ready</p>
+                <p className="mt-2 text-sm leading-6 text-slate-200">Allow camera permission and point at the library QR.</p>
+              </div>
             </div>
+          ) : null}
+          <div className="pointer-events-none absolute inset-[14%] rounded-2xl border-2 border-white shadow-[0_0_0_999px_rgba(15,23,42,0.22)]" />
+          <div className="absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-white backdrop-blur">
+            {scanStateLabel}
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-3">
+          <div className={`rounded-xl px-4 py-3 text-sm font-bold ${scanStateTone}`}>
+            {error ?? message ?? scannerStatus}
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          {lastResult ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Last action</p>
+              <p className="mt-1 font-black text-slate-950">{lastResult.action.replace(/_/g, " ")}</p>
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-[1fr_1fr] gap-2">
             <button
               type="button"
               onClick={() => void startCamera()}
               disabled={cameraActive}
-              className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)] disabled:opacity-60"
+              className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-black text-[var(--lp-accent-strong)] disabled:opacity-55"
             >
-              Start scanner
+              Start
             </button>
             <button
               type="button"
               onClick={stopCamera}
               disabled={!cameraActive}
-              className="rounded-xl border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
+              className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-black text-[var(--lp-text)] disabled:opacity-55"
             >
               Stop
             </button>
           </div>
 
-          <div className="rounded-xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{scannerStatus}</div>
+          <div className="rounded-xl border border-slate-200 bg-white">
+            <button
+              type="button"
+              onClick={() => setShowManualFallback((current) => !current)}
+              className="w-full px-4 py-3 text-left text-sm font-black text-slate-700"
+            >
+              {showManualFallback ? "Hide manual fallback" : "Use manual fallback"}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setShowManualFallback((current) => !current)}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
-          >
-            {showManualFallback ? "Hide manual fallback" : "Use manual fallback"}
-          </button>
-
-          {showManualFallback ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <textarea
-                value={manualQrPayload}
-                onChange={(event) => setManualQrPayload(event.target.value)}
-                placeholder="Paste QR payload here if camera access is unavailable."
-                className="min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
-              />
+            {showManualFallback ? (
+              <div className="border-t border-slate-200 p-3">
+                <textarea
+                  value={manualQrPayload}
+                  onChange={(event) => setManualQrPayload(event.target.value)}
+                  placeholder="Paste QR payload here if camera access is unavailable."
+                  className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                />
               <button
                 type="button"
                 onClick={() => void runScan(manualQrPayload)}
                 disabled={!manualQrPayload.trim() || submitting}
-                className="mt-3 rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60"
+                className="mt-3 w-full rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-black text-[var(--lp-text)] disabled:opacity-60"
               >
                 Process QR
               </button>
-            </div>
-          ) : null}
-        </div>
-      </ScannerCard>
-
-      <ScannerCard title="Scan result" subtitle="One scanner handles library joining and attendance.">
-        <div className="grid gap-4">
-          {message ? <div className="rounded-xl bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-700">{message}</div> : null}
-          {error ? <div className="rounded-xl bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-600">{error}</div> : null}
-
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Last action</p>
-            <p className="mt-3 text-2xl font-black text-slate-950">{lastResult?.action.replace(/_/g, " ") ?? "Ready"}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              {lastResult?.libraryName
-                ? lastResult.libraryName
-                : "Scan the QR displayed by the library desk or entry gate."}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
-            If you already have active access, the same QR toggles attendance. If you are new to that library, the scan creates a join request.
+              </div>
+            ) : null}
           </div>
         </div>
-      </ScannerCard>
-    </div>
+      </div>
+    </section>
   );
 }
