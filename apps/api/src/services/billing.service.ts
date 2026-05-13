@@ -3,6 +3,7 @@ import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
 import { getPlatformPlanConfig, listPlatformPlanConfigs } from "../lib/platform-plans";
 import { BillingRepository } from "../repositories/billing.repository";
+import { getPlatformIntegrationSettings } from "./platform-integrations.service";
 
 function repository() {
   return new BillingRepository(requireDb());
@@ -15,8 +16,8 @@ type RazorpayOrderResponse = {
   };
 };
 
-function ensureRazorpayConfigured() {
-  if (!env.razorpayKeyId || !env.razorpayKeySecret) {
+function ensureRazorpayConfigured(settings: { razorpayKeyId: string; razorpayKeySecret: string }) {
+  if (!settings.razorpayKeyId || !settings.razorpayKeySecret) {
     throw new AppError(503, "Razorpay is not configured yet", "RAZORPAY_NOT_CONFIGURED");
   }
 }
@@ -28,8 +29,9 @@ async function createRazorpayOrder(input: {
   currency: string;
   planName: string;
 }) {
-  ensureRazorpayConfigured();
-  const auth = Buffer.from(`${env.razorpayKeyId}:${env.razorpayKeySecret}`).toString("base64");
+  const integrations = await getPlatformIntegrationSettings();
+  ensureRazorpayConfigured(integrations);
+  const auth = Buffer.from(`${integrations.razorpayKeyId}:${integrations.razorpayKeySecret}`).toString("base64");
   const response = await fetch("https://api.razorpay.com/v1/orders", {
     method: "POST",
     headers: {
@@ -86,6 +88,7 @@ export async function createSubscriptionRenewal(input: {
       durationMonths: plan.durationMonths,
     });
 
+    const integrations = await getPlatformIntegrationSettings();
     const razorpayOrderId = await createRazorpayOrder({
       libraryId: input.libraryId,
       subscriptionId,
@@ -109,7 +112,7 @@ export async function createSubscriptionRenewal(input: {
       razorpayOrderId,
       plan,
       checkout: {
-        keyId: env.razorpayKeyId,
+        keyId: integrations.razorpayKeyId,
         amount: plan.amount * 100,
         currency: plan.currency,
         description: `${plan.name} renewal`,

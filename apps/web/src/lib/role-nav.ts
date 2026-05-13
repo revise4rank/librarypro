@@ -46,6 +46,7 @@ export const adminNav = [
   { href: "/superadmin/reviews", label: "Reviews", shortLabel: "REV" },
   { href: "/superadmin/offers", label: "Offers", shortLabel: "OFF" },
   { href: "/superadmin/plans", label: "Plans", shortLabel: "PLN" },
+  { href: "/superadmin/integrations", label: "Integrations", shortLabel: "INT" },
   { href: "/superadmin/referrals", label: "Referrals", shortLabel: "REF" },
   { href: "/superadmin/payments", label: "Payments", shortLabel: "PAY" },
 ];

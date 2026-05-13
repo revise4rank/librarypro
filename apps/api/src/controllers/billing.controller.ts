@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { processRazorpayWebhook, verifyRazorpayWebhookSignature } from "../services/razorpay-webhook.service";
 
 export async function razorpayWebhookController(req: Request, res: Response) {
-  verifyRazorpayWebhookSignature(
+  await verifyRazorpayWebhookSignature(
     req.body as Buffer,
     typeof req.headers["x-razorpay-signature"] === "string"
       ? req.headers["x-razorpay-signature"]

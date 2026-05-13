@@ -4,14 +4,17 @@ import { env } from "../config/env";
 import { requireDb } from "../lib/db";
 import { qualifyReferralForPaidPlatformPayment } from "./referral.service";
 import { AppError } from "../lib/errors";
+import { getPlatformIntegrationSettings } from "./platform-integrations.service";
 
-export function verifyRazorpayWebhookSignature(rawBody: Buffer, signatureHeader?: string) {
+export async function verifyRazorpayWebhookSignature(rawBody: Buffer, signatureHeader?: string) {
   if (!signatureHeader) {
     throw new AppError(400, "Missing Razorpay signature", "MISSING_WEBHOOK_SIGNATURE");
   }
 
+  const integrations = await getPlatformIntegrationSettings();
+  const webhookSecret = integrations.razorpayWebhookSecret || env.razorpayWebhookSecret;
   const expected = crypto
-    .createHmac("sha256", env.razorpayWebhookSecret)
+    .createHmac("sha256", webhookSecret)
     .update(rawBody)
     .digest("hex");
 

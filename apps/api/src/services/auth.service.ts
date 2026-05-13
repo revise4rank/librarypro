@@ -6,6 +6,7 @@ import { AuthRepository, type UserRow } from "../repositories/auth.repository";
 import { OwnerOperationsRepository } from "../repositories/owner-operations.repository";
 import crypto from "node:crypto";
 import nodemailer from "nodemailer";
+import { getPlatformIntegrationSettings } from "./platform-integrations.service";
 import type { user_role } from "../types/generated";
 
 function repository() {
@@ -334,27 +335,24 @@ function getPasswordResetUrl(token: string) {
   return url.toString();
 }
 
-function isSmtpConfigured() {
-  return Boolean(env.smtpHost && env.smtpUser && env.smtpPass && env.reportFromEmail);
-}
-
 async function sendPasswordResetEmail(input: { to: string; fullName: string; resetUrl: string }) {
-  if (!isSmtpConfigured()) {
+  const integrations = await getPlatformIntegrationSettings();
+  if (!integrations.smtpHost || !integrations.smtpUser || !integrations.smtpPass || !integrations.reportFromEmail) {
     return false;
   }
 
   const transporter = nodemailer.createTransport({
-    host: env.smtpHost,
-    port: env.smtpPort,
-    secure: env.smtpPort === 465,
+    host: integrations.smtpHost,
+    port: integrations.smtpPort,
+    secure: integrations.smtpPort === 465,
     auth: {
-      user: env.smtpUser,
-      pass: env.smtpPass,
+      user: integrations.smtpUser,
+      pass: integrations.smtpPass,
     },
   });
 
   await transporter.sendMail({
-    from: env.reportFromEmail,
+    from: integrations.reportFromEmail,
     to: input.to,
     subject: "Reset your LibraryPro password",
     text: [
@@ -422,33 +420,37 @@ function normalizeNextPath(next: string | undefined, role: GoogleOAuthRole) {
   return role === "LIBRARY_OWNER" ? "/owner/dashboard" : "/student/dashboard";
 }
 
-function getGoogleOAuthRedirectUrl() {
-  if (env.googleOAuthRedirectUrl) {
-    return env.googleOAuthRedirectUrl;
+async function getGoogleOAuthRedirectUrl() {
+  const integrations = await getPlatformIntegrationSettings();
+  if (integrations.googleOAuthRedirectUrl) {
+    return integrations.googleOAuthRedirectUrl;
   }
 
   const origin = env.apiPublicUrl || `http://127.0.0.1:${env.port}`;
   return `${origin.replace(/\/$/, "")}/v1/auth/google/callback`;
 }
 
-function ensureGoogleOAuthConfigured() {
-  if (!env.googleOAuthClientId || !env.googleOAuthClientSecret) {
+async function getGoogleOAuthConfig() {
+  const integrations = await getPlatformIntegrationSettings();
+  if (!integrations.googleOAuthClientId || !integrations.googleOAuthClientSecret) {
     throw new AppError(503, "Google sign-in is not configured yet", "GOOGLE_OAUTH_NOT_CONFIGURED");
   }
+  return integrations;
 }
 
-export function getGoogleOAuthStatus() {
+export async function getGoogleOAuthStatus() {
+  const integrations = await getPlatformIntegrationSettings();
   return {
-    enabled: Boolean(env.googleOAuthClientId && env.googleOAuthClientSecret),
+    enabled: Boolean(integrations.googleOAuthClientId && integrations.googleOAuthClientSecret),
   };
 }
 
-export function buildGoogleOAuthStartUrl(input: {
+export async function buildGoogleOAuthStartUrl(input: {
   role: GoogleOAuthRole;
   next?: string;
   library?: string;
 }) {
-  ensureGoogleOAuthConfigured();
+  const integrations = await getGoogleOAuthConfig();
   const state = signPayload({
     kind: "google_oauth_state",
     role: input.role,
@@ -459,8 +461,8 @@ export function buildGoogleOAuthStartUrl(input: {
   });
 
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  url.searchParams.set("client_id", env.googleOAuthClientId);
-  url.searchParams.set("redirect_uri", getGoogleOAuthRedirectUrl());
+  url.searchParams.set("client_id", integrations.googleOAuthClientId);
+  url.searchParams.set("redirect_uri", await getGoogleOAuthRedirectUrl());
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "openid email profile");
   url.searchParams.set("prompt", "select_account");
@@ -487,7 +489,7 @@ export async function createGoogleOAuthTicketFromCallback(input: {
   state?: string;
   error?: string;
 }) {
-  ensureGoogleOAuthConfigured();
+  const integrations = await getGoogleOAuthConfig();
   if (input.error) {
     throw new AppError(400, "Google sign-in was cancelled", "GOOGLE_OAUTH_CANCELLED");
   }
@@ -500,11 +502,11 @@ export async function createGoogleOAuthTicketFromCallback(input: {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: env.googleOAuthClientId,
-      client_secret: env.googleOAuthClientSecret,
+      client_id: integrations.googleOAuthClientId,
+      client_secret: integrations.googleOAuthClientSecret,
       code: input.code,
       grant_type: "authorization_code",
-      redirect_uri: getGoogleOAuthRedirectUrl(),
+      redirect_uri: await getGoogleOAuthRedirectUrl(),
     }),
   });
   const tokenPayload = (await tokenResponse.json()) as GoogleTokenResponse;

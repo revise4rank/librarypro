@@ -110,6 +110,7 @@ import {
   getAdminDataOverviewController,
   getAdminDashboardController,
   getAdminMarketplaceSettingsController,
+  getAdminIntegrationSettingsController,
   getOwnerDashboardController,
   getOwnerCheckinsController,
   getOwnerPaymentReceiptController,
@@ -158,6 +159,7 @@ import {
   unassignOwnerStudentSeatController,
   updateOwnerAdminPermissionsController,
   updateAdminMarketplaceSettingsController,
+  updateAdminIntegrationSettingsController,
   updateAdminPlanConfigController,
 } from "../controllers/owner-operations.controller";
 import { uploadAdmissionDocumentController, uploadPublicProfileAssetController } from "../controllers/upload.controller";
@@ -308,6 +310,8 @@ router.get("/admin/referrals", requireRole(["SUPER_ADMIN"]), asyncHandler(listAd
 router.patch("/admin/referrals/:referralId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminReferralStatusController));
 router.get("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminMarketplaceSettingsController));
 router.patch("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminMarketplaceSettingsController));
+router.get("/admin/integration-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminIntegrationSettingsController));
+router.patch("/admin/integration-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminIntegrationSettingsController));
 router.get("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminOffersController));
 router.post("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(createAdminOfferController));
 router.get("/admin/review-reports", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminReviewReportsController));

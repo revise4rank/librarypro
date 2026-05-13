@@ -87,6 +87,20 @@ export const updatePlatformMarketplaceSettingsBodySchema = z.object({
   ).min(1).max(4),
 });
 
+export const updatePlatformIntegrationSettingsBodySchema = z.object({
+  googleOAuthClientId: z.string().trim().max(255).optional().or(z.literal("")),
+  googleOAuthClientSecret: z.string().trim().max(500).optional().or(z.literal("")),
+  googleOAuthRedirectUrl: z.string().trim().max(500).optional().or(z.literal("")),
+  razorpayKeyId: z.string().trim().max(255).optional().or(z.literal("")),
+  razorpayKeySecret: z.string().trim().max(500).optional().or(z.literal("")),
+  razorpayWebhookSecret: z.string().trim().max(500).optional().or(z.literal("")),
+  smtpHost: z.string().trim().max(255).optional().or(z.literal("")),
+  smtpPort: z.coerce.number().int().positive().max(65535).default(587),
+  smtpUser: z.string().trim().max(255).optional().or(z.literal("")),
+  smtpPass: z.string().trim().max(500).optional().or(z.literal("")),
+  reportFromEmail: z.string().trim().email().optional().or(z.literal("")),
+});
+
 export const updatePlatformPlanBodySchema = z.object({
   planName: z.string().trim().min(3).max(120),
   amount: z.coerce.number().min(0).max(999999),

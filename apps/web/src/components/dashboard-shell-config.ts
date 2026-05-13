@@ -67,6 +67,7 @@ const navIconMap: Record<string, LucideIcon> = {
   "/superadmin/reviews": ShieldCheck,
   "/superadmin/offers": Send,
   "/superadmin/plans": CreditCard,
+  "/superadmin/integrations": SettingsIcon,
   "/superadmin/referrals": UserPlus,
   "/superadmin/payments": IndianRupee,
 };

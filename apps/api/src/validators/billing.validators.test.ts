@@ -21,19 +21,19 @@ test("billingRenewBodySchema accepts dynamic paid plan codes", () => {
   assert.equal(parsed.planCode, "CUSTOM_LIBRARY_PLAN_2026");
 });
 
-test("verifyRazorpayWebhookSignature accepts valid signature", () => {
+test("verifyRazorpayWebhookSignature accepts valid signature", async () => {
   const rawBody = Buffer.from(JSON.stringify({ event: "payment.captured", payload: {} }), "utf8");
   const signature = createHmac("sha256", TEST_WEBHOOK_SECRET)
     .update(rawBody)
     .digest("hex");
 
-  assert.doesNotThrow(() => verifyRazorpayWebhookSignature(rawBody, signature));
+  await assert.doesNotReject(() => verifyRazorpayWebhookSignature(rawBody, signature));
 });
 
-test("verifyRazorpayWebhookSignature rejects invalid signature", () => {
+test("verifyRazorpayWebhookSignature rejects invalid signature", async () => {
   const rawBody = Buffer.from(JSON.stringify({ event: "payment.captured", payload: {} }), "utf8");
 
-  assert.throws(
+  await assert.rejects(
     () => verifyRazorpayWebhookSignature(rawBody, "invalid-signature"),
     /Invalid Razorpay signature/,
   );

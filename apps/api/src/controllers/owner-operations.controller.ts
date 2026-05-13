@@ -3,6 +3,11 @@ import { createAuditLog } from "../lib/audit";
 import { AppError } from "../lib/errors";
 import { emitLibraryEvent, emitUserEvent } from "../lib/realtime";
 import {
+  getPlatformIntegrationSettings,
+  redactPlatformIntegrationSettings,
+  updatePlatformIntegrationSettings,
+} from "../services/platform-integrations.service";
+import {
   assignSeatToStudent,
   createOwnerAdmission,
   createOwnerFloor,
@@ -116,6 +121,7 @@ import {
   updateOwnerStudentBodySchema,
   updatePlatformPlanBodySchema,
   updatePlatformMarketplaceSettingsBodySchema,
+  updatePlatformIntegrationSettingsBodySchema,
 } from "../validators/owner-operations.validators";
 
 function requireOwnerContext(req: Request) {
@@ -1408,6 +1414,42 @@ export async function listAdminPaymentsController(_req: Request, res: Response) 
 export async function getAdminMarketplaceSettingsController(_req: Request, res: Response) {
   const data = await getPlatformMarketplaceSettings();
   res.json({ success: true, data });
+}
+
+export async function getAdminIntegrationSettingsController(_req: Request, res: Response) {
+  const data = await getPlatformIntegrationSettings();
+  res.json({ success: true, data: redactPlatformIntegrationSettings(data) });
+}
+
+export async function updateAdminIntegrationSettingsController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
+  }
+
+  const parsed = updatePlatformIntegrationSettingsBodySchema.parse(req.body);
+  const data = await updatePlatformIntegrationSettings({
+    ...parsed,
+    updatedByUserId: req.auth.userId,
+  });
+  await createAuditLog({
+    actorUserId: req.auth.userId,
+    action: "admin.integration_settings.update",
+    entityType: "platform_integration_settings",
+    entityId: "default",
+    metadata: {
+      googleOAuthClientId: Boolean(data.googleOAuthClientId),
+      googleOAuthClientSecret: Boolean(data.googleOAuthClientSecret),
+      razorpayKeyId: Boolean(data.razorpayKeyId),
+      razorpayKeySecret: Boolean(data.razorpayKeySecret),
+      razorpayWebhookSecret: Boolean(data.razorpayWebhookSecret),
+      smtpHost: Boolean(data.smtpHost),
+      smtpUser: Boolean(data.smtpUser),
+      smtpPass: Boolean(data.smtpPass),
+    },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.json({ success: true, data: redactPlatformIntegrationSettings(data) });
 }
 
 export async function updateAdminMarketplaceSettingsController(req: Request, res: Response) {

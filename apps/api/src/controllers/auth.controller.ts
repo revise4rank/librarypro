@@ -207,12 +207,12 @@ export async function studentRegisterController(req: Request, res: Response) {
 
 export async function googleOAuthStatusController(req: Request, res: Response) {
   googleOAuthStatusQuerySchema.parse(req.query);
-  res.json({ success: true, data: getGoogleOAuthStatus() });
+  res.json({ success: true, data: await getGoogleOAuthStatus() });
 }
 
 export async function googleOAuthStartController(req: Request, res: Response) {
   const parsed = googleOAuthStartQuerySchema.parse(req.query);
-  const url = buildGoogleOAuthStartUrl({
+  const url = await buildGoogleOAuthStartUrl({
     role: parsed.role,
     next: parsed.next || undefined,
     library: parsed.library || undefined,
