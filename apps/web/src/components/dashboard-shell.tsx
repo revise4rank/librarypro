@@ -11,6 +11,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -22,6 +23,14 @@ import {
   settingsPathForRole,
   type DashboardNavItem,
 } from "./dashboard-shell-config";
+
+const StudentScannerManager = dynamic(
+  () => import("./student-scanner-manager").then((module) => module.StudentScannerManager),
+  {
+    ssr: false,
+    loading: () => <p className="rounded-lg bg-white p-4 text-sm font-semibold text-slate-600">Opening scanner...</p>,
+  },
+);
 
 function initialsFromName(value?: string | null) {
   if (!value) return "U";
@@ -55,6 +64,7 @@ export function DashboardShell({
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [desktopPinnedOpen, setDesktopPinnedOpen] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("lp-desktop-rail-open") === "1";
@@ -195,14 +205,15 @@ export function DashboardShell({
 
               <div className="flex shrink-0 items-center gap-2">
                 {isStudentShell ? (
-                  <Link
-                    href="/student/scanner"
+                  <button
+                    type="button"
+                    onClick={() => setScannerOpen(true)}
                     className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-[var(--lp-text)] transition hover:bg-[var(--lp-surface-muted)]"
                     aria-label="Open scanner"
                     title="Open scanner"
                   >
                     <QrCode className="h-4 w-4" />
-                  </Link>
+                  </button>
                 ) : null}
                 <div className="relative" ref={notificationMenuRef}>
                   <button
@@ -353,6 +364,29 @@ export function DashboardShell({
           </div>
         </nav>
       </div>
+      {scannerOpen ? (
+        <div className="fixed inset-0 z-[80] bg-[rgba(15,23,42,0.58)] p-2 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true" aria-label="Student QR scanner">
+          <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden rounded-xl bg-[var(--lp-page-bg)] shadow-xl">
+            <div className="flex items-center justify-between border-b border-[var(--lp-border)] bg-white px-4 py-3">
+              <div>
+                <p className="text-base font-black text-slate-950">Scan library QR</p>
+                <p className="text-xs font-semibold text-slate-500">Join, check-in, or check-out directly.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setScannerOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--lp-border)] bg-white text-sm font-black text-slate-700"
+                aria-label="Close scanner"
+              >
+                X
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-2 sm:p-4">
+              <StudentScannerManager compact />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

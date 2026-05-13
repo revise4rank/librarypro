@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { apiFetch } from "../lib/api";
-import { DashboardCard } from "./dashboard-shell";
 
 type ScannerAction = "CHECKED_IN" | "CHECKED_OUT" | "JOIN_REQUEST_CREATED";
 
@@ -21,12 +21,26 @@ type ScannerResponse = {
   };
 };
 
-declare global {
-  interface Window {
-    BarcodeDetector?: new (options?: { formats?: string[] }) => {
-      detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>>;
-    };
-  }
+function ScannerCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-[var(--lp-border)] bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-black text-slate-950">{title}</h2>
+          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
 }
 
 function resultText(data: ScannerResponse["data"]) {
@@ -41,7 +55,7 @@ function resultText(data: ScannerResponse["data"]) {
   return `Join request sent to ${data.libraryName ?? "library"}. The library desk will review and activate access.`;
 }
 
-export function StudentScannerManager() {
+export function StudentScannerManager({ compact = false }: { compact?: boolean }) {
   const [cameraActive, setCameraActive] = useState(false);
   const [scannerStatus, setScannerStatus] = useState("Camera off");
   const [manualQrPayload, setManualQrPayload] = useState("");
@@ -52,22 +66,16 @@ export function StudentScannerManager() {
   const [lastResult, setLastResult] = useState<ScannerResponse["data"] | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const detectorRef = useRef<{ detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>> } | null>(null);
+  const controlsRef = useRef<IScannerControls | null>(null);
   const lastScanRef = useRef("");
-  const scanLoopRef = useRef<number | null>(null);
 
   const cameraSupported = useMemo(() => {
-    return typeof window !== "undefined" && !!window.BarcodeDetector && !!navigator.mediaDevices?.getUserMedia;
+    return typeof window !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
   }, []);
 
   function stopCamera() {
-    if (scanLoopRef.current) {
-      window.clearInterval(scanLoopRef.current);
-      scanLoopRef.current = null;
-    }
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
+    controlsRef.current?.stop();
+    controlsRef.current = null;
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -123,35 +131,17 @@ export function StudentScannerManager() {
     setMessage(null);
 
     try {
-      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
-      detectorRef.current = detector;
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
-      streamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      if (!videoRef.current) return;
 
       setCameraActive(true);
       setScannerStatus("Camera live. Scan the library QR.");
-
-      scanLoopRef.current = window.setInterval(async () => {
-        if (!videoRef.current || !detectorRef.current) return;
-        try {
-          const results = await detectorRef.current.detect(videoRef.current);
-          const match = results.find((item) => item.rawValue);
-          if (match?.rawValue) {
-            await handleDetectedPayload(match.rawValue);
-          }
-        } catch {
-          // Ignore transient detector errors while video frames are changing.
+      const reader = new BrowserQRCodeReader();
+      controlsRef.current = await reader.decodeFromVideoDevice(undefined, videoRef.current, (result) => {
+        const payload = result?.getText();
+        if (payload) {
+          void handleDetectedPayload(payload);
         }
-      }, 850);
+      });
     } catch (cameraError) {
       stopCamera();
       setError(cameraError instanceof Error ? cameraError.message : "Unable to start camera scanner.");
@@ -164,12 +154,12 @@ export function StudentScannerManager() {
   }, []);
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-      <DashboardCard title="Student QR scanner" subtitle="Scan the library QR for join request, check-in, or check-out.">
+    <div className={compact ? "grid gap-4" : "grid gap-5 xl:grid-cols-[1.05fr_0.95fr]"}>
+      <ScannerCard title="Student QR scanner" subtitle="Scan the library QR for join request, check-in, or check-out.">
         <div className="grid gap-4">
           <div className="overflow-hidden rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(180deg,#eef7f3,#dceee9)] p-3 shadow-sm">
             <div className="relative overflow-hidden rounded-lg bg-[#19332d]">
-              <video ref={videoRef} className="h-[min(70vh,28rem)] min-h-72 w-full object-cover" playsInline muted />
+              <video ref={videoRef} className={compact ? "h-[min(62vh,30rem)] min-h-80 w-full object-cover" : "h-[min(70vh,28rem)] min-h-72 w-full object-cover"} playsInline muted />
               {!cameraActive ? (
                 <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(15,23,42,0.88))] px-5 text-center">
                   <div>
@@ -233,9 +223,9 @@ export function StudentScannerManager() {
             </div>
           ) : null}
         </div>
-      </DashboardCard>
+      </ScannerCard>
 
-      <DashboardCard title="Scan result" subtitle="One scanner handles library joining and attendance.">
+      <ScannerCard title="Scan result" subtitle="One scanner handles library joining and attendance.">
         <div className="grid gap-4">
           {message ? <div className="rounded-xl bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-700">{message}</div> : null}
           {error ? <div className="rounded-xl bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-600">{error}</div> : null}
@@ -254,7 +244,7 @@ export function StudentScannerManager() {
             If you already have active access, the same QR toggles attendance. If you are new to that library, the scan creates a join request.
           </div>
         </div>
-      </DashboardCard>
+      </ScannerCard>
     </div>
   );
 }

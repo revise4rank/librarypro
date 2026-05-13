@@ -20,5 +20,9 @@
     "@types/compression": "^1.8.1",
     "autocannon": "^8.0.0",
     "playwright": "^1.59.1"
+  },
+  "dependencies": {
+    "@zxing/browser": "^0.2.0",
+    "@zxing/library": "^0.22.0"
   }
 }
