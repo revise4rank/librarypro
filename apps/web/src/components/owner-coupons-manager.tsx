@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch, displayApiError } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 
 type DiscountType = "PERCENTAGE" | "FLAT";
@@ -46,6 +47,7 @@ export function OwnerCouponsManager() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -90,6 +92,7 @@ export function OwnerCouponsManager() {
       setEditingCouponId(null);
       setCouponForm(emptyCouponForm);
       await loadData();
+      setFormOpen(false);
     } catch (saveError) {
       setError(displayApiError(saveError, "Unable to save coupon."));
     } finally {
@@ -109,6 +112,7 @@ export function OwnerCouponsManager() {
       usageLimit: coupon.usage_limit ? String(coupon.usage_limit) : "",
       isActive: coupon.is_active,
     });
+    setFormOpen(true);
   }
 
   return (
@@ -118,6 +122,25 @@ export function OwnerCouponsManager() {
 
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Create coupon" subtitle="Admission coupons stay separate from owner plans and marketing offers.">
+          <button
+            type="button"
+            onClick={() => {
+              setEditingCouponId(null);
+              setCouponForm(emptyCouponForm);
+              setFormOpen(true);
+            }}
+            className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent)]"
+          >
+            Create admission coupon
+          </button>
+        </DashboardCard>
+
+        <FormDrawer
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          title={editingCouponId ? "Edit admission coupon" : "Create admission coupon"}
+          description="Coupons are applied during admission checkout and stay separate from public marketing offers."
+        >
           <form className="grid gap-3" onSubmit={saveCoupon}>
             <div className="grid gap-3 md:grid-cols-2">
               <input value={couponForm.code} onChange={(event) => setCouponForm((current) => ({ ...current, code: event.target.value.toUpperCase() }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Coupon code" />
@@ -146,16 +169,16 @@ export function OwnerCouponsManager() {
             </label>
             <div className="flex flex-wrap gap-3">
               <button disabled={saving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-                {saving ? "Saving..." : editingCouponId ? "Update coupon" : "Create coupon"}
+                {saving ? "Saving admission coupon..." : editingCouponId ? "Update admission coupon" : "Create admission coupon"}
               </button>
               {editingCouponId ? (
                 <button type="button" onClick={() => { setEditingCouponId(null); setCouponForm(emptyCouponForm); }} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]">
-                  Reset
+                  Reset coupon form
                 </button>
               ) : null}
             </div>
           </form>
-        </DashboardCard>
+        </FormDrawer>
 
         <DashboardCard title="Coupon bank" subtitle="Codes created here are available in admission checkout.">
           <div className="grid gap-3">
@@ -177,7 +200,7 @@ export function OwnerCouponsManager() {
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--lp-text-soft)]">
                   <span>{coupon.valid_until ? `Valid till ${new Date(coupon.valid_until).toLocaleDateString()}` : "No expiry"}</span>
                   <button type="button" onClick={() => editCoupon(coupon)} className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]">
-                    Edit
+                    Edit coupon
                   </button>
                 </div>
               </div>

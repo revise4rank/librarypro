@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type DiscountType = "PERCENTAGE" | "FLAT";
 
@@ -46,6 +47,7 @@ export function OwnerPlansManager() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   async function loadPlans() {
     setLoading(true);
@@ -91,6 +93,7 @@ export function OwnerPlansManager() {
       setEditingPlanId(null);
       setPlanForm(emptyPlanForm);
       await loadPlans();
+      setFormOpen(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save plan.");
     } finally {
@@ -110,6 +113,7 @@ export function OwnerPlansManager() {
       defaultDiscountValue: plan.default_discount_value ?? "",
       isActive: plan.is_active,
     });
+    setFormOpen(true);
   }
 
   return (
@@ -119,6 +123,25 @@ export function OwnerPlansManager() {
 
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Create student plan" subtitle="Reusable admission pricing, duration, and default discount setup.">
+          <button
+            type="button"
+            onClick={() => {
+              setEditingPlanId(null);
+              setPlanForm(emptyPlanForm);
+              setFormOpen(true);
+            }}
+            className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent)]"
+          >
+            Create student admission plan
+          </button>
+        </DashboardCard>
+
+        <FormDrawer
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          title={editingPlanId ? "Edit student admission plan" : "Create student admission plan"}
+          description="Plan amount, duration, default discount, and active state appear in the admissions flow."
+        >
           <form className="grid gap-3" onSubmit={savePlan}>
             <div className="grid gap-3 md:grid-cols-2">
               <input value={planForm.name} onChange={(event) => setPlanForm((current) => ({ ...current, name: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Plan name" />
@@ -146,16 +169,16 @@ export function OwnerPlansManager() {
             </div>
             <div className="flex flex-wrap gap-3">
               <button disabled={saving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-                {saving ? "Saving..." : editingPlanId ? "Update plan" : "Create plan"}
+                {saving ? "Saving admission plan..." : editingPlanId ? "Update admission plan" : "Create admission plan"}
               </button>
               {editingPlanId ? (
                 <button type="button" onClick={() => { setEditingPlanId(null); setPlanForm(emptyPlanForm); }} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]">
-                  Reset
+                  Reset plan form
                 </button>
               ) : null}
             </div>
           </form>
-        </DashboardCard>
+        </FormDrawer>
 
         <DashboardCard title="Saved plans" subtitle="These plans appear directly inside admissions.">
           <div className="grid gap-3">
@@ -175,7 +198,7 @@ export function OwnerPlansManager() {
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--lp-text-soft)]">
                   <span>Base Rs. {Number(plan.base_amount).toLocaleString("en-IN")}</span>
                   <button type="button" onClick={() => editPlan(plan)} className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]">
-                    Edit
+                    Edit admission plan
                   </button>
                 </div>
               </div>

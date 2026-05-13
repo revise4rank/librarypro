@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type StudentRow = {
   assignment_id: string;
@@ -197,6 +198,7 @@ export function OwnerStudentsManager() {
   const [seatSaving, setSeatSaving] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState<"aadhaar" | "school" | null>(null);
   const [editorMode, setEditorMode] = useState<"summary" | "profile" | "plan">("summary");
+  const [editorOpen, setEditorOpen] = useState(false);
   const selectedStudent = rows.find((row) => row.assignment_id === selectedAssignmentId) ?? null;
   const [form, setForm] = useState(buildInitialForm(null));
 
@@ -293,6 +295,7 @@ export function OwnerStudentsManager() {
       });
       setMessage("Student profile updated.");
       await loadStudents();
+      setEditorOpen(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to update student.");
     } finally {
@@ -366,7 +369,7 @@ export function OwnerStudentsManager() {
               <p className="mt-0.5 text-xs text-[var(--lp-text-soft)]">Select a student to manage seat or plan.</p>
             </div>
             <Link href="/owner/admissions" className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] transition hover:bg-emerald-100">
-              New admission
+              Create admission
             </Link>
           </div>
 
@@ -441,14 +444,20 @@ export function OwnerStudentsManager() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setEditorMode("profile")}
+                    onClick={() => {
+                      setEditorMode("profile");
+                      setEditorOpen(true);
+                    }}
                     className={`rounded-lg px-4 py-2 text-sm font-semibold ${editorMode === "profile" ? "border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"}`}
                   >
-                    Edit profile
+                    Edit student profile
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEditorMode("plan")}
+                    onClick={() => {
+                      setEditorMode("plan");
+                      setEditorOpen(true);
+                    }}
                     className={`rounded-lg px-4 py-2 text-sm font-semibold ${editorMode === "plan" ? "border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"}`}
                   >
                     Renew / change plan
@@ -461,8 +470,12 @@ export function OwnerStudentsManager() {
               </div>
             </DashboardCard>
 
-            {editorMode === "profile" ? (
-            <DashboardCard title="Edit roster profile">
+            <FormDrawer
+              open={editorOpen && editorMode === "profile"}
+              onClose={() => setEditorOpen(false)}
+              title="Edit student profile"
+              description="Update contact, class, guardian, address, and documents for the selected roster student."
+            >
               <form className="grid gap-4" onSubmit={updateStudent}>
                 <div className="grid gap-3 md:grid-cols-2">
                   <input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Full name" />
@@ -496,14 +509,17 @@ export function OwnerStudentsManager() {
                 </div>
                 <textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} className="min-h-20 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Roster notes" />
                 <button disabled={saving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-                  {saving ? "Saving..." : "Save profile changes"}
+                  {saving ? "Saving profile..." : "Save student profile"}
                 </button>
               </form>
-            </DashboardCard>
-            ) : null}
+            </FormDrawer>
 
-            {editorMode === "plan" ? (
-            <DashboardCard title="Renew or change plan">
+            <FormDrawer
+              open={editorOpen && editorMode === "plan"}
+              onClose={() => setEditorOpen(false)}
+              title="Renew or change student plan"
+              description="Update the student's plan, amount, validity dates, and payment status."
+            >
               <form className="grid gap-4" onSubmit={updateStudent}>
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
@@ -541,11 +557,10 @@ export function OwnerStudentsManager() {
                   </select>
                 </div>
                 <button disabled={saving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-                  {saving ? "Saving..." : "Save plan and billing changes"}
+                  {saving ? "Saving plan..." : "Save student plan changes"}
                 </button>
               </form>
-            </DashboardCard>
-            ) : null}
+            </FormDrawer>
           </>
         ) : (
           <DashboardCard title="Student controls">

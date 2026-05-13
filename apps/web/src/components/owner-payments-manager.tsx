@@ -10,6 +10,7 @@ import {
 } from "../lib/offline-queue";
 import { getRealtimeSocket } from "../lib/realtime";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { StatCard } from "./stat-card";
 
 type PaymentRow = {
@@ -225,6 +226,7 @@ export function OwnerPaymentsManager() {
         notes: "",
       });
       await loadPayments();
+      setComposerOpen(false);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to save payment.");
     }
@@ -335,10 +337,18 @@ export function OwnerPaymentsManager() {
               onClick={() => setComposerOpen((current) => !current)}
               className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
             >
-              {composerOpen ? "Hide form" : editingId ? "Open edit form" : "New payment"}
+              {composerOpen ? "Close payment form" : editingId ? "Edit selected payment" : "Record payment"}
             </button>
           </div>
-          {composerOpen ? (
+          <FormDrawer
+            open={composerOpen}
+            onClose={() => {
+              setComposerOpen(false);
+              setEditingId(null);
+            }}
+            title={editingId ? "Edit payment entry" : "Record roster payment"}
+            description="Record cash, UPI, or bank transfer against one active student assignment."
+          >
         <form className="grid gap-4" onSubmit={onSubmit}>
           <div className={`rounded-xl px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {isOffline ? `Offline mode active. Queued owner payment actions: ${queuedPayments}` : `Online and ready. Queued owner payment actions: ${queuedPayments}`}
@@ -402,7 +412,7 @@ export function OwnerPaymentsManager() {
           {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
           {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
           <div className="flex flex-wrap gap-3">
-            <button type="submit" disabled={!form.assignmentId.trim()} className="rounded-2xl bg-[var(--lp-accent-soft)] px-5 py-4 text-sm font-bold text-[var(--lp-accent)] disabled:opacity-60">{editingId ? "Update payment" : "Save payment"}</button>
+            <button type="submit" disabled={!form.assignmentId.trim()} className="rounded-2xl bg-[var(--lp-accent-soft)] px-5 py-4 text-sm font-bold text-[var(--lp-accent)] disabled:opacity-60">{editingId ? "Update payment entry" : "Record payment"}</button>
             <button
               type="button"
               onClick={() => {
@@ -426,11 +436,12 @@ export function OwnerPaymentsManager() {
             </button>
           </div>
         </form>
-          ) : (
+          </FormDrawer>
+          {!composerOpen ? (
             <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
               The entry form is hidden. Open it only for a new collection or payment edit.
             </div>
-          )}
+          ) : null}
         </div>
       </DashboardCard>
 
@@ -450,7 +461,7 @@ export function OwnerPaymentsManager() {
                   onClick={() => setSelectedPaymentId(null)}
                   className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
                 >
-                  Clear
+                  Clear selected payment
                 </button>
               </div>
               <div className="grid gap-3 md:grid-cols-4">

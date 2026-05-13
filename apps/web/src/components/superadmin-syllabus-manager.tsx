@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { StatCard } from "./stat-card";
 
 type SyllabusTemplate = {
@@ -44,6 +45,7 @@ export function SuperadminSyllabusManager() {
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   async function loadTemplates() {
     const response = await apiFetch<{ success: boolean; data: SyllabusTemplate[] }>("/admin/syllabus/templates");
@@ -77,6 +79,7 @@ export function SuperadminSyllabusManager() {
       });
       setImportStatus(`${response.data.subjectsTouched} subjects and ${response.data.topicsTouched} topics imported.`);
       await loadTemplates();
+      setImportOpen(false);
     } catch (importError) {
       setImportStatus(null);
       setError(importError instanceof Error ? importError.message : "Unable to import syllabus CSV.");
@@ -96,6 +99,7 @@ export function SuperadminSyllabusManager() {
       });
       setImportStatus(`${response.data.subjectsTouched} subjects and ${response.data.topicsTouched} topics imported from ${file.name}.`);
       await loadTemplates();
+      setImportOpen(false);
     } catch (uploadError) {
       setImportStatus(null);
       setError(uploadError instanceof Error ? uploadError.message : "Unable to upload syllabus file.");
@@ -135,6 +139,24 @@ export function SuperadminSyllabusManager() {
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Upload syllabus" subtitle="Import CSV or XLSX files with class, subject, and topic rows.">
+          <div className="grid gap-3">
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              className="rounded-full border border-[var(--lp-primary)] bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
+            >
+              Import syllabus template
+            </button>
+            {importStatus ? <p className="text-sm font-semibold text-emerald-700">{importStatus}</p> : null}
+          </div>
+        </DashboardCard>
+
+        <FormDrawer
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+          title="Import syllabus template"
+          description="Download the template, fill class-wise topics, then upload CSV or XLSX for students."
+        >
           <div className="grid gap-4">
             <div className="flex flex-wrap gap-3">
               <a
@@ -184,7 +206,7 @@ export function SuperadminSyllabusManager() {
             </div>
             {importStatus ? <p className="text-sm font-semibold text-emerald-700">{importStatus}</p> : null}
           </div>
-        </DashboardCard>
+        </FormDrawer>
 
         <DashboardCard title="Student import library" subtitle="Review what students can pull into Study Zone by class and subject.">
           <div className="grid gap-4">

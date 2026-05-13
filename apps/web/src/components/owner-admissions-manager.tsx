@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type JoinRequest = {
   id: string;
@@ -178,6 +179,7 @@ export function OwnerAdmissionsManager() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AdmissionResult | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   async function load() {
     try {
@@ -313,17 +315,20 @@ export function OwnerAdmissionsManager() {
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              onClick={() => setMode("desk")}
+              onClick={() => {
+                setMode("desk");
+                setFormOpen(true);
+              }}
               className={`rounded-lg border px-4 py-3 text-left text-sm font-semibold ${mode === "desk" ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
             >
-              Desk Admission
+              Create desk admission
             </button>
             <button
               type="button"
               onClick={() => setMode("requests")}
               className={`rounded-lg border px-4 py-3 text-left text-sm font-semibold ${mode === "requests" ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
             >
-              Join Requests
+              Review join requests
             </button>
           </div>
 
@@ -343,17 +348,20 @@ export function OwnerAdmissionsManager() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setSelectedRequestId(request.id)}
+                      onClick={() => {
+                        setSelectedRequestId(request.id);
+                        setFormOpen(true);
+                      }}
                       className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]"
                     >
-                      Review
+                      Review request
                     </button>
                   </div>
                   <p className="mt-2 text-sm text-[var(--lp-text-soft)]">{request.message ?? "No message shared."}</p>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--lp-text-soft)]">
                     <span>{request.requested_via} • {new Date(request.created_at).toLocaleString()}</span>
                     <button type="button" onClick={() => void rejectRequest(request.id)} className="text-rose-600">
-                      Reject
+                      Reject join request
                     </button>
                   </div>
                 </div>
@@ -369,7 +377,41 @@ export function OwnerAdmissionsManager() {
         </div>
       </DashboardCard>
 
-      <DashboardCard title={mode === "desk" ? "Desk admission" : "Approve request into admission"} subtitle="The same form powers manual onboarding and request approvals.">
+      <DashboardCard title="Admission form launcher" subtitle="Forms open from the left so the admission desk stays readable on mobile and desktop.">
+        <div className="grid gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("desk");
+              setFormOpen(true);
+            }}
+            className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent)]"
+          >
+            Create desk admission
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("requests");
+              setFormOpen(true);
+            }}
+            disabled={!selectedRequest}
+            className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-50"
+          >
+            Approve selected join request
+          </button>
+          <p className="text-sm text-[var(--lp-text-soft)]">
+            {selectedRequest ? `Selected request: ${selectedRequest.student_name}` : "Select a join request to approve it into roster."}
+          </p>
+        </div>
+      </DashboardCard>
+
+      <FormDrawer
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        title={mode === "desk" ? "Create desk admission" : "Approve join request"}
+        description="Student, plan, coupon, document upload, and payment status stay in one focused form."
+      >
         <form className="grid gap-4" onSubmit={submitAdmission}>
           <div className="grid gap-3 md:grid-cols-2">
             <input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Full name" />
@@ -465,7 +507,7 @@ export function OwnerAdmissionsManager() {
 
           <div className="flex flex-wrap gap-3">
             <button disabled={saving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-              {saving ? "Saving..." : mode === "desk" ? "Create admission" : "Approve into roster"}
+              {saving ? "Creating admission..." : mode === "desk" ? "Create admission" : "Approve request into roster"}
             </button>
             <button
               type="button"
@@ -476,7 +518,7 @@ export function OwnerAdmissionsManager() {
             </button>
           </div>
         </form>
-      </DashboardCard>
+      </FormDrawer>
     </div>
   );
 }

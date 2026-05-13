@@ -7,6 +7,7 @@ import {
   flushQueuedOwnerExpenseActions,
   listQueuedOwnerExpenseActions,
 } from "../lib/offline-queue";
+import { FormDrawer } from "./form-drawer";
 import { Surface } from "./shell";
 
 type ExpensesResponse = {
@@ -36,6 +37,7 @@ export function OwnerExpensesManager() {
   const [message, setMessage] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [queuedExpenses, setQueuedExpenses] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({
     category: "",
     title: "",
@@ -121,6 +123,7 @@ export function OwnerExpensesManager() {
           spentOn: new Date().toISOString().slice(0, 10),
           notes: "",
         });
+        setFormOpen(false);
         return;
       }
 
@@ -144,6 +147,7 @@ export function OwnerExpensesManager() {
       });
       await loadExpenses(month);
       setError(null);
+      setFormOpen(false);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to save expense.");
     }
@@ -173,6 +177,21 @@ export function OwnerExpensesManager() {
 
       <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
         <Surface title="Add expense" subtitle="Track staff, rent, electricity, internet, and other library costs">
+          <button
+            type="button"
+            onClick={() => setFormOpen(true)}
+            className="rounded-2xl bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white"
+          >
+            Add expense entry
+          </button>
+        </Surface>
+
+        <FormDrawer
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          title="Add expense entry"
+          description="Track rent, staff, electricity, internet, and other monthly costs."
+        >
           <form className="grid gap-4" onSubmit={submitExpense}>
             <input value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
             <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Expense title" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
@@ -181,9 +200,9 @@ export function OwnerExpensesManager() {
               <input value={form.spentOn} onChange={(event) => setForm((current) => ({ ...current, spentOn: event.target.value }))} type="date" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
             </div>
             <textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes" className="min-h-28 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none" />
-            <button type="submit" className="rounded-2xl bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white">Save expense</button>
+            <button type="submit" className="rounded-2xl bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white">Add expense entry</button>
           </form>
-        </Surface>
+        </FormDrawer>
 
         <Surface title="Expense ledger" subtitle="Live monthly list with revenue-profit view">
           <div className="mb-4 flex items-center gap-3">

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { StatCard } from "./stat-card";
 
 type LibraryRow = {
@@ -73,6 +74,7 @@ export function SuperadminLibrariesManager() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   async function loadLibraries(nextSelectedId?: string) {
     const response = await apiFetch<{ success: boolean; data: LibraryRow[] }>("/admin/libraries");
@@ -126,6 +128,7 @@ export function SuperadminLibrariesManager() {
       });
       setMessage(`${payload.name} updated.`);
       await loadLibraries(selected.id);
+      setFormOpen(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to update library.");
     } finally {
@@ -194,58 +197,15 @@ export function SuperadminLibrariesManager() {
         <DashboardCard title="Super admin powers" subtitle="Block access, edit owner details, and inspect operational data.">
           {selected && form ? (
             <div className="grid gap-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="grid gap-1 text-sm font-bold text-slate-700">
-                  Library name
-                  <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
-                </label>
-                <label className="grid gap-1 text-sm font-bold text-slate-700">
-                  Status
-                  <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as FormState["status"] })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none">
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="SUSPENDED">SUSPENDED</option>
-                    <option value="INACTIVE">INACTIVE</option>
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm font-bold text-slate-700">
-                  City
-                  <input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
-                </label>
-                <label className="grid gap-1 text-sm font-bold text-slate-700">
-                  Area
-                  <input value={form.area} onChange={(event) => setForm({ ...form, area: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
-                </label>
-                <label className="grid gap-1 text-sm font-bold text-slate-700 md:col-span-2">
-                  Address
-                  <input value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
-                </label>
-                <label className="grid gap-1 text-sm font-bold text-slate-700">
-                  Owner name
-                  <input value={form.ownerFullName} onChange={(event) => setForm({ ...form, ownerFullName: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
-                </label>
-                <label className="grid gap-1 text-sm font-bold text-slate-700">
-                  Owner email
-                  <input value={form.ownerEmail} onChange={(event) => setForm({ ...form, ownerEmail: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
-                </label>
-                <label className="grid gap-1 text-sm font-bold text-slate-700">
-                  Owner phone
-                  <input value={form.ownerPhone} onChange={(event) => setForm({ ...form, ownerPhone: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
-                </label>
-                <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                  <input type="checkbox" checked={form.ownerActive} onChange={(event) => setForm({ ...form, ownerActive: event.target.checked })} />
-                  Owner login active
-                </label>
-              </div>
-
               <div className="grid gap-2 sm:grid-cols-3">
-                <button type="button" onClick={() => void saveLibrary()} disabled={saving} className="rounded-xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-black text-white disabled:opacity-50">
-                  {saving ? "Saving..." : "Save changes"}
+                <button type="button" onClick={() => setFormOpen(true)} className="rounded-xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-black text-white">
+                  Edit tenant details
                 </button>
                 <button type="button" onClick={() => void saveLibrary({ status: "SUSPENDED", ownerActive: false })} disabled={saving} className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-black text-white disabled:opacity-50">
                   Block tenant
                 </button>
                 <button type="button" onClick={() => void saveLibrary({ status: "ACTIVE", ownerActive: true })} disabled={saving} className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 disabled:opacity-50">
-                  Unblock
+                  Unblock tenant
                 </button>
               </div>
 
@@ -266,6 +226,63 @@ export function SuperadminLibrariesManager() {
           )}
         </DashboardCard>
       </section>
+
+      <FormDrawer
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        title="Edit tenant details"
+        description="Super admin can edit library identity, status, owner contact, and owner login access."
+      >
+        {selected && form ? (
+          <div className="grid gap-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="grid gap-1 text-sm font-bold text-slate-700">
+                Library name
+                <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
+              </label>
+              <label className="grid gap-1 text-sm font-bold text-slate-700">
+                Status
+                <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as FormState["status"] })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none">
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="SUSPENDED">SUSPENDED</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm font-bold text-slate-700">
+                City
+                <input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
+              </label>
+              <label className="grid gap-1 text-sm font-bold text-slate-700">
+                Area
+                <input value={form.area} onChange={(event) => setForm({ ...form, area: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
+              </label>
+              <label className="grid gap-1 text-sm font-bold text-slate-700 md:col-span-2">
+                Address
+                <input value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
+              </label>
+              <label className="grid gap-1 text-sm font-bold text-slate-700">
+                Owner name
+                <input value={form.ownerFullName} onChange={(event) => setForm({ ...form, ownerFullName: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
+              </label>
+              <label className="grid gap-1 text-sm font-bold text-slate-700">
+                Owner email
+                <input value={form.ownerEmail} onChange={(event) => setForm({ ...form, ownerEmail: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
+              </label>
+              <label className="grid gap-1 text-sm font-bold text-slate-700">
+                Owner phone
+                <input value={form.ownerPhone} onChange={(event) => setForm({ ...form, ownerPhone: event.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none" />
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
+                <input type="checkbox" checked={form.ownerActive} onChange={(event) => setForm({ ...form, ownerActive: event.target.checked })} />
+                Owner login active
+              </label>
+            </div>
+            <button type="button" onClick={() => void saveLibrary()} disabled={saving} className="rounded-xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-black text-white disabled:opacity-50">
+              {saving ? "Saving tenant details..." : "Save tenant details"}
+            </button>
+          </div>
+        ) : null}
+      </FormDrawer>
     </div>
   );
 }

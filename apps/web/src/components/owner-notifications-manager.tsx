@@ -9,6 +9,7 @@ import {
 } from "../lib/offline-queue";
 import { getRealtimeSocket } from "../lib/realtime";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type NotificationRow = {
   id: string;
@@ -37,6 +38,7 @@ export function OwnerNotificationsManager() {
   const [toast, setToast] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [queuedNotifications, setQueuedNotifications] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
 
   function showToast(nextMessage: string) {
     setToast(nextMessage);
@@ -159,6 +161,7 @@ export function OwnerNotificationsManager() {
           audience: "ALL_STUDENTS",
           message: "",
         });
+        setFormOpen(false);
         return;
       }
 
@@ -175,6 +178,7 @@ export function OwnerNotificationsManager() {
         message: "",
       });
       await loadNotifications();
+      setFormOpen(false);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to send notification.");
     }
@@ -199,6 +203,29 @@ export function OwnerNotificationsManager() {
         </div>
       ) : null}
       <DashboardCard title="Broadcast studio">
+        <div className="grid gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+              {isOffline ? "Offline" : "Online"}
+            </span>
+            <span className="text-xs font-semibold text-slate-400">Socket {liveStatus} | Queue {queuedNotifications}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFormOpen(true)}
+            className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)]"
+          >
+            Send student notification
+          </button>
+        </div>
+      </DashboardCard>
+
+      <FormDrawer
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        title="Send student notification"
+        description="Send due reminders, expiry alerts, or general notices to the selected audience."
+      >
         <form className="grid gap-4" onSubmit={onSubmit}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
@@ -223,11 +250,11 @@ export function OwnerNotificationsManager() {
           {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
           {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
           <div className="flex flex-wrap gap-3">
-            <button type="submit" className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-2.5 text-sm font-bold text-[var(--lp-accent-strong)]">Send</button>
-            <button type="button" onClick={saveTemplate} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700">Save template</button>
+            <button type="submit" className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-2.5 text-sm font-bold text-[var(--lp-accent-strong)]">Send student notification</button>
+            <button type="button" onClick={saveTemplate} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700">Save notification template</button>
           </div>
         </form>
-      </DashboardCard>
+      </FormDrawer>
 
       <DashboardCard title="Recent broadcasts">
         {loading ? <p className="text-sm text-slate-500">Loading campaigns...</p> : null}
