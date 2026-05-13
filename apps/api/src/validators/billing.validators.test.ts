@@ -12,14 +12,13 @@ const { verifyRazorpayWebhookSignature } = await import("../services/razorpay-we
 
 const TEST_WEBHOOK_SECRET = "test-razorpay-webhook-secret";
 
-test("billingRenewBodySchema defaults to growth plan", () => {
-  const parsed = billingRenewBodySchema.parse({});
-  assert.equal(parsed.planCode, "GROWTH_999_6M");
+test("billingRenewBodySchema requires an explicit plan code", () => {
+  assert.throws(() => billingRenewBodySchema.parse({}), /Required|expected string/i);
 });
 
-test("billingRenewBodySchema accepts starter plan", () => {
-  const parsed = billingRenewBodySchema.parse({ planCode: "STARTER_449_2M" });
-  assert.equal(parsed.planCode, "STARTER_449_2M");
+test("billingRenewBodySchema accepts dynamic paid plan codes", () => {
+  const parsed = billingRenewBodySchema.parse({ planCode: "CUSTOM_LIBRARY_PLAN_2026" });
+  assert.equal(parsed.planCode, "CUSTOM_LIBRARY_PLAN_2026");
 });
 
 test("verifyRazorpayWebhookSignature accepts valid signature", () => {

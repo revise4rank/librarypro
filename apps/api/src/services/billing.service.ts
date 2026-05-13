@@ -1,7 +1,7 @@
 import { env } from "../config/env";
 import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
-import { getPlatformPlanConfig, listPlatformPlanConfigs, type PaidPlanCode } from "../lib/platform-plans";
+import { getPlatformPlanConfig, listPlatformPlanConfigs } from "../lib/platform-plans";
 import { BillingRepository } from "../repositories/billing.repository";
 
 function repository() {
@@ -65,7 +65,7 @@ export async function getBillingSubscription(libraryId: string) {
 
 export async function createSubscriptionRenewal(input: {
   libraryId: string;
-  planCode: PaidPlanCode;
+  planCode: string;
 }) {
   const db = requireDb();
   const client = await db.connect();
@@ -74,6 +74,9 @@ export async function createSubscriptionRenewal(input: {
     await client.query("BEGIN");
 
     const plan = await getPlatformPlanConfig(input.planCode);
+    if (plan.code === "TRIAL_25" || plan.amount <= 0 || !plan.isActive) {
+      throw new AppError(400, "Choose an active paid platform plan.", "PAID_PLAN_REQUIRED");
+    }
     const subscriptionId = await repository().ensureSubscription(client, {
       libraryId: input.libraryId,
       planCode: plan.code,

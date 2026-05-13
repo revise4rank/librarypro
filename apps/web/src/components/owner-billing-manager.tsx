@@ -38,7 +38,7 @@ type BillingResponse = {
       created_at: string;
     }>;
     availablePlans: Array<{
-      code: "STARTER_449_2M" | "GROWTH_999_6M";
+      code: string;
       name: string;
       amount: number;
       currency: string;
@@ -55,7 +55,7 @@ type RenewResponse = {
     paymentId: string;
     razorpayOrderId: string;
     plan: {
-      code: "STARTER_449_2M" | "GROWTH_999_6M";
+      code: string;
       name: string;
       amount: number;
       currency: string;
@@ -85,7 +85,7 @@ export function OwnerBillingManager() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [renewing, setRenewing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<"STARTER_449_2M" | "GROWTH_999_6M">("GROWTH_999_6M");
+  const [selectedPlan, setSelectedPlan] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined" || window.Razorpay) {
@@ -107,6 +107,7 @@ export function OwnerBillingManager() {
     try {
       const response = await apiFetch<BillingResponse>("/billing/subscription");
       setData(response.data);
+      setSelectedPlan((current) => current || response.data.availablePlans[0]?.code || "");
       setError(null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load billing state.");
@@ -203,10 +204,7 @@ export function OwnerBillingManager() {
       <Surface title="Renew plan">
         <div className="grid gap-4">
           <div className="grid gap-3 md:grid-cols-2">
-            {(data?.availablePlans ?? [
-              { code: "STARTER_449_2M", name: "Starter 449 - 2 Months", amount: 449, currency: "INR", durationMonths: 2, referralBonus: 100 },
-              { code: "GROWTH_999_6M", name: "Growth 999 - 6 Months", amount: 999, currency: "INR", durationMonths: 6, referralBonus: 300 },
-            ]).map((plan) => (
+            {(data?.availablePlans ?? []).map((plan) => (
               <button
                 key={plan.code}
                 type="button"
@@ -223,10 +221,15 @@ export function OwnerBillingManager() {
               </button>
             ))}
           </div>
+          {data?.availablePlans?.length === 0 ? (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+              No active paid plan is available. Superadmin can enable or edit paid plans from Plans.
+            </p>
+          ) : null}
           <button
             type="button"
             onClick={() => void startRenewal()}
-            disabled={renewing}
+            disabled={renewing || !selectedPlan}
             className="rounded-xl bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
           >
             {renewing ? "Creating renewal order..." : "Create renewal order"}
