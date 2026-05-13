@@ -54,6 +54,14 @@ function SecretHint({ active }: { active: boolean }) {
   return <span className={`text-xs font-bold ${active ? "text-emerald-700" : "text-amber-700"}`}>{active ? "Saved" : "Not set"}</span>;
 }
 
+function ReadinessPill({ ready }: { ready: boolean }) {
+  return (
+    <span className={`rounded-full px-3 py-1 text-xs font-black ${ready ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+      {ready ? "Ready" : "Needs setup"}
+    </span>
+  );
+}
+
 export function SuperadminIntegrationsManager() {
   const [settings, setSettings] = useState<IntegrationSettings | null>(null);
   const [form, setForm] = useState<IntegrationForm | null>(null);
@@ -105,10 +113,38 @@ export function SuperadminIntegrationsManager() {
 
   if (!form || !settings) return <p className="text-sm text-[var(--lp-muted)]">{error ?? "Loading integration settings..."}</p>;
 
+  const googleReady = Boolean(settings.googleOAuthClientId && settings.googleOAuthRedirectUrl && settings.googleOAuthClientSecretSet);
+  const razorpayReady = Boolean(settings.razorpayKeyId && settings.razorpayKeySecretSet && settings.razorpayWebhookSecretSet);
+  const smtpReady = Boolean(settings.smtpHost && settings.smtpUser && settings.smtpPassSet && settings.reportFromEmail);
+
   return (
     <div className="grid gap-4">
       {message ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</p> : null}
       {error ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">{error}</p> : null}
+
+      <section className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-white p-4 md:grid-cols-3">
+        <div className="rounded-lg bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-black text-[var(--lp-text)]">Google login</p>
+            <ReadinessPill ready={googleReady} />
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[var(--lp-muted)]">Owner and student OAuth use this client and callback URL.</p>
+        </div>
+        <div className="rounded-lg bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-black text-[var(--lp-text)]">Razorpay billing</p>
+            <ReadinessPill ready={razorpayReady} />
+          </div>
+          <p className="mt-2 break-all text-xs leading-5 text-[var(--lp-muted)]">Webhook: https://api.booklib.in/v1/billing/razorpay/webhook</p>
+        </div>
+        <div className="rounded-lg bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-black text-[var(--lp-text)]">SMTP reset mail</p>
+            <ReadinessPill ready={smtpReady} />
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[var(--lp-muted)]">Forgot-password delivery needs host, user, password, and from email.</p>
+        </div>
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-3">
         <DashboardCard title="Google Auth" subtitle="Owner and student Google login credentials.">
