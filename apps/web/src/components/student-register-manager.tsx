@@ -47,7 +47,7 @@ export function StudentRegisterManager() {
         false,
       );
       saveSession(result.data);
-      router.push("/student/join-library");
+      router.push("/student/scanner");
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Signup failed");
@@ -56,7 +56,7 @@ export function StudentRegisterManager() {
 
   return (
     <div className="mt-8 grid gap-4">
-      <GoogleOAuthButton role="STUDENT" next="/student/join-library" />
+      <GoogleOAuthButton role="STUDENT" next="/student/scanner" />
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         <span className="h-px bg-slate-200" />
         <span>Create with email</span>

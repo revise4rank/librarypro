@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
+import { OwnerOperationsRepository } from "../repositories/owner-operations.repository";
 
 export type ScanCheckInInput = {
   studentUserId: string;
@@ -431,4 +432,66 @@ export async function scanCheckOut(input: ScanCheckInInput) {
     clientEventId: input.clientEventId ?? null,
     scannedAtDevice: input.scannedAtDevice ?? null,
   };
+}
+
+export async function scanStudentUnifiedQr(input: ScanCheckInInput) {
+  try {
+    const checkin = await scanCheckIn(input);
+    return {
+      action: "CHECKED_IN" as const,
+      ...checkin,
+    };
+  } catch (error) {
+    if (
+      error instanceof AppError &&
+      ["ALREADY_CHECKED_IN", "PLAN_EXPIRED", "PAYMENT_BLOCKED", "ASSIGNMENT_INACTIVE"].includes(error.code)
+    ) {
+      try {
+        const checkout = await scanCheckOut(input);
+        return {
+          action: "CHECKED_OUT" as const,
+          ...checkout,
+        };
+      } catch (checkoutError) {
+        if (checkoutError instanceof AppError && checkoutError.code === "CHECKOUT_NOT_ALLOWED") {
+          throw error;
+        }
+        throw checkoutError;
+      }
+    }
+
+    if (error instanceof AppError && error.code === "ASSIGNMENT_NOT_FOUND") {
+      const parsed = parseQrPayload(input.qrRawPayload);
+      const db = requireDb();
+      const repo = new OwnerOperationsRepository(db);
+      const client = await db.connect();
+      let joinRequest: { id: string; libraryId: string; libraryName: string };
+
+      try {
+        const library = await repo.findLibraryByQrKey(client, parsed.qrKeyId);
+        if (!library || library.id !== parsed.libraryId) {
+          throw new AppError(404, "Library QR not recognized", "LIBRARY_QR_NOT_FOUND");
+        }
+
+        const created = await repo.createJoinRequest(client, {
+          libraryId: library.id,
+          studentUserId: input.studentUserId,
+          requestedVia: "QR",
+          requestQrKeyId: parsed.qrKeyId,
+          message: "Join request created from student scanner",
+        });
+
+        joinRequest = { id: created.id, libraryId: library.id, libraryName: library.name };
+      } finally {
+        client.release();
+      }
+
+      return {
+        action: "JOIN_REQUEST_CREATED" as const,
+        ...joinRequest,
+      };
+    }
+
+    throw error;
+  }
 }

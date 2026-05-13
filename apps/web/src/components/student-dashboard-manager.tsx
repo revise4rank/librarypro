@@ -298,8 +298,8 @@ export function StudentDashboardManager() {
             <Link href="/student/focus-mode" className="lp-button justify-start">
               Start focus mode
             </Link>
-            <Link href="/student/qr" className="lp-button justify-start">
-              Open QR entry pass
+            <Link href="/student/scanner" className="lp-button justify-start">
+              Open scanner
             </Link>
             <Link href="/student/payments" className="lp-button justify-start">
               Pay fees now

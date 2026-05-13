@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   LogOut,
+  QrCode,
   Settings as SettingsIcon,
   UserRound,
 } from "lucide-react";
@@ -35,10 +36,10 @@ function initialsFromName(value?: string | null) {
 export function DashboardShell({
   productLabel,
   panelLabel,
-  title,
+  title: _title,
   description: _description,
   nav,
-  actions,
+  actions: _actions,
   children,
 }: {
   productLabel: string;
@@ -68,6 +69,7 @@ export function DashboardShell({
   const notificationsHref = notificationsPathForRole(sessionUser?.role);
   const accountHref = settingsPathForRole(sessionUser?.role, "account");
   const securityHref = settingsPathForRole(sessionUser?.role, "account");
+  const isStudentShell = sessionUser?.role === "STUDENT" || pathname.startsWith("/student");
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -189,19 +191,19 @@ export function DashboardShell({
                     className="h-7 w-9 rounded-md bg-white object-contain p-0.5 ring-1 ring-[var(--lp-border)]"
                   />
                 </span>
-                <h1 className="max-w-[44rem] truncate text-[1.15rem] font-semibold tracking-tight text-[var(--lp-text)]">
-                  {title}
-                </h1>
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                {actions ? <div className="lp-header-actions hidden items-center md:flex">{actions}</div> : null}
-                <Link
-                  href="/marketplace"
-                  className="hidden h-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white px-3 text-xs font-semibold text-[var(--lp-text)] transition hover:bg-[var(--lp-surface-muted)] xl:flex"
-                >
-                  Explore
-                </Link>
+                {isStudentShell ? (
+                  <Link
+                    href="/student/scanner"
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-[var(--lp-text)] transition hover:bg-[var(--lp-surface-muted)]"
+                    aria-label="Open scanner"
+                    title="Open scanner"
+                  >
+                    <QrCode className="h-4 w-4" />
+                  </Link>
+                ) : null}
                 <div className="relative" ref={notificationMenuRef}>
                   <button
                     type="button"
@@ -287,7 +289,7 @@ export function DashboardShell({
             </div>
           </header>
 
-          <section className="lp-shell-container px-1.5 py-2 pb-24 sm:px-4 sm:py-3 lg:py-4 lg:pb-6">{children}</section>
+          <section className="lp-shell-container px-1.5 py-2 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-4 sm:py-3 lg:py-4 lg:pb-6">{children}</section>
         </div>
       </div>
 
@@ -307,20 +309,6 @@ export function DashboardShell({
           }`}
         >
           <div className="grid gap-2">
-            {actions ? (
-              <div className="grid gap-2 border-b border-[var(--lp-border)] pb-2">
-                <p className="px-1 text-xs font-semibold text-[var(--lp-muted)]">Page actions</p>
-                <div className="grid gap-2 [&>*]:justify-center [&>*]:rounded-lg [&>*]:border [&>*]:border-[var(--lp-border)] [&>*]:bg-white [&>*]:px-3 [&>*]:py-2 [&>*]:text-sm [&>*]:font-semibold [&>*]:text-[var(--lp-text)]">
-                  {actions}
-                </div>
-              </div>
-            ) : null}
-            <Link
-              href="/marketplace"
-              className="flex items-center justify-center rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--lp-text)]"
-            >
-              Explore Libraries
-            </Link>
             {nav.slice(5).map((item) => {
               const active = pathname === item.href;
               const Icon = navIconFor(item);

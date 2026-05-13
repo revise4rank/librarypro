@@ -1,25 +1,5 @@
-import { DashboardShell } from "../../../../components/dashboard-shell";
-import { StudentQrManager } from "../../../../components/student-qr-manager";
-import { StudentWorkspaceActions } from "../../../../components/student-workspace-actions";
-import { studentNav } from "../../../../lib/role-nav";
+import { redirect } from "next/navigation";
 
 export default function StudentQrPage() {
-  return (
-    <DashboardShell
-      productLabel="BookLib"
-      panelLabel="QR Entry"
-      title="QR entry pass with offline-first sync status."
-      description="Students should be able to show their pass quickly and understand if offline check-in events are waiting to sync."
-      nav={studentNav}
-      actions={
-        <StudentWorkspaceActions>
-          <span className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
-            Live QR
-          </span>
-        </StudentWorkspaceActions>
-      }
-    >
-      <StudentQrManager />
-    </DashboardShell>
-  );
+  redirect("/student/scanner");
 }

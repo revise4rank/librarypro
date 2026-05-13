@@ -33,7 +33,7 @@ import {
   listStudentBookRequestsController,
   updateAdminBookRequestStatusController,
 } from "../controllers/book-requests.controller";
-import { getStudentEntryQrController, scanCheckInController, scanCheckOutController } from "../controllers/checkin.controller";
+import { getStudentEntryQrController, scanCheckInController, scanCheckOutController, scanStudentUnifiedQrController } from "../controllers/checkin.controller";
 import {
   createPublicLibraryContactLeadController,
   createStudentLibraryReviewController,
@@ -192,6 +192,7 @@ router.post("/billing/subscription/renew", requireRole(["LIBRARY_OWNER"]), async
 router.get("/owner/referrals", requireRole(["LIBRARY_OWNER"]), asyncHandler(getOwnerReferralsController));
 router.get("/student/referrals", requireRole(["STUDENT"]), asyncHandler(getStudentReferralsController));
 router.get("/student/entry-qr", requireRole(["STUDENT"]), asyncHandler(getStudentEntryQrController));
+router.post("/student/scanner/scan", requireRole(["STUDENT"]), asyncHandler(scanStudentUnifiedQrController));
 router.post("/checkins/scan", requireRole(["STUDENT"]), asyncHandler(scanCheckInController));
 router.post("/checkins/checkout", requireRole(["STUDENT"]), asyncHandler(scanCheckOutController));
 router.get("/public/subdomain-availability", asyncHandler(getSubdomainAvailabilityController));

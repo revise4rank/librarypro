@@ -20,13 +20,11 @@ export const ownerNav = [
 
 export const studentNav = [
   { href: "/student/dashboard", label: "My Library", shortLabel: "LIB" },
-  { href: "/student/join-library", label: "Join Library", shortLabel: "JIN" },
   { href: "/student/seat", label: "Seat", shortLabel: "SEA" },
   { href: "/student/payments", label: "Payments", shortLabel: "PAY" },
   { href: "/student/notifications", label: "Alerts", shortLabel: "ALT" },
   { href: "/student/focus", label: "Study Zone", shortLabel: "STZ" },
   { href: "/student/tools", label: "Study Tools", shortLabel: "TLS" },
-  { href: "/student/qr", label: "My QR", shortLabel: "QR" },
   { href: "/student/syllabus", label: "Syllabus", shortLabel: "SYL" },
   { href: "/student/revisions", label: "Revision", shortLabel: "REV" },
   { href: "/student/rewards", label: "Rewards", shortLabel: "RWD" },

@@ -79,6 +79,7 @@ export function OwnerCheckinsManager() {
   const [data, setData] = useState<CheckinResponse["data"] | null>(null);
   const [qrSettings, setQrSettings] = useState<OwnerQrSettingsResponse["data"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [qrDownloadStatus, setQrDownloadStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterState>({
     status: "ALL",
@@ -117,11 +118,42 @@ export function OwnerCheckinsManager() {
 
   const rows = useMemo(() => data?.rows ?? [], [data]);
 
-  function downloadQrImage() {
+  async function downloadQrImage() {
+    if (!qrSettings?.qr_payload) return;
+    const qrUrl = buildQrImageUrl(qrSettings.qr_payload, 960);
+    const filename = `${qrSettings.library_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-attendance-qr.png`;
+
+    setQrDownloadStatus("Preparing QR download...");
+    try {
+      const response = await fetch(qrUrl);
+      if (!response.ok) {
+        throw new Error("Unable to fetch QR image.");
+      }
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+      setQrDownloadStatus("QR image downloaded.");
+    } catch (downloadError) {
+      const anchor = document.createElement("a");
+      anchor.href = qrUrl;
+      anchor.download = filename;
+      anchor.rel = "noopener";
+      anchor.target = "_blank";
+      anchor.click();
+      setQrDownloadStatus(downloadError instanceof Error ? "Opened QR image in a new tab for download." : "Opened QR image in a new tab.");
+    }
+  }
+
+  function openQrImage() {
     if (!qrSettings?.qr_payload) return;
     const anchor = document.createElement("a");
     anchor.href = buildQrImageUrl(qrSettings.qr_payload, 960);
-    anchor.download = `${qrSettings.library_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-library-qr.png`;
     anchor.rel = "noopener";
     anchor.target = "_blank";
     anchor.click();
@@ -232,11 +264,19 @@ export function OwnerCheckinsManager() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={downloadQrImage}
+                onClick={() => void downloadQrImage()}
                 disabled={!qrSettings?.qr_payload}
                 className="rounded-xl bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-black text-[var(--lp-accent)] disabled:opacity-50"
               >
-                Download QR image
+                Download QR
+              </button>
+              <button
+                type="button"
+                onClick={openQrImage}
+                disabled={!qrSettings?.qr_payload}
+                className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 disabled:opacity-50"
+              >
+                Open QR image
               </button>
               <button
                 type="button"
@@ -247,6 +287,7 @@ export function OwnerCheckinsManager() {
                 Print QR poster
               </button>
             </div>
+            {qrDownloadStatus ? <p className="text-sm font-semibold text-emerald-700">{qrDownloadStatus}</p> : null}
           </div>
         </div>
       </DashboardCard>

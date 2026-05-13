@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { AppError } from "../lib/errors";
-import { getStudentEntryQr, scanCheckIn, scanCheckOut } from "../services/checkin.service";
+import { getStudentEntryQr, scanCheckIn, scanCheckOut, scanStudentUnifiedQr } from "../services/checkin.service";
 import { studentQrActionBodySchema } from "../validators/owner-operations.validators";
 
 function requireStudentCheckinContext(req: Request) {
@@ -66,6 +66,22 @@ export async function scanCheckOutController(req: Request, res: Response) {
   });
 
   res.status(200).json({
+    success: true,
+    data: result,
+  });
+}
+
+export async function scanStudentUnifiedQrController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentOnly(req);
+  const parsed = studentQrActionBodySchema.parse(req.body);
+  const result = await scanStudentUnifiedQr({
+    studentUserId,
+    qrRawPayload: parsed.qrPayload,
+    clientEventId: parsed.clientEventId || undefined,
+    scannedAtDevice: parsed.scannedAtDevice || undefined,
+  });
+
+  res.status(result.action === "JOIN_REQUEST_CREATED" ? 201 : 200).json({
     success: true,
     data: result,
   });

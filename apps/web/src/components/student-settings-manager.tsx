@@ -307,7 +307,7 @@ export function StudentSettingsManager({ initialTab = "account" }: { initialTab?
             ))}
             {activeLibraries.length === 0 ? (
               <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4 text-sm text-[var(--lp-text-soft)]">
-                No active library access yet. Use Join Library from the student menu to request access.
+                No active library access yet. Use the scanner button in the header to scan a library QR and request access.
               </div>
             ) : null}
           </div>
