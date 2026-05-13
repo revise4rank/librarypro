@@ -1,6 +1,7 @@
 import {
   Armchair,
   BarChart3,
+  BookOpen,
   CalendarCheck,
   CreditCard,
   Database,
@@ -62,6 +63,7 @@ const navIconMap: Record<string, LucideIcon> = {
   "/superadmin/marketplace": Megaphone,
   "/superadmin/data": Database,
   "/superadmin/syllabus": Database,
+  "/superadmin/book-requests": BookOpen,
   "/superadmin/reviews": ShieldCheck,
   "/superadmin/offers": Send,
   "/superadmin/plans": CreditCard,

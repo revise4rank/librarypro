@@ -13,14 +13,11 @@ function requireStudent(req: Request) {
   };
 }
 
-function requireOwner(req: Request) {
-  if (!req.auth || req.auth.role !== "LIBRARY_OWNER" || !req.auth.libraryIds[0]) {
-    throw new AppError(401, "Library owner authentication required", "OWNER_AUTH_REQUIRED");
+function requireSuperAdmin(req: Request) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "SUPER_ADMIN_AUTH_REQUIRED");
   }
-  return {
-    ownerUserId: req.auth.userId,
-    libraryId: req.auth.libraryIds[0],
-  };
+  return { adminUserId: req.auth.userId };
 }
 
 function bodyText(value: unknown, maxLength: number) {
@@ -34,6 +31,7 @@ function normalizeBookRequest(row: Record<string, unknown>) {
     student_user_id: row.student_user_id,
     student_name: row.student_name ?? null,
     library_id: row.library_id ?? null,
+    library_name: row.library_name ?? null,
     title: row.title,
     author: row.author ?? null,
     class_name: row.class_name ?? null,
@@ -97,8 +95,7 @@ export async function listStudentBookRequestsController(req: Request, res: Respo
   res.json({ success: true, data: result.rows.map(normalizeBookRequest) });
 }
 
-export async function listOwnerBookRequestsController(req: Request, res: Response) {
-  const { libraryId } = requireOwner(req);
+export async function listAdminBookRequestsController(_req: Request, res: Response) {
   const result = await requireDb().query(
     `
     SELECT
@@ -106,6 +103,7 @@ export async function listOwnerBookRequestsController(req: Request, res: Respons
       sbr.student_user_id::text,
       sbr.library_id::text,
       u.full_name AS student_name,
+      l.name AS library_name,
       sbr.title,
       sbr.author,
       sbr.class_name,
@@ -117,17 +115,16 @@ export async function listOwnerBookRequestsController(req: Request, res: Respons
       sbr.reviewed_at::text
     FROM student_book_requests sbr
     INNER JOIN users u ON u.id = sbr.student_user_id
-    WHERE sbr.library_id = $1
+    LEFT JOIN libraries l ON l.id = sbr.library_id
     ORDER BY sbr.created_at DESC
-    LIMIT 80
+    LIMIT 150
     `,
-    [libraryId],
   );
   res.json({ success: true, data: result.rows.map(normalizeBookRequest) });
 }
 
-export async function updateOwnerBookRequestStatusController(req: Request, res: Response) {
-  const { libraryId, ownerUserId } = requireOwner(req);
+export async function updateAdminBookRequestStatusController(req: Request, res: Response) {
+  const { adminUserId } = requireSuperAdmin(req);
   const requestId = req.params.requestId;
   const status = String(req.body.status ?? "").trim();
   if (!["PENDING", "APPROVED", "REJECTED", "FULFILLED"].includes(status)) {
@@ -137,15 +134,14 @@ export async function updateOwnerBookRequestStatusController(req: Request, res: 
   const result = await requireDb().query(
     `
     UPDATE student_book_requests
-    SET status = $3,
-        reviewed_by_user_id = $4,
-        reviewed_at = CASE WHEN $3 = 'PENDING' THEN NULL ELSE NOW() END,
+    SET status = $2,
+        reviewed_by_user_id = $3,
+        reviewed_at = CASE WHEN $2 = 'PENDING' THEN NULL ELSE NOW() END,
         updated_at = NOW()
     WHERE id = $1
-      AND library_id = $2
     RETURNING id::text, student_user_id::text, library_id::text, title, author, class_name, subject, message, toc_image_url, status, created_at::text, reviewed_at::text
     `,
-    [requestId, libraryId, status, ownerUserId],
+    [requestId, status, adminUserId],
   );
   if (!result.rows[0]) {
     throw new AppError(404, "Book request not found", "BOOK_REQUEST_NOT_FOUND");

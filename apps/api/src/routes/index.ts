@@ -27,9 +27,9 @@ import {
 } from "../controllers/referral.controller";
 import {
   createStudentBookRequestController,
-  listOwnerBookRequestsController,
+  listAdminBookRequestsController,
   listStudentBookRequestsController,
-  updateOwnerBookRequestStatusController,
+  updateAdminBookRequestStatusController,
 } from "../controllers/book-requests.controller";
 import { getStudentEntryQrController, scanCheckInController, scanCheckOutController } from "../controllers/checkin.controller";
 import {
@@ -255,8 +255,6 @@ router.get("/owner/expenses", requireRole(["LIBRARY_OWNER"]), requireOwnerPermis
 router.post("/owner/expenses", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("reports"), asyncHandler(createOwnerExpenseController));
 router.get("/owner/notifications", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("notifications"), asyncHandler(listOwnerNotificationsController));
 router.post("/owner/notifications", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("notifications"), asyncHandler(createOwnerNotificationController));
-router.get("/owner/book-requests", requireRole(["LIBRARY_OWNER"]), asyncHandler(listOwnerBookRequestsController));
-router.patch("/owner/book-requests/:requestId", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerBookRequestStatusController));
 router.get("/owner/settings", requireRole(["LIBRARY_OWNER"]), asyncHandler(getOwnerSettingsController));
 router.patch("/owner/settings", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerSettingsController));
 router.post("/owner/settings/regenerate-qr", requireRole(["LIBRARY_OWNER"]), asyncHandler(regenerateOwnerQrController));
@@ -304,6 +302,8 @@ router.get("/admin/libraries", requireRole(["SUPER_ADMIN"]), asyncHandler(listAd
 router.get("/admin/plans", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPlanSummariesController));
 router.patch("/admin/plans/:planCode", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminPlanConfigController));
 router.get("/admin/payments", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPaymentsController));
+router.get("/admin/book-requests", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminBookRequestsController));
+router.patch("/admin/book-requests/:requestId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminBookRequestStatusController));
 router.get("/admin/referrals", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminReferralsController));
 router.patch("/admin/referrals/:referralId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminReferralStatusController));
 router.get("/admin/marketplace-settings", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminMarketplaceSettingsController));
