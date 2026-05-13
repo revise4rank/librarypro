@@ -26,7 +26,26 @@ export type DashboardNavItem = {
   href: string;
   label: string;
   shortLabel?: string;
+  group?: string;
 };
+
+export type DashboardNavGroup = {
+  label: string;
+  items: DashboardNavItem[];
+};
+
+export function groupNavItems(nav: DashboardNavItem[]) {
+  return nav.reduce<DashboardNavGroup[]>((groups, item) => {
+    const label = item.group ?? "Workspace";
+    const existing = groups.find((group) => group.label === label);
+    if (existing) {
+      existing.items.push(item);
+    } else {
+      groups.push({ label, items: [item] });
+    }
+    return groups;
+  }, []);
+}
 
 const navIconMap: Record<string, LucideIcon> = {
   "/owner/dashboard": LayoutDashboard,
@@ -45,6 +64,7 @@ const navIconMap: Record<string, LucideIcon> = {
   "/owner/website": PanelsTopLeft,
   "/owner/notifications": Send,
   "/owner/billing": CreditCard,
+  "/owner/admins": UserRound,
   "/owner/settings": SettingsIcon,
   "/student/dashboard": LayoutDashboard,
   "/student/seat": Armchair,

@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { dashboardPathForRole, hydrateSessionFromServer, logoutSession, type SessionUser } from "../lib/api";
 import {
   loginPathForRole,
+  groupNavItems,
   navIconFor,
   notificationsPathForRole,
   settingsPathForRole,
@@ -74,6 +75,11 @@ export function DashboardShell({
   const notificationMenuRef = useRef<HTMLDivElement | null>(null);
 
   const primaryMobileNav = nav.slice(0, 5);
+  const navGroups = useMemo(() => groupNavItems(nav), [nav]);
+  const moreMobileGroups = useMemo(() => {
+    const primaryHrefs = new Set(primaryMobileNav.map((item) => item.href));
+    return groupNavItems(nav.filter((item) => !primaryHrefs.has(item.href)));
+  }, [nav, primaryMobileNav]);
   const sidebarExpanded = desktopPinnedOpen || desktopHovered;
   const userInitials = useMemo(() => initialsFromName(sessionUser?.fullName), [sessionUser?.fullName]);
   const notificationsHref = notificationsPathForRole(sessionUser?.role);
@@ -157,26 +163,31 @@ export function DashboardShell({
             </div>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-auto px-2 py-3">
-            {nav.map((item) => {
-              const active = pathname === item.href;
-              const Icon = navIconFor(item);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  title={item.label}
-                  className={`group flex h-10 items-center rounded-lg px-2 transition ${
-                    active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "text-slate-500 hover:bg-white hover:text-[var(--lp-text)]"
-                  }`}
-                >
-                  <span className={`flex w-6 shrink-0 items-center justify-center ${sidebarExpanded ? "" : "mx-auto"}`}>
-                    <Icon className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
-                  </span>
-                  {sidebarExpanded ? <span className="ml-3 truncate text-sm font-medium">{item.label}</span> : null}
-                </Link>
-              );
-            })}
+          <nav className="flex-1 space-y-3 overflow-auto px-2 py-3">
+            {navGroups.map((group) => (
+              <div key={group.label} className="grid gap-1">
+                {sidebarExpanded ? <p className="px-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{group.label}</p> : null}
+                {group.items.map((item) => {
+                  const active = pathname === item.href;
+                  const Icon = navIconFor(item);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      title={`${group.label}: ${item.label}`}
+                      className={`group flex h-10 items-center rounded-lg px-2 transition ${
+                        active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "text-slate-500 hover:bg-white hover:text-[var(--lp-text)]"
+                      }`}
+                    >
+                      <span className={`flex w-6 shrink-0 items-center justify-center ${sidebarExpanded ? "" : "mx-auto"}`}>
+                        <Icon className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
+                      </span>
+                      {sidebarExpanded ? <span className="ml-3 truncate text-sm font-medium">{item.label}</span> : null}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </aside>
 
@@ -319,25 +330,30 @@ export function DashboardShell({
             mobileMenuOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
           }`}
         >
-          <div className="grid gap-2">
-            {nav.slice(5).map((item) => {
-              const active = pathname === item.href;
-              const Icon = navIconFor(item);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-                    active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-                  }`}
-                >
-                  <span className="flex w-6 shrink-0 items-center justify-center">
-                    <Icon className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
-                  </span>
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            })}
+          <div className="max-h-[58vh] overflow-auto pr-1">
+            {moreMobileGroups.map((group) => (
+              <div key={group.label} className="mb-3 grid gap-2">
+                <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{group.label}</p>
+                {group.items.map((item) => {
+                  const active = pathname === item.href;
+                  const Icon = navIconFor(item);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
+                        active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                      }`}
+                    >
+                      <span className="flex w-6 shrink-0 items-center justify-center">
+                        <Icon className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
+                      </span>
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </div>
 

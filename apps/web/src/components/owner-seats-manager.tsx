@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { getRealtimeSocket } from "../lib/realtime";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type SeatRow = {
   id: string;
@@ -1571,11 +1572,18 @@ export function OwnerSeatsManager() {
                 onClick={() => setSetupRibbonOpen((current) => !current)}
                 className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
               >
-                {setupRibbonOpen ? "Hide form" : "Open form"}
+                {setupRibbonOpen ? "Close setup drawer" : "Open setup drawer"}
               </button>
             </div>
           </div>
 
+          <FormDrawer
+            open={setupRibbonOpen}
+            onClose={() => setSetupRibbonOpen(false)}
+            title={ribbonTab === "floor" ? "Create floor" : ribbonTab === "bank" ? "Create seat bank" : "Create one seat"}
+            description="Create structural seat inventory without pushing the seat map down the page."
+            widthClassName="sm:w-[min(96vw,56rem)] max-w-5xl"
+          >
           {setupRibbonOpen && ribbonTab === "floor" ? (
             <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
               <div className="lg:col-span-5 rounded-xl border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
@@ -1681,9 +1689,10 @@ export function OwnerSeatsManager() {
               <button type="submit" disabled={!selectedFloorId} className="rounded-xl border border-[var(--lp-border)] bg-white px-5 py-2.5 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
             </form>
           ) : null}
+          </FormDrawer>
           {!setupRibbonOpen ? (
             <div className="rounded-xl border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-[var(--lp-muted)]">
-                The setup form is hidden. Open the matching tab only when you need a new floor, seat bank, or single seat.
+                Setup controls are in the right drawer. Open the matching tab only when you need a new floor, seat bank, or single seat.
             </div>
           ) : null}
             </>
@@ -1727,11 +1736,28 @@ export function OwnerSeatsManager() {
                   onClick={() => setPlannerToolbarOpen((current) => !current)}
                   className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
                 >
-                  {plannerToolbarOpen ? "Hide panel" : "Open panel"}
+                  {plannerToolbarOpen ? "Close tool drawer" : "Open tool drawer"}
                 </button>
               </div>
             </div>
 
+            <FormDrawer
+              open={plannerToolbarOpen}
+              onClose={() => setPlannerToolbarOpen(false)}
+              title={
+                plannerRibbonTab === "templates"
+                  ? "Apply layout templates"
+                  : plannerRibbonTab === "rooms"
+                    ? "Manage room tools"
+                    : plannerRibbonTab === "layout"
+                      ? "Edit seat layout"
+                      : plannerRibbonTab === "paint"
+                        ? "Paint room sections"
+                        : "Assign unallotted students"
+              }
+              description="Secondary seat tools open in a right drawer so the map stays visible."
+              widthClassName="sm:w-[min(96vw,56rem)] max-w-5xl"
+            >
             {plannerToolbarOpen && plannerRibbonTab === "templates" ? (
               <div className="grid gap-3 xl:grid-cols-[auto_1fr]">
                 <div className="flex flex-wrap gap-2">
@@ -1856,6 +1882,7 @@ export function OwnerSeatsManager() {
                 </div>
               </div>
             ) : null}
+            </FormDrawer>
           </div>
           ) : null}
         </div>
@@ -2481,8 +2508,13 @@ export function OwnerSeatsManager() {
       </section>
 
       {hallSettingsFloor && hallSettingsDraft ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-slate-950/20 px-3 pb-3 pt-16 backdrop-blur-sm lg:items-center lg:justify-center lg:p-6">
-          <div className="max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-y-auto rounded-lg border border-[var(--lp-border)] bg-white p-4 shadow-sm">
+        <FormDrawer
+          open={Boolean(hallSettingsFloor && hallSettingsDraft)}
+          onClose={() => setHallSettingsOpen(null)}
+          title={`Manage rooms and hall settings`}
+          description={hallSettingsFloor.floor.name}
+          widthClassName="sm:w-[min(96vw,56rem)] max-w-5xl"
+        >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lp-accent)]">Hall settings</p>
@@ -2493,7 +2525,7 @@ export function OwnerSeatsManager() {
                 onClick={() => setHallSettingsOpen(null)}
                 className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
               >
-                Close
+                Close hall settings
               </button>
             </div>
 
@@ -2638,7 +2670,7 @@ export function OwnerSeatsManager() {
                 onClick={() => setHallSettingsOpen(null)}
                 className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
               >
-                Cancel
+                Close hall settings
               </button>
               <button
                 type="button"
@@ -2648,12 +2680,20 @@ export function OwnerSeatsManager() {
                 Save hall
               </button>
             </div>
-          </div>
-        </div>
+        </FormDrawer>
       ) : null}
 
       {actionSheetOpen && selectedSeat ? (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-sm backdrop-blur lg:left-auto lg:right-4 lg:top-[84px] lg:bottom-auto lg:w-[360px] lg:rounded-lg lg:border lg:px-4 lg:pb-4">
+        <FormDrawer
+          open={actionSheetOpen}
+          onClose={() => {
+            setActionSheetOpen(false);
+            setSelectedSeatId(null);
+          }}
+          title={`Seat ${selectedSeat.seat_number}`}
+          description={`${selectedSeat.floor_name ?? "Main floor"} | ${selectedSeat.section_name ?? "Main section"}`}
+          widthClassName="sm:w-[min(94vw,28rem)] max-w-md"
+        >
           <div className="grid gap-3">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -2673,7 +2713,7 @@ export function OwnerSeatsManager() {
                   }}
                   className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
                 >
-                  Close
+                  Close seat panel
                 </button>
               </div>
             </div>
@@ -2728,7 +2768,7 @@ export function OwnerSeatsManager() {
                 onClick={() => setInspectorControlsOpen((current) => !current)}
                 className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text-soft)]"
               >
-                {inspectorControlsOpen ? "Hide controls" : "Open controls"}
+                {inspectorControlsOpen ? "Close seat controls" : "Open seat controls"}
               </button>
             </div>
 
@@ -2766,7 +2806,7 @@ export function OwnerSeatsManager() {
             {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
             {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
           </div>
-        </div>
+        </FormDrawer>
       ) : null}
     </div>
   );

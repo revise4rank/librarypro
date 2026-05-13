@@ -59,24 +59,25 @@ type CouponConfig = {
 
 export type OwnerSettingsTab = "profile" | "listing" | "plans" | "account" | "website" | "team" | "billing";
 
+function normalizeSettingsTab(tab: OwnerSettingsTab): OwnerSettingsTab {
+  if (tab === "listing" || tab === "plans" || tab === "website") return "profile";
+  return tab;
+}
+
 const settingsTabs: Array<{ id: OwnerSettingsTab; label: string; summary: string }> = [
   { id: "profile", label: "Library Setup", summary: "Core library profile, QR access, WiFi, and notices." },
-  { id: "listing", label: "Marketplace Listing", summary: "Trial-safe public listing details, photos, contact actions, and search visibility." },
-  { id: "plans", label: "Plans & Coupons", summary: "Reusable admission plans, pricing overrides, and coupon rules." },
   { id: "account", label: "Account", summary: "Personal profile, password, and current session controls." },
-  { id: "website", label: "Website", summary: "Public site editing and publishing inside the same setup desk." },
   { id: "team", label: "Team", summary: "Head admin access, permissions, and audit visibility." },
   { id: "billing", label: "Billing", summary: "Subscription plan, renewal state, and payment visibility." },
 ];
 
 const settingsGroups: Array<{
-  id: "setup" | "pricing" | "account" | "team" | "billing";
+  id: "setup" | "account" | "team" | "billing";
   label: string;
   summary: string;
   tabs: OwnerSettingsTab[];
 }> = [
-  { id: "setup", label: "Library Setup", summary: "Core library identity, marketplace listing, QR access, and public website controls.", tabs: ["profile", "listing", "website"] },
-  { id: "pricing", label: "Plans & Coupons", summary: "Admission pricing, reusable plans, and coupon rules.", tabs: ["plans"] },
+  { id: "setup", label: "Library Setup", summary: "Core library identity, QR access, WiFi, and operating defaults.", tabs: ["profile"] },
   { id: "account", label: "Account", summary: "Owner profile, password, and session controls.", tabs: ["account"] },
   { id: "team", label: "Team", summary: "Admin access and operator permissions.", tabs: ["team"] },
   { id: "billing", label: "Billing", summary: "Subscription state and renewals.", tabs: ["billing"] },
@@ -127,7 +128,7 @@ function computePreviewAmount(baseAmount: string, discountType: DiscountType | "
 }
 
 export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: OwnerSettingsTab }) {
-  const [activeTab, setActiveTab] = useState<OwnerSettingsTab>(initialTab);
+  const [activeTab, setActiveTab] = useState<OwnerSettingsTab>(normalizeSettingsTab(initialTab));
   const [data, setData] = useState<SettingsResponse["data"] | null>(null);
   const [plans, setPlans] = useState<StudentPlanConfig[]>([]);
   const [coupons, setCoupons] = useState<CouponConfig[]>([]);
@@ -182,7 +183,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
   });
 
   useEffect(() => {
-    setActiveTab(initialTab);
+    setActiveTab(normalizeSettingsTab(initialTab));
   }, [initialTab]);
 
   useEffect(() => {
@@ -432,6 +433,20 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
           </p>
         </div>
       </DashboardCard>
+
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { href: "/owner/plans", label: "Open admission plans", detail: "Create and edit pricing plans on the dedicated page." },
+          { href: "/owner/coupons", label: "Open coupons", detail: "Manage discount codes without duplicating settings." },
+          { href: "/owner/listing", label: "Open marketplace listing", detail: "Edit public listing media and discovery content." },
+          { href: "/owner/website", label: "Open website builder", detail: "Customize public pages and subdomain content." },
+        ].map((item) => (
+          <Link key={item.href} href={item.href} className="rounded-lg border border-[var(--lp-border)] bg-white p-4 transition hover:border-[var(--lp-accent-soft)] hover:bg-[var(--lp-accent-soft)]/25">
+            <p className="text-sm font-black text-[var(--lp-text)]">{item.label}</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--lp-text-soft)]">{item.detail}</p>
+          </Link>
+        ))}
+      </section>
 
       {activeTab === "profile" ? (
         <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
