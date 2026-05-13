@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type TopicStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 
@@ -445,92 +446,113 @@ export function StudentSyllabusManager() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <DashboardCard title="Create subject" subtitle="Add custom subjects when templates do not cover your plan.">
+        <DashboardCard title="Custom subject" subtitle="Add only when templates do not cover your plan.">
           <div className="grid gap-4">
-            <button type="button" onClick={() => setShowSubjectForm((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
-              {showSubjectForm ? "Hide subject creator" : "Show subject creator"}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              {subjects.length} subjects tracked. Add a new one only when your study map changes.
+            </div>
+            <button type="button" onClick={() => setShowSubjectForm(true)} className="rounded-lg border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-left text-sm font-bold text-[var(--lp-accent-strong)]">
+              Add custom subject
             </button>
-            {showSubjectForm ? (
-              <>
-                <div className="grid gap-4 md:grid-cols-[1fr_160px_120px]">
-                  <input
-                    value={subjectForm.title}
-                    onChange={(event) => setSubjectForm((current) => ({ ...current, title: event.target.value }))}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                    placeholder="Physics, Maths, Reasoning..."
-                  />
-                  <input
-                    value={subjectForm.className}
-                    onChange={(event) => setSubjectForm((current) => ({ ...current, className: event.target.value }))}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                    placeholder="Class 12"
-                  />
-                  <input
-                    value={subjectForm.colorHex}
-                    onChange={(event) => setSubjectForm((current) => ({ ...current, colorHex: event.target.value }))}
-                    className="h-[58px] rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none"
-                    type="color"
-                  />
-                </div>
-                <button type="button" onClick={() => void createSubject()} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
-                  Add subject
-                </button>
-              </>
-            ) : (
-              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-                Add a new subject only when your study map changes. Existing subjects stay below.
-              </div>
-            )}
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Create topic" subtitle="Break subjects into small, finishable blocks.">
+        <DashboardCard title="Custom topic" subtitle="Break subjects into small, finishable blocks.">
           <div className="grid gap-4">
-            <button type="button" onClick={() => setShowTopicForm((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
-              {showTopicForm ? "Hide topic creator" : "Show topic creator"}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              {analytics.totalTopics} topics in tracker. Keep topic creation tucked away until you need to expand.
+            </div>
+            <button type="button" onClick={() => setShowTopicForm(true)} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
+              Add custom topic
             </button>
-            {showTopicForm ? (
-              <>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <select
-                    value={topicForm.subjectId}
-                    onChange={(event) => setTopicForm((current) => ({ ...current, subjectId: event.target.value }))}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                  >
-                    <option value="">Choose subject</option>
-                    {data.subjects.map((subject) => (
-                      <option key={subject.id} value={subject.id}>
-                        {subject.class_name ? `${subject.class_name} - ` : ""}{subject.title}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    value={topicForm.title}
-                    onChange={(event) => setTopicForm((current) => ({ ...current, title: event.target.value }))}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                    placeholder="Current electricity"
-                  />
-                  <input
-                    value={topicForm.estimatedMinutes}
-                    onChange={(event) => setTopicForm((current) => ({ ...current, estimatedMinutes: event.target.value }))}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                    type="number"
-                    min="15"
-                    placeholder="Estimated minutes"
-                  />
-                </div>
-                <button type="button" onClick={() => void createTopic()} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800">
-                  Add topic
-                </button>
-              </>
-            ) : (
-              <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-                Topic creation stays tucked away until you need to expand the syllabus.
-              </div>
-            )}
           </div>
         </DashboardCard>
       </section>
+
+      <FormDrawer
+        open={showSubjectForm}
+        onClose={() => setShowSubjectForm(false)}
+        title="Add custom subject"
+        description="Use this only when the superadmin syllabus template does not cover your study plan."
+      >
+        <div className="grid gap-4">
+          <input
+            value={subjectForm.title}
+            onChange={(event) => setSubjectForm((current) => ({ ...current, title: event.target.value }))}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+            placeholder="Physics, Maths, Reasoning..."
+          />
+          <input
+            value={subjectForm.className}
+            onChange={(event) => setSubjectForm((current) => ({ ...current, className: event.target.value }))}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+            placeholder="Class 12"
+          />
+          <label className="grid gap-2 text-sm font-bold text-slate-700">
+            Subject color
+            <input
+              value={subjectForm.colorHex}
+              onChange={(event) => setSubjectForm((current) => ({ ...current, colorHex: event.target.value }))}
+              className="h-[58px] rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none"
+              type="color"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              void createSubject().then(() => setShowSubjectForm(false));
+            }}
+            className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]"
+          >
+            Add subject
+          </button>
+        </div>
+      </FormDrawer>
+
+      <FormDrawer
+        open={showTopicForm}
+        onClose={() => setShowTopicForm(false)}
+        title="Add custom topic"
+        description="Create small, trackable study blocks under an existing subject."
+      >
+        <div className="grid gap-4">
+          <select
+            value={topicForm.subjectId}
+            onChange={(event) => setTopicForm((current) => ({ ...current, subjectId: event.target.value }))}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+          >
+            <option value="">Choose subject</option>
+            {data.subjects.map((subject) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.class_name ? `${subject.class_name} - ` : ""}{subject.title}
+              </option>
+            ))}
+          </select>
+          <input
+            value={topicForm.title}
+            onChange={(event) => setTopicForm((current) => ({ ...current, title: event.target.value }))}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+            placeholder="Current electricity"
+          />
+          <input
+            value={topicForm.estimatedMinutes}
+            onChange={(event) => setTopicForm((current) => ({ ...current, estimatedMinutes: event.target.value }))}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+            type="number"
+            min="15"
+            placeholder="Estimated minutes"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              void createTopic().then(() => setShowTopicForm(false));
+            }}
+            className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800"
+          >
+            Add topic
+          </button>
+        </div>
+      </FormDrawer>
 
       <section className="grid gap-4">
         {filteredSubjects.map((subject) => (

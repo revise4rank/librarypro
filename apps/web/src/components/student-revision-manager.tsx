@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type SyllabusResponse = {
   success: boolean;
@@ -164,51 +165,16 @@ export function StudentRevisionManager() {
           <div className="grid gap-4">
             <button
               type="button"
-              onClick={() => setShowManualReminder((current) => !current)}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
+              onClick={() => setShowManualReminder(true)}
+              className="rounded-lg border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-left text-sm font-bold text-[var(--lp-accent-strong)]"
             >
-              {showManualReminder ? "Hide manual reminder form" : "Add manual reminder"}
+              Add manual reminder
             </button>
-            {showManualReminder ? (
-              <>
-                <select
-                  value={manualForm.topicId}
-                  onChange={(event) => setManualForm((current) => ({ ...current, topicId: event.target.value }))}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                >
-                  <option value="">Choose topic</option>
-                  {syllabus.subjects.flatMap((subject) =>
-                    subject.topics.map((topic) => (
-                      <option key={topic.id} value={topic.id}>
-                        {subject.title} | {topic.title}
-                      </option>
-                    )),
-                  )}
-                </select>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <input
-                    type="datetime-local"
-                    value={manualForm.scheduledFor}
-                    onChange={(event) => setManualForm((current) => ({ ...current, scheduledFor: event.target.value }))}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                  />
-                  <input
-                    type="number"
-                    min="10"
-                    value={manualForm.minutesTarget}
-                    onChange={(event) => setManualForm((current) => ({ ...current, minutesTarget: event.target.value }))}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                  />
-                </div>
-                <button type="button" onClick={() => void createManualRevision()} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
-                  Schedule revision
-                </button>
-              </>
-            ) : (
-                  <div className="rounded-xl border border-slate-200 bg-white p-5">
-                    <p className="text-sm text-slate-600">Add a custom reminder here for weak topics or chapters that need a short-notice revision push.</p>
-                  </div>
-            )}
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <p className="text-sm text-slate-600">
+                Custom reminders stay in a focused drawer so the revision queues remain visible.
+              </p>
+            </div>
           </div>
         </DashboardCard>
 
@@ -229,6 +195,54 @@ export function StudentRevisionManager() {
           </div>
         </DashboardCard>
       </section>
+
+      <FormDrawer
+        open={showManualReminder}
+        onClose={() => setShowManualReminder(false)}
+        title="Schedule manual revision"
+        description="Add a short-notice reminder for a weak topic or chapter."
+      >
+        <div className="grid gap-4">
+          <select
+            value={manualForm.topicId}
+            onChange={(event) => setManualForm((current) => ({ ...current, topicId: event.target.value }))}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+          >
+            <option value="">Choose topic</option>
+            {syllabus.subjects.flatMap((subject) =>
+              subject.topics.map((topic) => (
+                <option key={topic.id} value={topic.id}>
+                  {subject.title} | {topic.title}
+                </option>
+              )),
+            )}
+          </select>
+          <div className="grid gap-4 md:grid-cols-2">
+            <input
+              type="datetime-local"
+              value={manualForm.scheduledFor}
+              onChange={(event) => setManualForm((current) => ({ ...current, scheduledFor: event.target.value }))}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+            />
+            <input
+              type="number"
+              min="10"
+              value={manualForm.minutesTarget}
+              onChange={(event) => setManualForm((current) => ({ ...current, minutesTarget: event.target.value }))}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void createManualRevision().then(() => setShowManualReminder(false));
+            }}
+            className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]"
+          >
+            Schedule revision
+          </button>
+        </div>
+      </FormDrawer>
 
       <section className="grid gap-6 xl:grid-cols-3">
         {[

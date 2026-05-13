@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type FocusResponse = {
   success: boolean;
@@ -94,6 +95,7 @@ export function StudentFocusManager() {
     leaderboard: false,
     history: false,
   });
+  const [drawer, setDrawer] = useState<"goals" | "subjects" | null>(null);
 
   async function loadFocus() {
     try {
@@ -279,15 +281,14 @@ export function StudentFocusManager() {
       <DashboardCard title="Study goals" subtitle="Targets, secondary analytics, and library context open only when needed">
         <div className="grid gap-4">
           <button type="button" onClick={() => toggle("goals")} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700">
-            {expanded.goals ? "Hide goal editor" : "Show goal editor"}
+            {expanded.goals ? "Hide goal summary" : "Show goal summary"}
           </button>
           {expanded.goals ? (
-            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
-              <input value={goalForm.dailyTargetMinutes} onChange={(event) => setGoalForm((current) => ({ ...current, dailyTargetMinutes: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Daily target minutes" type="number" min="30" />
-              <input value={goalForm.weeklyTargetHours} onChange={(event) => setGoalForm((current) => ({ ...current, weeklyTargetHours: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Weekly target hours" type="number" min="1" />
-	              <button type="button" onClick={() => void saveGoals()} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
-	                Save goals
-	              </button>
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 sm:grid-cols-[1fr_auto] sm:items-center">
+              <span>Daily target {data.goals.daily_target_minutes} min | Weekly target {data.goals.weekly_target_hours} hrs</span>
+              <button type="button" onClick={() => setDrawer("goals")} className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-bold text-[var(--lp-accent-strong)]">
+                Edit goals
+              </button>
             </div>
           ) : (
             <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
@@ -357,12 +358,7 @@ export function StudentFocusManager() {
             </button>
             {expanded.subjects ? (
               <>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <input value={subjectForm.subjectName} onChange={(event) => setSubjectForm((current) => ({ ...current, subjectName: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Subject" />
-                  <input value={subjectForm.topicName} onChange={(event) => setSubjectForm((current) => ({ ...current, topicName: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Topic" />
-                  <input value={subjectForm.targetMinutes} onChange={(event) => setSubjectForm((current) => ({ ...current, targetMinutes: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Target minutes" type="number" min="15" />
-                </div>
-                <button type="button" onClick={() => void createSubject()} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800">
+                <button type="button" onClick={() => setDrawer("subjects")} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800">
                   Add subject or topic
                 </button>
                 <div className="grid gap-3">
@@ -445,6 +441,49 @@ export function StudentFocusManager() {
           )}
         </div>
       </DashboardCard>
+
+      <FormDrawer
+        open={drawer === "goals"}
+        onClose={() => setDrawer(null)}
+        title="Edit study goals"
+        description="Keep daily and weekly targets realistic for your active library routine."
+      >
+        <div className="grid gap-4">
+          <input value={goalForm.dailyTargetMinutes} onChange={(event) => setGoalForm((current) => ({ ...current, dailyTargetMinutes: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Daily target minutes" type="number" min="30" />
+          <input value={goalForm.weeklyTargetHours} onChange={(event) => setGoalForm((current) => ({ ...current, weeklyTargetHours: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Weekly target hours" type="number" min="1" />
+          <button
+            type="button"
+            onClick={() => {
+              void saveGoals().then(() => setDrawer(null));
+            }}
+            className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]"
+          >
+            Save goals
+          </button>
+        </div>
+      </FormDrawer>
+
+      <FormDrawer
+        open={drawer === "subjects"}
+        onClose={() => setDrawer(null)}
+        title="Add subject or topic"
+        description="Use this planning layer when you need to shape your study structure."
+      >
+        <div className="grid gap-4">
+          <input value={subjectForm.subjectName} onChange={(event) => setSubjectForm((current) => ({ ...current, subjectName: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Subject" />
+          <input value={subjectForm.topicName} onChange={(event) => setSubjectForm((current) => ({ ...current, topicName: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Topic" />
+          <input value={subjectForm.targetMinutes} onChange={(event) => setSubjectForm((current) => ({ ...current, targetMinutes: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none" placeholder="Target minutes" type="number" min="15" />
+          <button
+            type="button"
+            onClick={() => {
+              void createSubject().then(() => setDrawer(null));
+            }}
+            className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800"
+          >
+            Add subject or topic
+          </button>
+        </div>
+      </FormDrawer>
     </div>
   );
 }
