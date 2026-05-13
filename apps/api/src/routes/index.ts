@@ -64,6 +64,7 @@ import {
 import {
   completeStudentRevisionController,
   createManualRevisionController,
+  downloadAdminSyllabusTemplateController,
   importAdminSyllabusTemplatesController,
   importStudentSyllabusTemplateController,
   createOwnerStudentInterventionNoteController,
@@ -162,6 +163,7 @@ import {
   updateOwnerAdminPermissionsController,
   updateAdminMarketplaceSettingsController,
   updateAdminIntegrationSettingsController,
+  updateAdminLibraryController,
   updateAdminPlanConfigController,
 } from "../controllers/owner-operations.controller";
 import { uploadAdmissionDocumentController, uploadPublicProfileAssetController } from "../controllers/upload.controller";
@@ -305,6 +307,7 @@ router.get("/student/notifications", requireRole(["STUDENT"]), asyncHandler(list
 router.get("/admin/dashboard", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminDashboardController));
 router.get("/admin/data-overview", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminDataOverviewController));
 router.get("/admin/libraries", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminLibrariesController));
+router.patch("/admin/libraries/:libraryId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminLibraryController));
 router.get("/admin/plans", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPlanSummariesController));
 router.patch("/admin/plans/:planCode", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminPlanConfigController));
 router.get("/admin/payments", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPaymentsController));
@@ -321,6 +324,7 @@ router.get("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdmin
 router.post("/admin/offers", requireRole(["SUPER_ADMIN"]), asyncHandler(createAdminOfferController));
 router.get("/admin/review-reports", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminReviewReportsController));
 router.get("/admin/syllabus/templates", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminSyllabusTemplatesController));
+router.get("/admin/syllabus/template.xlsx", requireRole(["SUPER_ADMIN"]), asyncHandler(downloadAdminSyllabusTemplateController));
 router.post("/admin/syllabus/import", requireRole(["SUPER_ADMIN"]), asyncHandler(importAdminSyllabusTemplatesController));
 router.post("/admin/syllabus/import-file", requireRole(["SUPER_ADMIN"]), syllabusTemplateUpload.single("file"), asyncHandler(uploadAdminSyllabusTemplatesController));
 router.patch("/admin/reviews/:reviewId/moderate", requireRole(["SUPER_ADMIN"]), asyncHandler(moderateLibraryReviewController));

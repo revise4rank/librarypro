@@ -2201,37 +2201,125 @@ export class OwnerOperationsRepository {
       name: string;
       slug: string;
       city: string;
+      area: string | null;
+      address: string;
       status: string;
       total_seats: number;
       available_seats: number;
+      owner_user_id: string;
       owner_name: string;
       owner_email: string | null;
+      owner_phone: string | null;
+      owner_active: boolean;
       plan_name: string | null;
+      plan_code: string | null;
       subscription_status: string | null;
       current_period_end: string | null;
+      active_students: string;
+      admins: string;
+      pending_join_requests: string;
+      unpaid_amount: string;
+      created_at: string;
+      updated_at: string;
     }>(
       `
       SELECT
-        l.id,
+        l.id::text,
         l.name,
         l.slug,
         l.city,
+        l.area,
+        l.address,
         l.status::text,
         l.total_seats,
         l.available_seats,
+        u.id::text AS owner_user_id,
         u.full_name AS owner_name,
         u.email AS owner_email,
+        u.phone AS owner_phone,
+        u.is_active AS owner_active,
         s.plan_name,
+        s.plan_code,
         s.status::text AS subscription_status,
-        s.current_period_end::date::text
+        s.current_period_end::date::text,
+        COALESCE(stats.active_students, '0') AS active_students,
+        COALESCE(stats.admins, '0') AS admins,
+        COALESCE(stats.pending_join_requests, '0') AS pending_join_requests,
+        COALESCE(stats.unpaid_amount, '0') AS unpaid_amount,
+        l.created_at::text,
+        l.updated_at::text
       FROM libraries l
       INNER JOIN users u ON u.id = l.owner_user_id
       LEFT JOIN subscriptions s ON s.library_id = l.id
+      LEFT JOIN LATERAL (
+        SELECT
+          (SELECT COUNT(*)::text FROM student_assignments sa WHERE sa.library_id = l.id AND sa.status = 'ACTIVE') AS active_students,
+          (SELECT COUNT(*)::text FROM user_library_roles ulr WHERE ulr.library_id = l.id AND ulr.role = 'LIBRARY_OWNER') AS admins,
+          (SELECT COUNT(*)::text FROM library_join_requests ljr WHERE ljr.library_id = l.id AND ljr.status = 'PENDING') AS pending_join_requests,
+          (SELECT COALESCE(SUM(amount), 0)::text FROM payments p WHERE p.library_id = l.id AND p.status IN ('DUE', 'PENDING')) AS unpaid_amount
+      ) stats ON TRUE
       ORDER BY l.created_at DESC
       `,
     );
 
     return result.rows;
+  }
+
+  async updateAdminLibrary(client: PoolClient, input: {
+    libraryId: string;
+    name: string;
+    city: string;
+    area?: string | null;
+    address: string;
+    status: "ACTIVE" | "SUSPENDED" | "INACTIVE";
+    ownerFullName: string;
+    ownerEmail?: string | null;
+    ownerPhone?: string | null;
+    ownerActive: boolean;
+  }) {
+    const libraryResult = await client.query<{
+      id: string;
+      owner_user_id: string;
+      name: string;
+      city: string;
+      area: string | null;
+      address: string;
+      status: string;
+    }>(
+      `
+      UPDATE libraries
+      SET
+        name = $2,
+        city = $3,
+        area = NULLIF($4, ''),
+        address = $5,
+        status = $6::library_status,
+        updated_at = NOW()
+      WHERE id = $1
+      RETURNING id::text, owner_user_id::text, name, city, area, address, status::text
+      `,
+      [input.libraryId, input.name, input.city, input.area ?? null, input.address, input.status],
+    );
+
+    const library = libraryResult.rows[0];
+    if (!library) return null;
+
+    await client.query(
+      `
+      UPDATE users
+      SET
+        full_name = $2,
+        email = NULLIF($3, ''),
+        phone = NULLIF($4, ''),
+        is_active = $5,
+        session_version = CASE WHEN is_active <> $5 THEN session_version + 1 ELSE session_version END,
+        updated_at = NOW()
+      WHERE id = $1
+      `,
+      [library.owner_user_id, input.ownerFullName, input.ownerEmail ?? null, input.ownerPhone ?? null, input.ownerActive],
+    );
+
+    return library;
   }
 
   async getAdminDashboard() {

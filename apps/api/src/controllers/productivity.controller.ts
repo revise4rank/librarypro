@@ -291,6 +291,63 @@ export async function listAdminSyllabusTemplatesController(req: Request, res: Re
   res.json({ success: true, data });
 }
 
+export async function downloadAdminSyllabusTemplateController(_req: Request, res: Response) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "BookLib";
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet("Syllabus Import");
+  sheet.columns = [
+    { header: "className", key: "className", width: 18 },
+    { header: "subjectTitle", key: "subjectTitle", width: 24 },
+    { header: "topicTitle", key: "topicTitle", width: 42 },
+    { header: "estimatedMinutes", key: "estimatedMinutes", width: 18 },
+    { header: "topicOrder", key: "topicOrder", width: 14 },
+    { header: "colorHex", key: "colorHex", width: 14 },
+  ];
+  sheet.getRow(1).font = { bold: true };
+  sheet.addRows([
+    {
+      className: "Class 12",
+      subjectTitle: "Physics",
+      topicTitle: "Current Electricity",
+      estimatedMinutes: 90,
+      topicOrder: 1,
+      colorHex: "#2563eb",
+    },
+    {
+      className: "Class 12",
+      subjectTitle: "Physics",
+      topicTitle: "Ray Optics",
+      estimatedMinutes: 90,
+      topicOrder: 2,
+      colorHex: "#2563eb",
+    },
+    {
+      className: "Class 12",
+      subjectTitle: "Chemistry",
+      topicTitle: "Solid State",
+      estimatedMinutes: 75,
+      topicOrder: 1,
+      colorHex: "#16a34a",
+    },
+  ]);
+
+  const notes = workbook.addWorksheet("Instructions");
+  notes.addRows([
+    ["Fill rows in 'Syllabus Import' only."],
+    ["Required columns", "className, subjectTitle, topicTitle"],
+    ["Optional columns", "estimatedMinutes, topicOrder, colorHex"],
+    ["Upload format", "Save as .xlsx and upload from Superadmin > Syllabus."],
+  ]);
+  notes.columns = [{ width: 24 }, { width: 72 }];
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", 'attachment; filename="booklib-syllabus-import-template.xlsx"');
+  res.send(Buffer.from(buffer));
+}
+
 export async function importAdminSyllabusTemplatesController(req: Request, res: Response) {
   if (!req.auth) {
     throw new AppError(401, "Super admin authentication required", "SUPER_ADMIN_AUTH_REQUIRED");

@@ -104,6 +104,24 @@ export function SuperadminSyllabusManager() {
     }
   }
 
+  function downloadCsvTemplate() {
+    const csv = [
+      "className,subjectTitle,topicTitle,estimatedMinutes,topicOrder,colorHex",
+      "Class 12,Physics,Current Electricity,90,1,#2563eb",
+      "Class 12,Physics,Ray Optics,90,2,#2563eb",
+      "Class 12,Chemistry,Solid State,75,1,#16a34a",
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "booklib-syllabus-import-template.csv";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="grid gap-4">
       {error ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">{error}</p> : null}
@@ -118,6 +136,21 @@ export function SuperadminSyllabusManager() {
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Upload syllabus" subtitle="Import CSV or XLSX files with class, subject, and topic rows.">
           <div className="grid gap-4">
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="/api-proxy/v1/admin/syllabus/template.xlsx"
+                className="rounded-full border border-[var(--lp-primary)] bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
+              >
+                Download Excel template
+              </a>
+              <button
+                type="button"
+                onClick={downloadCsvTemplate}
+                className="rounded-full border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-[var(--lp-text)]"
+              >
+                Download CSV template
+              </button>
+            </div>
             <input
               type="file"
               accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

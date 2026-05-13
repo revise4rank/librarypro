@@ -113,6 +113,18 @@ export const updatePlatformPlanBodySchema = z.object({
   sortOrder: z.coerce.number().int().min(0).max(9999),
 });
 
+export const updateAdminLibraryBodySchema = z.object({
+  name: z.string().trim().min(2).max(180),
+  city: z.string().trim().min(2).max(120),
+  area: z.string().trim().max(120).optional().or(z.literal("")),
+  address: z.string().trim().min(5).max(500),
+  status: z.enum(["ACTIVE", "SUSPENDED", "INACTIVE"]),
+  ownerFullName: z.string().trim().min(2).max(150),
+  ownerEmail: z.string().trim().email().optional().or(z.literal("")),
+  ownerPhone: z.string().trim().max(20).optional().or(z.literal("")),
+  ownerActive: z.boolean(),
+});
+
 export const createOwnerPaymentBodySchema = z.object({
   assignmentId: z.string().uuid(),
   amount: z.coerce.number().positive(),

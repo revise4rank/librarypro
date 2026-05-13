@@ -77,6 +77,7 @@ import {
   unassignSeatFromStudent,
   getPlatformMarketplaceSettings,
   updatePlatformPlanConfig,
+  updateAdminLibrary,
   updatePlatformMarketplaceSettings,
 } from "../services/owner-operations.service";
 import {
@@ -119,6 +120,7 @@ import {
   updateOwnerSeatBodySchema,
   updateOwnerPaymentBodySchema,
   updateOwnerStudentBodySchema,
+  updateAdminLibraryBodySchema,
   updatePlatformPlanBodySchema,
   updatePlatformMarketplaceSettingsBodySchema,
   updatePlatformIntegrationSettingsBodySchema,
@@ -1368,6 +1370,38 @@ export async function getPublicMarketplaceSettingsController(_req: Request, res:
 
 export async function listAdminLibrariesController(_req: Request, res: Response) {
   const data = await listAdminLibraries();
+  res.json({ success: true, data });
+}
+
+export async function updateAdminLibraryController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
+  }
+
+  const libraryId = paramValue(req.params.libraryId);
+  const parsed = updateAdminLibraryBodySchema.parse(req.body);
+  const data = await updateAdminLibrary({
+    libraryId,
+    ...parsed,
+    area: parsed.area || null,
+    ownerEmail: parsed.ownerEmail || null,
+    ownerPhone: parsed.ownerPhone || null,
+  });
+  await createAuditLog({
+    actorUserId: req.auth.userId,
+    libraryId,
+    action: "admin.library.update",
+    entityType: "library",
+    entityId: libraryId,
+    metadata: {
+      status: parsed.status,
+      ownerActive: parsed.ownerActive,
+      name: parsed.name,
+      city: parsed.city,
+    },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
   res.json({ success: true, data });
 }
 

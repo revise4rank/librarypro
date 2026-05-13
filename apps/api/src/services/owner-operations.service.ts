@@ -1462,6 +1462,37 @@ export async function listAdminLibraries() {
   return repository().listAdminLibraries();
 }
 
+export async function updateAdminLibrary(input: {
+  libraryId: string;
+  name: string;
+  city: string;
+  area?: string | null;
+  address: string;
+  status: "ACTIVE" | "SUSPENDED" | "INACTIVE";
+  ownerFullName: string;
+  ownerEmail?: string | null;
+  ownerPhone?: string | null;
+  ownerActive: boolean;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const updated = await repo.updateAdminLibrary(client, input);
+    if (!updated) {
+      throw new AppError(404, "Library not found", "LIBRARY_NOT_FOUND");
+    }
+    await client.query("COMMIT");
+    return updated;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function listAdminPlanSummaries() {
   return repository().listAdminPlanSummaries();
 }
