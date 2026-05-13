@@ -15,7 +15,6 @@ const ALLOWED_DOCUMENT_MIME_TYPES = new Set([
 const ALLOWED_SYLLABUS_MIME_TYPES = new Set([
   "text/csv",
   "application/csv",
-  "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
 
@@ -55,8 +54,8 @@ export const syllabusTemplateUpload = multer({
   fileFilter: (_req, file, callback) => {
     const fileName = file.originalname.toLowerCase();
     const mimeType = file.mimetype.toLowerCase();
-    if (!ALLOWED_SYLLABUS_MIME_TYPES.has(mimeType) && !fileName.endsWith(".csv") && !fileName.endsWith(".xlsx") && !fileName.endsWith(".xls")) {
-      return callback(new AppError(400, "Only CSV and Excel files are allowed.", "INVALID_UPLOAD_TYPE"));
+    if (!ALLOWED_SYLLABUS_MIME_TYPES.has(mimeType) && !fileName.endsWith(".csv") && !fileName.endsWith(".xlsx")) {
+      return callback(new AppError(400, "Only CSV and XLSX files are allowed.", "INVALID_UPLOAD_TYPE"));
     }
 
     return callback(null, true);

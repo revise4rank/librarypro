@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { AppError } from "../lib/errors";
 import {
   createOwnerStudentInterventionNote,
@@ -120,15 +120,27 @@ function rowsFromCsv(buffer: Buffer) {
   });
 }
 
-function rowsFromSpreadsheet(buffer: Buffer) {
-  const workbook = XLSX.read(buffer, { type: "buffer" });
-  const firstSheetName = workbook.SheetNames[0];
-  if (!firstSheetName) return [];
-  const worksheet = workbook.Sheets[firstSheetName];
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
-    defval: "",
-    raw: false,
+async function rowsFromSpreadsheet(buffer: Buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) return [];
+  const headers: string[] = [];
+  worksheet.getRow(1).eachCell((cell, colNumber) => {
+    headers[colNumber - 1] = normalizeHeader(cell.value);
   });
+
+  const rows: Record<string, unknown>[] = [];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const current: Record<string, unknown> = {};
+    headers.forEach((header, index) => {
+      if (!header) return;
+      current[header] = row.getCell(index + 1).text;
+    });
+    rows.push(current);
+  });
+
   return rows
     .filter((row) => Object.values(row).some((value) => String(value ?? "").trim()))
     .map((row, index) => ({
@@ -307,9 +319,12 @@ export async function uploadAdminSyllabusTemplatesController(req: Request, res: 
   }
 
   const fileName = req.file.originalname.toLowerCase();
+  if (fileName.endsWith(".xls")) {
+    throw new AppError(400, "Legacy .xls files are not supported for secure import. Upload CSV or XLSX instead.", "UNSUPPORTED_LEGACY_XLS");
+  }
   const rawRows = fileName.endsWith(".csv") || req.file.mimetype.toLowerCase().includes("csv")
     ? rowsFromCsv(req.file.buffer)
-    : rowsFromSpreadsheet(req.file.buffer);
+    : await rowsFromSpreadsheet(req.file.buffer);
 
   const parsed = adminSyllabusImportBodySchema.parse({ rows: rawRows });
   const data = await importGlobalSyllabusRows({

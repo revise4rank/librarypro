@@ -116,11 +116,11 @@ export function SuperadminSyllabusManager() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardCard title="Upload syllabus" subtitle="Import CSV, XLS, or XLSX files with class, subject, and topic rows.">
+        <DashboardCard title="Upload syllabus" subtitle="Import CSV or XLSX files with class, subject, and topic rows.">
           <div className="grid gap-4">
             <input
               type="file"
-              accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (!file) return;

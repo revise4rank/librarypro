@@ -14,9 +14,9 @@
     "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@opentelemetry/auto-instrumentations-node": "^0.73.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.215.0",
-    "@opentelemetry/sdk-node": "^0.215.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.76.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
+    "@opentelemetry/sdk-node": "^0.218.0",
     "@sentry/node": "^10.47.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "@supabase/supabase-js": "^2.101.0",
@@ -35,7 +35,6 @@
     "rate-limit-redis": "^4.3.1",
     "redis": "^5.11.0",
     "socket.io": "^4.8.3",
-    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
