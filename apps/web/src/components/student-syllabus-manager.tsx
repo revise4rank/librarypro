@@ -35,6 +35,24 @@ type SyllabusResponse = {
       totalTopics: number;
       completedTopics: number;
       dailyCompletedTopics: number;
+      completionPercent: number;
+      completionStreakDays: number;
+      longestCompletionStreak: number;
+      remainingTopics: number;
+      remainingMinutes: number;
+      inProgressTopics: number;
+      weeklyCompletions: Array<{
+        date: string;
+        completedTopics: number;
+      }>;
+      nextTopics: Array<{
+        id: string;
+        title: string;
+        subjectTitle: string;
+        className: string | null;
+        estimatedMinutes: number;
+        progressPercent: number;
+      }>;
     };
   };
 };
@@ -67,6 +85,13 @@ function uniqueSorted(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.map((value) => value?.trim()).filter(Boolean) as string[])).sort((a, b) =>
     a.localeCompare(b),
   );
+}
+
+function formatMinutes(minutes: number) {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
 }
 
 export function StudentSyllabusManager() {
@@ -126,6 +151,37 @@ export function StudentSyllabusManager() {
     () => templates.filter((template) => !templateForm.className || template.class_name === templateForm.className),
     [templates, templateForm.className],
   );
+
+  const subjects = data?.subjects ?? [];
+  const analytics = data?.analytics ?? {
+    totalSubjects: 0,
+    totalTopics: 0,
+    completedTopics: 0,
+    dailyCompletedTopics: 0,
+    completionPercent: 0,
+    completionStreakDays: 0,
+    longestCompletionStreak: 0,
+    remainingTopics: 0,
+    remainingMinutes: 0,
+    inProgressTopics: 0,
+    weeklyCompletions: [],
+    nextTopics: [],
+  };
+
+  const weakSubjects = useMemo(() => {
+    return [...subjects]
+      .filter((subject) => subject.total_topics > 0 && subject.completion_percent < 100)
+      .sort((a, b) => a.completion_percent - b.completion_percent)
+      .slice(0, 3);
+  }, [subjects]);
+
+  const weeklyMax = Math.max(...analytics.weeklyCompletions.map((item) => item.completedTopics), 1);
+  const todayTargetDone = analytics.dailyCompletedTopics > 0;
+  const motivationLine = todayTargetDone
+    ? `Aaj ${analytics.dailyCompletedTopics} topic complete hua. Streak ko kal bhi continue karna.`
+    : analytics.remainingTopics > 0
+      ? "Aaj ek chhota topic complete kar de, streak active ho jayegi."
+      : "Syllabus clear hai. Revision queue maintain kar.";
 
   async function createSubject() {
     try {
@@ -230,6 +286,89 @@ export function StudentSyllabusManager() {
           <p className="mt-3 text-2xl font-bold text-slate-950">{data.analytics.dailyCompletedTopics}</p>
         </div>
       </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <DashboardCard title="Syllabus momentum" subtitle={motivationLine}>
+          <div className="grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Current streak</p>
+                <p className="mt-2 text-2xl font-black text-emerald-950">{data.analytics.completionStreakDays} days</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Best streak</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{data.analytics.longestCompletionStreak} days</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Remaining</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{formatMinutes(data.analytics.remainingMinutes)}</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-black text-slate-950">Overall completion</p>
+                <span className="text-sm font-black text-slate-600">{data.analytics.completionPercent}%</span>
+              </div>
+              <div className="mt-3 rounded-full bg-slate-100 p-2">
+                <div className="h-3 rounded-full bg-[var(--lp-primary)]" style={{ width: `${Math.max(data.analytics.completionPercent, 4)}%` }} />
+              </div>
+              <p className="mt-3 text-sm font-semibold text-slate-500">
+                {data.analytics.remainingTopics} topics pending, {data.analytics.inProgressTopics} currently in progress.
+              </p>
+            </div>
+            <div className="grid grid-cols-7 items-end gap-2 rounded-xl border border-slate-200 bg-white p-4">
+              {data.analytics.weeklyCompletions.map((day) => (
+                <div key={day.date} className="grid gap-2 text-center">
+                  <div className="flex h-24 items-end rounded-lg bg-slate-50 px-2">
+                    <div
+                      className="w-full rounded-t-md bg-[var(--lp-accent-soft)]"
+                      style={{ height: `${Math.max(8, (day.completedTopics / weeklyMax) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-500">{day.date.slice(5)}</p>
+                  <p className="text-xs font-black text-slate-800">{day.completedTopics}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DashboardCard>
+
+        <DashboardCard title="Today focus queue" subtitle="Pick one small block instead of scrolling the whole syllabus.">
+          <div className="grid gap-3">
+            {data.analytics.nextTopics.map((topic) => (
+              <article key={topic.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-black text-slate-950">{topic.title}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {topic.className ? `${topic.className} | ` : ""}{topic.subjectTitle} | {topic.estimatedMinutes} min
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{topic.progressPercent}%</span>
+                </div>
+              </article>
+            ))}
+            {data.analytics.nextTopics.length === 0 ? <p className="text-sm text-slate-500">No pending topics. Move to revision.</p> : null}
+          </div>
+        </DashboardCard>
+      </section>
+
+      {weakSubjects.length > 0 ? (
+        <DashboardCard title="Weak subject watch" subtitle="Lowest completion subjects stay visible until they improve.">
+          <div className="grid gap-3 md:grid-cols-3">
+            {weakSubjects.map((subject) => (
+              <div key={subject.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-sm font-black text-slate-950">{subject.title}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{subject.class_name ?? "General"}</p>
+                <div className="mt-3 rounded-full bg-slate-100 p-1.5">
+                  <div className="h-2 rounded-full" style={{ width: `${Math.max(subject.completion_percent, 5)}%`, background: subject.color_hex ?? "var(--lp-primary)" }} />
+                </div>
+                <p className="mt-2 text-sm font-bold text-slate-600">{subject.completion_percent}% complete</p>
+              </div>
+            ))}
+          </div>
+        </DashboardCard>
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <DashboardCard title="Import syllabus" subtitle="Pick a class template uploaded by super admin.">

@@ -334,10 +334,42 @@ export async function updateSyllabusTopicProgress(input: {
 }
 
 export async function getStudentSyllabus(studentUserId: string) {
-  const [subjects, analytics] = await Promise.all([
+  const [subjects, analytics, habit] = await Promise.all([
     repository().listSyllabus(studentUserId),
     repository().getSyllabusAnalytics(studentUserId),
+    repository().getSyllabusHabitAnalytics(studentUserId),
   ]);
+  const completedDays = new Set(habit.completionDays.map((row) => row.day_value));
+  const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+  const yesterdayKey = yesterday.toISOString().slice(0, 10);
+  const streakAnchor = completedDays.has(todayKey) ? today : completedDays.has(yesterdayKey) ? yesterday : null;
+  let completionStreakDays = 0;
+  if (streakAnchor) {
+    for (let offset = 0; offset < 365; offset += 1) {
+      const day = new Date(streakAnchor.getTime() - offset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      if (!completedDays.has(day)) break;
+      completionStreakDays += 1;
+    }
+  }
+  const longestCompletionStreak = habit.completionDays
+    .map((row) => row.day_value)
+    .sort()
+    .reduce(
+      (state, dayValue) => {
+        const previous = state.previous ? new Date(`${state.previous}T00:00:00.000Z`) : null;
+        const current = new Date(`${dayValue}T00:00:00.000Z`);
+        const consecutive = previous && current.getTime() - previous.getTime() === 24 * 60 * 60 * 1000;
+        const currentCount = consecutive ? state.current + 1 : 1;
+        return {
+          previous: dayValue,
+          current: currentCount,
+          best: Math.max(state.best, currentCount),
+        };
+      },
+      { previous: "", current: 0, best: 0 },
+    ).best;
   return {
     subjects,
     analytics: {
@@ -345,6 +377,27 @@ export async function getStudentSyllabus(studentUserId: string) {
       totalTopics: Number(analytics.total_topics),
       completedTopics: Number(analytics.completed_topics),
       dailyCompletedTopics: Number(analytics.daily_completed_topics),
+      completionPercent:
+        Number(analytics.total_topics) > 0
+          ? Math.round((Number(analytics.completed_topics) / Number(analytics.total_topics)) * 100)
+          : 0,
+      completionStreakDays,
+      longestCompletionStreak,
+      remainingTopics: Number(habit.remaining?.remaining_topics ?? 0),
+      remainingMinutes: Number(habit.remaining?.remaining_minutes ?? 0),
+      inProgressTopics: Number(habit.remaining?.in_progress_topics ?? 0),
+      weeklyCompletions: habit.weekly.map((row) => ({
+        date: row.day_value,
+        completedTopics: Number(row.completed_topics),
+      })),
+      nextTopics: habit.nextTopics.map((topic) => ({
+        id: topic.id,
+        title: topic.title,
+        subjectTitle: topic.subject_title,
+        className: topic.class_name,
+        estimatedMinutes: Number(topic.estimated_minutes),
+        progressPercent: Number(topic.progress_percent),
+      })),
     },
   };
 }

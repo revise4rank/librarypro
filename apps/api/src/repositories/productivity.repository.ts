@@ -508,6 +508,99 @@ export class ProductivityRepository {
     return result.rows[0];
   }
 
+  async getSyllabusHabitAnalytics(studentUserId: string) {
+    const weeklyResult = await this.pool.query<{
+      day_value: string;
+      completed_topics: string;
+    }>(
+      `
+      WITH days AS (
+        SELECT generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, INTERVAL '1 day')::date AS day_value
+      )
+      SELECT
+        days.day_value::text,
+        COUNT(sp.topic_id)::text AS completed_topics
+      FROM days
+      LEFT JOIN student_progress sp
+        ON sp.completed_at::date = days.day_value
+       AND sp.student_user_id = $1
+       AND sp.status = 'COMPLETED'
+      GROUP BY days.day_value
+      ORDER BY days.day_value ASC
+      `,
+      [studentUserId],
+    );
+
+    const completionDaysResult = await this.pool.query<{ day_value: string }>(
+      `
+      SELECT DISTINCT completed_at::date::text AS day_value
+      FROM student_progress
+      WHERE student_user_id = $1
+        AND status = 'COMPLETED'
+        AND completed_at IS NOT NULL
+        AND completed_at >= CURRENT_DATE - INTERVAL '365 days'
+      ORDER BY day_value DESC
+      `,
+      [studentUserId],
+    );
+
+    const pendingResult = await this.pool.query<{
+      id: string;
+      title: string;
+      subject_title: string;
+      class_name: string | null;
+      estimated_minutes: number;
+      progress_percent: number;
+    }>(
+      `
+      SELECT
+        t.id::text,
+        t.title,
+        s.title AS subject_title,
+        s.class_name,
+        t.estimated_minutes,
+        COALESCE(sp.progress_percent, 0) AS progress_percent
+      FROM topics t
+      INNER JOIN subjects s ON s.id = t.subject_id
+      LEFT JOIN student_progress sp
+        ON sp.topic_id = t.id
+       AND sp.student_user_id = t.student_user_id
+      WHERE t.student_user_id = $1
+        AND COALESCE(sp.status, 'NOT_STARTED') <> 'COMPLETED'
+      ORDER BY COALESCE(sp.progress_percent, 0) DESC, s.created_at DESC, t.topic_order ASC, t.created_at ASC
+      LIMIT 6
+      `,
+      [studentUserId],
+    );
+
+    const remainingResult = await this.pool.query<{
+      remaining_topics: string;
+      remaining_minutes: string;
+      in_progress_topics: string;
+    }>(
+      `
+      SELECT
+        COUNT(t.id)::text AS remaining_topics,
+        COALESCE(SUM(t.estimated_minutes), 0)::text AS remaining_minutes,
+        COUNT(t.id) FILTER (WHERE COALESCE(sp.status, 'NOT_STARTED') = 'IN_PROGRESS')::text AS in_progress_topics
+      FROM topics t
+      LEFT JOIN student_progress sp
+        ON sp.topic_id = t.id
+       AND sp.student_user_id = t.student_user_id
+      WHERE t.student_user_id = $1
+        AND COALESCE(sp.status, 'NOT_STARTED') <> 'COMPLETED'
+      `,
+      [studentUserId],
+    );
+
+    return {
+      weekly: weeklyResult.rows,
+      completionDays: completionDaysResult.rows,
+      nextTopics: pendingResult.rows,
+      remaining: remainingResult.rows[0],
+    };
+  }
+
   async getStudentAnalytics(studentUserId: string, libraryId?: string | null) {
     const result = await this.pool.query<{
       total_focus_minutes: string;
