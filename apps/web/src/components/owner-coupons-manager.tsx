@@ -115,24 +115,53 @@ export function OwnerCouponsManager() {
     setFormOpen(true);
   }
 
+  const activeCoupons = coupons.filter((coupon) => coupon.is_active);
+  const totalRedemptions = coupons.reduce((sum, coupon) => sum + Number(coupon.used_count || 0), 0);
+  const limitedCoupons = coupons.filter((coupon) => coupon.usage_limit).length;
+  const expiringSoon = coupons.filter((coupon) => {
+    if (!coupon.valid_until) return false;
+    const daysLeft = Math.ceil((new Date(coupon.valid_until).getTime() - Date.now()) / 86400000);
+    return daysLeft >= 0 && daysLeft <= 7;
+  }).length;
+
   return (
     <div className="grid gap-4">
       {error ? isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
       {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
 
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardCard title="Create coupon" subtitle="Admission coupons stay separate from owner plans and marketing offers.">
-          <button
-            type="button"
-            onClick={() => {
-              setEditingCouponId(null);
-              setCouponForm(emptyCouponForm);
-              setFormOpen(true);
-            }}
-            className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent)]"
-          >
-            Create admission coupon
-          </button>
+        <DashboardCard title="Coupon performance desk" subtitle="Admission coupons stay separate from public marketing offers.">
+          <div className="grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Active coupons</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{activeCoupons.length}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Redeemed</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{totalRedemptions}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Limited</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{limitedCoupons}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Expiring soon</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{expiringSoon}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingCouponId(null);
+                setCouponForm(emptyCouponForm);
+                setFormOpen(true);
+              }}
+              className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent)]"
+            >
+              Create admission coupon
+            </button>
+          </div>
         </DashboardCard>
 
         <FormDrawer

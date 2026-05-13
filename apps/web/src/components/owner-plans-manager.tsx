@@ -70,6 +70,13 @@ export function OwnerPlansManager() {
     () => computePreviewAmount(planForm.baseAmount, planForm.defaultDiscountType, planForm.defaultDiscountValue),
     [planForm.baseAmount, planForm.defaultDiscountType, planForm.defaultDiscountValue],
   );
+  const activePlans = plans.filter((plan) => plan.is_active);
+  const inactivePlans = plans.length - activePlans.length;
+  const lowestPlanAmount = plans.reduce((min, plan) => {
+    const amount = Number(plan.base_amount || "0");
+    return min === 0 ? amount : Math.min(min, amount);
+  }, 0);
+  const longestDuration = plans.reduce((max, plan) => Math.max(max, Number(plan.duration_months || 0)), 0);
 
   async function savePlan(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -122,18 +129,38 @@ export function OwnerPlansManager() {
       {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
 
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardCard title="Create student plan" subtitle="Reusable admission pricing, duration, and default discount setup.">
-          <button
-            type="button"
-            onClick={() => {
-              setEditingPlanId(null);
-              setPlanForm(emptyPlanForm);
-              setFormOpen(true);
-            }}
-            className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent)]"
-          >
-            Create student admission plan
-          </button>
+        <DashboardCard title="Plan performance desk" subtitle="Reusable admission pricing, duration, and discount setup.">
+          <div className="grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Active</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{activePlans.length}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Inactive</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{inactivePlans}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Lowest fee</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">Rs. {lowestPlanAmount.toLocaleString("en-IN")}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Longest</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{longestDuration} mo</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingPlanId(null);
+                setPlanForm(emptyPlanForm);
+                setFormOpen(true);
+              }}
+              className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent)]"
+            >
+              Create student admission plan
+            </button>
+          </div>
         </DashboardCard>
 
         <FormDrawer

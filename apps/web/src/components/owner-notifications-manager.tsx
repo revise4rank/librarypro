@@ -195,6 +195,12 @@ export function OwnerNotificationsManager() {
     }
   }
 
+  const typeCounts = rows.reduce<Record<string, number>>((counts, row) => {
+    counts[row.type] = (counts[row.type] ?? 0) + 1;
+    return counts;
+  }, {});
+  const latestBroadcast = rows[0] ?? null;
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
       {toast ? (
@@ -202,13 +208,26 @@ export function OwnerNotificationsManager() {
           {toast}
         </div>
       ) : null}
-      <DashboardCard title="Broadcast studio">
-        <div className="grid gap-3">
+      <DashboardCard title="Broadcast studio" subtitle="Quick send plus recent audience health.">
+        <div className="grid gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
               {isOffline ? "Offline" : "Online"}
             </span>
             <span className="text-xs font-semibold text-slate-400">Socket {liveStatus} | Queue {queuedNotifications}</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+            {["GENERAL", "PAYMENT_REMINDER", "EXPIRY_ALERT"].map((type) => (
+              <div key={type} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">{type.replace("_", " ")}</p>
+                <p className="mt-2 text-xl font-black text-slate-950">{typeCounts[type] ?? 0}</p>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Latest</p>
+            <p className="mt-1 text-sm font-black text-slate-950">{latestBroadcast?.title ?? "No broadcasts yet"}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-slate-500">{latestBroadcast?.message ?? "Send notices, dues, and expiry alerts from one drawer."}</p>
           </div>
           <button
             type="button"

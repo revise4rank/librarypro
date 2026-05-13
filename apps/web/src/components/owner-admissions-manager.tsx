@@ -208,6 +208,16 @@ export function OwnerAdmissionsManager() {
   const selectedPlan = plans.find((plan) => plan.id === form.studentPlanId);
   const selectedCoupon = coupons.find((coupon) => coupon.code === form.couponCode.trim().toUpperCase()) ?? undefined;
   const previewAmount = useMemo(() => computePreviewAmount(selectedPlan, selectedCoupon, form.planAmountOverride), [selectedPlan, selectedCoupon, form.planAmountOverride]);
+  const pendingRequestsCount = requests.length;
+  const planStartingAmount = plans.reduce((min, plan) => {
+    const amount = Number(plan.base_amount || "0");
+    return min === 0 ? amount : Math.min(min, amount);
+  }, 0);
+  const expiringCouponsCount = coupons.filter((coupon) => {
+    if (!coupon.valid_until) return false;
+    const daysLeft = Math.ceil((new Date(coupon.valid_until).getTime() - Date.now()) / 86400000);
+    return daysLeft >= 0 && daysLeft <= 7;
+  }).length;
 
   useEffect(() => {
     if (!selectedRequest || mode !== "requests") return;
@@ -377,8 +387,32 @@ export function OwnerAdmissionsManager() {
         </div>
       </DashboardCard>
 
-      <DashboardCard title="Admission form launcher" subtitle="Forms open from the left so the admission desk stays readable on mobile and desktop.">
-        <div className="grid gap-3">
+      <DashboardCard title="Admission desk snapshot" subtitle="Useful setup and request status before opening any form.">
+        <div className="grid gap-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Pending joins</p>
+              <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{pendingRequestsCount}</p>
+            </div>
+            <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Active plans</p>
+              <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{plans.length}</p>
+            </div>
+            <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Entry fee from</p>
+              <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">Rs. {planStartingAmount.toLocaleString("en-IN")}</p>
+            </div>
+            <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-text-soft)]">Coupons expiring</p>
+              <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{expiringCouponsCount}</p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4">
+            <p className="text-sm font-black text-[var(--lp-text)]">{selectedRequest ? selectedRequest.student_name : "No request selected"}</p>
+            <p className="mt-1 text-sm text-[var(--lp-text-soft)]">
+              {selectedRequest ? selectedRequest.student_email ?? selectedRequest.student_phone ?? "Student details pending" : "Select a pending request to approve it into roster."}
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => {

@@ -264,6 +264,17 @@ export function OwnerPaymentsManager() {
   );
   const selectedPayment = rows.find((row) => row.id === selectedPaymentId) ?? null;
   const selectedStudent = students.find((student) => student.assignment_id === form.assignmentId) ?? null;
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayPaidTotal = rows.reduce((sum, row) => {
+    if (row.status === "PAID" && (row.paid_at ?? row.created_at).slice(0, 10) === todayKey) {
+      return sum + Number(row.amount || "0");
+    }
+    return sum;
+  }, 0);
+  const dueStudents = students
+    .filter((student) => student.payment_status !== "PAID" || Number(student.due_amount || "0") > 0)
+    .slice(0, 4);
+  const recentRows = rows.slice(0, 4);
 
   function applyStudentSelection(assignmentId: string) {
     const student = students.find((row) => row.assignment_id === assignmentId) ?? null;
@@ -437,11 +448,33 @@ export function OwnerPaymentsManager() {
           </div>
         </form>
           </FormDrawer>
-          {!composerOpen ? (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
-              The entry form is hidden. Open it only for a new collection or payment edit.
+          <div className="grid gap-3 rounded-xl border border-slate-200 bg-white px-4 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-950">Today collection</p>
+                <p className="mt-1 text-2xl font-black text-emerald-700">Rs. {todayPaidTotal.toLocaleString("en-IN")}</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{recentRows.length} recent entries</span>
             </div>
-          ) : null}
+            <div className="grid gap-2">
+              {dueStudents.map((student) => (
+                <button
+                  key={student.assignment_id}
+                  type="button"
+                  onClick={() => {
+                    applyStudentSelection(student.assignment_id);
+                    setEditingId(null);
+                    setComposerOpen(true);
+                  }}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm"
+                >
+                  <span className="min-w-0 truncate font-bold text-slate-950">{student.student_name}</span>
+                  <span className="shrink-0 font-black text-amber-700">Rs. {Number(student.due_amount || "0").toLocaleString("en-IN")}</span>
+                </button>
+              ))}
+              {dueStudents.length === 0 ? <p className="text-sm text-slate-500">No due students in the current roster.</p> : null}
+            </div>
+          </div>
         </div>
       </DashboardCard>
 

@@ -153,6 +153,10 @@ export function OwnerExpensesManager() {
     }
   }
 
+  const latestExpense = data?.rows[0] ?? null;
+  const expenseCount = data?.rows.length ?? 0;
+  const profitTone = (data?.summary.monthlyProfit ?? 0) >= 0 ? "text-emerald-700" : "text-rose-700";
+
   return (
     <div className="grid gap-6">
       <div className={`rounded-xl px-4 py-4 text-sm font-semibold ${isOffline ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
@@ -176,14 +180,33 @@ export function OwnerExpensesManager() {
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <Surface title="Add expense" subtitle="Track staff, rent, electricity, internet, and other library costs">
-          <button
-            type="button"
-            onClick={() => setFormOpen(true)}
-            className="rounded-2xl bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white"
-          >
-            Add expense entry
-          </button>
+        <Surface title="Expense control desk" subtitle="Track staff, rent, electricity, internet, and other library costs">
+          <div className="grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Entries</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{expenseCount}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Profit</p>
+                <p className={`mt-2 text-2xl font-black ${profitTone}`}>Rs. {data ? data.summary.monthlyProfit.toLocaleString() : 0}</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Latest expense</p>
+              <p className="mt-2 text-base font-black text-slate-950">{latestExpense?.title ?? "No expense added"}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {latestExpense ? `${latestExpense.category} | Rs. ${Number(latestExpense.amount).toLocaleString()}` : "Add the first cost entry for this month."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormOpen(true)}
+              className="rounded-2xl bg-[var(--lp-primary)] px-5 py-4 text-sm font-bold text-white"
+            >
+              Add expense entry
+            </button>
+          </div>
         </Surface>
 
         <FormDrawer
