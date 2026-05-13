@@ -41,6 +41,7 @@ export const adminNav = [
   { href: "/superadmin/libraries", label: "Libraries", shortLabel: "LIB" },
   { href: "/superadmin/marketplace", label: "Marketplace", shortLabel: "MKT" },
   { href: "/superadmin/data", label: "Data", shortLabel: "DAT" },
+  { href: "/superadmin/syllabus", label: "Syllabus", shortLabel: "SYL" },
   { href: "/superadmin/reviews", label: "Reviews", shortLabel: "REV" },
   { href: "/superadmin/offers", label: "Offers", shortLabel: "OFF" },
   { href: "/superadmin/plans", label: "Plans", shortLabel: "PLN" },
