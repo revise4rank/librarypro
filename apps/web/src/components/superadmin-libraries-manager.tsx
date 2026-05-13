@@ -108,6 +108,8 @@ export function SuperadminLibrariesManager() {
   const blockedCount = rows.filter((row) => row.status !== "ACTIVE" || !row.owner_active).length;
   const studentsCount = rows.reduce((sum, row) => sum + Number(row.active_students || 0), 0);
   const unpaidTotal = rows.reduce((sum, row) => sum + Number(row.unpaid_amount || 0), 0);
+  const pendingJoinTotal = rows.reduce((sum, row) => sum + Number(row.pending_join_requests || 0), 0);
+  const selectedSeatUsage = selected ? Math.max(0, Number(selected.total_seats || 0) - Number(selected.available_seats || 0)) : 0;
 
   function selectLibrary(library: LibraryRow) {
     setSelectedId(library.id);
@@ -151,6 +153,20 @@ export function SuperadminLibrariesManager() {
       <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <DashboardCard title="Tenant control center" subtitle="Select any library to edit, suspend, unblock, or inspect.">
           <div className="grid gap-3">
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3">
+              <div>
+                <p className="lp-stat-label">Filtered</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{filteredRows.length}</p>
+              </div>
+              <div>
+                <p className="lp-stat-label">Pending joins</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{pendingJoinTotal}</p>
+              </div>
+              <div>
+                <p className="lp-stat-label">Blocked risk</p>
+                <p className="mt-1 text-lg font-black text-rose-700">{blockedCount}</p>
+              </div>
+            </div>
             <div className="grid gap-2 sm:grid-cols-[1fr_150px]">
               <input
                 value={search}
@@ -184,6 +200,9 @@ export function SuperadminLibrariesManager() {
                     <div className="min-w-0">
                       <p className="truncate text-base font-black text-slate-950">{library.name}</p>
                       <p className="mt-1 truncate text-sm text-slate-500">{[library.city, library.owner_name].filter(Boolean).join(" | ")}</p>
+                      <p className="mt-2 text-xs font-semibold text-slate-400">
+                        {library.active_students} students | Rs. {Number(library.unpaid_amount || 0).toFixed(0)} dues
+                      </p>
                     </div>
                     <span className={`rounded-full px-3 py-1 text-xs font-black ${statusTone(library.status)}`}>{library.status}</span>
                   </div>
@@ -194,9 +213,19 @@ export function SuperadminLibrariesManager() {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Super admin powers" subtitle="Block access, edit owner details, and inspect operational data.">
+        <DashboardCard title={selected ? selected.name : "Super admin powers"} subtitle="Block access, edit owner details, and inspect operational data.">
           {selected && form ? (
             <div className="grid gap-4">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-xl font-black text-slate-950">{selected.name}</p>
+                    <p className="mt-1 text-sm text-slate-500">{selected.city}{selected.area ? ` | ${selected.area}` : ""} | {selected.slug}</p>
+                    <p className="mt-1 text-sm text-slate-500">{selected.owner_name} | {selected.owner_email ?? selected.owner_phone ?? "No owner contact"}</p>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-black ${statusTone(selected.status)}`}>{selected.status}</span>
+                </div>
+              </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 <button type="button" onClick={() => setFormOpen(true)} className="rounded-xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-black text-white">
                   Edit tenant details
@@ -216,9 +245,9 @@ export function SuperadminLibrariesManager() {
                 <div className="rounded-lg bg-slate-50 p-3"><p className="lp-stat-label">Students</p><p className="mt-1 font-black">{selected.active_students}</p></div>
                 <div className="rounded-lg bg-slate-50 p-3"><p className="lp-stat-label">Admins</p><p className="mt-1 font-black">{selected.admins}</p></div>
                 <div className="rounded-lg bg-slate-50 p-3"><p className="lp-stat-label">Pending joins</p><p className="mt-1 font-black">{selected.pending_join_requests}</p></div>
-                <div className="rounded-lg bg-slate-50 p-3"><p className="lp-stat-label">Seats</p><p className="mt-1 font-black">{selected.available_seats}/{selected.total_seats}</p></div>
+                <div className="rounded-lg bg-slate-50 p-3"><p className="lp-stat-label">Seats used</p><p className="mt-1 font-black">{selectedSeatUsage}/{selected.total_seats}</p></div>
                 <div className="rounded-lg bg-slate-50 p-3"><p className="lp-stat-label">Dues</p><p className="mt-1 font-black">Rs. {Number(selected.unpaid_amount || 0).toFixed(0)}</p></div>
-                <div className="rounded-lg bg-slate-50 p-3"><p className="lp-stat-label">Slug</p><p className="mt-1 truncate font-black">{selected.slug}</p></div>
+                <div className="rounded-lg bg-slate-50 p-3"><p className="lp-stat-label">Owner login</p><p className="mt-1 font-black">{selected.owner_active ? "Active" : "Blocked"}</p></div>
               </div>
             </div>
           ) : (
