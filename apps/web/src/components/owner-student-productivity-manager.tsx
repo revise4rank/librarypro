@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type ProductivityDetailResponse = {
   success: boolean;
@@ -70,6 +71,7 @@ export function OwnerStudentProductivityManager({
   const [noteForm, setNoteForm] = useState({ noteText: "", noteType: "GENERAL", followUpAt: "" });
   const [savingNote, setSavingNote] = useState(false);
   const [updatingNoteId, setUpdatingNoteId] = useState<string | null>(null);
+  const [noteDrawerOpen, setNoteDrawerOpen] = useState(false);
 
   async function loadProductivity() {
     try {
@@ -94,6 +96,7 @@ export function OwnerStudentProductivityManager({
       });
       setNoteForm({ noteText: "", noteType: "GENERAL", followUpAt: "" });
       await loadProductivity();
+      setNoteDrawerOpen(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save intervention note.");
     } finally {
@@ -312,6 +315,37 @@ export function OwnerStudentProductivityManager({
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardCard title="Add intervention note" subtitle="Keep a simple coaching memory for this student">
           <div className="grid gap-4">
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Notes</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{data.interventionNotes.length}</p>
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Open</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{data.interventionNotes.filter((note) => note.noteStatus === "OPEN").length}</p>
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Escalated</p>
+                <p className="mt-2 text-2xl font-black text-rose-700">{data.interventionNotes.filter((note) => note.noteStatus === "ESCALATED").length}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNoteDrawerOpen(true)}
+              className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]"
+            >
+              Add intervention note
+            </button>
+          </div>
+        </DashboardCard>
+
+        <FormDrawer
+          open={noteDrawerOpen}
+          onClose={() => setNoteDrawerOpen(false)}
+          title="Add intervention note"
+          description="Keep coaching, attendance, focus, payment, and syllabus follow-ups in one place."
+        >
+          <div className="grid gap-4">
             <select
               value={noteForm.noteType}
               onChange={(event) => setNoteForm((current) => ({ ...current, noteType: event.target.value }))}
@@ -344,7 +378,7 @@ export function OwnerStudentProductivityManager({
               {savingNote ? "Saving..." : "Save note"}
             </button>
           </div>
-        </DashboardCard>
+        </FormDrawer>
 
         <DashboardCard title="Intervention history" subtitle="Last coaching, follow-up, and operational notes">
           <div className="grid gap-3">

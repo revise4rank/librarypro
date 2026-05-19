@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { StudentSectionTabs } from "./student-section-tabs";
 
 type BookRequest = {
@@ -61,6 +62,7 @@ export function StudentToolsManager() {
   const [bookMessage, setBookMessage] = useState<string | null>(null);
   const [bookError, setBookError] = useState<string | null>(null);
   const [bookSaving, setBookSaving] = useState(false);
+  const [bookDrawerOpen, setBookDrawerOpen] = useState(false);
   const [bookForm, setBookForm] = useState({
     title: "",
     author: "",
@@ -106,6 +108,7 @@ export function StudentToolsManager() {
       setBookForm({ title: "", author: "", className: "", subject: "", message: "" });
       setTocImage(null);
       await loadBookRequests();
+      setBookDrawerOpen(false);
     } catch (error) {
       setBookError(error instanceof Error ? error.message : "Unable to send book request.");
     } finally {
@@ -136,7 +139,40 @@ export function StudentToolsManager() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardCard title="Request a new book" subtitle="Ask your library to add a book and attach table-of-content image.">
+        <DashboardCard title="Request a new book" subtitle="Send a book request to superadmin with table-of-content image.">
+          <div className="grid gap-4">
+            <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 sm:grid-cols-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-muted)]">Total</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{bookRequests.length}</p>
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-muted)]">Pending</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{bookRequests.filter((request) => request.status === "PENDING").length}</p>
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-muted)]">Approved</p>
+                <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{bookRequests.filter((request) => request.status === "APPROVED" || request.status === "FULFILLED").length}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBookDrawerOpen(true)}
+              className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--lp-accent)]"
+            >
+              Send book request
+            </button>
+            {bookMessage ? <p className="text-sm font-semibold text-emerald-700">{bookMessage}</p> : null}
+            {bookError ? <p className="text-sm font-semibold text-amber-700">{bookError}</p> : null}
+          </div>
+        </DashboardCard>
+
+        <FormDrawer
+          open={bookDrawerOpen}
+          onClose={() => setBookDrawerOpen(false)}
+          title="Send book request"
+          description="This request goes directly to superadmin with optional table-of-content image."
+        >
           <form className="grid gap-3" onSubmit={submitBookRequest}>
             <input
               value={bookForm.title}
@@ -183,9 +219,9 @@ export function StudentToolsManager() {
               {bookSaving ? "Sending..." : "Send book request"}
             </button>
           </form>
-        </DashboardCard>
+        </FormDrawer>
 
-        <DashboardCard title="My book requests" subtitle="Track what you asked your library to add.">
+        <DashboardCard title="My book requests" subtitle="Track what you asked the platform team to add.">
           <div className="grid gap-3">
             {bookRequests.map((request) => (
               <article key={request.id} className="rounded-xl border border-[var(--lp-border)] bg-white p-4">
