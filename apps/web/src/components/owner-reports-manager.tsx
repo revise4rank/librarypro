@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { displayApiError } from "../lib/api";
 import { exportOwnerReport, fetchOwnerReports } from "../lib/owner-finance";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 import { StatCard } from "./stat-card";
 
@@ -103,7 +104,7 @@ export function OwnerReportsManager() {
   const [error, setError] = useState<string | null>(null);
   const [exportingKey, setExportingKey] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [exportsOpen, setExportsOpen] = useState(true);
+  const [exportsOpen, setExportsOpen] = useState(false);
   const [previewsOpen, setPreviewsOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"students" | "payments" | "expenses" | "attendance">("students");
 
@@ -194,50 +195,35 @@ export function OwnerReportsManager() {
         </div>
       </section>
 
-      <DashboardCard title="Custom report window" subtitle="Keep date filters compact and let insights stay primary.">
+      <DashboardCard title="Report actions" subtitle="Filters, exports, and detailed rows open in right drawers so the main report stays compact.">
         <div className="grid gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <div>
-              <p className="text-sm font-black text-slate-950">Report filters</p>
-              <p className="mt-1 text-sm text-slate-500">{fromDate} to {toDate}</p>
-            </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-black text-slate-950">Active window</p>
+            <p className="mt-1 text-sm text-slate-500">{fromDate} to {toDate}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
             <button
               type="button"
-              onClick={() => setFiltersOpen((current) => !current)}
-              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
+              onClick={() => setFiltersOpen(true)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800"
             >
-              {filtersOpen ? "Hide filters" : "Show filters"}
+              Change date window
+            </button>
+            <button
+              type="button"
+              onClick={() => setExportsOpen(true)}
+              className="rounded-xl bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-black text-[var(--lp-accent)]"
+            >
+              Download reports
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreviewsOpen(true)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800"
+            >
+              Review detailed rows
             </button>
           </div>
-          {filtersOpen ? (
-            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
-              <label className="grid gap-2 text-sm font-semibold text-slate-600">
-                From date
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(event) => setFromDate(event.target.value)}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-semibold text-slate-600">
-                To date
-                <input
-                  type="date"
-                  value={toDate}
-                  onChange={(event) => setToDate(event.target.value)}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => void loadReports(fromDate, toDate)}
-                className="rounded-2xl bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent)] md:self-end"
-              >
-                Refresh report
-              </button>
-            </div>
-          ) : null}
         </div>
       </DashboardCard>
 
@@ -246,59 +232,6 @@ export function OwnerReportsManager() {
           <StatCard key={card.label} label={card.label} value={card.value} note={card.note} />
         ))}
       </section>
-
-      <DashboardCard title="Server exports" subtitle="One-click XLSX/PDF files for owner records and accountant handoff.">
-        <div className="grid gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <div>
-              <p className="text-sm font-black text-slate-950">Export center</p>
-              <p className="mt-1 text-sm text-slate-500">Range: {fromDate || "start"} to {toDate || "today"}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setExportsOpen((current) => !current)}
-              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
-            >
-              {exportsOpen ? "Hide exports" : "Show exports"}
-            </button>
-          </div>
-          {exportsOpen ? (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {[
-                ["summary", "Business summary"],
-                ["students", "Student list"],
-                ["payments", "All payments"],
-                ["dues", "Due payments"],
-                ["paid", "Paid payments"],
-                ["expenses", "Expenses"],
-                ["attendance", "Attendance"],
-              ].map(([reportType, label]) => (
-                <div key={reportType} className="rounded-xl border border-slate-200 bg-white p-4">
-                  <p className="font-black text-slate-950">{label}</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      onClick={() => void exportReport(reportType as ReportType, "xlsx")}
-                      className="rounded-xl bg-[var(--lp-accent-soft)] px-4 py-2 text-xs font-black text-[var(--lp-accent)]"
-                    >
-                      {exportingKey === `${reportType}:xlsx` ? "Preparing..." : "Download XLSX"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void exportReport(reportType as ReportType, "pdf")}
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700"
-                    >
-                      {exportingKey === `${reportType}:pdf` ? "Preparing..." : "Download PDF"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Export buttons are hidden. Open them only when you need a file.</div>
-          )}
-        </div>
-      </DashboardCard>
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <DashboardCard title="Monthly comparison" subtitle="Revenue, expense, and profit trend over the last six months">
@@ -377,43 +310,114 @@ export function OwnerReportsManager() {
         </DashboardCard>
       </section>
 
-      <section className="grid gap-6">
-        <DashboardCard title="Preview workspace" subtitle="Open one operational slice at a time instead of reading everything together">
-          <div className="grid gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div>
-                <p className="text-sm font-black text-slate-950">Preview panels</p>
-                <p className="mt-1 text-sm text-slate-500">Open detailed rows only when you are reviewing a specific slice.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreviewsOpen((current) => !current)}
-                className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700"
-              >
-                {previewsOpen ? "Hide previews" : "Show previews"}
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                ["students", "Students"],
-                ["payments", "Payments"],
-                ["expenses", "Expenses"],
-                ["attendance", "Attendance"],
-              ].map(([tab, label]) => (
+      <FormDrawer
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        title="Change report window"
+        description="Set a compact report range, refresh once, and return to the dashboard view."
+        footer={
+          <button
+            type="button"
+            onClick={() => {
+              void loadReports(fromDate, toDate);
+              setFiltersOpen(false);
+            }}
+            className="w-full rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
+          >
+            Refresh report
+          </button>
+        }
+      >
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-semibold text-slate-600">
+            From date
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(event) => setFromDate(event.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-600">
+            To date
+            <input
+              type="date"
+              value={toDate}
+              onChange={(event) => setToDate(event.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+            />
+          </label>
+        </div>
+      </FormDrawer>
+
+      <FormDrawer
+        open={exportsOpen}
+        onClose={() => setExportsOpen(false)}
+        title="Download reports"
+        description={`Range: ${fromDate || "start"} to ${toDate || "today"}. Export owner records as XLSX or PDF.`}
+        widthClassName="sm:w-[min(94vw,48rem)] max-w-3xl"
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            ["summary", "Business summary"],
+            ["students", "Student list"],
+            ["payments", "All payments"],
+            ["dues", "Due payments"],
+            ["paid", "Paid payments"],
+            ["expenses", "Expenses"],
+            ["attendance", "Attendance"],
+          ].map(([reportType, label]) => (
+            <div key={reportType} className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="font-black text-slate-950">{label}</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <button
-                  key={tab}
                   type="button"
-                  onClick={() => setPreviewTab(tab as "students" | "payments" | "expenses" | "attendance")}
-                  className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] ${
-                    previewTab === tab ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-slate-200 bg-white text-slate-700"
-                  }`}
+                  onClick={() => void exportReport(reportType as ReportType, "xlsx")}
+                  className="rounded-xl bg-[var(--lp-accent-soft)] px-4 py-2 text-xs font-black text-[var(--lp-accent)]"
                 >
-                  {label}
+                  {exportingKey === `${reportType}:xlsx` ? "Preparing..." : "Download XLSX"}
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => void exportReport(reportType as ReportType, "pdf")}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700"
+                >
+                  {exportingKey === `${reportType}:pdf` ? "Preparing..." : "Download PDF"}
+                </button>
+              </div>
             </div>
-            {previewsOpen ? (
-              <div className="space-y-3">
+          ))}
+        </div>
+      </FormDrawer>
+
+      <FormDrawer
+        open={previewsOpen}
+        onClose={() => setPreviewsOpen(false)}
+        title="Review detailed rows"
+        description="Open one operational slice at a time instead of stretching the report page."
+        widthClassName="sm:w-[min(94vw,52rem)] max-w-4xl"
+      >
+        <div className="grid gap-4">
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["students", "Students"],
+              ["payments", "Payments"],
+              ["expenses", "Expenses"],
+              ["attendance", "Attendance"],
+            ].map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setPreviewTab(tab as "students" | "payments" | "expenses" | "attendance")}
+                className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] ${
+                  previewTab === tab ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-slate-200 bg-white text-slate-700"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="space-y-3">
                 {previewTab === "students"
                   ? reports.students.slice(0, 8).map((row) => (
                       <div key={row.assignment_id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -466,13 +470,9 @@ export function OwnerReportsManager() {
                       </div>
                     ))
                   : null}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">Preview rows are hidden. Open them only when you need a closer review.</div>
-            )}
           </div>
-        </DashboardCard>
-      </section>
+        </div>
+      </FormDrawer>
     </div>
   );
 }
