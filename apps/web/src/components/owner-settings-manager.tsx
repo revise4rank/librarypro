@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { apiFetch, clearClientSession, logoutSession, saveSession, type SessionState, type SessionUser } from "../lib/api";
 import { OwnerAdminsManager } from "./owner-admins-manager";
-import { OwnerMarketplaceListingManager } from "./owner-marketplace-listing-manager";
 import { DashboardCard } from "./dashboard-shell";
-import { OwnerWebsiteBuilder } from "./owner-website-builder";
 
 type SettingsResponse = {
   success: boolean;
@@ -28,39 +26,9 @@ type SettingsResponse = {
   };
 };
 
-type DiscountType = "PERCENTAGE" | "FLAT";
-
-type StudentPlanConfig = {
-  id: string;
-  name: string;
-  target_audience: string | null;
-  description: string | null;
-  duration_months: number;
-  base_amount: string;
-  default_discount_type: DiscountType | null;
-  default_discount_value: string | null;
-  is_active: boolean;
-  created_at: string;
-};
-
-type CouponConfig = {
-  id: string;
-  student_plan_id: string | null;
-  code: string;
-  discount_type: DiscountType;
-  discount_value: string;
-  valid_from: string | null;
-  valid_until: string | null;
-  usage_limit: number | null;
-  used_count: number;
-  is_active: boolean;
-  created_at: string;
-};
-
-export type OwnerSettingsTab = "profile" | "listing" | "plans" | "account" | "website" | "team" | "billing";
+export type OwnerSettingsTab = "profile" | "account" | "team" | "billing";
 
 function normalizeSettingsTab(tab: OwnerSettingsTab): OwnerSettingsTab {
-  if (tab === "listing" || tab === "plans" || tab === "website") return "profile";
   return tab;
 }
 
@@ -115,33 +83,15 @@ function SettingsTabButton({
   );
 }
 
-function computePreviewAmount(baseAmount: string, discountType: DiscountType | "", discountValue: string) {
-  const base = Number(baseAmount || "0");
-  const discount = Number(discountValue || "0");
-  if (!base || !discountType || !discount) {
-    return base;
-  }
-  if (discountType === "PERCENTAGE") {
-    return Math.max(0, base - Math.round((base * discount) / 100));
-  }
-  return Math.max(0, base - discount);
-}
-
 export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: OwnerSettingsTab }) {
   const [activeTab, setActiveTab] = useState<OwnerSettingsTab>(normalizeSettingsTab(initialTab));
   const [data, setData] = useState<SettingsResponse["data"] | null>(null);
-  const [plans, setPlans] = useState<StudentPlanConfig[]>([]);
-  const [coupons, setCoupons] = useState<CouponConfig[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [accountSaving, setAccountSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
-  const [planSaving, setPlanSaving] = useState(false);
-  const [couponSaving, setCouponSaving] = useState(false);
   const [account, setAccount] = useState<SessionUser | null>(null);
-  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
-  const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
   const [form, setForm] = useState({
     libraryName: "",
     address: "",
@@ -161,27 +111,6 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
     currentPassword: "",
     nextPassword: "",
   });
-  const [planForm, setPlanForm] = useState({
-    name: "",
-    targetAudience: "",
-    description: "",
-    durationMonths: "1",
-    baseAmount: "999",
-    defaultDiscountType: "" as DiscountType | "",
-    defaultDiscountValue: "",
-    isActive: true,
-  });
-  const [couponForm, setCouponForm] = useState({
-    code: "",
-    studentPlanId: "",
-    discountType: "PERCENTAGE" as DiscountType,
-    discountValue: "",
-    validFrom: "",
-    validUntil: "",
-    usageLimit: "",
-    isActive: true,
-  });
-
   useEffect(() => {
     setActiveTab(normalizeSettingsTab(initialTab));
   }, [initialTab]);
@@ -205,14 +134,8 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
 
   async function loadSettings() {
     try {
-      const [settingsResponse, plansResponse, couponsResponse] = await Promise.all([
-        apiFetch<SettingsResponse>("/owner/settings"),
-        apiFetch<{ success: boolean; data: StudentPlanConfig[] }>("/owner/student-plans"),
-        apiFetch<{ success: boolean; data: CouponConfig[] }>("/owner/coupons"),
-      ]);
+      const settingsResponse = await apiFetch<SettingsResponse>("/owner/settings");
       setData(settingsResponse.data);
-      setPlans(plansResponse.data);
-      setCoupons(couponsResponse.data);
       setForm({
         libraryName: settingsResponse.data.library_name,
         address: settingsResponse.data.address,
@@ -309,85 +232,6 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
       setPasswordSaving(false);
     }
   }
-
-  async function savePlan(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPlanSaving(true);
-    try {
-      await apiFetch(editingPlanId ? `/owner/student-plans/${editingPlanId}` : "/owner/student-plans", {
-        method: editingPlanId ? "PATCH" : "POST",
-        body: JSON.stringify({
-          name: planForm.name,
-          targetAudience: planForm.targetAudience,
-          description: planForm.description,
-          durationMonths: Number(planForm.durationMonths || "1"),
-          baseAmount: Number(planForm.baseAmount || "0"),
-          defaultDiscountType: planForm.defaultDiscountType || undefined,
-          defaultDiscountValue: planForm.defaultDiscountValue ? Number(planForm.defaultDiscountValue) : undefined,
-          isActive: planForm.isActive,
-        }),
-      });
-      setMessage(editingPlanId ? "Plan updated." : "Plan created.");
-      setEditingPlanId(null);
-      setPlanForm({
-        name: "",
-        targetAudience: "",
-        description: "",
-        durationMonths: "1",
-        baseAmount: "999",
-        defaultDiscountType: "",
-        defaultDiscountValue: "",
-        isActive: true,
-      });
-      await loadSettings();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unable to save plan.");
-    } finally {
-      setPlanSaving(false);
-    }
-  }
-
-  async function saveCoupon(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setCouponSaving(true);
-    try {
-      await apiFetch(editingCouponId ? `/owner/coupons/${editingCouponId}` : "/owner/coupons", {
-        method: editingCouponId ? "PATCH" : "POST",
-        body: JSON.stringify({
-          code: couponForm.code,
-          studentPlanId: couponForm.studentPlanId || undefined,
-          discountType: couponForm.discountType,
-          discountValue: Number(couponForm.discountValue || "0"),
-          validFrom: couponForm.validFrom || undefined,
-          validUntil: couponForm.validUntil || undefined,
-          usageLimit: couponForm.usageLimit ? Number(couponForm.usageLimit) : undefined,
-          isActive: couponForm.isActive,
-        }),
-      });
-      setMessage(editingCouponId ? "Coupon updated." : "Coupon created.");
-      setEditingCouponId(null);
-      setCouponForm({
-        code: "",
-        studentPlanId: "",
-        discountType: "PERCENTAGE",
-        discountValue: "",
-        validFrom: "",
-        validUntil: "",
-        usageLimit: "",
-        isActive: true,
-      });
-      await loadSettings();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unable to save coupon.");
-    } finally {
-      setCouponSaving(false);
-    }
-  }
-
-  const planPreview = useMemo(
-    () => computePreviewAmount(planForm.baseAmount, planForm.defaultDiscountType, planForm.defaultDiscountValue),
-    [planForm.baseAmount, planForm.defaultDiscountType, planForm.defaultDiscountValue],
-  );
 
   if (!data) {
     return <p className="text-sm text-slate-500">{error ?? "Loading owner settings..."}</p>;
@@ -496,211 +340,6 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
         </div>
       ) : null}
 
-      {activeTab === "plans" ? (
-        <div className="grid gap-4">
-          <div className="grid gap-4 xl:grid-cols-2">
-            <DashboardCard title="Student plans" subtitle="Create reusable pricing and duration templates before admitting students.">
-              <form className="grid gap-3" onSubmit={savePlan}>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <input value={planForm.name} onChange={(event) => setPlanForm((current) => ({ ...current, name: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Plan name" />
-                  <input value={planForm.targetAudience} onChange={(event) => setPlanForm((current) => ({ ...current, targetAudience: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Target audience / label" />
-                </div>
-                <textarea value={planForm.description} onChange={(event) => setPlanForm((current) => ({ ...current, description: event.target.value }))} className="min-h-24 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Description" />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <input type="number" min="1" value={planForm.durationMonths} onChange={(event) => setPlanForm((current) => ({ ...current, durationMonths: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration (months)" />
-                  <input type="number" min="0" value={planForm.baseAmount} onChange={(event) => setPlanForm((current) => ({ ...current, baseAmount: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Base amount" />
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <select value={planForm.defaultDiscountType} onChange={(event) => setPlanForm((current) => ({ ...current, defaultDiscountType: event.target.value as DiscountType | "" }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
-                    <option value="">No default discount</option>
-                    <option value="PERCENTAGE">Percentage</option>
-                    <option value="FLAT">Flat</option>
-                  </select>
-                  <input type="number" min="0" value={planForm.defaultDiscountValue} onChange={(event) => setPlanForm((current) => ({ ...current, defaultDiscountValue: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Discount value" />
-                </div>
-                <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
-                  <input type="checkbox" checked={planForm.isActive} onChange={(event) => setPlanForm((current) => ({ ...current, isActive: event.target.checked }))} />
-                  Active for new admissions
-                </label>
-                <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3 text-sm text-[var(--lp-text-soft)]">
-                  Final preview: <span className="font-semibold text-[var(--lp-text)]">Rs. {planPreview.toLocaleString("en-IN")}</span>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <button disabled={planSaving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-                    {planSaving ? "Saving..." : editingPlanId ? "Update plan" : "Create plan"}
-                  </button>
-                  {editingPlanId ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingPlanId(null);
-                        setPlanForm({
-                          name: "",
-                          targetAudience: "",
-                          description: "",
-                          durationMonths: "1",
-                          baseAmount: "999",
-                          defaultDiscountType: "",
-                          defaultDiscountValue: "",
-                          isActive: true,
-                        });
-                      }}
-                      className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
-                    >
-                      Reset
-                    </button>
-                  ) : null}
-                </div>
-              </form>
-            </DashboardCard>
-
-            <DashboardCard title="Coupons" subtitle="Optional one-code discounts for admissions. Keep them separate from marketing offers.">
-              <form className="grid gap-3" onSubmit={saveCoupon}>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <input value={couponForm.code} onChange={(event) => setCouponForm((current) => ({ ...current, code: event.target.value.toUpperCase() }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Coupon code" />
-                  <select value={couponForm.studentPlanId} onChange={(event) => setCouponForm((current) => ({ ...current, studentPlanId: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
-                    <option value="">All plans</option>
-                    {plans.map((plan) => (
-                      <option key={plan.id} value={plan.id}>{plan.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <select value={couponForm.discountType} onChange={(event) => setCouponForm((current) => ({ ...current, discountType: event.target.value as DiscountType }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
-                    <option value="PERCENTAGE">Percentage</option>
-                    <option value="FLAT">Flat</option>
-                  </select>
-                  <input type="number" min="0" value={couponForm.discountValue} onChange={(event) => setCouponForm((current) => ({ ...current, discountValue: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Discount value" />
-                </div>
-                <div className="grid gap-3 md:grid-cols-3">
-                  <input type="date" value={couponForm.validFrom} onChange={(event) => setCouponForm((current) => ({ ...current, validFrom: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
-                  <input type="date" value={couponForm.validUntil} onChange={(event) => setCouponForm((current) => ({ ...current, validUntil: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
-                  <input type="number" min="1" value={couponForm.usageLimit} onChange={(event) => setCouponForm((current) => ({ ...current, usageLimit: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Usage limit" />
-                </div>
-                <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
-                  <input type="checkbox" checked={couponForm.isActive} onChange={(event) => setCouponForm((current) => ({ ...current, isActive: event.target.checked }))} />
-                  Coupon is active
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  <button disabled={couponSaving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-                    {couponSaving ? "Saving..." : editingCouponId ? "Update coupon" : "Create coupon"}
-                  </button>
-                  {editingCouponId ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingCouponId(null);
-                        setCouponForm({
-                          code: "",
-                          studentPlanId: "",
-                          discountType: "PERCENTAGE",
-                          discountValue: "",
-                          validFrom: "",
-                          validUntil: "",
-                          usageLimit: "",
-                          isActive: true,
-                        });
-                      }}
-                      className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text-soft)]"
-                    >
-                      Reset
-                    </button>
-                  ) : null}
-                </div>
-              </form>
-            </DashboardCard>
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <DashboardCard title="Saved plans" subtitle="These plans appear directly inside admissions.">
-              <div className="grid gap-3">
-                {plans.map((plan) => (
-                  <div key={plan.id} className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-[var(--lp-text)]">{plan.name}</p>
-                        <p className="text-sm text-[var(--lp-text-soft)]">{plan.target_audience ?? "General admissions"} • {plan.duration_months} month(s)</p>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${plan.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                        {plan.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-[var(--lp-text-soft)]">{plan.description ?? "No description added yet."}</p>
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--lp-text-soft)]">
-                      <span>Base Rs. {Number(plan.base_amount).toLocaleString("en-IN")}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingPlanId(plan.id);
-                          setPlanForm({
-                            name: plan.name,
-                            targetAudience: plan.target_audience ?? "",
-                            description: plan.description ?? "",
-                            durationMonths: String(plan.duration_months),
-                            baseAmount: String(plan.base_amount),
-                            defaultDiscountType: (plan.default_discount_type as DiscountType | null) ?? "",
-                            defaultDiscountValue: plan.default_discount_value ?? "",
-                            isActive: plan.is_active,
-                          });
-                        }}
-                        className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {plans.length === 0 ? <p className="text-sm text-[var(--lp-text-soft)]">No plans created yet.</p> : null}
-              </div>
-            </DashboardCard>
-
-            <DashboardCard title="Coupon bank" subtitle="One coupon code per admission in v1.">
-              <div className="grid gap-3">
-                {coupons.map((coupon) => (
-                  <div key={coupon.id} className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-[var(--lp-text)]">{coupon.code}</p>
-                        <p className="text-sm text-[var(--lp-text-soft)]">{coupon.discount_type} • {coupon.discount_value}</p>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${coupon.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                        {coupon.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-[var(--lp-text-soft)]">
-                      Used {coupon.used_count}{coupon.usage_limit ? ` / ${coupon.usage_limit}` : ""} times
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--lp-text-soft)]">
-                      <span>{coupon.valid_until ? `Valid till ${new Date(coupon.valid_until).toLocaleDateString()}` : "No expiry"}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingCouponId(coupon.id);
-                          setCouponForm({
-                            code: coupon.code,
-                            studentPlanId: coupon.student_plan_id ?? "",
-                            discountType: coupon.discount_type,
-                            discountValue: coupon.discount_value,
-                            validFrom: coupon.valid_from ? coupon.valid_from.slice(0, 10) : "",
-                            validUntil: coupon.valid_until ? coupon.valid_until.slice(0, 10) : "",
-                            usageLimit: coupon.usage_limit ? String(coupon.usage_limit) : "",
-                            isActive: coupon.is_active,
-                          });
-                        }}
-                        className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--lp-text)]"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {coupons.length === 0 ? <p className="text-sm text-[var(--lp-text-soft)]">No coupons created yet.</p> : null}
-              </div>
-            </DashboardCard>
-          </div>
-        </div>
-      ) : null}
-
       {activeTab === "account" ? (
         <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
           <DashboardCard title="Account profile" subtitle="Update your own name, email, and phone from one place.">
@@ -748,47 +387,6 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
         </div>
       ) : null}
 
-      {activeTab === "website" ? (
-        <OwnerWebsiteBuilder
-          defaultEditorOpen
-          initialValues={{
-            subdomain: "",
-            brandLogoUrl: "",
-            heroBannerUrl: "",
-            heroTitle: "",
-            heroTagline: "",
-            aboutText: "",
-            contactName: "",
-            contactPhone: "",
-            whatsappPhone: "",
-            addressText: "",
-            landmark: "",
-            businessHours: "",
-            highlightOffer: "",
-            offerExpiresAt: "",
-            seoTitle: "",
-            seoDescription: "",
-            adBudget: "0",
-            themePrimary: "#d2723d",
-            themeAccent: "#2f8f88",
-            themeSurface: "#fff9f0",
-            amenities: [],
-            galleryImages: [],
-            sitePages: {},
-            published: false,
-          }}
-        />
-      ) : null}
-
-      {activeTab === "listing" ? (
-        <OwnerMarketplaceListingManager
-          libraryName={data.library_name}
-          address={data.address}
-          city={data.city}
-          area={data.area}
-        />
-      ) : null}
-
       {activeTab === "team" ? <OwnerAdminsManager /> : null}
 
       {activeTab === "billing" ? (
@@ -817,3 +415,4 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
     </div>
   );
 }
+
