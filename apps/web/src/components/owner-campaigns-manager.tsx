@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetch, displayApiError } from "../lib/api";
 import { formatLibraryHost } from "../lib/domain";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 
 type CampaignProfile = {
@@ -43,6 +44,7 @@ export function OwnerCampaignsManager() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   async function loadProfile() {
     try {
@@ -99,6 +101,7 @@ export function OwnerCampaignsManager() {
         }),
       });
       setStatus("Campaign settings saved to marketplace and public website.");
+      setEditorOpen(false);
     } catch (saveError) {
       setError(displayApiError(saveError, "Unable to save campaign settings."));
     } finally {
@@ -123,46 +126,35 @@ export function OwnerCampaignsManager() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+    <>
+    <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
       <DashboardCard title="Campaign center" subtitle="Publish offers that show up on marketplace cards and your subdomain hero">
         <div className="grid gap-4">
-          <input
-            value={profile.highlight_offer ?? ""}
-            onChange={(event) => setProfile((current) => current ? { ...current, highlight_offer: event.target.value } : current)}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-            placeholder="Example: Free trial day + first week discount"
-          />
-          <input
-            type="date"
-            value={profile.offer_expires_at?.slice(0, 10) ?? ""}
-            onChange={(event) => setProfile((current) => current ? { ...current, offer_expires_at: event.target.value } : current)}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-          />
-          <input
-            value={profile.ad_budget}
-            onChange={(event) => setProfile((current) => current ? { ...current, ad_budget: event.target.value } : current)}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-            placeholder="Monthly ad budget"
-          />
-          <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-700">
-            <input
-              type="checkbox"
-              checked={profile.show_in_marketplace}
-              onChange={(event) => setProfile((current) => current ? { ...current, show_in_marketplace: event.target.checked } : current)}
-            />
-            Show this library in marketplace discovery
-          </label>
-          <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-700">
-            <input
-              type="checkbox"
-              checked={profile.allow_direct_contact}
-              onChange={(event) => setProfile((current) => current ? { ...current, allow_direct_contact: event.target.checked } : current)}
-            />
-            Allow direct contact leads from marketplace and subdomain
-          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Marketplace</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{profile.show_in_marketplace ? "Visible" : "Hidden"}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Leads</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{profile.allow_direct_contact ? "Enabled" : "Paused"}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Budget</p>
+              <p className="mt-2 text-lg font-black text-slate-950">Rs. {profile.ad_budget || "0"}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Offer expiry</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{profile.offer_expires_at?.slice(0, 10) ?? "-"}</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Current offer</p>
+            <p className="mt-2 text-base font-black text-slate-950">{profile.highlight_offer || "No campaign offer published yet."}</p>
+          </div>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => void saveCampaign()} disabled={saving} className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
-              {saving ? "Saving..." : "Save campaign"}
+            <button type="button" onClick={() => setEditorOpen(true)} className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white">
+              Edit campaign settings
             </button>
             <button type="button" onClick={() => void triggerDueRecovery()} className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-5 py-3 text-sm font-bold text-[var(--lp-text)]">
               Send due recovery
@@ -191,5 +183,54 @@ export function OwnerCampaignsManager() {
         </div>
       </DashboardCard>
     </div>
+    <FormDrawer
+      open={editorOpen}
+      onClose={() => setEditorOpen(false)}
+      title="Edit campaign settings"
+      description="Keep public growth controls in one focused panel so the campaign page stays short."
+      footer={
+        <button type="button" onClick={() => void saveCampaign()} disabled={saving} className="w-full rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
+          {saving ? "Saving campaign..." : "Save campaign settings"}
+        </button>
+      }
+    >
+      <div className="grid gap-4">
+        <input
+          value={profile.highlight_offer ?? ""}
+          onChange={(event) => setProfile((current) => current ? { ...current, highlight_offer: event.target.value } : current)}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 outline-none"
+          placeholder="Example: Free trial day + first week discount"
+        />
+        <input
+          type="date"
+          value={profile.offer_expires_at?.slice(0, 10) ?? ""}
+          onChange={(event) => setProfile((current) => current ? { ...current, offer_expires_at: event.target.value } : current)}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 outline-none"
+        />
+        <input
+          value={profile.ad_budget}
+          onChange={(event) => setProfile((current) => current ? { ...current, ad_budget: event.target.value } : current)}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-4 outline-none"
+          placeholder="Monthly ad budget"
+        />
+        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-700">
+          <input
+            type="checkbox"
+            checked={profile.show_in_marketplace}
+            onChange={(event) => setProfile((current) => current ? { ...current, show_in_marketplace: event.target.checked } : current)}
+          />
+          Show this library in marketplace discovery
+        </label>
+        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-700">
+          <input
+            type="checkbox"
+            checked={profile.allow_direct_contact}
+            onChange={(event) => setProfile((current) => current ? { ...current, allow_direct_contact: event.target.checked } : current)}
+          />
+          Allow direct contact leads from marketplace and subdomain
+        </label>
+      </div>
+    </FormDrawer>
+    </>
   );
 }

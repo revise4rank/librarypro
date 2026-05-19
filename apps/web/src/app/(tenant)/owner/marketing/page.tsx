@@ -11,7 +11,7 @@ export default function OwnerMarketingPage() {
       description="Leads, campaigns, and offers now share one compact conversion workspace."
       nav={ownerNav}
     >
-      <OwnerMarketingManager initialTab="leads" />
+      <OwnerMarketingManager />
     </DashboardShell>
   );
 }

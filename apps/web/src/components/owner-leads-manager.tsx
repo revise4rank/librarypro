@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type LeadRow = {
   id: string;
@@ -31,6 +32,7 @@ export function OwnerLeadsManager() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<LeadRow | null>(null);
 
   async function loadLeads(nextStatus = statusFilter) {
     setLoading(true);
@@ -65,6 +67,7 @@ export function OwnerLeadsManager() {
       });
       setMessage(`Lead moved to ${status}.`);
       await loadLeads();
+      setSelectedLead(null);
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Unable to update lead.");
     }
@@ -82,15 +85,39 @@ export function OwnerLeadsManager() {
       });
       setMessage("Lead updated.");
       await loadLeads();
+      setSelectedLead(null);
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Unable to save lead notes.");
     }
   }
 
+  const newCount = rows.filter((row) => row.status === "NEW").length;
+  const contactedCount = rows.filter((row) => row.status === "CONTACTED").length;
+  const wonCount = rows.filter((row) => row.status === "WON").length;
+
   return (
+    <>
     <div className="grid gap-6">
       <DashboardCard title="Lead inbox" subtitle="Marketplace call, WhatsApp, and form interest in one CRM-style inbox">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid gap-4">
+          <div className="grid gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Total</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{rows.length}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">New</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{newCount}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Contacted</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{contactedCount}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Won</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{wonCount}</p>
+            </div>
+          </div>
           <select
             value={statusFilter}
             onChange={(event) => {
@@ -98,13 +125,13 @@ export function OwnerLeadsManager() {
               setStatusFilter(nextStatus);
               void loadLeads(nextStatus);
             }}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none sm:max-w-xs"
           >
-            <option value="ALL">All leads</option>
-            <option value="NEW">New</option>
-            <option value="CONTACTED">Contacted</option>
-            <option value="WON">Won</option>
-            <option value="CLOSED">Closed</option>
+            <option value="ALL">Show all leads</option>
+            <option value="NEW">Show new leads</option>
+            <option value="CONTACTED">Show contacted leads</option>
+            <option value="WON">Show won leads</option>
+            <option value="CLOSED">Show closed leads</option>
           </select>
           {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
           {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
@@ -143,42 +170,17 @@ export function OwnerLeadsManager() {
                   <p className="mt-2 font-bold text-slate-950">{row.follow_up_at?.slice(0, 16).replace("T", " ") ?? "-"}</p>
                 </div>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <input
-                  defaultValue={row.assignee_label ?? "Owner Desk"}
-                  onBlur={(event) => {
-                    if ((row.assignee_label ?? "Owner Desk") !== event.target.value) {
-                      void saveLead(row, { assigneeLabel: event.target.value });
-                    }
-                  }}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                  placeholder="Assignee"
-                />
-                <input
-                  type="datetime-local"
-                  defaultValue={row.follow_up_at ? row.follow_up_at.slice(0, 16) : ""}
-                  onBlur={(event) => {
-                    if ((row.follow_up_at ? row.follow_up_at.slice(0, 16) : "") !== event.target.value) {
-                      void saveLead(row, { followUpAt: event.target.value });
-                    }
-                  }}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                />
-              </div>
               <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700">
                 {row.message ?? "No message provided. This lead was captured from a contact intent action."}
               </div>
-              <textarea
-                defaultValue={row.owner_notes ?? ""}
-                onBlur={(event) => {
-                  if ((row.owner_notes ?? "") !== event.target.value) {
-                    void saveLead(row, { ownerNotes: event.target.value });
-                  }
-                }}
-                className="min-h-24 rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none"
-                placeholder="Owner notes, follow-up summary, or conversion details"
-              />
               <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLead(row)}
+                  className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-bold text-[var(--lp-accent-strong)]"
+                >
+                  Manage lead
+                </button>
                 {["NEW", "CONTACTED", "WON", "CLOSED"].map((status) => (
                   <button
                     key={status}
@@ -193,6 +195,85 @@ export function OwnerLeadsManager() {
             </div>
           </DashboardCard>
         ))}
+      </div>
+    </div>
+    <FormDrawer
+      open={Boolean(selectedLead)}
+      onClose={() => setSelectedLead(null)}
+      title="Manage lead"
+      description="Update ownership, follow-up time, notes, and conversion status without stretching the lead list."
+    >
+      {selectedLead ? (
+        <LeadDrawerContent
+          row={selectedLead}
+          onSave={(updates) => void saveLead(selectedLead, updates)}
+          onMove={(status) => void updateLead(selectedLead, status)}
+        />
+      ) : null}
+    </FormDrawer>
+    </>
+  );
+}
+
+function LeadDrawerContent({
+  row,
+  onSave,
+  onMove,
+}: {
+  row: LeadRow;
+  onSave: (updates: { ownerNotes?: string; assigneeLabel?: string; followUpAt?: string }) => void;
+  onMove: (status: string) => void;
+}) {
+  const [assigneeLabel, setAssigneeLabel] = useState(row.assignee_label ?? "Owner Desk");
+  const [followUpAt, setFollowUpAt] = useState(row.follow_up_at ? row.follow_up_at.slice(0, 16) : "");
+  const [ownerNotes, setOwnerNotes] = useState(row.owner_notes ?? "");
+
+  return (
+    <div className="grid gap-4">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Lead</p>
+        <p className="mt-2 text-xl font-black text-slate-950">{row.student_name ?? row.student_phone ?? "Anonymous lead"}</p>
+        <p className="mt-1 text-sm text-slate-600">{[row.student_phone, row.student_email].filter(Boolean).join(" | ") || "No contact saved"}</p>
+      </div>
+      <input
+        value={assigneeLabel}
+        onChange={(event) => setAssigneeLabel(event.target.value)}
+        className="rounded-xl border border-slate-200 bg-white px-4 py-4 outline-none"
+        placeholder="Assignee"
+      />
+      <input
+        type="datetime-local"
+        value={followUpAt}
+        onChange={(event) => setFollowUpAt(event.target.value)}
+        className="rounded-xl border border-slate-200 bg-white px-4 py-4 outline-none"
+      />
+      <textarea
+        value={ownerNotes}
+        onChange={(event) => setOwnerNotes(event.target.value)}
+        className="min-h-32 rounded-xl border border-slate-200 bg-white px-4 py-4 outline-none"
+        placeholder="Owner notes, follow-up summary, or conversion details"
+      />
+      <button
+        type="button"
+        onClick={() => onSave({ assigneeLabel, followUpAt, ownerNotes })}
+        className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
+      >
+        Save lead details
+      </button>
+      <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-4">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Move status</p>
+        <div className="flex flex-wrap gap-2">
+          {["NEW", "CONTACTED", "WON", "CLOSED"].map((status) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() => onMove(status)}
+              className={`rounded-full px-4 py-2 text-sm font-bold ${row.status === status ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-slate-200 bg-white text-slate-700"}`}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

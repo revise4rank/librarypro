@@ -1,5 +1,5 @@
 import { DashboardShell } from "../../../../components/dashboard-shell";
-import { OwnerMarketingManager } from "../../../../components/owner-marketing-manager";
+import { OwnerOffersManager } from "../../../../components/owner-offers-manager";
 import { ownerNav } from "../../../../lib/role-nav";
 
 export default function OwnerOffersPage() {
@@ -8,10 +8,10 @@ export default function OwnerOffersPage() {
       productLabel="BookLib"
       panelLabel="Marketing"
       title="Offers"
-      description="Marketing surfaces are grouped together so offers and visibility work stay in one module."
+      description="Submit student-facing offers for platform approval from a dedicated page."
       nav={ownerNav}
     >
-      <OwnerMarketingManager initialTab="offers" />
+      <OwnerOffersManager />
     </DashboardShell>
   );
 }

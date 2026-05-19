@@ -1,5 +1,5 @@
 import { DashboardShell } from "../../../../components/dashboard-shell";
-import { OwnerMarketingManager } from "../../../../components/owner-marketing-manager";
+import { OwnerLeadsManager } from "../../../../components/owner-leads-manager";
 import { ownerNav } from "../../../../lib/role-nav";
 
 export default function OwnerLeadsPage() {
@@ -8,10 +8,10 @@ export default function OwnerLeadsPage() {
       productLabel="BookLib"
       panelLabel="Marketing"
       title="Lead inbox"
-      description="Marketing surfaces are grouped together so conversion work stays in one module."
+      description="Follow up marketplace and website leads from a dedicated conversion workspace."
       nav={ownerNav}
     >
-      <OwnerMarketingManager initialTab="leads" />
+      <OwnerLeadsManager />
     </DashboardShell>
   );
 }

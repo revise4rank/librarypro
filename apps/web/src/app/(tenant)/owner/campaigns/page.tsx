@@ -1,5 +1,5 @@
 import { DashboardShell } from "../../../../components/dashboard-shell";
-import { OwnerMarketingManager } from "../../../../components/owner-marketing-manager";
+import { OwnerCampaignsManager } from "../../../../components/owner-campaigns-manager";
 import { ownerNav } from "../../../../lib/role-nav";
 
 export default function OwnerCampaignsPage() {
@@ -8,10 +8,10 @@ export default function OwnerCampaignsPage() {
       productLabel="BookLib"
       panelLabel="Marketing"
       title="Campaign center"
-      description="Marketing surfaces are grouped together so campaign work stays in one module."
+      description="Tune marketplace highlights, public campaign settings, and due recovery actions."
       nav={ownerNav}
     >
-      <OwnerMarketingManager initialTab="campaigns" />
+      <OwnerCampaignsManager />
     </DashboardShell>
   );
 }
