@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type OfferCategory = { id: string; slug: string; name: string };
 type OfferRow = {
@@ -25,6 +26,7 @@ export function SuperadminOffersManager() {
   const [rows, setRows] = useState<OfferRow[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [form, setForm] = useState({
     categoryId: "",
     title: "",
@@ -80,14 +82,48 @@ export function SuperadminOffersManager() {
         isFeatured: false,
       });
       await load();
+      setComposerOpen(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to create offer.");
     }
   }
 
+  const approvedCount = rows.filter((row) => row.status === "APPROVED").length;
+  const pendingCount = rows.filter((row) => row.status === "PENDING").length;
+  const featuredCount = rows.filter((row) => row.is_featured).length;
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
       <DashboardCard title="Create platform offer" subtitle="Student-first opportunities feed, not ad spam">
+        <div className="grid gap-4">
+          <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Approved</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{approvedCount}</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Pending</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{pendingCount}</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Featured</p>
+              <p className="mt-2 text-2xl font-black text-amber-700">{featuredCount}</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => setComposerOpen(true)} className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white">
+            Create platform offer
+          </button>
+          {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
+          {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+        </div>
+      </DashboardCard>
+
+      <FormDrawer
+        open={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        title="Create platform offer"
+        description="Create an approved student-first opportunity for the offers feed."
+      >
         <div className="grid gap-4">
           <select value={form.categoryId} onChange={(event) => setForm((current) => ({ ...current, categoryId: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none">
             <option value="">Select category</option>
@@ -117,7 +153,7 @@ export function SuperadminOffersManager() {
           {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
           {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
         </div>
-      </DashboardCard>
+      </FormDrawer>
 
       <DashboardCard title="Offer moderation" subtitle="Views, clicks, and approval state">
         <div className="grid gap-3">
