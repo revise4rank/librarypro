@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch, hydrateSessionFromServer } from "../lib/api";
 import { resolvePublicAssetUrl } from "../lib/public-library";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { PublicProfileImageUpload } from "./public-profile-image-upload";
 
 type ListingProfile = {
@@ -136,6 +137,7 @@ export function OwnerMarketplaceListingManager({
   const [slug, setSlug] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const amenitiesInput = form.amenities.join(", ");
@@ -202,6 +204,42 @@ export function OwnerMarketplaceListingManager({
       {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
 
       <DashboardCard title="Marketplace listing" subtitle="This is the trial-safe public listing. It appears in marketplace search without enabling the premium subdomain website builder.">
+        <div className="grid gap-4">
+          <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 sm:grid-cols-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">State</p>
+              <p className={`mt-2 text-sm font-black ${form.listingPublished ? "text-emerald-700" : "text-amber-700"}`}>{form.listingPublished ? "Published" : "Hidden"}</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Amenities</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{form.amenities.length}</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Gallery</p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{form.galleryImages.length}</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Contact</p>
+              <p className="mt-2 text-sm font-black text-slate-950">{form.allowDirectContact ? "Enabled" : "Hidden"}</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-lg font-black text-slate-950">{form.heroTitle || "Listing title"}</p>
+            <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{form.heroTagline || "Short marketplace pitch will appear here."}</p>
+          </div>
+          <button type="button" onClick={() => setDetailsOpen(true)} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--lp-accent)]">
+            Edit listing details
+          </button>
+        </div>
+      </DashboardCard>
+
+      <FormDrawer
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        title="Edit listing details"
+        description="Manage listing title, pitch, amenities, contact, address, and current offer."
+        widthClassName="sm:w-[min(96vw,56rem)] sm:max-w-5xl"
+      >
         <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
           <div className="grid gap-4">
             <label className="grid gap-2">
@@ -263,7 +301,7 @@ export function OwnerMarketplaceListingManager({
             </label>
           </div>
         </div>
-      </DashboardCard>
+      </FormDrawer>
 
       <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
         <DashboardCard title="Listing media" subtitle="Upload real photos; URLs are generated automatically after upload.">

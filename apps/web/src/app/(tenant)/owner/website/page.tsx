@@ -18,7 +18,6 @@ export default function OwnerWebsiteBuilderPage() {
       }
     >
       <OwnerWebsiteBuilder
-        defaultEditorOpen
         initialValues={{
           subdomain: "",
           brandLogoUrl: "",

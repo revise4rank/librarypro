@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { defaultMarketplaceSettings, type MarketplaceBannerSlide, type PlatformMarketplaceSettings } from "../lib/marketplace-settings";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 const toneOptions: MarketplaceBannerSlide["tone"][] = ["slate", "emerald", "amber", "blue"];
 
@@ -22,6 +23,7 @@ export function SuperadminMarketplaceManager() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   useEffect(() => {
     async function loadSettings() {
@@ -75,6 +77,7 @@ export function SuperadminMarketplaceManager() {
       });
       setSettings(response.data);
       setStatus("Marketplace banner saved. Public marketplace will use this content now.");
+      setEditorOpen(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save marketplace settings.");
     } finally {
@@ -84,7 +87,42 @@ export function SuperadminMarketplaceManager() {
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_0.86fr]">
-      <DashboardCard title="Marketplace banner" subtitle="Controls the public marketplace headline and the compact auto-sliding banner. Keep each slide short.">
+      <DashboardCard title="Marketplace control" subtitle="Public marketplace headline, banner count, and publish state at a glance.">
+        <div className="grid gap-4">
+          <div className="rounded-lg border border-slate-200 bg-[#0F172A] p-4 text-white">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Marketplace</p>
+            <h2 className="mt-2 text-2xl font-black leading-tight">{settings.headline}</h2>
+            <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/72">{settings.subheadline}</p>
+          </div>
+          <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-muted)]">Slides</p>
+              <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">{settings.bannerSlides.length}</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-muted)]">Max</p>
+              <p className="mt-2 text-2xl font-black text-[var(--lp-text)]">4</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-muted)]">Target</p>
+              <p className="mt-2 text-sm font-black text-[var(--lp-text)]">Public marketplace</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => setEditorOpen(true)} className="lp-button lp-button-primary">
+            Edit marketplace banner
+          </button>
+          {status ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{status}</p> : null}
+          {error ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">{error}</p> : null}
+        </div>
+      </DashboardCard>
+
+      <FormDrawer
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        title="Edit marketplace banner"
+        description="Controls the public marketplace headline and compact auto-sliding banner."
+        widthClassName="sm:w-[min(96vw,56rem)] sm:max-w-5xl"
+      >
         <div className="grid gap-3">
           <label className="grid gap-1 text-sm font-semibold text-[var(--lp-text)]">
             Headline
@@ -141,7 +179,7 @@ export function SuperadminMarketplaceManager() {
           {status ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{status}</p> : null}
           {error ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">{error}</p> : null}
         </div>
-      </DashboardCard>
+      </FormDrawer>
 
       <DashboardCard title="Live preview" subtitle="This is the same compact style used on the public marketplace page.">
         <div className="rounded-lg border border-slate-200 bg-[#0F172A] p-4 text-white">

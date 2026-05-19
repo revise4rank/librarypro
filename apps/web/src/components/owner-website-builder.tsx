@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { apiFetch, hydrateSessionFromServer } from "../lib/api";
 import { formatLibraryHost } from "../lib/domain";
+import { resolvePublicAssetUrl } from "../lib/public-library";
+import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { PublicProfileForm } from "./public-profile-form";
 
 type PublicProfileFormValues = {
@@ -116,6 +119,10 @@ export function OwnerWebsiteBuilder({
   const [loadMessage, setLoadMessage] = useState<string | null>(null);
   const [requestedAction, setRequestedAction] = useState<"save-draft" | "publish" | null>(null);
   const [editorOpen, setEditorOpen] = useState(defaultEditorOpen);
+  const heroPreview = resolvePublicAssetUrl(values.heroBannerUrl);
+  const logoPreview = resolvePublicAssetUrl(values.brandLogoUrl);
+  const enabledPages = Object.values(values.sitePages ?? {}).filter((page) => page?.enabled !== false).length;
+  const siteHost = values.subdomain ? formatLibraryHost(values.subdomain) : "Subdomain pending";
 
   useEffect(() => {
     hydrateSessionFromServer()
@@ -151,31 +158,86 @@ export function OwnerWebsiteBuilder({
 
   return (
     <div className="grid gap-4">
-      <div className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-black text-slate-950">Website editor</p>
-            <p className="mt-1 text-sm text-slate-500">
-              {values.subdomain ? formatLibraryHost(values.subdomain) : "Subdomain pending"} | {values.published ? "Published" : "Draft"}
-            </p>
+      <DashboardCard title="Website workspace" subtitle="Public subdomain, page content, media, and publishing stay editable from one focused drawer.">
+        <div className="grid gap-4 xl:grid-cols-[0.86fr_1.14fr]">
+          <div className="grid gap-3">
+            <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">URL</p>
+                <p className="mt-2 break-all text-sm font-black text-slate-950">{siteHost}</p>
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">State</p>
+                <p className={`mt-2 text-sm font-black ${values.published ? "text-emerald-700" : "text-amber-700"}`}>{values.published ? "Published" : "Draft"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Pages</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{enabledPages || 6}</p>
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Gallery</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{values.galleryImages.length}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setEditorOpen(true)}
+                className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]"
+              >
+                Edit website
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditorOpen(true);
+                  setRequestedAction("save-draft");
+                }}
+                className="rounded-full border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-slate-700"
+              >
+                Save draft
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditorOpen(true);
+                  setRequestedAction("publish");
+                }}
+                className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
+              >
+                Publish
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setEditorOpen((current) => !current)}
-            className="rounded-full border border-[var(--lp-border)] bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
-          >
-            {editorOpen ? "Hide editor" : "Open editor"}
-          </button>
+
+          <div className="overflow-hidden rounded-xl border border-[var(--lp-border)] bg-white">
+            <div className="aspect-[16/7] bg-slate-100">
+              {heroPreview ? <img src={heroPreview} alt="Website hero preview" className="h-full w-full object-cover" /> : null}
+            </div>
+            <div className="grid gap-3 p-4">
+              <div className="flex items-start gap-3">
+                {logoPreview ? <img src={logoPreview} alt="Brand logo preview" className="h-12 w-12 rounded-lg object-cover ring-1 ring-slate-200" /> : null}
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-black text-slate-950">{values.heroTitle || "Website headline"}</p>
+                  <p className="line-clamp-2 text-sm leading-6 text-slate-600">{values.heroTagline || "Website tagline appears here."}</p>
+                </div>
+              </div>
+              <p className="line-clamp-3 text-sm leading-6 text-slate-600">{values.aboutText || "About section preview appears after the owner adds public copy."}</p>
+            </div>
+          </div>
         </div>
-      </div>
+      </DashboardCard>
       {loadMessage ? <p className="text-sm font-semibold text-slate-600">{loadMessage}</p> : null}
-      {editorOpen ? (
+
+      <FormDrawer
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        title="Edit website"
+        description="Edit identity, pages, media, theme, contact, SEO, and publishing settings."
+        widthClassName="sm:w-[min(96vw,56rem)] sm:max-w-5xl"
+      >
         <PublicProfileForm initialValues={values} requestedAction={requestedAction} onActionHandled={() => setRequestedAction(null)} />
-      ) : (
-        <div className="rounded-xl border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-slate-500">
-          The website editor stays hidden until you are ready to edit content or publish updates.
-        </div>
-      )}
+      </FormDrawer>
     </div>
   );
 }
