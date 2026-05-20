@@ -199,6 +199,7 @@ export function OwnerStudentsManager() {
   const [uploadingDoc, setUploadingDoc] = useState<"aadhaar" | "school" | null>(null);
   const [editorMode, setEditorMode] = useState<"summary" | "profile" | "plan">("summary");
   const [editorOpen, setEditorOpen] = useState(false);
+  const [seatDrawerOpen, setSeatDrawerOpen] = useState(false);
   const selectedStudent = rows.find((row) => row.assignment_id === selectedAssignmentId) ?? null;
   const [form, setForm] = useState(buildInitialForm(null));
 
@@ -315,6 +316,7 @@ export function OwnerStudentsManager() {
       });
       setMessage("Seat allotted successfully.");
       await loadStudents();
+      setSeatDrawerOpen(false);
     } catch (seatError) {
       setError(seatError instanceof Error ? seatError.message : "Unable to assign seat.");
     } finally {
@@ -333,6 +335,7 @@ export function OwnerStudentsManager() {
       });
       setMessage("Seat removed from student.");
       await loadStudents();
+      setSeatDrawerOpen(false);
     } catch (seatError) {
       setError(seatError instanceof Error ? seatError.message : "Unable to remove seat.");
     } finally {
@@ -424,20 +427,19 @@ export function OwnerStudentsManager() {
                   <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-4"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Validity</p><p className="mt-2 text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.ends_at}</p></div>
                 </div>
 
-                <div className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 md:grid-cols-[1fr_auto_auto]">
-                  <select value={selectedSeatId} onChange={(event) => setSelectedSeatId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
-                    <option value="">{selectedStudent.seat_number ? "Change seat" : "Allot seat"}</option>
-                    {availableSeats.map((seat) => (
-                      <option key={seat.id} value={seat.id}>
-                        {seat.seat_number}{seat.floor_name ? ` • ${seat.floor_name}` : ""}{seat.section_name ? ` • ${seat.section_name}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <button type="button" disabled={seatSaving || !selectedSeatId} onClick={() => void assignSeat()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
-                    {seatSaving ? "Saving..." : selectedStudent.seat_number ? "Change seat" : "Allot seat"}
-                  </button>
-                  <button type="button" disabled={seatSaving || !selectedStudent.seat_number} onClick={() => void removeSeat()} className="rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 disabled:opacity-60">
-                    Remove seat
+                <div className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 md:grid-cols-[1fr_auto]">
+                  <div>
+                    <p className="text-sm font-black text-[var(--lp-text)]">Seat assignment</p>
+                    <p className="mt-1 text-sm text-[var(--lp-text-soft)]">
+                      {selectedStudent.seat_number ? `Current seat ${selectedStudent.seat_number}. Change or remove from the focused drawer.` : "No seat allotted yet. Assign from the focused drawer."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSeatDrawerOpen(true)}
+                    className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]"
+                  >
+                    Manage seat
                   </button>
                 </div>
 
@@ -469,6 +471,35 @@ export function OwnerStudentsManager() {
                 </Link>
               </div>
             </DashboardCard>
+
+            <FormDrawer
+              open={seatDrawerOpen}
+              onClose={() => setSeatDrawerOpen(false)}
+              title="Manage student seat"
+              description="Allot, change, or remove the selected student's seat without stretching the roster page."
+            >
+              <div className="grid gap-4">
+                <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Student</p>
+                  <p className="mt-2 text-lg font-black text-[var(--lp-text)]">{selectedStudent.student_name}</p>
+                  <p className="mt-1 text-sm text-[var(--lp-text-soft)]">Current seat: {selectedStudent.seat_number ?? "Unallotted"}</p>
+                </div>
+                <select value={selectedSeatId} onChange={(event) => setSelectedSeatId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 outline-none">
+                  <option value="">{selectedStudent.seat_number ? "Choose new seat" : "Choose seat to allot"}</option>
+                  {availableSeats.map((seat) => (
+                    <option key={seat.id} value={seat.id}>
+                      {seat.seat_number}{seat.floor_name ? ` | ${seat.floor_name}` : ""}{seat.section_name ? ` | ${seat.section_name}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" disabled={seatSaving || !selectedSeatId} onClick={() => void assignSeat()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                  {seatSaving ? "Saving seat..." : selectedStudent.seat_number ? "Change seat" : "Allot seat"}
+                </button>
+                <button type="button" disabled={seatSaving || !selectedStudent.seat_number} onClick={() => void removeSeat()} className="rounded-lg border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-700 disabled:opacity-60">
+                  Remove current seat
+                </button>
+              </div>
+            </FormDrawer>
 
             <FormDrawer
               open={editorOpen && editorMode === "profile"}
