@@ -124,11 +124,13 @@ export function DashboardShell({
 
   return (
     <main className="lp-page-frame lp-density-surface text-[var(--lp-text)]">
-      <div className={`grid min-h-screen ${sidebarExpanded ? "lg:grid-cols-[192px_minmax(0,1fr)]" : "lg:grid-cols-[64px_minmax(0,1fr)]"}`}>
+      <div className={`grid min-h-screen lg:h-screen lg:overflow-hidden ${sidebarExpanded ? "lg:grid-cols-[192px_minmax(0,1fr)]" : "lg:grid-cols-[64px_minmax(0,1fr)]"}`}>
         <aside
           onMouseEnter={() => setDesktopHovered(true)}
           onMouseLeave={() => setDesktopHovered(false)}
-          className="hidden border-r border-[var(--lp-border)] bg-[rgba(255,255,255,0.9)] transition-[width] duration-200 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col"
+          className={`hidden border-r border-[var(--lp-border)] bg-[rgba(255,255,255,0.94)] transition-[width] duration-200 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:h-screen lg:flex-col ${
+            sidebarExpanded ? "lg:w-[192px]" : "lg:w-[64px]"
+          }`}
         >
           <div className="flex h-[50px] items-center border-b border-[var(--lp-border)] px-2">
             <div className={`flex w-full items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
@@ -191,7 +193,7 @@ export function DashboardShell({
           </nav>
         </aside>
 
-        <div className="min-w-0">
+        <div className="min-w-0 lg:h-screen lg:overflow-y-auto">
           <header className="sticky top-0 z-20 h-[50px] border-b border-[var(--lp-border)] bg-[rgba(255,255,255,0.94)] backdrop-blur">
             <div className="lp-shell-container flex h-full items-center justify-between gap-3 px-3 sm:px-4">
               <div className="flex min-w-0 items-center gap-2">
