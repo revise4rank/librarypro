@@ -94,6 +94,11 @@ export function middleware(request: NextRequest) {
 
   const publicOwnerRoutes = new Set(["/owner/register"]);
   const publicStudentRoutes = new Set(["/student/access", "/student/register"]);
+  const legacyStudentScannerRoutes = new Set(["/student/qr", "/student/join-library"]);
+
+  if (legacyStudentScannerRoutes.has(url.pathname)) {
+    return NextResponse.redirect(publicUrl(request, "/student/scanner"));
+  }
 
   for (const route of protectedRoutes) {
     if (url.pathname.startsWith(route.prefix) && url.pathname !== route.loginPath) {
