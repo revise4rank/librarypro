@@ -3387,19 +3387,53 @@ export class OwnerOperationsRepository {
     seatPreference?: string | null;
     message?: string | null;
   }) {
+    const existing = await client.query<{ id: string }>(
+      `
+      SELECT id::text
+      FROM library_join_requests
+      WHERE library_id = $1
+        AND student_user_id = $2
+        AND status = 'PENDING'
+      ORDER BY updated_at DESC, created_at DESC
+      LIMIT 1
+      `,
+      [input.libraryId, input.studentUserId],
+    );
+
+    if (existing.rows[0]) {
+      const updated = await client.query<{ id: string; created: boolean }>(
+        `
+        UPDATE library_join_requests
+        SET
+          requested_via = $3,
+          request_qr_key_id = $4::uuid,
+          seat_preference = $5,
+          message = $6,
+          updated_at = NOW()
+        WHERE id = $1
+          AND library_id = $2
+        RETURNING id::text, FALSE AS created
+        `,
+        [
+          existing.rows[0].id,
+          input.libraryId,
+          input.requestedVia,
+          input.requestQrKeyId ?? null,
+          input.seatPreference ?? null,
+          input.message ?? null,
+        ],
+      );
+
+      return updated.rows[0];
+    }
+
     const result = await client.query<{ id: string; created: boolean }>(
       `
       INSERT INTO library_join_requests (
         library_id, student_user_id, requested_via, request_qr_key_id, seat_preference, message
       )
       VALUES ($1, $2, $3, $4::uuid, $5, $6)
-      ON CONFLICT (library_id, student_user_id) WHERE status = 'PENDING'
-      DO UPDATE SET
-        seat_preference = EXCLUDED.seat_preference,
-        message = EXCLUDED.message,
-        request_qr_key_id = EXCLUDED.request_qr_key_id,
-        updated_at = NOW()
-      RETURNING id::text, (xmax = 0) AS created
+      RETURNING id::text, TRUE AS created
       `,
       [
         input.libraryId,
