@@ -3443,14 +3443,15 @@ export class OwnerOperationsRepository {
         l.name AS library_name,
         l.city,
         l.area,
-        l.subdomain
+        p.subdomain
       FROM libraries l
+      LEFT JOIN libraries_public_profiles p ON p.library_id = l.id
       WHERE l.is_active = TRUE
         AND (
           LOWER(l.name) LIKE $1
           OR LOWER(l.city) LIKE $1
           OR COALESCE(LOWER(l.area), '') LIKE $1
-          OR COALESCE(LOWER(l.subdomain), '') LIKE $1
+          OR COALESCE(LOWER(p.subdomain), '') LIKE $1
         )
       ORDER BY l.name ASC
       LIMIT 12
