@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type IntegrationSettings = {
   googleOAuthClientId: string;
@@ -66,6 +67,7 @@ export function SuperadminIntegrationsManager() {
   const [settings, setSettings] = useState<IntegrationSettings | null>(null);
   const [form, setForm] = useState<IntegrationForm | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,6 +106,7 @@ export function SuperadminIntegrationsManager() {
       setSettings(response.data);
       setForm(formFromSettings(response.data));
       setMessage("Integration settings saved. New requests will use these values.");
+      setEditorOpen(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save integration settings.");
     } finally {
@@ -146,6 +149,27 @@ export function SuperadminIntegrationsManager() {
         </div>
       </section>
 
+      <DashboardCard title="Credential editor" subtitle="Sensitive integration values open in a right drawer so the status page stays readable.">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--lp-border)] bg-slate-50 p-4">
+          <div>
+            <p className="text-sm font-black text-[var(--lp-text)]">Edit Google, Razorpay, and SMTP settings</p>
+            <p className="mt-1 text-sm text-[var(--lp-muted)]">
+              Last updated: {settings.updatedAt ? settings.updatedAt.slice(0, 16).replace("T", " ") : "Env fallback"} {settings.updatedByName ? `by ${settings.updatedByName}` : ""}
+            </p>
+          </div>
+          <button type="button" onClick={() => setEditorOpen(true)} className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white">
+            Open integration editor
+          </button>
+        </div>
+      </DashboardCard>
+
+      <FormDrawer
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        title="Integration editor"
+        description="Update platform credentials. Leave secret fields blank to keep the saved value."
+        widthClassName="sm:w-[min(96vw,56rem)] max-w-4xl"
+      >
       <section className="grid gap-4 xl:grid-cols-3">
         <DashboardCard title="Google Auth" subtitle="Owner and student Google login credentials.">
           <div className="grid gap-3">
@@ -194,6 +218,7 @@ export function SuperadminIntegrationsManager() {
           {saving ? "Saving..." : "Save integration settings"}
         </button>
       </div>
+      </FormDrawer>
     </div>
   );
 }

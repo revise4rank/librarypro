@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch, displayApiError } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 import { isPlanAccessMessage, PlanAccessNotice } from "./plan-access-notice";
 
 type AdminsResponse = {
@@ -39,6 +40,7 @@ export function OwnerAdminsManager() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const permissionCatalog = ["students", "payments", "reports", "checkins", "notifications", "seat_control", "admissions"];
@@ -72,6 +74,7 @@ export function OwnerAdminsManager() {
       setFullName("");
       setEmail("");
       setPhone("");
+      setCreateDrawerOpen(false);
       await load();
     } catch (createError) {
       setError(displayApiError(createError, "Unable to create admin."));
@@ -112,6 +115,31 @@ export function OwnerAdminsManager() {
       <DashboardCard title="Multi-admin control" subtitle="Head admin creates and removes workspace admins.">
         <div className="grid gap-4">
           {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{message}</div> : null}
+          <div className="rounded-2xl border border-[var(--lp-border)] bg-white p-4">
+            <p className="text-sm font-black text-[var(--lp-text)]">{admins?.admins.length ?? 0} workspace admins</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--lp-muted)]">Create admins in a focused drawer. Permission toggles stay with each roster row.</p>
+          </div>
+          <button
+            type="button"
+            disabled={!admins?.isHeadAdmin}
+            onClick={() => setCreateDrawerOpen(true)}
+            className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+          >
+            Add workspace admin
+          </button>
+          {!admins?.isHeadAdmin ? (
+            <p className="text-sm text-[var(--lp-muted)]">Only the head admin can create or remove admins. All admins can still view shared actions.</p>
+          ) : null}
+        </div>
+      </DashboardCard>
+
+      <FormDrawer
+        open={createDrawerOpen}
+        onClose={() => setCreateDrawerOpen(false)}
+        title="Add workspace admin"
+        description="Create a login for a team member, then tune permissions from the roster."
+      >
+        <div className="grid gap-4">
           <input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Admin full name" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
           <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
           <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Phone" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
@@ -121,13 +149,10 @@ export function OwnerAdminsManager() {
             onClick={() => void createAdmin()}
             className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
           >
-            Create admin
+            Create admin login
           </button>
-          {!admins?.isHeadAdmin ? (
-            <p className="text-sm text-[var(--lp-muted)]">Only the head admin can create or remove admins. All admins can still view shared actions.</p>
-          ) : null}
         </div>
-      </DashboardCard>
+      </FormDrawer>
 
       <DashboardCard title="Admin roster and shared actions" subtitle="Every admin can see who did what inside the library workspace.">
         <div className="grid gap-6">
