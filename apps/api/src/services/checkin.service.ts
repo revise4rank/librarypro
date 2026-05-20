@@ -465,7 +465,7 @@ export async function scanStudentUnifiedQr(input: ScanCheckInInput) {
       const db = requireDb();
       const repo = new OwnerOperationsRepository(db);
       const client = await db.connect();
-      let joinRequest: { id: string; libraryId: string; libraryName: string };
+      let joinRequest: { id: string; libraryId: string; libraryName: string; created: boolean };
 
       try {
         const library = await repo.findLibraryByQrKey(client, parsed.qrKeyId);
@@ -481,13 +481,13 @@ export async function scanStudentUnifiedQr(input: ScanCheckInInput) {
           message: "Join request created from student scanner",
         });
 
-        joinRequest = { id: created.id, libraryId: library.id, libraryName: library.name };
+        joinRequest = { id: created.id, libraryId: library.id, libraryName: library.name, created: created.created };
       } finally {
         client.release();
       }
 
       return {
-        action: "JOIN_REQUEST_CREATED" as const,
+        action: joinRequest.created ? ("JOIN_REQUEST_CREATED" as const) : ("JOIN_REQUEST_PENDING" as const),
         ...joinRequest,
       };
     }

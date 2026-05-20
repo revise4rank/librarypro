@@ -4,7 +4,7 @@ import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 
-type ScannerAction = "CHECKED_IN" | "CHECKED_OUT" | "JOIN_REQUEST_CREATED";
+type ScannerAction = "CHECKED_IN" | "CHECKED_OUT" | "JOIN_REQUEST_CREATED" | "JOIN_REQUEST_PENDING";
 
 type ScannerResponse = {
   success: boolean;
@@ -28,6 +28,10 @@ function resultText(data: ScannerResponse["data"]) {
 
   if (data.action === "CHECKED_OUT") {
     return `Check-out done at ${new Date(data.checkedOutAt ?? new Date().toISOString()).toLocaleString()}.`;
+  }
+
+  if (data.action === "JOIN_REQUEST_PENDING") {
+    return `Join request is already pending for ${data.libraryName ?? "this library"}. The library desk will review it.`;
   }
 
   return `Join request sent to ${data.libraryName ?? "library"}. The library desk will review and activate access.`;

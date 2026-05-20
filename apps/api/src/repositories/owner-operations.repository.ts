@@ -3387,7 +3387,7 @@ export class OwnerOperationsRepository {
     seatPreference?: string | null;
     message?: string | null;
   }) {
-    const result = await client.query<{ id: string }>(
+    const result = await client.query<{ id: string; created: boolean }>(
       `
       INSERT INTO library_join_requests (
         library_id, student_user_id, requested_via, request_qr_key_id, seat_preference, message
@@ -3399,7 +3399,7 @@ export class OwnerOperationsRepository {
         message = EXCLUDED.message,
         request_qr_key_id = EXCLUDED.request_qr_key_id,
         updated_at = NOW()
-      RETURNING id::text
+      RETURNING id::text, (xmax = 0) AS created
       `,
       [
         input.libraryId,
