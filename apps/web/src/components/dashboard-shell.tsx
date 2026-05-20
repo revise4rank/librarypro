@@ -128,9 +128,7 @@ export function DashboardShell({
         <aside
           onMouseEnter={() => setDesktopHovered(true)}
           onMouseLeave={() => setDesktopHovered(false)}
-          className={`hidden border-r border-[var(--lp-border)] bg-[rgba(255,255,255,0.94)] transition-[width] duration-200 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:h-screen lg:flex-col ${
-            sidebarExpanded ? "lg:w-[192px]" : "lg:w-[64px]"
-          }`}
+          className="hidden border-r border-[var(--lp-border)] bg-[rgba(255,255,255,0.94)] transition-[width] duration-200 lg:flex lg:h-screen lg:flex-col"
         >
           <div className="flex h-[50px] items-center border-b border-[var(--lp-border)] px-2">
             <div className={`flex w-full items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
