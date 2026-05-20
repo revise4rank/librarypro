@@ -9,6 +9,7 @@ import {
 } from "../lib/offline-queue";
 import { getRealtimeSocket } from "../lib/realtime";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type PaymentRow = {
   id: string;
@@ -221,42 +222,47 @@ export function StudentPaymentsManager() {
           </div>
           <button
             type="button"
-            onClick={() => setShowHistory((current) => !current)}
+            onClick={() => setShowHistory(true)}
             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
-            {showHistory ? "Hide receipt history" : `Show receipt history (${rows.length})`}
+            Open receipt history ({rows.length})
           </button>
-          {showHistory ? (
-            <div className="space-y-3">
-              {rows.map((payment) => (
-                <div key={payment.id} className="rounded-xl border border-slate-200 bg-white px-4 py-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-slate-950">{payment.student_name}</p>
-                      <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.due_date ?? payment.created_at).slice(0, 10)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-black text-slate-950">Rs. {payment.amount}</p>
-                      <p className={`text-xs font-black ${payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{payment.status}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    {payment.status !== "PAID" ? (
-                      <button onClick={() => void payNow(payment.id)} className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
-                        Pay now
-                      </button>
-                    ) : null}
-                    <button onClick={() => void downloadReceipt(payment.id)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
-                      Get receipt
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {!loading && rows.length === 0 ? <p className="text-sm text-slate-500">No student payments found yet.</p> : null}
-            </div>
-          ) : null}
         </div>
       </DashboardCard>
+      <FormDrawer
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        title="Receipt history"
+        description="Review old receipts and pay pending items without lengthening the payment page."
+      >
+        <div className="space-y-3">
+          {rows.map((payment) => (
+            <div key={payment.id} className="rounded-xl border border-slate-200 bg-white px-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-bold text-slate-950">{payment.student_name}</p>
+                  <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.due_date ?? payment.created_at).slice(0, 10)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-black text-slate-950">Rs. {payment.amount}</p>
+                  <p className={`text-xs font-black ${payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{payment.status}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {payment.status !== "PAID" ? (
+                  <button onClick={() => void payNow(payment.id)} className="rounded-xl border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent-strong)]">
+                    Pay now
+                  </button>
+                ) : null}
+                <button onClick={() => void downloadReceipt(payment.id)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                  Get receipt
+                </button>
+              </div>
+            </div>
+          ))}
+          {!loading && rows.length === 0 ? <p className="text-sm text-slate-500">No student payments found yet.</p> : null}
+        </div>
+      </FormDrawer>
     </div>
   );
 }

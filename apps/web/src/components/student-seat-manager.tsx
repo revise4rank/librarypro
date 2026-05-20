@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
+import { FormDrawer } from "./form-drawer";
 
 type DashboardResponse = {
   success: boolean;
@@ -73,22 +74,27 @@ export function StudentSeatManager() {
           </div>
           <button
             type="button"
-            onClick={() => setShowLibraryInfo((current) => !current)}
+            onClick={() => setShowLibraryInfo(true)}
             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700"
           >
-            {showLibraryInfo ? "Hide library details" : "Show library details"}
+            Open library details
           </button>
-          {showLibraryInfo ? (
-            <div className="space-y-4 text-sm leading-7 text-slate-700">
-              <p><span className="font-black text-slate-950">Library:</span> {data.library?.library_name ?? "-"}</p>
-              <p><span className="font-black text-slate-950">WiFi:</span> {data.library?.wifi_name ?? "-"}</p>
-              <p><span className="font-black text-slate-950">Password:</span> {data.library?.wifi_password ?? "-"}</p>
-              <p><span className="font-black text-slate-950">Current notice:</span> {data.library?.notice_message ?? "No notice available right now."}</p>
-              <p><span className="font-black text-slate-950">Payment status:</span> {data.assignment?.payment_status ?? "-"}</p>
-            </div>
-          ) : null}
         </div>
       </DashboardCard>
+      <FormDrawer
+        open={showLibraryInfo}
+        onClose={() => setShowLibraryInfo(false)}
+        title="Library details"
+        description="Useful arrival details without adding long content to the seat page."
+      >
+        <div className="space-y-4 text-sm leading-7 text-slate-700">
+          <p><span className="font-black text-slate-950">Library:</span> {data.library?.library_name ?? "-"}</p>
+          <p><span className="font-black text-slate-950">WiFi:</span> {data.library?.wifi_name ?? "-"}</p>
+          <p><span className="font-black text-slate-950">Password:</span> {data.library?.wifi_password ?? "-"}</p>
+          <p><span className="font-black text-slate-950">Current notice:</span> {data.library?.notice_message ?? "No notice available right now."}</p>
+          <p><span className="font-black text-slate-950">Payment status:</span> {data.assignment?.payment_status ?? "-"}</p>
+        </div>
+      </FormDrawer>
     </div>
   );
 }
