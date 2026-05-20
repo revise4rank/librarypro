@@ -311,6 +311,55 @@ function SeatStatusGlyph({ status }: { status: string }) {
   );
 }
 
+function OwnerSeatStepCard({
+  number,
+  title,
+  detail,
+  status,
+  active,
+  done,
+  onClick,
+}: {
+  number: string;
+  title: string;
+  detail: string;
+  status: string;
+  active: boolean;
+  done: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`grid min-h-[8.5rem] gap-3 rounded-xl border p-4 text-left transition ${
+        active
+          ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] shadow-sm"
+          : done
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-[var(--lp-border)] bg-white hover:border-[var(--lp-primary)]"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span
+          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+            done ? "bg-emerald-600 text-white" : active ? "bg-[var(--lp-accent)] text-white" : "bg-slate-100 text-slate-600"
+          }`}
+        >
+          {done ? "OK" : number}
+        </span>
+        <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+          {status}
+        </span>
+      </div>
+      <div>
+        <p className="text-base font-black text-slate-950">{title}</p>
+        <p className="mt-1 text-sm leading-6 text-slate-600">{detail}</p>
+      </div>
+    </button>
+  );
+}
+
 const roomLayoutPresets = [
   {
     id: "reading-hall",
@@ -742,6 +791,20 @@ export function OwnerSeatsManager() {
     () => students.filter((student) => student.assignment_id && (student.admission_status ? student.admission_status === "SEAT_UNALLOTTED" : !student.seat_number)),
     [students],
   );
+
+  useEffect(() => {
+    if (loading) return;
+    if (floors.length === 0 || seats.length === 0) {
+      setWorkspaceMode("setup");
+      setSetupRibbonOpen(true);
+      setRibbonTab(floors.length === 0 ? "floor" : "bank");
+      return;
+    }
+    if (!selectedAssignmentId && unallottedStudents.length > 0) {
+      setWorkspaceMode("assign");
+    }
+  }, [floors.length, loading, seats.length, selectedAssignmentId, unallottedStudents.length]);
+
   const selectedAssignmentStudent = useMemo(
     () => students.find((student) => student.assignment_id === selectedAssignmentId) ?? null,
     [students, selectedAssignmentId],
@@ -1454,74 +1517,112 @@ export function OwnerSeatsManager() {
         return acc;
       }, {} as Record<string, number>)
     : {};
+  const hasFloors = floors.length > 0 || seats.length > 0;
+  const hasSeats = seats.length > 0;
+  const hasLayout = seats.some((seat) => seat.pos_x > 0 && seat.pos_y > 0);
+  const assignedCount = seats.filter((seat) => seat.assignment_id).length;
+  const nextStep =
+    !hasFloors ? "Create floor" : !hasSeats ? "Add seats" : unallottedStudents.length > 0 ? "Allot seats" : "Monitor seats";
+  const stepCards = [
+    {
+      number: "1",
+      title: "Create floor",
+      detail: "Start with the hall or floor size. This gives the seat map a real boundary.",
+      status: hasFloors ? "Done" : "Start here",
+      active: workspaceMode === "setup" && ribbonTab === "floor",
+      done: hasFloors,
+      onClick: () => {
+        setWorkspaceMode("setup");
+        setRibbonTab("floor");
+        setSetupRibbonOpen(true);
+      },
+    },
+    {
+      number: "2",
+      title: "Add seat bank",
+      detail: "Create seats in bulk with prefix, count, row, and columns per row.",
+      status: hasSeats ? `${seats.length} seats` : "Required",
+      active: workspaceMode === "setup" && ribbonTab === "bank",
+      done: hasSeats,
+      onClick: () => {
+        setWorkspaceMode("setup");
+        setRibbonTab("bank");
+        setSetupRibbonOpen(true);
+      },
+    },
+    {
+      number: "3",
+      title: "Shape layout",
+      detail: "Use templates, rooms, paint, and aisles only after seats exist.",
+      status: hasLayout ? "Ready" : "After seats",
+      active: workspaceMode === "layout",
+      done: hasLayout,
+      onClick: () => {
+        setWorkspaceMode("layout");
+        setPlannerRibbonTab("templates");
+        setPlannerToolbarOpen(true);
+      },
+    },
+    {
+      number: "4",
+      title: "Allot students",
+      detail: "Pick an unallotted student, tap a free seat, then confirm assignment.",
+      status: unallottedStudents.length ? `${unallottedStudents.length} waiting` : "Daily mode",
+      active: workspaceMode === "assign",
+      done: assignedCount > 0 && unallottedStudents.length === 0,
+      onClick: () => {
+        setWorkspaceMode("assign");
+        setPlannerRibbonTab("students");
+        setPlannerToolbarOpen(false);
+      },
+    },
+  ];
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9cead4_100%)] p-4 text-white shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Seat inventory live</p>
-            <h3 className="mt-1 text-xl font-black tracking-tight">Keep seat inventory calm, then place unallotted students only when you are ready</h3>
-            <p className="mt-1 text-sm leading-6 text-white/85">
-              This page now defaults to assignment mode first. Open setup or layout tools only when the hall itself needs changes.
+      <section className="rounded-xl border border-[var(--lp-border)] bg-white p-4 shadow-sm">
+        <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr] xl:items-start">
+          <div className="rounded-xl bg-[linear-gradient(135deg,#0f8f62_0%,#6ee7b7_100%)] p-4 text-white">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Seat setup guide</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight">Next: {nextStep}</h2>
+            <p className="mt-2 text-sm leading-6 text-white/85">
+              Follow the cards from left to right. Daily owners can stay on allotment; setup tools open only in right drawers.
             </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-white/14 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/70">Free</p>
+                <p className="mt-1 text-xl font-black">{totals.AVAILABLE ?? 0}</p>
+              </div>
+              <div className="rounded-lg bg-white px-3 py-2 text-[#0f8f62]">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-70">Occupied</p>
+                <p className="mt-1 text-xl font-black">{totals.OCCUPIED ?? 0}</p>
+              </div>
+              <div className="rounded-lg bg-white/14 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/70">Waiting</p>
+                <p className="mt-1 text-xl font-black">{unallottedStudents.length}</p>
+              </div>
+              <div className="rounded-lg bg-white/14 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/70">Live</p>
+                <p className="mt-1 text-xl font-black">{liveStatus}</p>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="rounded-lg bg-white/12 px-4 py-2.5 text-sm font-black">
-              {totals.AVAILABLE ?? 0} free
-            </div>
-            <div className="rounded-lg bg-white px-4 py-2.5 text-sm font-black text-[#139b62]">
-              {totals.OCCUPIED ?? 0} occupied
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {stepCards.map((step) => (
+              <OwnerSeatStepCard key={step.number} {...step} />
+            ))}
           </div>
         </div>
       </section>
-      <DashboardCard title="Workspace mode" subtitle="Assignment stays primary. Setup and layout open only when the hall needs structural changes.">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            {([
-              ["setup", "Setup"],
-              ["layout", "Layout"],
-              ["assign", "Assign"],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setWorkspaceMode(value)}
-                className={`rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] transition ${
-                  workspaceMode === value
-                    ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] shadow-sm"
-                    : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="rounded-full border border-[var(--lp-border)] bg-slate-50 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]">
-              Active: {workspaceMode}
-            </div>
-            <InlineHelp
-              title="Workspace mode"
-              points={[
-                "Assign is the daily mode for placing unallotted students.",
-                "Setup is only for floors and new seats.",
-                "Layout is only for moving desks, aisles, and section colors.",
-              ]}
-            />
-          </div>
-        </div>
-      </DashboardCard>
       <div className="sticky top-[88px] z-10">
       <DashboardCard
-        title={workspaceMode === "setup" ? "Setup ribbon" : workspaceMode === "layout" ? "Layout ribbon" : "Assignment ribbon"}
+        title={workspaceMode === "setup" ? "Setup actions" : workspaceMode === "layout" ? "Layout actions" : "Allotment actions"}
         subtitle={
           workspaceMode === "setup"
-            ? "Create floors, seat banks, and single seats from one compact ribbon."
+            ? "Create floors, seat banks, or one exact seat. Forms open from the right."
             : workspaceMode === "layout"
-              ? "Switch between templates, layout tools, and section painting here."
-              : "Keep unallotted-student assignment focused and close to the planner, while hall-edit tools stay hidden."
+              ? "Use templates, rooms, paint, and movement only when changing the physical hall."
+              : "Pick a student and then tap a free seat on the canvas."
         }
       >
         <div className="grid gap-4">
@@ -1546,9 +1647,9 @@ export function OwnerSeatsManager() {
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex flex-wrap gap-2">
                 {[
-                  ["floor", "Floor"],
-                  ["bank", "Bank"],
-                  ["single", "Single"],
+                  ["floor", "Create floor"],
+                  ["bank", "Add seat bank"],
+                  ["single", "Add one seat"],
                 ].map(([value, label]) => (
                   <button
                     key={value}
@@ -1572,7 +1673,7 @@ export function OwnerSeatsManager() {
                 onClick={() => setSetupRibbonOpen((current) => !current)}
                 className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
               >
-                {setupRibbonOpen ? "Close setup drawer" : "Open setup drawer"}
+                {setupRibbonOpen ? "Close form" : "Open selected form"}
               </button>
             </div>
           </div>
@@ -1708,11 +1809,11 @@ export function OwnerSeatsManager() {
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex flex-wrap gap-2">
                   {[
-                    ["templates", "Templates"],
-                    ["rooms", "Rooms"],
-                    ["layout", "Layout"],
-                    ["paint", "Paint"],
-                    ["students", "Unallotted"],
+                    ["templates", "Apply template"],
+                    ["rooms", "Manage rooms"],
+                    ["layout", "Move seats"],
+                    ["paint", "Paint sections"],
+                    ["students", "Allot students"],
                   ].map(([value, label]) => (
                     <button
                       key={value}
@@ -1736,7 +1837,7 @@ export function OwnerSeatsManager() {
                   onClick={() => setPlannerToolbarOpen((current) => !current)}
                   className="rounded-full border border-[var(--lp-border)] bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
                 >
-                  {plannerToolbarOpen ? "Close tool drawer" : "Open tool drawer"}
+                  {plannerToolbarOpen ? "Close tools" : "Open selected tool"}
                 </button>
               </div>
             </div>
@@ -1927,7 +2028,7 @@ export function OwnerSeatsManager() {
               />
             </div>
 
-            {workspaceMode === "layout" ? (
+            {false && workspaceMode === "layout" ? (
             <div className="grid gap-3">
               <div className="flex flex-wrap gap-2">
                 {[
@@ -2000,12 +2101,11 @@ export function OwnerSeatsManager() {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Action flow" subtitle="Compact assignment support without turning the seat desk into a bulky roster page.">
+        {workspaceMode !== "assign" ? (
+        <DashboardCard title="Seat tips" subtitle="Secondary guidance stays here while setup or layout mode is active.">
           <div className="grid gap-3">
             <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-[var(--lp-text-soft)]">
-              {workspaceMode === "assign"
-                ? "Use the planner for placement and keep the queue limited to unallotted students only."
-                : "Seat controls no longer sit in a bulky side inspector. Tap any seat to open its action sheet."}
+              Seat controls no longer sit in a bulky side inspector. Tap any seat to open its action sheet.
             </div>
             <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-3">
               <div className="flex items-center justify-between gap-3">
@@ -2044,6 +2144,7 @@ export function OwnerSeatsManager() {
             </div>
           </div>
         </DashboardCard>
+        ) : null}
       </section>
 
       <div className="rounded-xl border border-[var(--lp-border)] bg-white p-4">
