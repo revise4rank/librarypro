@@ -589,6 +589,7 @@ export function OwnerSeatsManager() {
   const [roomDraftNotes, setRoomDraftNotes] = useState("");
   const [ribbonTab, setRibbonTab] = useState<"floor" | "bank" | "single">("floor");
   const [plannerRibbonTab, setPlannerRibbonTab] = useState<"templates" | "rooms" | "layout" | "paint" | "students">("templates");
+  const [layoutDrawerTab, setLayoutDrawerTab] = useState<"floors" | "seats" | "rooms" | "templates" | "move-paint">("seats");
   const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("assign");
   const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
   const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
@@ -1577,6 +1578,222 @@ export function OwnerSeatsManager() {
       },
     },
   ];
+  const needsSetup = !hasFloors || !hasSeats;
+  const activeFloorCells = activeFloorCard
+    ? (() => {
+        const aisleCells = new Set(floorMetaDrafts[activeFloorCard.floor.id]?.aisleCells ?? activeFloorCard.floor.layout_meta?.aisleCells ?? []);
+        const seatByCell = new Map(activeFloorCard.seats.map((seat) => [`${seat.pos_x}-${seat.pos_y}`, seat]));
+        return Array.from({ length: activeFloorCard.rows * activeFloorCard.columns }, (_, index) => {
+          const y = Math.floor(index / activeFloorCard.columns) + 1;
+          const x = (index % activeFloorCard.columns) + 1;
+          const key = `${x}-${y}`;
+          return { x, y, key, seat: seatByCell.get(key), isAisleCell: aisleCells.has(key) };
+        });
+      })()
+    : [];
+  const activeSectionColors = activeFloorCard
+    ? floorMetaDrafts[activeFloorCard.floor.id]?.sectionColors ?? activeFloorCard.floor.layout_meta?.sectionColors ?? {}
+    : {};
+  const layoutDrawerTabs = [
+    ["floors", "Floors"],
+    ["seats", "Seats"],
+    ["rooms", "Rooms"],
+    ["templates", "Templates"],
+    ["move-paint", "Move/Paint"],
+  ] as const;
+
+  return (
+    <div className="grid gap-4">
+      <section className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-3 shadow-sm sm:grid-cols-2 xl:grid-cols-5">
+        {[
+          ["Seats total", seats.length],
+          ["Free", totals.AVAILABLE ?? 0],
+          ["Occupied", totals.OCCUPIED ?? 0],
+          ["Students waiting", unallottedStudents.length],
+          ["Live status", liveStatus],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-lg bg-slate-50 px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
+            <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
+          </div>
+        ))}
+      </section>
+
+      {error ? <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">{error}</div> : null}
+      {message ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{message}</div> : null}
+
+      {needsSetup ? (
+        <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <DashboardCard title={hasFloors ? "Add seat bank" : "Create your first floor"} subtitle={hasFloors ? "Seats are missing. Add one bank, then the daily map opens." : "Start with one hall or floor. Rows and columns create the map boundary."}>
+            <div className="grid gap-4">
+              <div className="rounded-xl border border-dashed border-[var(--lp-border)] bg-[#fff9f2] p-4">
+                <p className="text-sm font-black text-slate-950">{hasFloors ? "Next step: add seats" : "Next step: create floor"}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {hasFloors ? "Add a bulk seat bank. After seats exist, this page becomes the daily allotment workspace." : "Create one floor first. You can adjust rows, columns, rooms, and colors later."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setLayoutDrawerTab(hasFloors ? "seats" : "floors");
+                  setRibbonTab(hasFloors ? "bank" : "floor");
+                  setPlannerToolbarOpen(true);
+                }}
+                className="rounded-lg bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white"
+              >
+                {hasFloors ? "Add seats" : "Create floor"}
+              </button>
+            </div>
+          </DashboardCard>
+          <DashboardCard title="Simple flow" subtitle="Setup is intentionally short.">
+            <div className="grid gap-3">
+              {["Create floor", "Add seats", "Manage rooms if needed", "Allot students daily"].map((item, index) => (
+                <div key={item} className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-sm font-black text-emerald-700">{index + 1}</span>
+                  <span className="text-sm font-bold text-slate-700">{item}</span>
+                </div>
+              ))}
+            </div>
+          </DashboardCard>
+        </section>
+      ) : (
+        <>
+          <section className="rounded-xl border border-[var(--lp-border)] bg-white p-3 shadow-sm">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="grid gap-2 sm:grid-cols-[minmax(14rem,1fr)_12rem]">
+                <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none">
+                  <option value="">Select student for allotment</option>
+                  {unallottedStudents.map((student) => (
+                    <option key={student.assignment_id} value={student.assignment_id}>{student.student_name} | {student.plan_name} | {student.payment_status}</option>
+                  ))}
+                </select>
+                <select value={seatFilter} onChange={(event) => setSeatFilter(event.target.value as typeof seatFilter)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none">
+                  <option value="ALL">All seats</option>
+                  <option value="AVAILABLE">Free seats</option>
+                  <option value="OCCUPIED">Occupied seats</option>
+                  <option value="RESERVED">Reserved seats</option>
+                  <option value="DISABLED">Blocked seats</option>
+                  <option value="DUE">Due students</option>
+                  <option value="EXPIRING">Expiring soon</option>
+                </select>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {floorCards.length > 1 ? (
+                  <select value={activeFloorCard?.floor.id ?? ""} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 outline-none">
+                    {floorCards.map((item) => <option key={item.floor.id} value={item.floor.id}>{item.floor.name}</option>)}
+                  </select>
+                ) : null}
+                <button type="button" onClick={() => { setLayoutDrawerTab("seats"); setPlannerToolbarOpen(true); }} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-[var(--lp-primary)]">Manage layout</button>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <DashboardCard title={activeFloorCard?.floor.name ?? "Seat map"} subtitle="Select a student, choose a free seat, then confirm allotment.">
+              {activeFloorCard ? (
+                <div className="overflow-x-auto">
+                  <div className="w-max min-w-full rounded-xl border border-[var(--lp-border)] bg-[radial-gradient(circle_at_top,#ffffff_0%,#fcf7ef_100%)] p-3">
+                    <div className="grid gap-2 rounded-xl bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-3" style={{ gridTemplateColumns: `repeat(${activeFloorCard.columns}, minmax(${getPlannerColumnWidth(activeFloorCard.columns)}px, 1fr))` }}>
+                      {activeFloorCells.map((cell) => {
+                        const seat = cell.seat;
+                        return (
+                          <div key={cell.key} className={`relative min-h-[5rem] rounded-lg border border-dashed p-1 transition ${cell.isAisleCell ? "border-slate-300 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : seat ? "border-transparent bg-transparent" : "border-slate-200 bg-white/60"}`}>
+                            {seat ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (layoutMode && plannerTool === "paint") {
+                                    void paintSeatSection(seat);
+                                    return;
+                                  }
+                                  setSelectedSeatId(seat.id);
+                                  setSelectedFloorId(activeFloorCard.floor.id);
+                                }}
+                                className={`group relative flex h-full w-full min-w-0 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-md ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"}`}
+                                style={activeSectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${activeSectionColors[seat.section_name ?? ""]} inset` } : undefined}
+                              >
+                                <div className="flex w-full min-w-0 items-center justify-between gap-1">
+                                  <span className="min-w-0 truncate text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
+                                  <SeatStatusGlyph status={seat.status} />
+                                </div>
+                                <div className="mt-1 flex min-h-[2.75rem] w-full items-center justify-center rounded-md bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-sm">
+                                  <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
+                                </div>
+                                <div className="mt-1 flex w-full min-w-0 items-center justify-between gap-1">
+                                  <span className="truncate rounded-full bg-white/90 px-1.5 py-0.5 text-[8px] font-black text-slate-500 shadow-sm">{seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Live" : seat.status === "RESERVED" ? "Hold" : "Off"}</span>
+                                  {seat.student_name ? <span className="rounded-full bg-[var(--lp-accent-soft)] px-1.5 py-0.5 text-[8px] font-black text-[var(--lp-accent)]">{formatStudentInitials(seat.student_name)}</span> : null}
+                                </div>
+                              </button>
+                            ) : (
+                              <div className="flex h-full flex-col items-center justify-center rounded-lg p-1.5 text-center text-[9px] text-slate-400">
+                                <span className="text-[8px] font-semibold uppercase tracking-[0.12em]">{cell.isAisleCell ? "Aisle" : "Empty"}</span>
+                                {layoutMode && !cell.isAisleCell ? <button type="button" onClick={() => void createSeatAtCell(activeFloorCard.floor.id, cell.x, cell.y)} className="mt-1 rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]">Add seat</button> : null}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ) : <p className="text-sm text-slate-500">No active floor found.</p>}
+            </DashboardCard>
+
+            <DashboardCard title="Daily seat action" subtitle="Selected student, selected seat, and allotment.">
+              <div className="grid gap-3">
+                <div className="rounded-lg border border-[var(--lp-border)] bg-slate-50 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Selected student</p>
+                  <p className="mt-1 text-base font-black text-slate-950">{selectedAssignmentStudent?.student_name ?? "Select a student"}</p>
+                  <p className="mt-1 text-xs text-slate-500">{selectedAssignmentStudent ? `${selectedAssignmentStudent.plan_name} | ${selectedAssignmentStudent.payment_status}` : "Waiting students are listed below."}</p>
+                </div>
+                <div className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Selected seat</p>
+                  <p className="mt-1 text-base font-black text-slate-950">{selectedSeat?.seat_number ?? "Tap a seat"}</p>
+                  <p className="mt-1 text-xs text-slate-500">{selectedSeat ? describeSeatState(selectedSeat) : "Free seats can be allotted after selecting a student."}</p>
+                </div>
+                <button type="button" disabled={!selectedAssignmentId || !selectedSeat || selectedSeat.status !== "AVAILABLE"} onClick={() => selectedSeat && void assignSeat(selectedSeat.id)} className="rounded-lg bg-[var(--lp-accent)] px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">Allot seat</button>
+                {selectedSeat ? <button type="button" onClick={() => setInspectorControlsOpen(true)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-[var(--lp-primary)]">Edit seat status</button> : null}
+                <div className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-black text-slate-950">Waiting students</p>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black text-amber-700">{unallottedStudents.length}</span>
+                  </div>
+                  <div className="mt-3 grid max-h-[21rem] gap-2 overflow-auto">
+                    {unallottedStudents.map((student) => (
+                      <button key={student.assignment_id} type="button" onClick={() => setSelectedAssignmentId(student.assignment_id)} className={`rounded-lg border px-3 py-2 text-left ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]/40" : "border-[var(--lp-border)] bg-white"}`}>
+                        <p className="text-sm font-black text-slate-950">{student.student_name}</p>
+                        <p className="text-xs text-slate-500">{student.plan_name} | {student.payment_status}</p>
+                      </button>
+                    ))}
+                    {unallottedStudents.length === 0 ? <p className="py-5 text-center text-sm text-slate-500">No unallotted students waiting.</p> : null}
+                  </div>
+                </div>
+              </div>
+            </DashboardCard>
+          </section>
+        </>
+      )}
+
+      <FormDrawer open={plannerToolbarOpen} onClose={() => setPlannerToolbarOpen(false)} title="Manage layout" description="Advanced setup tools stay here so daily allotment stays clean." widthClassName="sm:w-[min(96vw,56rem)] max-w-5xl">
+        <div className="grid gap-4">
+          <div className="flex flex-wrap gap-2">
+            {layoutDrawerTabs.map(([value, label]) => (
+              <button key={value} type="button" onClick={() => setLayoutDrawerTab(value)} className={`rounded-full px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.16em] ${layoutDrawerTab === value ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-slate-700"}`}>{label}</button>
+            ))}
+          </div>
+          {layoutDrawerTab === "floors" ? <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 md:grid-cols-2"><input value={floorName} onChange={(event) => setFloorName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Floor name" /><input value={floorNumber} onChange={(event) => setFloorNumber(Number(event.target.value) || 0)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Floor no." /><input value={layoutRows} onChange={(event) => setLayoutRows(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Rows" /><input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Columns" /><button type="submit" className="rounded-xl bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white md:col-span-2">Create floor</button></form> : null}
+          {layoutDrawerTab === "seats" ? <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 md:grid-cols-2 xl:grid-cols-4"><select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none">{floorCards.map((item) => <option key={item.floor.id} value={item.floor.id}>{item.floor.name}</option>)}</select><input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Section" /><input value={seatPrefix} onChange={(event) => setSeatPrefix(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Prefix" /><input value={seatCount} onChange={(event) => setSeatCount(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Count" /><input value={startNumber} onChange={(event) => setStartNumber(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Start" /><input value={rowStart} onChange={(event) => setRowStart(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Row" /><input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Column" /><input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Per row" /><button type="submit" disabled={!selectedFloorId} className="rounded-xl bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white disabled:bg-slate-200 md:col-span-2 xl:col-span-4">Add seats</button></form> : null}
+          {layoutDrawerTab === "rooms" ? <div className="grid gap-3"><button type="button" disabled={!activeFloorCard || activeFloorCard.floor.id === "main-floor"} onClick={() => activeFloorCard && setHallSettingsOpen(activeFloorCard.floor.id)} className="rounded-xl bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white disabled:bg-slate-200">Manage rooms</button><p className="text-sm text-slate-500">Room settings open as a focused editor for names, colors, capacity, and notes.</p></div> : null}
+          {layoutDrawerTab === "templates" ? <div className="grid gap-3 xl:grid-cols-3">{roomLayoutPresets.map((preset) => <button key={preset.id} type="button" onClick={() => selectedFloorId && void applyRoomLayoutPreset(selectedFloorId, preset)} disabled={!selectedFloorId} className="rounded-xl border border-[var(--lp-border)] bg-white p-4 text-left disabled:opacity-50"><p className="text-sm font-black text-slate-950">{preset.title}</p><p className="mt-1 text-xs text-slate-500">{preset.subtitle}</p><span className="mt-3 inline-flex rounded-full bg-[var(--lp-accent-soft)] px-3 py-1 text-[11px] font-black text-[var(--lp-accent)]">Apply template</span></button>)}</div> : null}
+          {layoutDrawerTab === "move-paint" ? <div className="grid gap-4"><button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-lg px-4 py-2.5 text-sm font-black ${layoutMode ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-slate-700"}`}>{layoutMode ? "Stop moving" : "Move seats"}</button><div className="grid gap-3 md:grid-cols-[1fr_auto]"><input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" /><input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-20 rounded-xl border border-[var(--lp-border)] bg-white p-1" /></div><button type="button" onClick={() => { setLayoutMode(true); setPlannerTool("paint"); }} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-slate-700">Paint seats</button></div> : null}
+        </div>
+      </FormDrawer>
+
+      <FormDrawer open={Boolean(selectedSeat && inspectorControlsOpen)} onClose={() => setInspectorControlsOpen(false)} title={selectedSeat ? `Edit ${selectedSeat.seat_number}` : "Edit seat"} description="Reserve, block, mark free, or rename the selected seat." widthClassName="sm:w-[min(94vw,32rem)] max-w-lg">
+        {selectedSeat ? <div className="grid gap-3"><input value={drawerSeatCode} onChange={(event) => setDrawerSeatCode(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Seat code" /><input value={drawerSectionName} onChange={(event) => setDrawerSectionName(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Room / section" /><input type="datetime-local" value={drawerReservedUntil} onChange={(event) => setDrawerReservedUntil(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" /><div className="grid gap-2 sm:grid-cols-2"><button type="button" onClick={() => void updateSeatAction("RESERVED")} className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">Reserve seat</button><button type="button" onClick={() => void updateSeatAction("DISABLED")} className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Block seat</button><button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--lp-text)]">Mark free</button><button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">Save seat</button></div></div> : null}
+      </FormDrawer>
+    </div>
+  );
 
   return (
     <div className="grid gap-5">
