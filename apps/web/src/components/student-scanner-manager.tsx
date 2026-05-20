@@ -33,6 +33,25 @@ function resultText(data: ScannerResponse["data"]) {
   return `Join request sent to ${data.libraryName ?? "library"}. The library desk will review and activate access.`;
 }
 
+function scannerErrorText(error: unknown) {
+  const message = error instanceof Error ? error.message : "Unable to process this QR.";
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes("column") || lowerMessage.includes("subdomain") || lowerMessage.includes("relation") || lowerMessage.includes("syntax")) {
+    return "Scanner setup needs a quick server refresh. Please try again after a moment.";
+  }
+
+  if (lowerMessage.includes("invalid") || lowerMessage.includes("qr")) {
+    return "This QR is not a valid BookLib library QR. Please scan the QR shown by the library desk.";
+  }
+
+  if (lowerMessage.includes("camera") || lowerMessage.includes("permission") || lowerMessage.includes("notallowed")) {
+    return "Camera permission is blocked. Allow camera access or use manual fallback.";
+  }
+
+  return message;
+}
+
 export function StudentScannerManager({ compact = false }: { compact?: boolean }) {
   const [cameraActive, setCameraActive] = useState(false);
   const [scannerStatus, setScannerStatus] = useState("Camera off");
@@ -81,7 +100,7 @@ export function StudentScannerManager({ compact = false }: { compact?: boolean }
       setMessage(resultText(response.data));
       setManualQrPayload("");
     } catch (scanError) {
-      setError(scanError instanceof Error ? scanError.message : "Unable to process this QR.");
+      setError(scannerErrorText(scanError));
     } finally {
       setSubmitting(false);
     }
@@ -122,7 +141,7 @@ export function StudentScannerManager({ compact = false }: { compact?: boolean }
       });
     } catch (cameraError) {
       stopCamera();
-      setError(cameraError instanceof Error ? cameraError.message : "Unable to start camera scanner.");
+      setError(scannerErrorText(cameraError));
     }
   }
 
@@ -142,7 +161,7 @@ export function StudentScannerManager({ compact = false }: { compact?: boolean }
     <section className={compact ? "grid gap-3" : "mx-auto grid max-w-3xl gap-4"}>
       <div className="overflow-hidden rounded-2xl border border-[var(--lp-border)] bg-white p-3 shadow-sm sm:p-4">
         <div className="relative overflow-hidden rounded-xl bg-[#111827]">
-          <video ref={videoRef} className={compact ? "h-[min(62vh,34rem)] min-h-[24rem] w-full object-cover" : "h-[min(70vh,34rem)] min-h-[24rem] w-full object-cover"} playsInline muted />
+          <video ref={videoRef} className={compact ? "h-[min(58vh,32rem)] min-h-[20rem] w-full object-cover" : "h-[min(68vh,34rem)] min-h-[22rem] w-full object-cover"} playsInline muted />
           {!cameraActive ? (
             <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(180deg,rgba(15,23,42,0.7),rgba(15,23,42,0.92))] px-5 text-center">
               <div>

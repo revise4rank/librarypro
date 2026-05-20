@@ -253,13 +253,13 @@ export function OwnerDashboardManager() {
               href="/owner/admissions"
               className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-lg border border-[#0F172A] bg-[#0F172A] px-5 py-2.5 text-sm font-black !text-white shadow-sm transition hover:bg-slate-800"
             >
-              New admission
+              Open admissions
             </Link>
             <Link
               href="/owner/admissions?mode=requests"
               className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-lg border border-white/70 bg-white px-5 py-2.5 text-sm font-black !text-[#0F172A] shadow-sm transition hover:bg-emerald-50"
             >
-              Review requests
+              Review join requests
             </Link>
           </div>
         </div>
