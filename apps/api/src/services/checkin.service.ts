@@ -481,7 +481,12 @@ export async function scanStudentUnifiedQr(input: ScanCheckInInput) {
           message: "Join request created from student scanner",
         });
 
-        joinRequest = { id: created.id, libraryId: library.id, libraryName: library.name, created: created.created };
+        joinRequest = {
+          id: created.id,
+          libraryId: library.id,
+          libraryName: library.name,
+          created: String(created.created) === "true",
+        };
       } finally {
         client.release();
       }
