@@ -163,10 +163,10 @@ export function DashboardShell({
             </div>
           </div>
 
-          <nav className="flex-1 space-y-3 overflow-auto px-2 py-3">
+          <nav className={`flex-1 overscroll-contain px-1.5 py-2 ${sidebarExpanded ? "space-y-2 overflow-auto" : "space-y-1.5 overflow-hidden"}`}>
             {navGroups.map((group) => (
-              <div key={group.label} className="grid gap-1">
-                {sidebarExpanded ? <p className="px-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{group.label}</p> : null}
+              <div key={group.label} className={sidebarExpanded ? "grid gap-1" : "grid gap-0.5"}>
+                {sidebarExpanded ? <p className="px-2 text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">{group.label}</p> : null}
                 {group.items.map((item) => {
                   const active = pathname === item.href;
                   const Icon = navIconFor(item);
@@ -175,14 +175,14 @@ export function DashboardShell({
                       key={item.href}
                       href={item.href}
                       title={`${group.label}: ${item.label}`}
-                      className={`group flex h-10 items-center rounded-lg px-2 transition ${
+                      className={`group flex items-center rounded-md px-2 transition ${sidebarExpanded ? "h-8" : "h-8"} ${
                         active ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "text-slate-500 hover:bg-white hover:text-[var(--lp-text)]"
                       }`}
                     >
                       <span className={`flex w-6 shrink-0 items-center justify-center ${sidebarExpanded ? "" : "mx-auto"}`}>
                         <Icon className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
                       </span>
-                      {sidebarExpanded ? <span className="ml-3 truncate text-sm font-medium">{item.label}</span> : null}
+                      {sidebarExpanded ? <span className="ml-2.5 truncate text-[13px] font-medium">{item.label}</span> : null}
                     </Link>
                   );
                 })}
@@ -311,7 +311,7 @@ export function DashboardShell({
             </div>
           </header>
 
-          <section className="lp-shell-container px-1.5 py-2 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-4 sm:py-3 lg:py-4 lg:pb-6">{children}</section>
+          <section className="lp-shell-container px-1.5 py-2 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-3 sm:py-2.5 lg:py-3 lg:pb-5">{children}</section>
         </div>
       </div>
 
@@ -421,7 +421,7 @@ export function DashboardCard({
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
-    <section className={`min-w-0 rounded-lg border border-[var(--lp-border)] p-2.5 shadow-sm sm:p-4 ${tone}`}>
+    <section className={`min-w-0 rounded-lg border border-[var(--lp-border)] p-2.5 shadow-sm sm:p-3 ${tone}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-[var(--lp-text)]">{title}</h3>
@@ -444,7 +444,7 @@ export function DashboardCard({
           </div>
         ) : null}
       </div>
-      <div className="mt-3 min-w-0">{children}</div>
+      <div className="mt-2.5 min-w-0">{children}</div>
     </section>
   );
 }

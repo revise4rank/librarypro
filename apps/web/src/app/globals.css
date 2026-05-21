@@ -218,7 +218,7 @@ button:disabled {
 }
 
 .lp-stat-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: none;
@@ -226,7 +226,7 @@ button:disabled {
 }
 
 .lp-stat-value {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -273,8 +273,17 @@ button:disabled {
   padding: 1rem !important;
 }
 
+.lp-density-surface [class*="py-3"] {
+  padding-top: 0.625rem !important;
+  padding-bottom: 0.625rem !important;
+}
+
 .lp-density-surface [class*="gap-6"] {
   gap: 1rem !important;
+}
+
+.lp-density-surface [class*="gap-5"] {
+  gap: 0.875rem !important;
 }
 
 .lp-density-surface [class*="tracking-[0.16em]"],
@@ -293,8 +302,12 @@ button:disabled {
 }
 
 .lp-density-surface [class*="text-2xl"] {
-  font-size: 1.35rem !important;
+  font-size: 1.2rem !important;
   line-height: 1.12 !important;
+}
+
+.lp-density-surface [class*="leading-7"] {
+  line-height: 1.5 !important;
 }
 
 .animate-fade-up {

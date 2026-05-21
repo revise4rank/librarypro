@@ -199,35 +199,35 @@ export function OwnerMarketplaceListingManager({
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-3">
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
       {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
 
       <DashboardCard title="Marketplace listing" subtitle="This is the trial-safe public listing. It appears in marketplace search without enabling the premium subdomain website builder.">
-        <div className="grid gap-4">
-          <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 sm:grid-cols-4">
+        <div className="grid gap-3">
+          <div className="grid gap-2 rounded-lg border border-[var(--lp-border)] bg-white p-3 sm:grid-cols-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">State</p>
-              <p className={`mt-2 text-sm font-black ${form.listingPublished ? "text-emerald-700" : "text-amber-700"}`}>{form.listingPublished ? "Published" : "Hidden"}</p>
+              <p className={`mt-1 text-sm font-black ${form.listingPublished ? "text-emerald-700" : "text-amber-700"}`}>{form.listingPublished ? "Published" : "Hidden"}</p>
             </div>
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Amenities</p>
-              <p className="mt-2 text-2xl font-black text-slate-950">{form.amenities.length}</p>
+              <p className="mt-1 text-xl font-black text-slate-950">{form.amenities.length}</p>
             </div>
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Gallery</p>
-              <p className="mt-2 text-2xl font-black text-slate-950">{form.galleryImages.length}</p>
+              <p className="mt-1 text-xl font-black text-slate-950">{form.galleryImages.length}</p>
             </div>
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Contact</p>
-              <p className="mt-2 text-sm font-black text-slate-950">{form.allowDirectContact ? "Enabled" : "Hidden"}</p>
+              <p className="mt-1 text-sm font-black text-slate-950">{form.allowDirectContact ? "Enabled" : "Hidden"}</p>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-lg font-black text-slate-950">{form.heroTitle || "Listing title"}</p>
-            <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{form.heroTagline || "Short marketplace pitch will appear here."}</p>
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <p className="text-base font-black text-slate-950">{form.heroTitle || "Listing title"}</p>
+            <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{form.heroTagline || "Short marketplace pitch will appear here."}</p>
           </div>
-          <button type="button" onClick={() => setDetailsOpen(true)} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--lp-accent)]">
+          <button type="button" onClick={() => setDetailsOpen(true)} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
             Edit listing details
           </button>
         </div>
@@ -303,23 +303,23 @@ export function OwnerMarketplaceListingManager({
         </div>
       </FormDrawer>
 
-      <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+      <div className="grid gap-3 xl:grid-cols-[0.72fr_1.28fr]">
         <DashboardCard title="Listing media" subtitle="Upload real photos; URLs are generated automatically after upload.">
-          <div className="grid gap-4">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
-                <div className="aspect-square overflow-hidden rounded-lg bg-slate-100">
+          <div className="grid gap-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-2.5">
+                <div className="h-28 overflow-hidden rounded-lg bg-slate-100">
                   {logoPreview ? <img src={logoPreview} alt="Listing logo" className="h-full w-full object-cover" /> : null}
                 </div>
-                <div className="mt-3">
+                <div className="mt-2">
                   <PublicProfileImageUpload label="Upload logo" helperText="Square logo works best" onUploaded={(url) => update("brandLogoUrl", url)} />
                 </div>
               </div>
-              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
-                <div className="aspect-[16/10] overflow-hidden rounded-lg bg-slate-100">
+              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-2.5">
+                <div className="h-28 overflow-hidden rounded-lg bg-slate-100">
                   {heroPreview ? <img src={heroPreview} alt="Listing banner" className="h-full w-full object-cover" /> : null}
                 </div>
-                <div className="mt-3">
+                <div className="mt-2">
                   <PublicProfileImageUpload label="Upload cover" helperText="Wide library photo recommended" onUploaded={(url) => update("heroBannerUrl", url)} />
                 </div>
               </div>
@@ -329,39 +329,39 @@ export function OwnerMarketplaceListingManager({
         </DashboardCard>
 
         <DashboardCard title="Listing preview" subtitle="Students see this through Marketplace and the detail page.">
-          <div className="grid gap-4">
-            <div className="overflow-hidden rounded-xl border border-[var(--lp-border)] bg-white">
-              <div className="aspect-[16/8] bg-slate-100">
+          <div className="grid gap-3">
+            <div className="overflow-hidden rounded-lg border border-[var(--lp-border)] bg-white">
+              <div className="h-36 bg-slate-100">
                 {heroPreview ? <img src={heroPreview} alt="Marketplace cover preview" className="h-full w-full object-cover" /> : null}
               </div>
-              <div className="grid gap-3 p-4">
+              <div className="grid gap-2.5 p-3">
                 <div className="flex items-start gap-3">
-                  {logoPreview ? <img src={logoPreview} alt="Logo preview" className="h-14 w-14 rounded-lg object-cover ring-1 ring-slate-200" /> : null}
+                  {logoPreview ? <img src={logoPreview} alt="Logo preview" className="h-11 w-11 rounded-lg object-cover ring-1 ring-slate-200" /> : null}
                   <div>
-                    <p className="text-lg font-black text-slate-950">{form.heroTitle || "Listing title"}</p>
-                    <p className="text-sm leading-6 text-slate-600">{form.heroTagline || "Short pitch"}</p>
+                    <p className="text-base font-black text-slate-950">{form.heroTitle || "Listing title"}</p>
+                    <p className="line-clamp-2 text-sm leading-5 text-slate-600">{form.heroTagline || "Short pitch"}</p>
                   </div>
                 </div>
-                <p className="text-sm leading-6 text-slate-600">{form.aboutText || "About text will appear here."}</p>
+                <p className="line-clamp-2 text-sm leading-5 text-slate-600">{form.aboutText || "About text will appear here."}</p>
                 <div className="flex flex-wrap gap-2">
                   {form.amenities.slice(0, 8).map((amenity) => (
-                    <span key={amenity} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">{amenity}</span>
+                    <span key={amenity} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">{amenity}</span>
                   ))}
                 </div>
               </div>
             </div>
 
             {form.galleryImages.length ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
                 {form.galleryImages.map((url, index) => (
                   <div key={`${url}-${index}`} className="overflow-hidden rounded-lg border border-[var(--lp-border)] bg-white">
-                    <div className="aspect-[4/3] bg-slate-100">
+                    <div className="h-28 bg-slate-100">
                       <img src={resolvePublicAssetUrl(url) ?? url} alt={`Gallery ${index + 1}`} className="h-full w-full object-cover" />
                     </div>
-                    <div className="flex flex-wrap gap-2 p-3">
-                      <button type="button" onClick={() => update("galleryImages", moveImage(form.galleryImages, index, -1))} className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-xs font-bold">Left</button>
-                      <button type="button" onClick={() => update("galleryImages", moveImage(form.galleryImages, index, 1))} className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-xs font-bold">Right</button>
-                      <button type="button" onClick={() => update("galleryImages", form.galleryImages.filter((_, imageIndex) => imageIndex !== index))} className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">Delete</button>
+                    <div className="flex flex-wrap gap-1.5 p-2">
+                      <button type="button" onClick={() => update("galleryImages", moveImage(form.galleryImages, index, -1))} className="rounded-md border border-[var(--lp-border)] px-2.5 py-1.5 text-xs font-bold">Left</button>
+                      <button type="button" onClick={() => update("galleryImages", moveImage(form.galleryImages, index, 1))} className="rounded-md border border-[var(--lp-border)] px-2.5 py-1.5 text-xs font-bold">Right</button>
+                      <button type="button" onClick={() => update("galleryImages", form.galleryImages.filter((_, imageIndex) => imageIndex !== index))} className="rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700">Delete</button>
                     </div>
                   </div>
                 ))}
@@ -371,14 +371,14 @@ export function OwnerMarketplaceListingManager({
         </DashboardCard>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={() => void saveListing(true)} disabled={saving} className="rounded-lg bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => void saveListing(true)} disabled={saving} className="rounded-lg bg-[var(--lp-primary)] px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
           {saving ? "Saving..." : "Publish marketplace listing"}
         </button>
-        <button type="button" onClick={() => void saveListing(false)} disabled={saving} className="rounded-lg border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60">
+        <button type="button" onClick={() => void saveListing(false)} disabled={saving} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)] disabled:opacity-60">
           Save hidden
         </button>
-        <a href={listingPath} target="_blank" rel="noreferrer" className="rounded-lg border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-[var(--lp-primary)]">
+        <a href={listingPath} target="_blank" rel="noreferrer" className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-primary)]">
           Open public detail
         </a>
       </div>
