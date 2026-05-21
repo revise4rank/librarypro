@@ -5,7 +5,6 @@ import { apiFetch, hydrateSessionFromServer } from "../lib/api";
 import { formatLibraryHost } from "../lib/domain";
 import { resolvePublicAssetUrl } from "../lib/public-library";
 import { DashboardCard } from "./dashboard-shell";
-import { FormDrawer } from "./form-drawer";
 import { PublicProfileForm } from "./public-profile-form";
 
 type StudentPlanConfig = {
@@ -56,6 +55,7 @@ type SitePageConfig = {
 };
 
 type SitePagesConfig = Partial<Record<SitePageKey, SitePageConfig>>;
+type BuilderSection = "identity" | "hero" | "pages" | "theme" | "contact" | "seo" | "gallery";
 
 type OwnerPublicProfileResponse = {
   success: boolean;
@@ -126,7 +126,8 @@ export function OwnerWebsiteBuilder({
   const [values, setValues] = useState(initialValues);
   const [loadMessage, setLoadMessage] = useState<string | null>(null);
   const [requestedAction, setRequestedAction] = useState<"save-draft" | "publish" | null>(null);
-  const [editorOpen, setEditorOpen] = useState(defaultEditorOpen);
+  const [activeSection, setActiveSection] = useState<BuilderSection>(defaultEditorOpen ? "identity" : "hero");
+  const [activePage, setActivePage] = useState<SitePageKey>("home");
   const [plans, setPlans] = useState<StudentPlanConfig[]>([]);
   const heroPreview = resolvePublicAssetUrl(values.heroBannerUrl);
   const logoPreview = resolvePublicAssetUrl(values.brandLogoUrl);
@@ -150,6 +151,26 @@ export function OwnerWebsiteBuilder({
     values.highlightOffer,
   ];
   const qualityScore = Math.round((qualityChecks.filter(Boolean).length / qualityChecks.length) * 100);
+  const siteUrl = values.subdomain ? `https://${formatLibraryHost(values.subdomain)}` : "";
+  const builderShortcuts: { label: string; section: BuilderSection; page?: SitePageKey }[] = [
+    { label: "Brand", section: "identity" },
+    { label: "Hero", section: "hero" },
+    { label: "Home", section: "pages", page: "home" },
+    { label: "Features", section: "pages", page: "features" },
+    { label: "Pricing", section: "pages", page: "pricing" },
+    { label: "Gallery", section: "gallery", page: "gallery" },
+    { label: "Pages", section: "pages" },
+    { label: "Theme", section: "theme" },
+    { label: "Contact", section: "contact" },
+    { label: "SEO", section: "seo" },
+  ];
+
+  function openBuilderSection(section: BuilderSection, page?: SitePageKey) {
+    setActiveSection(section);
+    if (page) {
+      setActivePage(page);
+    }
+  }
 
   useEffect(() => {
     hydrateSessionFromServer()
@@ -177,24 +198,12 @@ export function OwnerWebsiteBuilder({
       });
   }, []);
 
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const action = (event as CustomEvent<"save-draft" | "publish">).detail;
-      if (action === "publish" || action === "save-draft") {
-        setRequestedAction(action);
-      }
-    };
-
-    window.addEventListener("booklib:owner-website-action", handler as EventListener);
-    return () => window.removeEventListener("booklib:owner-website-action", handler as EventListener);
-  });
-
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 gap-4 overflow-hidden">
       <DashboardCard title="Website builder" subtitle="Brand, pages, plans, offer, gallery, contact, and public subdomain preview stay synced from this workspace.">
-        <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
-          <div className="grid gap-3">
-            <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-4">
+          <div className="grid gap-3 xl:grid-cols-[0.86fr_1.14fr] xl:items-start">
+            <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-3 sm:grid-cols-2 xl:grid-cols-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">URL</p>
                 <p className="mt-2 break-all text-sm font-black text-slate-950">{siteHost}</p>
@@ -220,51 +229,76 @@ export function OwnerWebsiteBuilder({
                 <p className="mt-2 line-clamp-1 text-sm font-black text-slate-950">{values.highlightOffer || "No active offer"}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {["Brand", "Home", "Sections", "Pages", "Theme", "SEO"].map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setEditorOpen(true)}
-                  className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-black text-slate-700 hover:border-[var(--lp-accent)] hover:text-[var(--lp-accent)]"
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap justify-start gap-2 xl:justify-end">
               <button
                 type="button"
-                onClick={() => setEditorOpen(true)}
-                className="rounded-full border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent-strong)]"
-              >
-                Edit website
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditorOpen(true);
-                  setRequestedAction("save-draft");
-                }}
+                onClick={() => setRequestedAction("save-draft")}
                 className="rounded-full border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-slate-700"
               >
                 Save draft
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setEditorOpen(true);
-                  setRequestedAction("publish");
-                }}
+                onClick={() => setRequestedAction("publish")}
                 className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
               >
-                Publish
+                Publish website
               </button>
+              <a
+                href={siteUrl || undefined}
+                target="_blank"
+                rel="noreferrer"
+                aria-disabled={!siteUrl}
+                className={`rounded-full border border-[var(--lp-border)] px-5 py-3 text-sm font-bold ${siteUrl ? "bg-white text-slate-700" : "pointer-events-none bg-slate-100 text-slate-400"}`}
+              >
+                Open website
+              </a>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-slate-900 bg-slate-950 text-white shadow-sm">
-            <div className="relative aspect-[16/8] bg-slate-900">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-10">
+            {builderShortcuts.map((item) => (
+              <button
+                key={`${item.section}-${item.page ?? item.label}`}
+                type="button"
+                onClick={() => openBuilderSection(item.section, item.page)}
+                className={`rounded-lg border px-3 py-2 text-sm font-black transition ${
+                  activeSection === item.section && (!item.page || item.page === activePage)
+                    ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]"
+                    : "border-[var(--lp-border)] bg-white text-slate-700 hover:border-[var(--lp-accent)] hover:text-[var(--lp-accent)]"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.62fr)]">
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[var(--lp-border)] bg-white p-3">
+              <PublicProfileForm
+                initialValues={values}
+                requestedAction={requestedAction}
+                onActionHandled={() => setRequestedAction(null)}
+                activeSection={activeSection}
+                onSectionChange={setActiveSection}
+                activePage={activePage}
+                onPageChange={setActivePage}
+                onValuesChange={setValues}
+                hideStatusPanel
+              />
+            </div>
+
+            <div className="min-w-0 overflow-hidden rounded-xl border border-slate-900 bg-slate-950 text-white shadow-sm xl:sticky xl:top-4 xl:self-start">
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Live website preview</p>
+                  <p className="mt-1 truncate text-sm font-bold text-white/70">{siteHost}</p>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-black ${values.published ? "bg-emerald-300 text-slate-950" : "bg-amber-200 text-slate-950"}`}>
+                  {values.published ? "Published" : "Draft"}
+                </span>
+              </div>
+              <div className="relative aspect-[16/8] bg-slate-900">
               {heroPreview ? <img src={heroPreview} alt="Website hero preview" className="h-full w-full object-cover opacity-75" /> : null}
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,6,23,0.92),rgba(2,6,23,0.40))]" />
               <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
@@ -279,8 +313,8 @@ export function OwnerWebsiteBuilder({
                 <h3 className="mt-3 text-3xl font-black tracking-[-0.04em]">{values.heroTitle || "Premium public website"}</h3>
                 <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/72">{values.heroTagline || "Website tagline appears here."}</p>
               </div>
-            </div>
-            <div className="grid gap-3 p-4">
+              </div>
+              <div className="grid gap-3 p-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-white/10 bg-white/10 p-3">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">Starting</p>
@@ -295,21 +329,12 @@ export function OwnerWebsiteBuilder({
                   <p className="mt-2 text-lg font-black">{enabledPages || 6} enabled</p>
                 </div>
               </div>
+              </div>
             </div>
           </div>
         </div>
       </DashboardCard>
       {loadMessage ? <p className="text-sm font-semibold text-slate-600">{loadMessage}</p> : null}
-
-      <FormDrawer
-        open={editorOpen}
-        onClose={() => setEditorOpen(false)}
-        title="Edit website"
-        description="Edit identity, pages, media, theme, contact, SEO, and publishing settings."
-        widthClassName="sm:w-[min(96vw,56rem)] sm:max-w-5xl"
-      >
-        <PublicProfileForm initialValues={values} requestedAction={requestedAction} onActionHandled={() => setRequestedAction(null)} />
-      </FormDrawer>
     </div>
   );
 }

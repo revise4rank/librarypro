@@ -35,6 +35,14 @@ type PublicProfileFormProps = {
   };
   requestedAction?: "save-draft" | "publish" | null;
   onActionHandled?: () => void;
+  activeSection?: PublicProfileSection;
+  initialSection?: PublicProfileSection;
+  onSectionChange?: (section: PublicProfileSection) => void;
+  activePage?: SitePageKey;
+  initialPage?: SitePageKey;
+  onPageChange?: (page: SitePageKey) => void;
+  onValuesChange?: (values: PublicProfileFormProps["initialValues"]) => void;
+  hideStatusPanel?: boolean;
 };
 
 type SaveResponse = {
@@ -59,6 +67,7 @@ type SitePageConfig = {
 };
 
 type SitePagesConfig = Partial<Record<SitePageKey, SitePageConfig>>;
+type PublicProfileSection = "identity" | "hero" | "pages" | "theme" | "contact" | "seo" | "gallery";
 
 const pageOrder: { key: SitePageKey; label: string; path: string; source: string }[] = [
   { key: "home", label: "Home", path: "/", source: "Landing copy, offer, quick gallery" },
@@ -176,15 +185,29 @@ function linesToItems(value: string) {
     .filter((item) => item.title || item.detail);
 }
 
-export function PublicProfileForm({ initialValues, requestedAction = null, onActionHandled }: PublicProfileFormProps) {
+export function PublicProfileForm({
+  initialValues,
+  requestedAction = null,
+  onActionHandled,
+  activeSection: controlledActiveSection,
+  initialSection = "identity",
+  onSectionChange,
+  activePage: controlledActivePage,
+  initialPage = "home",
+  onPageChange,
+  onValuesChange,
+  hideStatusPanel = false,
+}: PublicProfileFormProps) {
   const [values, setValues] = useState({ ...initialValues, sitePages: normalizeSitePages(initialValues.sitePages) });
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
   const [subdomainState, setSubdomainState] = useState<"unknown" | "available" | "taken">("unknown");
-  const [activeSection, setActiveSection] = useState<"identity" | "hero" | "pages" | "theme" | "contact" | "seo" | "gallery">("identity");
-  const [activePage, setActivePage] = useState<SitePageKey>("home");
+  const [uncontrolledActiveSection, setUncontrolledActiveSection] = useState<PublicProfileSection>(initialSection);
+  const [uncontrolledActivePage, setUncontrolledActivePage] = useState<SitePageKey>(initialPage);
+  const activeSection = controlledActiveSection ?? uncontrolledActiveSection;
+  const activePage = controlledActivePage ?? uncontrolledActivePage;
 
   const amenitiesInput = useMemo(() => values.amenities.join(", "), [values.amenities]);
   const galleryInput = useMemo(() => values.galleryImages.join(", "), [values.galleryImages]);
@@ -208,6 +231,20 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
     setValues({ ...initialValues, sitePages: normalizeSitePages(initialValues.sitePages) });
   }, [initialValues]);
 
+  function selectSection(section: PublicProfileSection) {
+    if (!controlledActiveSection) {
+      setUncontrolledActiveSection(section);
+    }
+    onSectionChange?.(section);
+  }
+
+  function selectPage(page: SitePageKey) {
+    if (!controlledActivePage) {
+      setUncontrolledActivePage(page);
+    }
+    onPageChange?.(page);
+  }
+
   useEffect(() => {
     if (!requestedAction || saving) {
       return;
@@ -219,20 +256,28 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
   }, [requestedAction]);
 
   function updateValue<Key extends keyof typeof values>(key: Key, value: (typeof values)[Key]) {
-    setValues((current) => ({ ...current, [key]: value }));
+    setValues((current) => {
+      const next = { ...current, [key]: value };
+      onValuesChange?.(next);
+      return next;
+    });
   }
 
   function updatePageValue<Key extends keyof SitePageConfig>(key: SitePageKey, field: Key, value: SitePageConfig[Key]) {
-    setValues((current) => ({
-      ...current,
-      sitePages: {
-        ...normalizeSitePages(current.sitePages),
-        [key]: {
-          ...(normalizeSitePages(current.sitePages)[key] ?? defaultPageConfigs[key]),
-          [field]: value,
+    setValues((current) => {
+      const next = {
+        ...current,
+        sitePages: {
+          ...normalizeSitePages(current.sitePages),
+          [key]: {
+            ...(normalizeSitePages(current.sitePages)[key] ?? defaultPageConfigs[key]),
+            [field]: value,
+          },
         },
-      },
-    }));
+      };
+      onValuesChange?.(next);
+      return next;
+    });
   }
 
   function parseBudget(value: string) {
@@ -315,14 +360,14 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
   }
 
   return (
-    <div className="lp-density-surface grid gap-4">
-      <div className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-4">
+    <div className="lp-density-surface grid min-w-0 gap-4 overflow-hidden">
+      <div className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-3 sm:px-4">
         <div className="flex flex-wrap gap-2">
           {sections.map(([key, label]) => (
             <button
               key={key}
               type="button"
-              onClick={() => setActiveSection(key)}
+              onClick={() => selectSection(key)}
               className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
                 activeSection === key ? "border border-[var(--lp-accent-soft)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent-strong)]" : "border border-slate-200 bg-white text-slate-700"
               }`}
@@ -333,7 +378,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
         </div>
       </div>
 
-      <div className="sticky top-4 z-10 grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white/95 px-4 py-4 backdrop-blur">
+      {!hideStatusPanel ? <div className="sticky top-4 z-10 grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white/95 px-4 py-4 backdrop-blur">
         <div className="grid gap-3 md:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Subdomain</p>
@@ -391,21 +436,21 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
             {saving ? "Publishing..." : "Publish Website"}
           </button>
         </div>
-      </div>
+      </div> : null}
 
       {activeSection === "identity" ? (
-        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
           <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
             <h2 className="text-2xl font-black text-slate-950">Subdomain and publishing</h2>
             <p className="mt-1 text-sm text-slate-500">Premium plan libraries get this shareable public web address</p>
             <div className="mt-6 grid gap-4">
               <div className="rounded-xl bg-slate-50 p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">Chosen subdomain</p>
-                <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center">
+                <div className="mt-3 flex min-w-0 flex-col gap-3 md:flex-row md:items-center">
                   <input
                     value={values.subdomain}
                     onChange={(event) => updateValue("subdomain", event.target.value.toLowerCase())}
-                    className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base font-bold text-slate-950 outline-none"
+                    className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base font-bold text-slate-950 outline-none"
                   />
                   <button
                     type="button"
@@ -547,7 +592,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
             </div>
           </div>
 
-          <div className="mt-6 grid gap-5 xl:grid-cols-[280px_1fr]">
+          <div className="mt-6 grid min-w-0 gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
             <div className="grid gap-2 self-start rounded-xl border border-slate-200 bg-white p-3">
               {pageOrder.map((item) => {
                 const pageConfig = normalizedPages[item.key] ?? defaultPageConfigs[item.key];
@@ -555,7 +600,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
                   <button
                     key={item.key}
                     type="button"
-                    onClick={() => setActivePage(item.key)}
+                    onClick={() => selectPage(item.key)}
                     className={`rounded-xl border px-3 py-3 text-left transition ${
                       activePage === item.key ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]" : "border-slate-200 bg-white hover:bg-slate-50"
                     }`}
@@ -572,7 +617,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
               })}
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid min-w-0 gap-4">
               <div className="grid gap-4 md:grid-cols-[1fr_170px_150px]">
                 <label className="grid gap-2">
                   <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Navigation label</span>

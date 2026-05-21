@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const RESERVED = new Set(["www", "admin"]);
+const TENANT_SITE_PATHS = new Set(["/about", "/features", "/gallery", "/pricing", "/contact"]);
 const INTERNAL_TENANT_HEADER_SECRET = process.env.INTERNAL_TENANT_HEADER_SECRET ?? "";
 
 function getTenantSlug(host: string) {
@@ -81,8 +82,10 @@ function internalRewriteUrl(request: NextRequest, path: string) {
 
 export function middleware(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").toLowerCase();
+  const hostname = host.split(":")[0];
   const tenantSlug = getTenantSlug(host);
   const url = request.nextUrl.clone();
+  const normalizedPathname = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : url.pathname;
   const role = request.cookies.get("lp_role")?.value;
   const hasSession = request.cookies.get("lp_session")?.value === "1";
 
@@ -96,16 +99,16 @@ export function middleware(request: NextRequest) {
   const publicStudentRoutes = new Set(["/student/access", "/student/register"]);
   const legacyStudentScannerRoutes = new Set(["/student/qr", "/student/join-library"]);
 
-  if (legacyStudentScannerRoutes.has(url.pathname)) {
+  if (legacyStudentScannerRoutes.has(normalizedPathname)) {
     return NextResponse.redirect(publicUrl(request, "/student/scanner"));
   }
 
   for (const route of protectedRoutes) {
-    if (url.pathname.startsWith(route.prefix) && url.pathname !== route.loginPath) {
-      if (route.prefix === "/owner" && publicOwnerRoutes.has(url.pathname)) {
+    if (normalizedPathname.startsWith(route.prefix) && normalizedPathname !== route.loginPath) {
+      if (route.prefix === "/owner" && publicOwnerRoutes.has(normalizedPathname)) {
         continue;
       }
-      if (route.prefix === "/student" && publicStudentRoutes.has(url.pathname)) {
+      if (route.prefix === "/student" && publicStudentRoutes.has(normalizedPathname)) {
         continue;
       }
       if (!hasSession || !role || role !== route.role) {
@@ -116,15 +119,15 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  if (host.startsWith("admin.")) {
-    if (url.pathname === "/") {
+  if (hostname.startsWith("admin.")) {
+    if (normalizedPathname === "/") {
       return NextResponse.redirect(publicUrl(request, "/admin"));
     }
 
     return NextResponse.next();
   }
 
-  if (host === (process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "booklib.in").toLowerCase() || host.startsWith("www.")) {
+  if (hostname === (process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "booklib.in").toLowerCase() || hostname.startsWith("www.")) {
     return NextResponse.next();
   }
 
@@ -135,12 +138,12 @@ export function middleware(request: NextRequest) {
       requestHeaders.set("x-booklib-internal-tenant-secret", INTERNAL_TENANT_HEADER_SECRET);
     }
 
-    if (url.pathname === "/") {
+    if (normalizedPathname === "/") {
       return NextResponse.rewrite(internalRewriteUrl(request, "/library-site"), { request: { headers: requestHeaders } });
     }
 
-    if (url.pathname === "/about" || url.pathname === "/features" || url.pathname === "/gallery" || url.pathname === "/pricing" || url.pathname === "/contact") {
-      return NextResponse.rewrite(internalRewriteUrl(request, `/library-site${url.pathname}`), { request: { headers: requestHeaders } });
+    if (TENANT_SITE_PATHS.has(normalizedPathname)) {
+      return NextResponse.rewrite(internalRewriteUrl(request, `/library-site${normalizedPathname}`), { request: { headers: requestHeaders } });
     }
 
     return NextResponse.next({
