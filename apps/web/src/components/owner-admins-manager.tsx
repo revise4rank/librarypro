@@ -113,25 +113,26 @@ export function OwnerAdminsManager() {
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <div className="grid items-start gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       {error ? (
         <div className="xl:col-span-2">
           {isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-rose-600">{error}</p>}
         </div>
       ) : null}
 
-      <DashboardCard title="Multi-admin control" subtitle="Head admin creates and removes workspace admins.">
-        <div className="grid gap-4">
-          {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{message}</div> : null}
-          <div className="rounded-2xl border border-[var(--lp-border)] bg-white p-4">
+      <div className="self-start">
+        <DashboardCard title="Multi-admin control" subtitle="Head admin creates and removes workspace admins.">
+        <div className="grid gap-3">
+          {message ? <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">{message}</div> : null}
+          <div className="rounded-xl border border-[var(--lp-border)] bg-white p-3">
             <p className="text-sm font-black text-[var(--lp-text)]">{admins?.admins.length ?? 0} workspace admins</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--lp-muted)]">Create admins in a focused drawer. Permission toggles stay with each roster row.</p>
+            <p className="mt-1 text-sm leading-5 text-[var(--lp-muted)]">Create admins in a focused drawer. Permission toggles stay with each roster row.</p>
           </div>
           <button
             type="button"
             disabled={!admins?.isHeadAdmin}
             onClick={() => setCreateDrawerOpen(true)}
-            className="rounded-2xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+            className="rounded-xl bg-[var(--lp-primary)] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
           >
             Add workspace admin
           </button>
@@ -139,7 +140,8 @@ export function OwnerAdminsManager() {
             <p className="text-sm text-[var(--lp-muted)]">Only the head admin can create or remove admins. All admins can still view shared actions.</p>
           ) : null}
         </div>
-      </DashboardCard>
+        </DashboardCard>
+      </div>
 
       <FormDrawer
         open={createDrawerOpen}
@@ -163,10 +165,10 @@ export function OwnerAdminsManager() {
       </FormDrawer>
 
       <DashboardCard title="Admin roster and shared actions" subtitle="Latest actions stay inside this tile. Use filters for older entries.">
-        <div className="grid gap-6">
+        <div className="grid gap-4">
           <div className="grid gap-3">
             {(admins?.admins ?? []).map((admin) => (
-              <div key={admin.user_id} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-4">
+              <div key={admin.user_id} className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-base font-bold text-[var(--lp-text)]">{admin.full_name}</p>
@@ -204,19 +206,19 @@ export function OwnerAdminsManager() {
             ))}
           </div>
 
-          <div className="rounded-2xl border border-[var(--lp-border)] bg-slate-50 p-3">
+          <div className="rounded-xl border border-[var(--lp-border)] bg-slate-50 p-3">
             <div className="grid gap-3 md:grid-cols-[1fr_180px_auto]">
               <input
                 value={logSearch}
                 onChange={(event) => setLogSearch(event.target.value)}
                 placeholder="Search by admin name or action"
-                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none"
+                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm outline-none"
               />
               <input
                 type="date"
                 value={logDate}
                 onChange={(event) => setLogDate(event.target.value)}
-                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none"
+                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm outline-none"
               />
               <button
                 type="button"
@@ -224,15 +226,15 @@ export function OwnerAdminsManager() {
                   setLogSearch("");
                   setLogDate("");
                 }}
-                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)]"
+                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-bold text-[var(--lp-text)]"
               >
                 Clear
               </button>
             </div>
-            <div className="mt-3 max-h-[430px] overflow-y-auto pr-1">
-              <div className="grid gap-3">
+            <div className="mt-3 max-h-[360px] overflow-y-auto pr-1">
+              <div className="grid gap-2">
                 {filteredLogs.map((log) => (
-                  <div key={log.id} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-4 text-sm">
+                  <div key={log.id} className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm">
                     <p className="font-bold text-[var(--lp-text)]">
                       {log.actor_name ?? "System"} - {log.action}
                     </p>
