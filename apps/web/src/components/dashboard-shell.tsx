@@ -463,7 +463,10 @@ export function DashboardShell({
             </div>
           </header>
 
-          <section className="lp-shell-container px-1.5 py-2 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-3 sm:py-2.5 lg:py-3 lg:pb-5">{children}</section>
+          <section className="lp-shell-container px-1.5 py-2 pb-[calc(10rem+env(safe-area-inset-bottom))] sm:px-3 sm:py-2.5 lg:py-3 lg:pb-5">
+            {children}
+            <div className="h-[calc(4rem+env(safe-area-inset-bottom))] lg:hidden" aria-hidden="true" />
+          </section>
         </div>
       </div>
 
