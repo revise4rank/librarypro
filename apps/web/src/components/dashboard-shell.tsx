@@ -15,7 +15,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { dashboardPathForRole, hydrateSessionFromServer, logoutSession, type SessionUser } from "../lib/api";
+import { apiFetch, dashboardPathForRole, hydrateSessionFromServer, logoutSession, type SessionUser } from "../lib/api";
 import {
   loginPathForRole,
   groupNavItems,
@@ -32,6 +32,26 @@ const StudentScannerManager = dynamic(
     loading: () => <p className="rounded-lg bg-white p-4 text-sm font-semibold text-slate-600">Opening scanner...</p>,
   },
 );
+
+type OwnerQrSettingsResponse = {
+  success: boolean;
+  data: {
+    library_name: string;
+    city: string;
+    area: string | null;
+    qr_key_id: string;
+    qr_payload: string;
+    allow_offline_checkin: boolean;
+  };
+};
+
+function buildQrImageUrl(payload: string, size = 640) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=16&data=${encodeURIComponent(payload)}`;
+}
+
+function qrFilename(libraryName: string) {
+  return `${libraryName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "library"}-attendance-qr.png`;
+}
 
 function initialsFromName(value?: string | null) {
   if (!value) return "U";
@@ -65,6 +85,11 @@ export function DashboardShell({
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
+  const [ownerQrOpen, setOwnerQrOpen] = useState(false);
+  const [ownerQrSettings, setOwnerQrSettings] = useState<OwnerQrSettingsResponse["data"] | null>(null);
+  const [ownerQrError, setOwnerQrError] = useState<string | null>(null);
+  const [ownerQrLoading, setOwnerQrLoading] = useState(false);
+  const [ownerQrDownloadStatus, setOwnerQrDownloadStatus] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [desktopPinnedOpen, setDesktopPinnedOpen] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -73,6 +98,7 @@ export function DashboardShell({
   const [desktopHovered, setDesktopHovered] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const notificationMenuRef = useRef<HTMLDivElement | null>(null);
+  const ownerQrMenuRef = useRef<HTMLDivElement | null>(null);
 
   const primaryMobileNav = nav.slice(0, 5);
   const navGroups = useMemo(() => groupNavItems(nav), [nav]);
@@ -86,6 +112,7 @@ export function DashboardShell({
   const accountHref = settingsPathForRole(sessionUser?.role, "account");
   const securityHref = settingsPathForRole(sessionUser?.role, "account");
   const isStudentShell = sessionUser?.role === "STUDENT" || pathname.startsWith("/student");
+  const isOwnerShell = sessionUser?.role === "LIBRARY_OWNER" || pathname.startsWith("/owner");
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -108,6 +135,9 @@ export function DashboardShell({
       if (notificationMenuRef.current && target && !notificationMenuRef.current.contains(target)) {
         setNotificationMenuOpen(false);
       }
+      if (ownerQrMenuRef.current && target && !ownerQrMenuRef.current.contains(target)) {
+        setOwnerQrOpen(false);
+      }
     }
 
     document.addEventListener("mousedown", handleDocumentClick);
@@ -120,6 +150,52 @@ export function DashboardShell({
       window.localStorage.setItem("lp-desktop-rail-open", next ? "1" : "0");
       return next;
     });
+  }
+
+  async function loadOwnerQrSettings() {
+    if (ownerQrSettings || ownerQrLoading) return;
+    setOwnerQrLoading(true);
+    setOwnerQrError(null);
+    try {
+      const response = await apiFetch<OwnerQrSettingsResponse>("/owner/settings");
+      setOwnerQrSettings(response.data);
+    } catch (error) {
+      setOwnerQrError(error instanceof Error ? error.message : "Unable to load QR.");
+    } finally {
+      setOwnerQrLoading(false);
+    }
+  }
+
+  async function downloadOwnerQrImage() {
+    if (!ownerQrSettings?.qr_payload) return;
+    const qrUrl = buildQrImageUrl(ownerQrSettings.qr_payload, 960);
+    const filename = qrFilename(ownerQrSettings.library_name);
+
+    setOwnerQrDownloadStatus("Preparing QR...");
+    try {
+      const response = await fetch(qrUrl);
+      if (!response.ok) {
+        throw new Error("Unable to fetch QR image.");
+      }
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+      setOwnerQrDownloadStatus("QR downloaded.");
+    } catch {
+      const anchor = document.createElement("a");
+      anchor.href = qrUrl;
+      anchor.download = filename;
+      anchor.rel = "noopener";
+      anchor.target = "_blank";
+      anchor.click();
+      setOwnerQrDownloadStatus("Opened QR image.");
+    }
   }
 
   return (
@@ -226,12 +302,87 @@ export function DashboardShell({
                     <QrCode className="h-4 w-4" />
                   </button>
                 ) : null}
+                {isOwnerShell ? (
+                  <div className="relative" ref={ownerQrMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOwnerQrOpen((current) => !current);
+                        setNotificationMenuOpen(false);
+                        setProfileMenuOpen(false);
+                        void loadOwnerQrSettings();
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-[var(--lp-text)] transition hover:bg-[var(--lp-surface-muted)]"
+                      aria-label="Open attendance QR"
+                      title="Attendance QR"
+                    >
+                      <QrCode className="h-4 w-4" />
+                    </button>
+                    {ownerQrOpen ? (
+                      <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-[min(88vw,20rem)] rounded-lg border border-[var(--lp-border)] bg-white p-3 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-black text-slate-950">Attendance QR</p>
+                            <p className="mt-0.5 text-xs font-semibold leading-5 text-slate-500">Students scan this at reception for attendance.</p>
+                          </div>
+                          <Link href="/owner/checkins" className="shrink-0 rounded-md bg-[var(--lp-accent-soft)] px-2.5 py-1.5 text-xs font-black text-[var(--lp-accent)]">
+                            Open
+                          </Link>
+                        </div>
+
+                        <div className="mt-3 grid gap-3">
+                          <div className="mx-auto grid h-44 w-44 place-items-center rounded-xl border border-slate-200 bg-slate-50 p-2">
+                            {ownerQrSettings?.qr_payload ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={buildQrImageUrl(ownerQrSettings.qr_payload, 360)}
+                                alt={`${ownerQrSettings.library_name} attendance QR`}
+                                className="h-full w-full rounded-lg bg-white object-cover"
+                              />
+                            ) : (
+                              <p className="px-3 text-center text-sm font-semibold text-slate-500">{ownerQrLoading ? "Loading QR..." : "QR not loaded"}</p>
+                            )}
+                          </div>
+
+                          {ownerQrSettings ? (
+                            <div className="rounded-lg bg-slate-50 px-3 py-2">
+                              <p className="truncate text-sm font-black text-slate-950">{ownerQrSettings.library_name}</p>
+                              <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+                                {[ownerQrSettings.area, ownerQrSettings.city].filter(Boolean).join(", ") || "Library location"}
+                              </p>
+                              <p className="mt-2 truncate text-xs font-bold text-slate-500">
+                                QR key: <span className="text-slate-800">{ownerQrSettings.qr_key_id}</span>
+                              </p>
+                            </div>
+                          ) : null}
+
+                          {ownerQrError ? (
+                            <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                              Unable to load QR. <Link href="/owner/checkins" className="underline">Open Attendance page.</Link>
+                            </div>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => void downloadOwnerQrImage()}
+                            disabled={!ownerQrSettings?.qr_payload}
+                            className="rounded-lg bg-[var(--lp-primary)] px-4 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Download QR
+                          </button>
+                          {ownerQrDownloadStatus ? <p className="text-xs font-bold text-emerald-700">{ownerQrDownloadStatus}</p> : null}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="relative" ref={notificationMenuRef}>
                   <button
                     type="button"
                     onClick={() => {
                       setNotificationMenuOpen((current) => !current);
                       setProfileMenuOpen(false);
+                      setOwnerQrOpen(false);
                     }}
                     className="relative flex h-8 w-8 items-center justify-center rounded-md border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
                     aria-label="Open notifications"
@@ -259,6 +410,7 @@ export function DashboardShell({
                     onClick={() => {
                       setProfileMenuOpen((current) => !current);
                       setNotificationMenuOpen(false);
+                      setOwnerQrOpen(false);
                     }}
                     className="flex h-8 items-center gap-2 rounded-full border border-[var(--lp-border)] bg-white pl-1 pr-2 text-xs font-semibold text-[var(--lp-text)]"
                     aria-label={`Open ${panelLabel} profile`}
