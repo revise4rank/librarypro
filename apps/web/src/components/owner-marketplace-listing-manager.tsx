@@ -341,36 +341,47 @@ export function OwnerMarketplaceListingManager({
         </div>
       </FormDrawer>
 
-      <div className="grid gap-3 xl:grid-cols-[0.72fr_1.28fr]">
+      <div className="grid gap-3 xl:grid-cols-[0.52fr_1.48fr]">
         <DashboardCard title="Listing media" subtitle="Upload real photos; URLs are generated automatically after upload.">
-          <div className="grid gap-3">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-2.5">
-                <div className="h-28 overflow-hidden rounded-lg bg-slate-100">
-                  {logoPreview ? <img src={logoPreview} alt="Listing logo" className="h-full w-full object-cover" /> : null}
+          <div className="grid gap-2.5">
+            <div className="rounded-lg border border-[var(--lp-border)] bg-white p-2.5">
+              <div className="flex items-center gap-3">
+                <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-100 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                  {logoPreview ? <img src={logoPreview} alt="Listing logo" className="h-full w-full object-cover" /> : "Logo"}
                 </div>
-                <div className="mt-2">
+                <div className="min-w-0 flex-1">
                   <PublicProfileImageUpload label="Upload logo" helperText="Square logo works best" onUploaded={(url) => update("brandLogoUrl", url)} />
                 </div>
               </div>
-              <div className="rounded-lg border border-[var(--lp-border)] bg-white p-2.5">
-                <div className="h-28 overflow-hidden rounded-lg bg-slate-100">
-                  {heroPreview ? <img src={heroPreview} alt="Listing banner" className="h-full w-full object-cover" /> : null}
+            </div>
+            <div className="rounded-lg border border-[var(--lp-border)] bg-white p-2.5">
+              <div className="flex items-center gap-3">
+                <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-100 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                  {heroPreview ? <img src={heroPreview} alt="Listing banner" className="h-full w-full object-cover" /> : "Cover"}
                 </div>
-                <div className="mt-2">
+                <div className="min-w-0 flex-1">
                   <PublicProfileImageUpload label="Upload cover" helperText="Wide library photo recommended" onUploaded={(url) => update("heroBannerUrl", url)} />
                 </div>
               </div>
             </div>
-            <PublicProfileImageUpload label="Upload gallery photo" helperText="Add study hall, desk, reception, exterior" onUploaded={(url) => update("galleryImages", [...form.galleryImages, url])} />
+            <div className="rounded-lg border border-dashed border-[var(--lp-border)] bg-white p-2.5">
+              <PublicProfileImageUpload label="Upload gallery photo" helperText="Add study hall, desk, reception, exterior" onUploaded={(url) => update("galleryImages", [...form.galleryImages, url])} />
+            </div>
           </div>
         </DashboardCard>
 
         <DashboardCard title="Listing preview" subtitle="Students see this through Marketplace and the detail page.">
           <div className="grid gap-3">
             <div className="overflow-hidden rounded-lg border border-[var(--lp-border)] bg-white">
-              <div className="h-36 bg-slate-100">
-                {heroPreview ? <img src={heroPreview} alt="Marketplace cover preview" className="h-full w-full object-cover" /> : null}
+              <div className="grid h-32 place-items-center bg-slate-100">
+                {heroPreview ? (
+                  <img src={heroPreview} alt="Marketplace cover preview" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="text-center">
+                    <p className="text-sm font-black text-slate-500">Cover photo pending</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-400">Upload a real library photo for marketplace cards.</p>
+                  </div>
+                )}
               </div>
               <div className="grid gap-2.5 p-3">
                 <div className="flex items-start gap-3">
@@ -403,12 +414,12 @@ export function OwnerMarketplaceListingManager({
               <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
                 {form.galleryImages.map((url, index) => (
                   <div key={`${url}-${index}`} className="overflow-hidden rounded-lg border border-[var(--lp-border)] bg-white">
-                    <div className="h-28 bg-slate-100">
+                    <div className="aspect-[16/10] bg-slate-100">
                       <img src={resolvePublicAssetUrl(url) ?? url} alt={`Gallery ${index + 1}`} className="h-full w-full object-cover" />
                     </div>
-                    <div className="flex flex-wrap gap-1.5 p-2">
-                      <button type="button" onClick={() => update("galleryImages", moveImage(form.galleryImages, index, -1))} className="rounded-md border border-[var(--lp-border)] px-2.5 py-1.5 text-xs font-bold">Left</button>
-                      <button type="button" onClick={() => update("galleryImages", moveImage(form.galleryImages, index, 1))} className="rounded-md border border-[var(--lp-border)] px-2.5 py-1.5 text-xs font-bold">Right</button>
+                    <div className="flex flex-wrap gap-1.5 border-t border-[var(--lp-border)] bg-white p-2">
+                      <button type="button" onClick={() => update("galleryImages", moveImage(form.galleryImages, index, -1))} className="rounded-md border border-[var(--lp-border)] bg-white px-2.5 py-1.5 text-xs font-bold">Left</button>
+                      <button type="button" onClick={() => update("galleryImages", moveImage(form.galleryImages, index, 1))} className="rounded-md border border-[var(--lp-border)] bg-white px-2.5 py-1.5 text-xs font-bold">Right</button>
                       <button type="button" onClick={() => update("galleryImages", form.galleryImages.filter((_, imageIndex) => imageIndex !== index))} className="rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700">Delete</button>
                     </div>
                   </div>
