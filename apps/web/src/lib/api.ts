@@ -71,18 +71,24 @@ const SESSION_KEY = "booklib_session";
 const COOKIE_ROLE = "lp_role";
 const COOKIE_SESSION = "lp_session";
 const LEGACY_COOKIE_TOKEN = "lp_token";
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 10;
 
 function getPrimaryStorage() {
   if (typeof window === "undefined") return null;
   try {
-    return window.sessionStorage;
+    return window.localStorage;
   } catch {
     return null;
   }
 }
 
 function getSecondaryStorage() {
-  return null;
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 }
 
 function setCookie(name: string, value: string, maxAgeSeconds?: number) {
@@ -142,8 +148,8 @@ export function saveSession(session: SessionState) {
   const secondaryStorage = getSecondaryStorage();
   storage?.setItem(SESSION_KEY, payload);
   secondaryStorage?.setItem(SESSION_KEY, payload);
-  setCookie(COOKIE_ROLE, session.user.role);
-  setCookie(COOKIE_SESSION, "1");
+  setCookie(COOKIE_ROLE, session.user.role, SESSION_MAX_AGE_SECONDS);
+  setCookie(COOKIE_SESSION, "1", SESSION_MAX_AGE_SECONDS);
   clearCookie(LEGACY_COOKIE_TOKEN);
 }
 

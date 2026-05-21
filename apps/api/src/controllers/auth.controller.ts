@@ -35,7 +35,7 @@ import { env } from "../config/env";
 
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
-const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 15;
+const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 10;
 
 function getCookieDomain(hostname: string) {
   const normalizedHost = hostname.toLowerCase().split(":")[0];

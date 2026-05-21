@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const DEFAULT_UPSTREAM_ORIGIN = "https://api.booklib.in";
 const ACCESS_COOKIE_NAME = "lp_access";
 const CSRF_COOKIE_NAME = "lp_csrf";
-const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 15;
+const ACCESS_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 10;
 
 function getCookieDomain(request: NextRequest) {
   const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.host;
