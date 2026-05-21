@@ -44,6 +44,7 @@ export type PublicLibrarySearchRow = {
   rating?: string | null;
   reviews?: string | null;
   latest_review_snippet?: string | null;
+  public_plans?: unknown;
 };
 
 export type LibraryReviewRow = {
@@ -570,7 +571,8 @@ export class PublicProfileRepository {
         p.theme_surface,
         COALESCE(rv.average_rating, 0)::text AS rating,
         COALESCE(rv.review_count, 0)::text AS reviews,
-        rv.latest_review_snippet
+        rv.latest_review_snippet,
+        COALESCE(plans.public_plans, '[]'::jsonb) AS public_plans
       FROM libraries l
       INNER JOIN libraries_public_profiles p ON p.library_id = l.id
       LEFT JOIN (
@@ -591,6 +593,29 @@ export class PublicProfileRepository {
         ) visible_reviews
         GROUP BY library_id
       ) rv ON rv.library_id = l.id
+      LEFT JOIN LATERAL (
+        SELECT jsonb_agg(plan_row.plan_json ORDER BY plan_row.base_amount ASC, plan_row.created_at DESC) AS public_plans
+        FROM (
+          SELECT
+            sp.base_amount,
+            sp.created_at,
+            jsonb_build_object(
+              'id', sp.id,
+              'name', sp.name,
+              'target_audience', sp.target_audience,
+              'description', sp.description,
+              'duration_months', sp.duration_months,
+              'base_amount', sp.base_amount::text,
+              'default_discount_type', sp.default_discount_type::text,
+              'default_discount_value', sp.default_discount_value::text
+            ) AS plan_json
+          FROM library_student_plans sp
+          WHERE sp.library_id = l.id
+            AND sp.is_active = TRUE
+          ORDER BY sp.base_amount ASC, sp.created_at DESC
+          LIMIT 4
+        ) plan_row
+      ) plans ON TRUE
       WHERE (
           (l.slug = $1 AND p.listing_published = TRUE)
           OR
@@ -738,6 +763,29 @@ export class PublicProfileRepository {
         ) visible_reviews
         GROUP BY library_id
       ) rv ON rv.library_id = m.library_id
+      LEFT JOIN LATERAL (
+        SELECT jsonb_agg(plan_row.plan_json ORDER BY plan_row.base_amount ASC, plan_row.created_at DESC) AS public_plans
+        FROM (
+          SELECT
+            sp.base_amount,
+            sp.created_at,
+            jsonb_build_object(
+              'id', sp.id,
+              'name', sp.name,
+              'target_audience', sp.target_audience,
+              'description', sp.description,
+              'duration_months', sp.duration_months,
+              'base_amount', sp.base_amount::text,
+              'default_discount_type', sp.default_discount_type::text,
+              'default_discount_value', sp.default_discount_value::text
+            ) AS plan_json
+          FROM library_student_plans sp
+          WHERE sp.library_id = m.library_id
+            AND sp.is_active = TRUE
+          ORDER BY sp.base_amount ASC, sp.created_at DESC
+          LIMIT 3
+        ) plan_row
+      ) plans ON TRUE
       WHERE ${conditions.join(" AND ")}
     `;
 
@@ -793,6 +841,7 @@ export class PublicProfileRepository {
         COALESCE(rv.average_rating, 0)::text AS rating,
         COALESCE(rv.review_count, 0)::text AS reviews,
         rv.latest_review_snippet,
+        COALESCE(plans.public_plans, '[]'::jsonb) AS public_plans,
         ${distanceSql}
       ${baseSql}
       ORDER BY

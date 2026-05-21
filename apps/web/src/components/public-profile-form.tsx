@@ -144,6 +144,13 @@ function moveImage(images: string[], index: number, direction: -1 | 1) {
   return next;
 }
 
+const themePresets = [
+  { name: "Premium Dark", primary: "#0f172a", accent: "#f59e0b", surface: "#f8fafc" },
+  { name: "Clean Light", primary: "#1f2937", accent: "#0ea5e9", surface: "#ffffff" },
+  { name: "Emerald Study", primary: "#064e3b", accent: "#10b981", surface: "#f0fdf4" },
+  { name: "Minimal Pro", primary: "#111827", accent: "#64748b", surface: "#f8fafc" },
+];
+
 function normalizeSitePages(input: SitePagesConfig = {}): SitePagesConfig {
   return pageOrder.reduce<SitePagesConfig>((acc, page) => {
     acc[page.key] = {
@@ -194,7 +201,7 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
     ["theme", "Theme"],
     ["contact", "Contact"],
     ["seo", "SEO"],
-    ["gallery", "Gallery"],
+    ["gallery", "Sections"],
   ] as const;
 
   useEffect(() => {
@@ -664,6 +671,27 @@ export function PublicProfileForm({ initialValues, requestedAction = null, onAct
       {activeSection === "theme" ? (
         <section className="rounded-2xl border border-[var(--lp-border)] bg-[rgba(255,249,241,0.92)] p-6 shadow-sm">
           <h2 className="text-2xl font-black text-slate-950">Theme builder</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {themePresets.map((preset) => (
+              <button
+                key={preset.name}
+                type="button"
+                onClick={() => {
+                  updateValue("themePrimary", preset.primary);
+                  updateValue("themeAccent", preset.accent);
+                  updateValue("themeSurface", preset.surface);
+                }}
+                className="rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-[var(--lp-accent)]"
+              >
+                <span className="text-sm font-black text-slate-950">{preset.name}</span>
+                <span className="mt-3 flex gap-2">
+                  {[preset.primary, preset.accent, preset.surface].map((color) => (
+                    <span key={color} className="h-6 w-6 rounded-full border border-slate-200" style={{ background: color }} />
+                  ))}
+                </span>
+              </button>
+            ))}
+          </div>
           <div className="mt-6 grid gap-6 xl:grid-cols-[0.7fr_1.3fr]">
             <div className="grid gap-4">
               <label className="grid gap-2">

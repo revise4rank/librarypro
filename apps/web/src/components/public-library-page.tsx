@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, BadgeCheck, IndianRupee, MapPin, QrCode, ShieldCheck, Sparkles, Star, Wifi, Zap } from "lucide-react";
 import { ContactActions } from "./contact-actions";
 import { formatLibraryHost } from "../lib/domain";
-import { PublicLibrarySite, PublicLibraryReview, SitePageConfig, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
+import { PublicLibraryPlan, PublicLibrarySite, PublicLibraryReview, SitePageConfig, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
 import { LibraryReviewsPanel } from "./library-reviews-panel";
 
 type PublicLibraryPageProps = {
@@ -112,6 +112,40 @@ function pageItems(config: SitePageConfig, fallback: { title: string; detail: st
   return items.length ? items.map((item) => ({ title: item.title ?? "", detail: item.detail ?? "" })) : fallback;
 }
 
+function planPrice(plan: PublicLibraryPlan) {
+  const base = Number(plan.base_amount || "0");
+  const discount = Number(plan.default_discount_value || "0");
+  if (!base || !discount || !plan.default_discount_type) return base;
+  if (plan.default_discount_type === "PERCENTAGE") return Math.max(0, Math.round(base - (base * discount) / 100));
+  return Math.max(0, Math.round(base - discount));
+}
+
+function PlanCard({ plan, compact = false }: { plan: PublicLibraryPlan; compact?: boolean }) {
+  const price = planPrice(plan);
+  const base = Number(plan.base_amount || "0");
+  const hasDiscount = price > 0 && price < base;
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-black text-slate-950">{plan.name}</p>
+          <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
+            {plan.duration_months} month{plan.duration_months === 1 ? "" : "s"}
+            {plan.target_audience ? ` · ${plan.target_audience}` : ""}
+          </p>
+        </div>
+        {hasDiscount ? <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-black text-amber-800">Offer</span> : null}
+      </div>
+      <p className={`${compact ? "mt-3 text-2xl" : "mt-4 text-3xl"} flex items-center gap-1 font-black tracking-[-0.04em] text-slate-950`}>
+        <IndianRupee className="h-5 w-5" />
+        {price || plan.base_amount}
+      </p>
+      {hasDiscount ? <p className="mt-1 text-xs font-bold text-slate-400 line-through">Rs. {plan.base_amount}</p> : null}
+      {plan.description ? <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{plan.description}</p> : null}
+    </div>
+  );
+}
+
 export function PublicLibraryPage({
   profile,
   reviews = [],
@@ -172,6 +206,7 @@ export function PublicLibraryPage({
     { title: "QR entry support", detail: "Daily library actions can run from the same subdomain." },
     { title: "Payment reminders and notices", detail: "Student communication stays organized." },
   ]);
+  const publicPlans = Array.isArray(profile.public_plans) ? profile.public_plans : [];
   const galleryHighlights = gallery.map((item, index) => ({
     src: item,
     label: index === 0 ? "Main study hall" : index === 1 ? "Reading zone" : index === 2 ? "Reception and entry" : `Gallery view ${index + 1}`,
@@ -270,6 +305,12 @@ export function PublicLibraryPage({
                 </Link>
               ) : null}
             </div>
+            {visibleOffer ? (
+              <div className="mt-5 inline-flex max-w-full items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300 px-4 py-2 text-sm font-black text-slate-950 shadow-sm">
+                <Sparkles className="h-4 w-4" />
+                <span className="truncate">{visibleOffer}</span>
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-white/14 bg-white/10 p-3 shadow-sm backdrop-blur">
@@ -370,6 +411,27 @@ export function PublicLibraryPage({
                     <img src={item.src} alt={`${profile.library_name} ${item.label}`} className="h-full w-full object-cover transition duration-500 hover:scale-105" />
                   </div>
                 ))}
+              </div>
+            </SiteCard>
+
+            <SiteCard>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Plans</p>
+                  <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950">Clear pricing before students enquire.</h2>
+                </div>
+                <Link href={links.pricing} className="text-sm font-black text-emerald-700">View all plans</Link>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {publicPlans.length ? (
+                  publicPlans.slice(0, 3).map((plan) => <PlanCard key={plan.id} plan={plan} compact />)
+                ) : (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Starting from</p>
+                    <p className="mt-2 flex items-center gap-1 text-3xl font-black tracking-[-0.04em] text-slate-950"><IndianRupee className="h-6 w-6" /> {profile.starting_price}</p>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">Detailed public plans can be published from the owner Plans page.</p>
+                  </div>
+                )}
               </div>
             </SiteCard>
           </div>
@@ -500,9 +562,11 @@ export function PublicLibraryPage({
               </div>
             </SiteCard>
             <SiteCard>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Included access</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">{publicPlans.length ? "Active public plans" : "Included access"}</p>
               <div className="mt-4 grid gap-3">
-                {pricingCards.map((item) => (
+                {publicPlans.length ? publicPlans.map((plan) => (
+                  <PlanCard key={plan.id} plan={plan} />
+                )) : pricingCards.map((item) => (
                   <div key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <p className="text-sm font-bold text-slate-800">{item.title}</p>
                     {item.detail ? <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{item.detail}</p> : null}
@@ -563,6 +627,18 @@ export function PublicLibraryPage({
           </div>
         </SiteCard>
       </section>
+      {showStudentActions ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/94 p-3 shadow-sm backdrop-blur md:hidden">
+          <div className="mx-auto grid max-w-[1180px] grid-cols-2 gap-2">
+            <Link href={links.contact} className="rounded-full border border-slate-200 px-4 py-3 text-center text-sm font-black text-slate-950">
+              Contact
+            </Link>
+            <Link href={`/student/login?library=${profile.subdomain}`} className="rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-black text-slate-950">
+              Student login
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

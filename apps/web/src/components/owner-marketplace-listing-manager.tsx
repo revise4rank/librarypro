@@ -59,6 +59,14 @@ type OwnerPublicProfileResponse = {
   data: ListingProfile | null;
 };
 
+type StudentPlanConfig = {
+  id: string;
+  name: string;
+  duration_months: number;
+  base_amount: string;
+  is_active: boolean;
+};
+
 const defaultAmenities = ["Silent zone", "AC reading hall", "WiFi", "Power backup"];
 
 function buildDefaults(input: { libraryName?: string; address?: string; city?: string; area?: string | null }): ListingForm {
@@ -140,10 +148,29 @@ export function OwnerMarketplaceListingManager({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [plans, setPlans] = useState<StudentPlanConfig[]>([]);
   const amenitiesInput = form.amenities.join(", ");
   const logoPreview = resolvePublicAssetUrl(form.brandLogoUrl);
   const heroPreview = resolvePublicAssetUrl(form.heroBannerUrl);
   const listingPath = slug ? `/libraries/${slug}` : "/marketplace";
+  const activePlans = plans.filter((plan) => plan.is_active);
+  const startingPlan = activePlans.reduce<StudentPlanConfig | null>((lowest, plan) => {
+    if (!lowest) return plan;
+    return Number(plan.base_amount || "0") < Number(lowest.base_amount || "0") ? plan : lowest;
+  }, null);
+  const qualityChecks = [
+    form.heroTitle,
+    form.heroTagline,
+    form.heroBannerUrl,
+    form.brandLogoUrl,
+    form.contactPhone || form.whatsappPhone,
+    form.addressText,
+    form.amenities.length >= 3,
+    form.galleryImages.length >= 2,
+    activePlans.length > 0,
+    form.highlightOffer,
+  ];
+  const qualityScore = Math.round((qualityChecks.filter(Boolean).length / qualityChecks.length) * 100);
 
   useEffect(() => {
     setForm(defaults);
@@ -153,12 +180,18 @@ export function OwnerMarketplaceListingManager({
     hydrateSessionFromServer()
       .then((session) => {
         if (!session?.user || session.user.role !== "LIBRARY_OWNER") return null;
-        return apiFetch<OwnerPublicProfileResponse>("/owner/public-profile");
+        return Promise.all([
+          apiFetch<OwnerPublicProfileResponse>("/owner/public-profile"),
+          apiFetch<{ success: boolean; data: StudentPlanConfig[] }>("/owner/student-plans").catch(() => ({ success: false, data: [] })),
+        ]);
       })
       .then((response) => {
-        if (response?.data) {
-          setForm(mapProfile(response.data, defaults));
-          setSlug(response.data.library_slug ?? "");
+        if (response?.[0]?.data) {
+          setForm(mapProfile(response[0].data, defaults));
+          setSlug(response[0].data.library_slug ?? "");
+        }
+        if (response?.[1]?.data) {
+          setPlans(response[1].data);
         }
       })
       .catch((loadError) => {
@@ -203,16 +236,20 @@ export function OwnerMarketplaceListingManager({
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
       {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
 
-      <DashboardCard title="Marketplace listing" subtitle="This is the trial-safe public listing. It appears in marketplace search without enabling the premium subdomain website builder.">
+      <DashboardCard title="Marketplace listing" subtitle="This listing syncs media, offer, active public plans, contact details, and public website CTA into marketplace search.">
         <div className="grid gap-3">
-          <div className="grid gap-2 rounded-lg border border-[var(--lp-border)] bg-white p-3 sm:grid-cols-4">
+          <div className="grid gap-2 rounded-lg border border-[var(--lp-border)] bg-white p-3 sm:grid-cols-5">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">State</p>
               <p className={`mt-1 text-sm font-black ${form.listingPublished ? "text-emerald-700" : "text-amber-700"}`}>{form.listingPublished ? "Published" : "Hidden"}</p>
             </div>
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Amenities</p>
-              <p className="mt-1 text-xl font-black text-slate-950">{form.amenities.length}</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Quality</p>
+              <p className="mt-1 text-xl font-black text-slate-950">{qualityScore}%</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Plans</p>
+              <p className="mt-1 text-sm font-black text-slate-950">{startingPlan ? `From Rs. ${startingPlan.base_amount}` : "Add plan"}</p>
             </div>
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Gallery</p>
@@ -226,6 +263,7 @@ export function OwnerMarketplaceListingManager({
           <div className="rounded-lg border border-slate-200 bg-white p-3">
             <p className="text-base font-black text-slate-950">{form.heroTitle || "Listing title"}</p>
             <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{form.heroTagline || "Short marketplace pitch will appear here."}</p>
+            {form.highlightOffer ? <p className="mt-2 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">{form.highlightOffer}</p> : null}
           </div>
           <button type="button" onClick={() => setDetailsOpen(true)} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
             Edit listing details
@@ -343,6 +381,16 @@ export function OwnerMarketplaceListingManager({
                   </div>
                 </div>
                 <p className="line-clamp-2 text-sm leading-5 text-slate-600">{form.aboutText || "About text will appear here."}</p>
+                <div className="grid gap-2 rounded-lg bg-slate-50 p-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-emerald-700">Plans from</p>
+                    <p className="mt-1 text-lg font-black text-slate-950">{startingPlan ? `Rs. ${startingPlan.base_amount}` : "Add owner plan"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-amber-700">Offer</p>
+                    <p className="mt-1 line-clamp-1 text-sm font-black text-slate-950">{form.highlightOffer || "No active offer"}</p>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {form.amenities.slice(0, 8).map((amenity) => (
                     <span key={amenity} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">{amenity}</span>

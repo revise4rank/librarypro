@@ -34,6 +34,18 @@ export type PublicLibrarySite = {
   distance_km?: string | null;
   rating?: string | null;
   reviews?: string | null;
+  public_plans?: PublicLibraryPlan[] | null;
+};
+
+export type PublicLibraryPlan = {
+  id: string;
+  name: string;
+  target_audience?: string | null;
+  description?: string | null;
+  duration_months: number;
+  base_amount: string;
+  default_discount_type?: "PERCENTAGE" | "FLAT" | null;
+  default_discount_value?: string | null;
 };
 
 export type SitePageKey = "home" | "features" | "gallery" | "pricing" | "about" | "contact";

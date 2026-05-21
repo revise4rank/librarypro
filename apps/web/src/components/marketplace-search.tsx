@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { API_URL } from "../lib/api";
-import { getGalleryUrl } from "../lib/public-library";
+import { getGalleryUrl, PublicLibraryPlan } from "../lib/public-library";
 import { Surface } from "./shell";
 
 const filterOptions = ["AC", "WiFi", "Girls Only Zone", "Power Backup", "Locker", "QR Entry"];
@@ -48,6 +48,7 @@ type LibrarySearchItem = {
   reviews?: number | null;
   latest_review_snippet?: string | null;
   quietness?: string | null;
+  public_plans?: PublicLibraryPlan[] | null;
 };
 
 type SearchResponse = {
@@ -451,16 +452,34 @@ export function MarketplaceSearch() {
                   aria-label={`Open ${library.library_name} details`}
                   className="group overflow-hidden rounded-xl border border-[var(--lp-border)] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
                 >
-                  <div className="aspect-[4/3] overflow-hidden bg-slate-100">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                     <img
                       src={tileImageFor(library, index)}
                       alt={`${library.library_name} preview`}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                     />
+                    {library.offer_text ? (
+                      <span className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950 shadow-sm">
+                        {library.offer_text}
+                      </span>
+                    ) : null}
                   </div>
-                  <div className="grid gap-1 p-3">
-                    <h3 className="truncate text-base font-bold tracking-tight text-[var(--lp-text)]">{library.library_name}</h3>
-                    <p className="truncate text-sm text-[var(--lp-muted)]">{locationFor(library)}</p>
+                  <div className="grid gap-2 p-3">
+                    <div>
+                      <h3 className="truncate text-base font-bold tracking-tight text-[var(--lp-text)]">{library.library_name}</h3>
+                      <p className="truncate text-sm text-[var(--lp-muted)]">{locationFor(library)}</p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                      <span className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Plans from</span>
+                      <span className="text-sm font-black text-slate-950">Rs. {library.public_plans?.[0]?.base_amount ?? library.starting_price}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(library.amenities ?? []).slice(0, 3).map((amenity) => (
+                        <span key={amenity} className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">
+                          {amenity}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </Link>
               ))}
