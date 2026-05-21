@@ -41,6 +41,8 @@ export function OwnerAdminsManager() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
+  const [logSearch, setLogSearch] = useState("");
+  const [logDate, setLogDate] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const permissionCatalog = ["students", "payments", "reports", "checkins", "notifications", "seat_control", "admissions"];
@@ -49,7 +51,7 @@ export function OwnerAdminsManager() {
     try {
       const [adminsResponse, logsResponse] = await Promise.all([
         apiFetch<AdminsResponse>("/owner/admins"),
-        apiFetch<AuditLogsResponse>("/owner/audit-logs"),
+        apiFetch<AuditLogsResponse>("/owner/audit-logs?limit=200"),
       ]);
       setAdmins(adminsResponse.data);
       setLogs(logsResponse.data);
@@ -91,9 +93,7 @@ export function OwnerAdminsManager() {
   }
 
   async function togglePermission(adminUserId: string, permissions: string[], permission: string) {
-    const next = permissions.includes(permission)
-      ? permissions.filter((item) => item !== permission)
-      : [...permissions, permission];
+    const next = permissions.includes(permission) ? permissions.filter((item) => item !== permission) : [...permissions, permission];
     try {
       await apiFetch(`/owner/admins/${adminUserId}/permissions`, {
         method: "PATCH",
@@ -105,6 +105,13 @@ export function OwnerAdminsManager() {
     }
   }
 
+  const filteredLogs = logs.filter((log) => {
+    const search = logSearch.trim().toLowerCase();
+    const matchesSearch = !search || `${log.actor_name ?? "System"} ${log.action}`.toLowerCase().includes(search);
+    const matchesDate = !logDate || log.created_at.slice(0, 10) === logDate;
+    return matchesSearch && matchesDate;
+  });
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       {error ? (
@@ -112,6 +119,7 @@ export function OwnerAdminsManager() {
           {isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-rose-600">{error}</p>}
         </div>
       ) : null}
+
       <DashboardCard title="Multi-admin control" subtitle="Head admin creates and removes workspace admins.">
         <div className="grid gap-4">
           {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{message}</div> : null}
@@ -154,7 +162,7 @@ export function OwnerAdminsManager() {
         </div>
       </FormDrawer>
 
-      <DashboardCard title="Admin roster and shared actions" subtitle="Every admin can see who did what inside the library workspace.">
+      <DashboardCard title="Admin roster and shared actions" subtitle="Latest actions stay inside this tile. Use filters for older entries.">
         <div className="grid gap-6">
           <div className="grid gap-3">
             {(admins?.admins ?? []).map((admin) => (
@@ -196,13 +204,44 @@ export function OwnerAdminsManager() {
             ))}
           </div>
 
-          <div className="grid gap-3">
-            {logs.slice(0, 12).map((log) => (
-              <div key={log.id} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-4 text-sm">
-                <p className="font-bold text-[var(--lp-text)]">{log.actor_name ?? "System"} · {log.action}</p>
-                <p className="mt-1 text-[var(--lp-muted)]">{new Date(log.created_at).toLocaleString()}</p>
+          <div className="rounded-2xl border border-[var(--lp-border)] bg-slate-50 p-3">
+            <div className="grid gap-3 md:grid-cols-[1fr_180px_auto]">
+              <input
+                value={logSearch}
+                onChange={(event) => setLogSearch(event.target.value)}
+                placeholder="Search by admin name or action"
+                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none"
+              />
+              <input
+                type="date"
+                value={logDate}
+                onChange={(event) => setLogDate(event.target.value)}
+                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setLogSearch("");
+                  setLogDate("");
+                }}
+                className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-bold text-[var(--lp-text)]"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="mt-3 max-h-[430px] overflow-y-auto pr-1">
+              <div className="grid gap-3">
+                {filteredLogs.map((log) => (
+                  <div key={log.id} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-4 text-sm">
+                    <p className="font-bold text-[var(--lp-text)]">
+                      {log.actor_name ?? "System"} - {log.action}
+                    </p>
+                    <p className="mt-1 text-[var(--lp-muted)]">{new Date(log.created_at).toLocaleString()}</p>
+                  </div>
+                ))}
+                {filteredLogs.length === 0 ? <p className="px-2 py-6 text-center text-sm font-semibold text-[var(--lp-muted)]">No actions match this filter.</p> : null}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </DashboardCard>

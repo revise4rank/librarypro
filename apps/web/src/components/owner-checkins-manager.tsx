@@ -39,6 +39,31 @@ type OwnerQrSettingsResponse = {
   };
 };
 
+type ManualAttendanceStudent = {
+  student_user_id: string;
+  assignment_id: string;
+  student_name: string;
+  seat_number: string | null;
+  currently_inside: boolean;
+};
+
+type ManualStudentsResponse = {
+  success: boolean;
+  data: ManualAttendanceStudent[];
+};
+
+type ManualAttendanceResponse = {
+  success: boolean;
+  data: {
+    id: string;
+    action: "CHECKIN" | "CHECKOUT";
+    studentName: string;
+    seatNumber: string | null;
+    checkedInAt?: string;
+    checkedOutAt?: string;
+  };
+};
+
 type FilterState = {
   status: "ALL" | "INSIDE" | "COMPLETED" | "OVERSTAY";
   search: string;
@@ -80,6 +105,12 @@ export function OwnerCheckinsManager() {
   const [qrSettings, setQrSettings] = useState<OwnerQrSettingsResponse["data"] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [qrDownloadStatus, setQrDownloadStatus] = useState<string | null>(null);
+  const [manualStudents, setManualStudents] = useState<ManualAttendanceStudent[]>([]);
+  const [manualSearch, setManualSearch] = useState("");
+  const [manualSelectedStudentId, setManualSelectedStudentId] = useState("");
+  const [manualAction, setManualAction] = useState<"AUTO" | "CHECKIN" | "CHECKOUT">("AUTO");
+  const [manualStatus, setManualStatus] = useState<string | null>(null);
+  const [manualSubmitting, setManualSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterState>({
     status: "ALL",
@@ -111,12 +142,52 @@ export function OwnerCheckinsManager() {
     }
   }
 
+  async function loadManualStudents() {
+    try {
+      const response = await apiFetch<ManualStudentsResponse>("/owner/checkins/manual/students");
+      setManualStudents(response.data);
+      setManualSelectedStudentId((current) => current || response.data[0]?.student_user_id || "");
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load students for manual attendance.");
+    }
+  }
+
   useEffect(() => {
     void loadCheckins(filters);
     void loadQrSettings();
+    void loadManualStudents();
   }, []);
 
   const rows = useMemo(() => data?.rows ?? [], [data]);
+  const filteredManualStudents = useMemo(() => {
+    const query = manualSearch.trim().toLowerCase();
+    return manualStudents.filter((student) => {
+      if (!query) return true;
+      return `${student.student_name} ${student.seat_number ?? ""}`.toLowerCase().includes(query);
+    });
+  }, [manualSearch, manualStudents]);
+  const selectedManualStudent = manualStudents.find((student) => student.student_user_id === manualSelectedStudentId) ?? null;
+
+  async function submitManualAttendance() {
+    if (!manualSelectedStudentId) {
+      setManualStatus("Select a student first.");
+      return;
+    }
+    setManualSubmitting(true);
+    setManualStatus(null);
+    try {
+      const response = await apiFetch<ManualAttendanceResponse>("/owner/checkins/manual", {
+        method: "POST",
+        body: JSON.stringify({ studentUserId: manualSelectedStudentId, action: manualAction }),
+      });
+      setManualStatus(`${response.data.studentName} ${response.data.action === "CHECKIN" ? "checked in" : "checked out"} manually.`);
+      await Promise.all([loadCheckins(filters), loadManualStudents()]);
+    } catch (submitError) {
+      setManualStatus(submitError instanceof Error ? submitError.message : "Unable to mark manual attendance.");
+    } finally {
+      setManualSubmitting(false);
+    }
+  }
 
   async function downloadQrImage() {
     if (!qrSettings?.qr_payload) return;
@@ -236,6 +307,87 @@ export function OwnerCheckinsManager() {
           <p className="text-4xl font-black text-slate-950">{data?.summary.overstay ?? 0}</p>
         </DashboardCard>
       </section>
+
+      <DashboardCard title="Manual attendance" subtitle="For students without phone. Owner and attendance-enabled admins can mark entry from here.">
+        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <div className="rounded-2xl border border-[var(--lp-border)] bg-slate-50 p-3">
+            <input
+              value={manualSearch}
+              onChange={(event) => setManualSearch(event.target.value)}
+              placeholder="Search student name or seat"
+              className="w-full rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
+            />
+            <div className="mt-3 max-h-72 overflow-y-auto pr-1">
+              <div className="grid gap-2">
+                {filteredManualStudents.map((student) => (
+                  <button
+                    key={student.student_user_id}
+                    type="button"
+                    onClick={() => setManualSelectedStudentId(student.student_user_id)}
+                    className={`rounded-xl border px-4 py-3 text-left transition ${
+                      manualSelectedStudentId === student.student_user_id
+                        ? "border-emerald-300 bg-emerald-50"
+                        : "border-[var(--lp-border)] bg-white hover:border-emerald-200"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-slate-950">{student.student_name}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">Seat {student.seat_number ?? "not allotted"}</p>
+                      </div>
+                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${student.currently_inside ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+                        {student.currently_inside ? "Inside" : "Outside"}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+                {filteredManualStudents.length === 0 ? <p className="py-8 text-center text-sm font-semibold text-slate-500">No active student found.</p> : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--lp-border)] bg-white p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Selected student</p>
+            <p className="mt-2 text-xl font-black text-slate-950">{selectedManualStudent?.student_name ?? "Select student"}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">Seat {selectedManualStudent?.seat_number ?? "-"}</p>
+            <div className="mt-4 grid gap-2">
+              {[
+                ["AUTO", "Auto"],
+                ["CHECKIN", "Check-in"],
+                ["CHECKOUT", "Check-out"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setManualAction(value as typeof manualAction)}
+                  className={`rounded-xl px-4 py-3 text-sm font-black ${
+                    manualAction === value ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] text-slate-700"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled={!selectedManualStudent || manualSubmitting}
+              onClick={() => void submitManualAttendance()}
+              className="mt-4 w-full rounded-xl bg-[var(--lp-primary)] px-5 py-3 text-sm font-black text-white disabled:opacity-50"
+            >
+              {manualSubmitting
+                ? "Saving..."
+                : manualAction === "CHECKIN"
+                  ? "Mark check-in"
+                  : manualAction === "CHECKOUT"
+                    ? "Mark checkout"
+                    : selectedManualStudent?.currently_inside
+                      ? "Manual checkout"
+                      : "Manual check-in"}
+            </button>
+            {manualStatus ? <p className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">{manualStatus}</p> : null}
+          </div>
+        </div>
+      </DashboardCard>
 
       <DashboardCard title="Library QR scanner board" subtitle="Download or print the reception QR that students scan from their app.">
         <div className="grid gap-4 lg:grid-cols-[220px_1fr]">

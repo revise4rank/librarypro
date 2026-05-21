@@ -1126,6 +1126,155 @@ export async function getOwnerCheckinRegisterPage(input: {
   };
 }
 
+export async function listOwnerManualAttendanceStudents(libraryId: string) {
+  const db = requireDb();
+  const result = await db.query<{
+    student_user_id: string;
+    assignment_id: string;
+    student_name: string;
+    seat_number: string | null;
+    currently_inside: boolean;
+  }>(
+    `
+      SELECT
+        sa.student_user_id::text,
+        sa.id::text AS assignment_id,
+        u.full_name AS student_name,
+        s.seat_number,
+        EXISTS (
+          SELECT 1
+          FROM checkins c
+          WHERE c.library_id = sa.library_id
+            AND c.student_user_id = sa.student_user_id
+            AND c.checked_out_at IS NULL
+        ) AS currently_inside
+      FROM student_assignments sa
+      INNER JOIN users u ON u.id = sa.student_user_id
+      LEFT JOIN seats s ON s.id = sa.seat_id
+      WHERE sa.library_id = $1
+        AND sa.status = 'ACTIVE'
+      ORDER BY u.full_name ASC
+      LIMIT 500
+    `,
+    [libraryId],
+  );
+
+  return result.rows;
+}
+
+export async function createOwnerManualAttendance(input: {
+  libraryId: string;
+  actorUserId: string;
+  studentUserId: string;
+  action: "AUTO" | "CHECKIN" | "CHECKOUT";
+}) {
+  const db = requireDb();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const assignmentResult = await client.query<{
+      assignment_id: string;
+      student_name: string;
+      seat_id: string | null;
+      seat_number: string | null;
+    }>(
+      `
+        SELECT
+          sa.id::text AS assignment_id,
+          u.full_name AS student_name,
+          sa.seat_id::text,
+          s.seat_number
+        FROM student_assignments sa
+        INNER JOIN users u ON u.id = sa.student_user_id
+        LEFT JOIN seats s ON s.id = sa.seat_id
+        WHERE sa.library_id = $1
+          AND sa.student_user_id = $2
+          AND sa.status = 'ACTIVE'
+        ORDER BY sa.created_at DESC
+        LIMIT 1
+      `,
+      [input.libraryId, input.studentUserId],
+    );
+    const assignment = assignmentResult.rows[0];
+    if (!assignment) {
+      throw new AppError(404, "Active student not found for this library.", "STUDENT_NOT_ACTIVE");
+    }
+
+    const openResult = await client.query<{ id: string }>(
+      `
+        SELECT id::text
+        FROM checkins
+        WHERE library_id = $1
+          AND student_user_id = $2
+          AND checked_out_at IS NULL
+        ORDER BY checked_in_at DESC
+        LIMIT 1
+      `,
+      [input.libraryId, input.studentUserId],
+    );
+    const openCheckin = openResult.rows[0];
+
+    if ((input.action === "AUTO" && openCheckin) || input.action === "CHECKOUT") {
+      if (!openCheckin) {
+        throw new AppError(409, "Student is not currently checked in.", "MANUAL_CHECKOUT_NOT_ALLOWED");
+      }
+      const result = await client.query<{ id: string; checked_out_at: string }>(
+        `
+          UPDATE checkins
+          SET checked_out_at = NOW(), updated_at = NOW()
+          WHERE id = $1
+          RETURNING id::text, checked_out_at::text
+        `,
+        [openCheckin.id],
+      );
+      await client.query("COMMIT");
+      return {
+        id: result.rows[0].id,
+        action: "CHECKOUT" as const,
+        studentName: assignment.student_name,
+        seatNumber: assignment.seat_number,
+        checkedOutAt: result.rows[0].checked_out_at,
+      };
+    }
+
+    if (openCheckin) {
+      throw new AppError(409, "Student is already checked in.", "MANUAL_CHECKIN_NOT_ALLOWED");
+    }
+
+    const result = await client.query<{ id: string; checked_in_at: string }>(
+      `
+        INSERT INTO checkins (
+          library_id,
+          student_user_id,
+          assignment_id,
+          seat_id,
+          mode,
+          client_event_id,
+          checked_in_at,
+          device_time,
+          qr_key_id
+        )
+        VALUES ($1, $2, $3, $4, 'MANUAL', gen_random_uuid(), NOW(), NOW(), gen_random_uuid())
+        RETURNING id::text, checked_in_at::text
+      `,
+      [input.libraryId, input.studentUserId, assignment.assignment_id, assignment.seat_id],
+    );
+    await client.query("COMMIT");
+    return {
+      id: result.rows[0].id,
+      action: "CHECKIN" as const,
+      studentName: assignment.student_name,
+      seatNumber: assignment.seat_number,
+      checkedInAt: result.rows[0].checked_in_at,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function createOwnerNotification(input: {
   libraryId: string;
   actorUserId: string;

@@ -98,6 +98,7 @@ import {
   createOwnerExpenseController,
   createOwnerAdminController,
   createOwnerCouponController,
+  createOwnerManualAttendanceController,
   createOwnerPaymentController,
   createOwnerSeatsController,
   createOwnerStudentController,
@@ -128,6 +129,7 @@ import {
   listOwnerExpensesController,
   listOwnerAdminsController,
   listOwnerAuditLogsController,
+  listOwnerManualAttendanceStudentsController,
   listOwnerCouponsController,
   listOwnerJoinRequestsController,
   listStudentJoinRequestsController,
@@ -249,6 +251,8 @@ router.delete("/owner/students/:assignmentId/seat-allot", requireRole(["LIBRARY_
 router.get("/owner/seats", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(listOwnerSeatsController));
 router.get("/owner/floors", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(listOwnerFloorsController));
 router.get("/owner/checkins", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("checkins"), asyncHandler(getOwnerCheckinsController));
+router.get("/owner/checkins/manual/students", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("checkins"), asyncHandler(listOwnerManualAttendanceStudentsController));
+router.post("/owner/checkins/manual", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("checkins"), asyncHandler(createOwnerManualAttendanceController));
 router.post("/owner/floors", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(createOwnerFloorController));
 router.patch("/owner/floors/:floorId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(updateOwnerFloorController));
 router.post("/owner/seats", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(createOwnerSeatsController));

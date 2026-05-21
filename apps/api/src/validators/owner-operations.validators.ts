@@ -218,6 +218,11 @@ export const ownerCheckinsQuerySchema = z.object({
   toDate: z.string().trim().optional().default(""),
 });
 
+export const manualOwnerCheckinBodySchema = z.object({
+  studentUserId: z.string().uuid(),
+  action: z.enum(["AUTO", "CHECKIN", "CHECKOUT"]).default("AUTO"),
+});
+
 export const studentQrActionBodySchema = z.object({
   qrPayload: z.string().trim().min(20),
   clientEventId: z.string().uuid().optional().or(z.literal("")),

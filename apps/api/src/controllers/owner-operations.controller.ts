@@ -15,6 +15,7 @@ import {
   createOwnerAdmin,
   createOwnerCoupon,
   createOwnerExpense,
+  createOwnerManualAttendance,
   createOwnerPayment,
   createOwnerSeats,
   createOwnerStudent,
@@ -45,6 +46,7 @@ import {
   listOwnerExpenses,
   listOwnerAdmins,
   listOwnerAuditLogs,
+  listOwnerManualAttendanceStudents,
   listOwnerCoupons,
   listOwnerJoinRequests,
   listStudentJoinRequests,
@@ -110,6 +112,7 @@ import {
   rejectJoinRequestBodySchema,
   updateOwnerAdminPermissionsBodySchema,
   payStudentPaymentBodySchema,
+  manualOwnerCheckinBodySchema,
   ownerCheckinsQuerySchema,
   sendDueRecoveryBodySchema,
   studentNotificationsQuerySchema,
@@ -854,6 +857,35 @@ export async function getOwnerCheckinsController(req: Request, res: Response) {
     },
     meta: buildPaginationMeta(data.page, data.limit, data.total),
   });
+}
+
+export async function listOwnerManualAttendanceStudentsController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const data = await listOwnerManualAttendanceStudents(libraryId);
+  res.json({ success: true, data });
+}
+
+export async function createOwnerManualAttendanceController(req: Request, res: Response) {
+  const { libraryId, actorUserId } = requireOwnerContext(req);
+  const parsed = manualOwnerCheckinBodySchema.parse(req.body);
+  const data = await createOwnerManualAttendance({
+    libraryId,
+    actorUserId,
+    studentUserId: parsed.studentUserId,
+    action: parsed.action,
+  });
+  await createAuditLog({
+    actorUserId,
+    libraryId,
+    action: data.action === "CHECKIN" ? "owner.attendance.manual_checkin" : "owner.attendance.manual_checkout",
+    entityType: "checkin",
+    entityId: data.id,
+    metadata: { studentUserId: parsed.studentUserId, studentName: data.studentName, seatNumber: data.seatNumber ?? null },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  emitLibraryEvent(libraryId, "student.updated", { ...data, eventAction: "attendance_updated" });
+  res.status(201).json({ success: true, data });
 }
 
 export async function createOwnerFloorController(req: Request, res: Response) {
