@@ -91,6 +91,24 @@ const fallbackPageLabels: Record<PublicLibraryPageProps["page"], string> = {
   contact: "Contact",
 };
 
+const fallbackHeroTitles: Record<PublicLibraryPageProps["page"], string> = {
+  home: "A calmer study day, from seat to check-in.",
+  features: "Facilities built for serious daily study.",
+  gallery: "See the study space before you visit.",
+  pricing: "Plans, offers, and seat pricing.",
+  about: "About this library and study environment.",
+  contact: "Contact the library owner.",
+};
+
+const fallbackHeroSubtitles: Record<PublicLibraryPageProps["page"], string> = {
+  home: "A premium study space with seat visibility, student access, QR check-in, and direct owner contact.",
+  features: "Explore facilities, access flow, student tools, and the services available inside this library.",
+  gallery: "Browse the study hall, reception, reading zones, desks, and location photos before visiting.",
+  pricing: "Review starting prices, public plans, and current joining offers before contacting the owner.",
+  about: "Understand what makes this library reliable for students who need focused daily study time.",
+  contact: "Call, WhatsApp, or visit using the owner-published contact and address details.",
+};
+
 function pageConfig(profile: PublicLibrarySite, key: PublicLibraryPageProps["page"]): SitePageConfig {
   return profile.site_pages?.[key] ?? {};
 }
@@ -166,6 +184,11 @@ export function PublicLibraryPage({
     ? profile.amenities
     : ["Silent study zone", "Comfort seating", "Owner managed", "Student access"];
   const currentPageConfig = pageConfig(profile, page);
+  const heroTitle = page === "home" ? profile.hero_title : pageHeading(currentPageConfig, fallbackHeroTitles[page]);
+  const heroSubtitle =
+    page === "home"
+      ? profile.hero_tagline ?? profile.about_text ?? fallbackHeroSubtitles.home
+      : pageSubtitle(currentPageConfig, fallbackHeroSubtitles[page]);
   const navItems = ([
     { href: links.home, label: pageConfig(profile, "home").navLabel || fallbackPageLabels.home, page: "home" },
     { href: links.features, label: pageConfig(profile, "features").navLabel || fallbackPageLabels.features, page: "features" },
@@ -281,13 +304,13 @@ export function PublicLibraryPage({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-2 text-xs font-bold text-emerald-200 backdrop-blur">
               <Sparkles className="h-4 w-4" />
-              BookLib powered website
+              {page === "home" ? "BookLib powered website" : `${fallbackPageLabels[page]} page`}
             </div>
             <h1 className="mt-5 max-w-3xl text-balance text-[clamp(2rem,4.8vw,3.75rem)] font-bold leading-[1.05] tracking-[-0.04em] text-white">
-              {profile.hero_title}
+              {heroTitle}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-white/72 md:text-base md:leading-7">
-              {profile.hero_tagline ?? profile.about_text ?? "A premium study space with seat visibility, student access, QR check-in, and direct owner contact."}
+              {heroSubtitle}
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
