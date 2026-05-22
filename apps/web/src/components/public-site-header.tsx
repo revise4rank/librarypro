@@ -5,19 +5,24 @@ type PublicSiteHeaderProps = {
   ctaHref?: string;
   ctaLabel?: string;
   activeLabel?: string;
+  demoHref?: string;
+  showDemo?: boolean;
 };
 
 const navLinks = [
+  { label: "Home", href: "/" },
   { label: "Features", href: "/#features" },
+  { label: "Blog", href: "/blog" },
   { label: "Pricing", href: "/#pricing" },
-  { label: "Library Access", href: "/owner/login" },
-  { label: "Student Login", href: "/student/login" },
+  { label: "Contact", href: "/#contact" },
 ];
 
 export function PublicSiteHeader({
   ctaHref = "/owner/register",
   ctaLabel = "Start Free Trial",
   activeLabel,
+  demoHref,
+  showDemo = true,
 }: PublicSiteHeaderProps) {
   const baseLinkClass = "rounded-lg px-2.5 py-1.5 text-xs font-semibold !text-white transition md:text-sm";
   const activeLinkClass = "bg-white/15 !text-white ring-1 ring-white/20";
@@ -57,13 +62,16 @@ export function PublicSiteHeader({
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <Link
-            href="/marketplace"
-            className="inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-semibold !text-white transition hover:bg-white/15 sm:px-4 sm:text-sm"
-          >
-            <span className="sm:hidden">Explore</span>
-            <span className="hidden sm:inline">Explore Libraries</span>
-          </Link>
+          {showDemo && demoHref ? (
+            <a
+              href={demoHref}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden items-center justify-center rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold !text-white transition hover:bg-white/15 sm:inline-flex"
+            >
+              Book Demo
+            </a>
+          ) : null}
 
           <Link
             href={ctaHref}
@@ -99,6 +107,17 @@ export function PublicSiteHeader({
                 >
                   Explore Libraries
                 </Link>
+                {showDemo && demoHref ? (
+                  <a
+                    href={demoHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl px-3 py-2 text-sm font-medium text-white hover:bg-white/8"
+                    style={{ color: "#ffffff" }}
+                  >
+                    Book Demo
+                  </a>
+                ) : null}
               </div>
             </div>
           </details>

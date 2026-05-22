@@ -17,6 +17,12 @@ type IntegrationSettings = {
   smtpUser: string;
   reportFromEmail: string;
   smtpPassSet: boolean;
+  supportWhatsappNumber: string;
+  demoWhatsappNumber: string;
+  supportWhatsappMessage: string;
+  demoWhatsappMessage: string;
+  enableFloatingWhatsapp: boolean;
+  enableBookDemoCta: boolean;
   updatedAt: string | null;
   updatedByName: string | null;
 };
@@ -33,6 +39,12 @@ type IntegrationForm = {
   smtpUser: string;
   smtpPass: string;
   reportFromEmail: string;
+  supportWhatsappNumber: string;
+  demoWhatsappNumber: string;
+  supportWhatsappMessage: string;
+  demoWhatsappMessage: string;
+  enableFloatingWhatsapp: boolean;
+  enableBookDemoCta: boolean;
 };
 
 function formFromSettings(settings: IntegrationSettings): IntegrationForm {
@@ -48,6 +60,12 @@ function formFromSettings(settings: IntegrationSettings): IntegrationForm {
     smtpUser: settings.smtpUser ?? "",
     smtpPass: "",
     reportFromEmail: settings.reportFromEmail ?? "",
+    supportWhatsappNumber: settings.supportWhatsappNumber ?? "",
+    demoWhatsappNumber: settings.demoWhatsappNumber ?? "",
+    supportWhatsappMessage: settings.supportWhatsappMessage ?? "",
+    demoWhatsappMessage: settings.demoWhatsappMessage ?? "",
+    enableFloatingWhatsapp: settings.enableFloatingWhatsapp ?? true,
+    enableBookDemoCta: settings.enableBookDemoCta ?? true,
   };
 }
 
@@ -119,13 +137,14 @@ export function SuperadminIntegrationsManager() {
   const googleReady = Boolean(settings.googleOAuthClientId && settings.googleOAuthRedirectUrl && settings.googleOAuthClientSecretSet);
   const razorpayReady = Boolean(settings.razorpayKeyId && settings.razorpayKeySecretSet && settings.razorpayWebhookSecretSet);
   const smtpReady = Boolean(settings.smtpHost && settings.smtpUser && settings.smtpPassSet && settings.reportFromEmail);
+  const whatsappReady = Boolean(settings.supportWhatsappNumber || settings.demoWhatsappNumber);
 
   return (
     <div className="grid gap-4">
       {message ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</p> : null}
       {error ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">{error}</p> : null}
 
-      <section className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-white p-4 md:grid-cols-3">
+      <section className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-white p-4 md:grid-cols-4">
         <div className="rounded-lg bg-slate-50 p-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-black text-[var(--lp-text)]">Google login</p>
@@ -147,12 +166,19 @@ export function SuperadminIntegrationsManager() {
           </div>
           <p className="mt-2 text-xs leading-5 text-[var(--lp-muted)]">Forgot-password delivery needs host, user, password, and from email.</p>
         </div>
+        <div className="rounded-lg bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-black text-[var(--lp-text)]">WhatsApp CTAs</p>
+            <ReadinessPill ready={whatsappReady} />
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[var(--lp-muted)]">Landing support and demo buttons use these public-safe numbers.</p>
+        </div>
       </section>
 
       <DashboardCard title="Credential editor" subtitle="Sensitive integration values open in a right drawer so the status page stays readable.">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--lp-border)] bg-slate-50 p-4">
           <div>
-            <p className="text-sm font-black text-[var(--lp-text)]">Edit Google, Razorpay, and SMTP settings</p>
+            <p className="text-sm font-black text-[var(--lp-text)]">Edit Google, Razorpay, SMTP, and WhatsApp settings</p>
             <p className="mt-1 text-sm text-[var(--lp-muted)]">
               Last updated: {settings.updatedAt ? settings.updatedAt.slice(0, 16).replace("T", " ") : "Env fallback"} {settings.updatedByName ? `by ${settings.updatedByName}` : ""}
             </p>
@@ -170,7 +196,7 @@ export function SuperadminIntegrationsManager() {
         description="Update platform credentials. Leave secret fields blank to keep the saved value."
         widthClassName="sm:w-[min(96vw,56rem)] max-w-4xl"
       >
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-2">
         <DashboardCard title="Google Auth" subtitle="Owner and student Google login credentials.">
           <div className="grid gap-3">
             <input value={form.googleOAuthClientId} onChange={(event) => update({ googleOAuthClientId: event.target.value })} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Google OAuth client ID" />
@@ -206,6 +232,23 @@ export function SuperadminIntegrationsManager() {
               <input type="password" value={form.smtpPass} onChange={(event) => update({ smtpPass: event.target.value })} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Leave blank to keep existing" />
             </label>
             <input value={form.reportFromEmail} onChange={(event) => update({ reportFromEmail: event.target.value })} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="From email" />
+          </div>
+        </DashboardCard>
+
+        <DashboardCard title="WhatsApp and demo CTAs" subtitle="Control landing support and Book Demo routing without code changes.">
+          <div className="grid gap-3">
+            <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
+              <input type="checkbox" checked={form.enableFloatingWhatsapp} onChange={(event) => update({ enableFloatingWhatsapp: event.target.checked })} />
+              Floating WhatsApp support enabled
+            </label>
+            <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
+              <input type="checkbox" checked={form.enableBookDemoCta} onChange={(event) => update({ enableBookDemoCta: event.target.checked })} />
+              Book Demo CTA enabled
+            </label>
+            <input value={form.supportWhatsappNumber} onChange={(event) => update({ supportWhatsappNumber: event.target.value })} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Support WhatsApp number, e.g. +919389987466" />
+            <textarea value={form.supportWhatsappMessage} onChange={(event) => update({ supportWhatsappMessage: event.target.value })} className="min-h-20 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Support WhatsApp default message" />
+            <input value={form.demoWhatsappNumber} onChange={(event) => update({ demoWhatsappNumber: event.target.value })} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Demo WhatsApp number. Empty uses support number." />
+            <textarea value={form.demoWhatsappMessage} onChange={(event) => update({ demoWhatsappMessage: event.target.value })} className="min-h-20 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Book demo WhatsApp default message" />
           </div>
         </DashboardCard>
       </section>

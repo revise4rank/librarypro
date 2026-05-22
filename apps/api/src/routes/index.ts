@@ -15,6 +15,15 @@ import {
   studentRegisterController,
   updateMeController,
 } from "../controllers/auth.controller";
+import {
+  archiveAdminBlogController,
+  createAdminBlogController,
+  getPublicBlogController,
+  getPublicSiteSettingsController,
+  listAdminBlogsController,
+  listPublicBlogsController,
+  updateAdminBlogController,
+} from "../controllers/blog.controller";
 import { razorpayWebhookController } from "../controllers/billing.controller";
 import {
   getBillingSubscriptionController,
@@ -211,6 +220,9 @@ router.post("/student/scanner/scan", requireRole(["STUDENT"]), asyncHandler(scan
 router.post("/checkins/scan", requireRole(["STUDENT"]), asyncHandler(scanCheckInController));
 router.post("/checkins/checkout", requireRole(["STUDENT"]), asyncHandler(scanCheckOutController));
 router.get("/public/subdomain-availability", asyncHandler(getSubdomainAvailabilityController));
+router.get("/public/site-settings", asyncHandler(getPublicSiteSettingsController));
+router.get("/public/blogs", asyncHandler(listPublicBlogsController));
+router.get("/public/blogs/:slug", asyncHandler(getPublicBlogController));
 router.get("/public/marketplace-settings", asyncHandler(getPublicMarketplaceSettingsController));
 router.get("/public/libraries/suggestions", asyncHandler(searchMarketplaceSuggestionsController));
 router.get("/public/libraries/search", asyncHandler(searchMarketplaceLibrariesController));
@@ -337,6 +349,10 @@ router.get("/admin/plans", requireRole(["SUPER_ADMIN"]), requirePlatformPermissi
 router.patch("/admin/plans/:planCode", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("PLANS"), asyncHandler(updateAdminPlanConfigController));
 router.get("/admin/payments", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("PAYMENTS"), asyncHandler(listAdminPaymentsController));
 router.get("/admin/book-requests", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(listAdminBookRequestsController));
+router.get("/admin/blogs", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(listAdminBlogsController));
+router.post("/admin/blogs", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(createAdminBlogController));
+router.patch("/admin/blogs/:blogId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(updateAdminBlogController));
+router.delete("/admin/blogs/:blogId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(archiveAdminBlogController));
 router.patch("/admin/book-requests/:requestId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(updateAdminBookRequestStatusController));
 router.get("/admin/referrals", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("PAYMENTS"), asyncHandler(listAdminReferralsController));
 router.patch("/admin/referrals/:referralId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("PAYMENTS"), asyncHandler(updateAdminReferralStatusController));

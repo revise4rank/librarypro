@@ -83,6 +83,7 @@ const navIconMap: Record<string, LucideIcon> = {
   "/superadmin/dashboard": LayoutDashboard,
   "/superadmin/libraries": Store,
   "/superadmin/marketplace": Megaphone,
+  "/superadmin/blogs": BookOpen,
   "/superadmin/data": Database,
   "/superadmin/syllabus": Database,
   "/superadmin/book-requests": BookOpen,

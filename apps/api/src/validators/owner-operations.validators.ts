@@ -99,6 +99,12 @@ export const updatePlatformIntegrationSettingsBodySchema = z.object({
   smtpUser: z.string().trim().max(255).optional().or(z.literal("")),
   smtpPass: z.string().trim().max(500).optional().or(z.literal("")),
   reportFromEmail: z.string().trim().email().optional().or(z.literal("")),
+  supportWhatsappNumber: z.string().trim().max(30).optional().or(z.literal("")),
+  demoWhatsappNumber: z.string().trim().max(30).optional().or(z.literal("")),
+  supportWhatsappMessage: z.string().trim().max(500).optional().or(z.literal("")),
+  demoWhatsappMessage: z.string().trim().max(500).optional().or(z.literal("")),
+  enableFloatingWhatsapp: z.boolean().optional(),
+  enableBookDemoCta: z.boolean().optional(),
 });
 
 export const updatePlatformPlanBodySchema = z.object({

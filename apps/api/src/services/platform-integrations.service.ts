@@ -13,6 +13,12 @@ export type PlatformIntegrationSettings = {
   smtpUser: string;
   smtpPass: string;
   reportFromEmail: string;
+  supportWhatsappNumber: string;
+  demoWhatsappNumber: string;
+  supportWhatsappMessage: string;
+  demoWhatsappMessage: string;
+  enableFloatingWhatsapp: boolean;
+  enableBookDemoCta: boolean;
   updatedAt: string | null;
   updatedByName: string | null;
 };
@@ -29,6 +35,12 @@ type IntegrationRow = {
   smtp_user: string;
   smtp_pass: string;
   report_from_email: string;
+  support_whatsapp_number: string;
+  demo_whatsapp_number: string;
+  support_whatsapp_message: string;
+  demo_whatsapp_message: string;
+  enable_floating_whatsapp: boolean;
+  enable_book_demo_cta: boolean;
   updated_at: string | null;
   updated_by_name: string | null;
 };
@@ -46,6 +58,12 @@ function envSettings(): PlatformIntegrationSettings {
     smtpUser: env.smtpUser,
     smtpPass: env.smtpPass,
     reportFromEmail: env.reportFromEmail,
+    supportWhatsappNumber: "",
+    demoWhatsappNumber: "",
+    supportWhatsappMessage: "Hi BookLib, I need support.",
+    demoWhatsappMessage: "Hi BookLib, I want a demo for my library.",
+    enableFloatingWhatsapp: true,
+    enableBookDemoCta: true,
     updatedAt: null,
     updatedByName: null,
   };
@@ -66,6 +84,12 @@ function rowToSettings(row: IntegrationRow | undefined): PlatformIntegrationSett
     smtpUser: row.smtp_user || fallback.smtpUser,
     smtpPass: row.smtp_pass || fallback.smtpPass,
     reportFromEmail: row.report_from_email || fallback.reportFromEmail,
+    supportWhatsappNumber: row.support_whatsapp_number ?? fallback.supportWhatsappNumber,
+    demoWhatsappNumber: row.demo_whatsapp_number ?? fallback.demoWhatsappNumber,
+    supportWhatsappMessage: row.support_whatsapp_message || fallback.supportWhatsappMessage,
+    demoWhatsappMessage: row.demo_whatsapp_message || fallback.demoWhatsappMessage,
+    enableFloatingWhatsapp: row.enable_floating_whatsapp ?? fallback.enableFloatingWhatsapp,
+    enableBookDemoCta: row.enable_book_demo_cta ?? fallback.enableBookDemoCta,
     updatedAt: row.updated_at,
     updatedByName: row.updated_by_name,
   };
@@ -87,6 +111,12 @@ export async function getPlatformIntegrationSettings() {
         s.smtp_user,
         s.smtp_pass,
         s.report_from_email,
+        s.support_whatsapp_number,
+        s.demo_whatsapp_number,
+        s.support_whatsapp_message,
+        s.demo_whatsapp_message,
+        s.enable_floating_whatsapp,
+        s.enable_book_demo_cta,
         s.updated_at::text,
         u.full_name AS updated_by_name
       FROM platform_integration_settings s
@@ -116,8 +146,25 @@ export function redactPlatformIntegrationSettings(settings: PlatformIntegrationS
     smtpUser: settings.smtpUser,
     reportFromEmail: settings.reportFromEmail,
     smtpPassSet: Boolean(settings.smtpPass),
+    supportWhatsappNumber: settings.supportWhatsappNumber,
+    demoWhatsappNumber: settings.demoWhatsappNumber,
+    supportWhatsappMessage: settings.supportWhatsappMessage,
+    demoWhatsappMessage: settings.demoWhatsappMessage,
+    enableFloatingWhatsapp: settings.enableFloatingWhatsapp,
+    enableBookDemoCta: settings.enableBookDemoCta,
     updatedAt: settings.updatedAt,
     updatedByName: settings.updatedByName,
+  };
+}
+
+export function publicPlatformSiteSettings(settings: PlatformIntegrationSettings) {
+  return {
+    supportWhatsappNumber: settings.enableFloatingWhatsapp ? settings.supportWhatsappNumber : "",
+    demoWhatsappNumber: settings.enableBookDemoCta ? settings.demoWhatsappNumber || settings.supportWhatsappNumber : "",
+    supportWhatsappMessage: settings.supportWhatsappMessage,
+    demoWhatsappMessage: settings.demoWhatsappMessage,
+    enableFloatingWhatsapp: settings.enableFloatingWhatsapp,
+    enableBookDemoCta: settings.enableBookDemoCta,
   };
 }
 
@@ -133,6 +180,12 @@ export async function updatePlatformIntegrationSettings(input: {
   smtpUser?: string;
   smtpPass?: string;
   reportFromEmail?: string;
+  supportWhatsappNumber?: string;
+  demoWhatsappNumber?: string;
+  supportWhatsappMessage?: string;
+  demoWhatsappMessage?: string;
+  enableFloatingWhatsapp?: boolean;
+  enableBookDemoCta?: boolean;
   updatedByUserId: string;
 }) {
   const result = await requireDb().query<IntegrationRow>(
@@ -150,9 +203,15 @@ export async function updatePlatformIntegrationSettings(input: {
       smtp_user,
       smtp_pass,
       report_from_email,
+      support_whatsapp_number,
+      demo_whatsapp_number,
+      support_whatsapp_message,
+      demo_whatsapp_message,
+      enable_floating_whatsapp,
+      enable_book_demo_cta,
       updated_by
     )
-    VALUES ('default', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    VALUES ('default', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
     ON CONFLICT (singleton_key) DO UPDATE
     SET
       google_oauth_client_id = EXCLUDED.google_oauth_client_id,
@@ -166,6 +225,12 @@ export async function updatePlatformIntegrationSettings(input: {
       smtp_user = EXCLUDED.smtp_user,
       smtp_pass = COALESCE(NULLIF(EXCLUDED.smtp_pass, ''), platform_integration_settings.smtp_pass),
       report_from_email = EXCLUDED.report_from_email,
+      support_whatsapp_number = EXCLUDED.support_whatsapp_number,
+      demo_whatsapp_number = EXCLUDED.demo_whatsapp_number,
+      support_whatsapp_message = EXCLUDED.support_whatsapp_message,
+      demo_whatsapp_message = EXCLUDED.demo_whatsapp_message,
+      enable_floating_whatsapp = EXCLUDED.enable_floating_whatsapp,
+      enable_book_demo_cta = EXCLUDED.enable_book_demo_cta,
       updated_by = EXCLUDED.updated_by,
       updated_at = NOW()
     RETURNING
@@ -180,8 +245,14 @@ export async function updatePlatformIntegrationSettings(input: {
       smtp_user,
       smtp_pass,
       report_from_email,
+      support_whatsapp_number,
+      demo_whatsapp_number,
+      support_whatsapp_message,
+      demo_whatsapp_message,
+      enable_floating_whatsapp,
+      enable_book_demo_cta,
       updated_at::text,
-      (SELECT full_name FROM users WHERE id = $12) AS updated_by_name
+      (SELECT full_name FROM users WHERE id = $18) AS updated_by_name
     `,
     [
       input.googleOAuthClientId ?? "",
@@ -195,6 +266,12 @@ export async function updatePlatformIntegrationSettings(input: {
       input.smtpUser ?? "",
       input.smtpPass ?? "",
       input.reportFromEmail ?? "",
+      input.supportWhatsappNumber ?? "",
+      input.demoWhatsappNumber ?? "",
+      input.supportWhatsappMessage ?? "Hi BookLib, I need support.",
+      input.demoWhatsappMessage ?? "Hi BookLib, I want a demo for my library.",
+      input.enableFloatingWhatsapp ?? true,
+      input.enableBookDemoCta ?? true,
       input.updatedByUserId,
     ],
   );
