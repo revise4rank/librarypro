@@ -125,6 +125,32 @@ export const updateAdminLibraryBodySchema = z.object({
   ownerActive: z.boolean(),
 });
 
+export const updateAdminLibraryStatusBodySchema = z.object({
+  status: z.enum(["ACTIVE", "SUSPENDED", "INACTIVE"]),
+  ownerActive: z.boolean().optional(),
+  reason: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
+const platformAdminRoles = ["SUPER_ADMIN_FULL", "SUPPORT", "FINANCE", "CONTENT", "OPS"] as const;
+const platformAdminPermissions = ["TENANTS", "USERS", "PAYMENTS", "PLANS", "CONTENT", "OPS", "SETTINGS", "ACCESS"] as const;
+
+export const createPlatformAdminBodySchema = z.object({
+  fullName: z.string().trim().min(2).max(150),
+  email: z.string().trim().email().optional().or(z.literal("")),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  roleCode: z.enum(platformAdminRoles).default("SUPPORT"),
+  permissions: z.array(z.enum(platformAdminPermissions)).default(["TENANTS", "USERS", "OPS"]),
+});
+
+export const updatePlatformAdminBodySchema = z.object({
+  fullName: z.string().trim().min(2).max(150).optional(),
+  email: z.string().trim().email().optional().or(z.literal("")),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  roleCode: z.enum(platformAdminRoles).optional(),
+  permissions: z.array(z.enum(platformAdminPermissions)).optional(),
+  isActive: z.boolean().optional(),
+});
+
 export const createOwnerPaymentBodySchema = z.object({
   assignmentId: z.string().uuid(),
   amount: z.coerce.number().positive(),

@@ -92,6 +92,7 @@ const navIconMap: Record<string, LucideIcon> = {
   "/superadmin/integrations": SettingsIcon,
   "/superadmin/referrals": UserPlus,
   "/superadmin/payments": IndianRupee,
+  "/superadmin/access": UserRound,
 };
 
 export function navIconFor(item: DashboardNavItem) {

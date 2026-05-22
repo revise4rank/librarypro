@@ -17,6 +17,7 @@ import {
   createOwnerExpense,
   createOwnerManualAttendance,
   createOwnerPayment,
+  createPlatformAdmin,
   createOwnerSeats,
   createOwnerStudent,
   createOwnerStudentPlan,
@@ -30,6 +31,7 @@ import {
   exportOwnerPaymentReceipt,
   getAdminDashboard,
   getAdminDataOverview,
+  getAdminLibraryOverview,
   getOwnerDashboard,
   getOwnerCheckinRegisterPage,
   getOwnerReportsSummary,
@@ -41,8 +43,13 @@ import {
   getStudentRejoinOptions,
   reserveStudentRejoinSeat,
   listAdminLibraries,
+  listAdminLibraryActivity,
+  listAdminLibraryPayments,
+  listAdminLibraryStudents,
+  listAdminLibraryUsers,
   listAdminPayments,
   listAdminPlanSummaries,
+  listPlatformAdmins,
   listOwnerExpenses,
   listOwnerAdmins,
   listOwnerAuditLogs,
@@ -80,6 +87,8 @@ import {
   getPlatformMarketplaceSettings,
   updatePlatformPlanConfig,
   updateAdminLibrary,
+  updateAdminLibraryStatus,
+  updatePlatformAdmin,
   updatePlatformMarketplaceSettings,
 } from "../services/owner-operations.service";
 import {
@@ -113,6 +122,9 @@ import {
   updateOwnerAdminPermissionsBodySchema,
   payStudentPaymentBodySchema,
   manualOwnerCheckinBodySchema,
+  createPlatformAdminBodySchema,
+  updateAdminLibraryStatusBodySchema,
+  updatePlatformAdminBodySchema,
   ownerCheckinsQuerySchema,
   sendDueRecoveryBodySchema,
   studentNotificationsQuerySchema,
@@ -1405,6 +1417,31 @@ export async function listAdminLibrariesController(_req: Request, res: Response)
   res.json({ success: true, data });
 }
 
+export async function getAdminLibraryOverviewController(req: Request, res: Response) {
+  const data = await getAdminLibraryOverview(paramValue(req.params.libraryId));
+  res.json({ success: true, data });
+}
+
+export async function listAdminLibraryUsersController(req: Request, res: Response) {
+  const data = await listAdminLibraryUsers(paramValue(req.params.libraryId));
+  res.json({ success: true, data });
+}
+
+export async function listAdminLibraryStudentsController(req: Request, res: Response) {
+  const data = await listAdminLibraryStudents(paramValue(req.params.libraryId));
+  res.json({ success: true, data });
+}
+
+export async function listAdminLibraryPaymentsController(req: Request, res: Response) {
+  const data = await listAdminLibraryPayments(paramValue(req.params.libraryId));
+  res.json({ success: true, data });
+}
+
+export async function listAdminLibraryActivityController(req: Request, res: Response) {
+  const data = await listAdminLibraryActivity(paramValue(req.params.libraryId));
+  res.json({ success: true, data });
+}
+
 export async function updateAdminLibraryController(req: Request, res: Response) {
   if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
     throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
@@ -1431,6 +1468,107 @@ export async function updateAdminLibraryController(req: Request, res: Response) 
       name: parsed.name,
       city: parsed.city,
     },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.json({ success: true, data });
+}
+
+export async function updateAdminLibraryStatusController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
+  }
+  const libraryId = paramValue(req.params.libraryId);
+  const parsed = updateAdminLibraryStatusBodySchema.parse(req.body);
+  const data = await updateAdminLibraryStatus({
+    libraryId,
+    status: parsed.status,
+    ownerActive: parsed.ownerActive,
+  });
+  await createAuditLog({
+    actorUserId: req.auth.userId,
+    libraryId,
+    action: "admin.library.status.update",
+    entityType: "library",
+    entityId: libraryId,
+    metadata: { status: parsed.status, ownerActive: parsed.ownerActive ?? null, reason: parsed.reason || null },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.json({ success: true, data });
+}
+
+export async function archiveAdminLibraryController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
+  }
+  const libraryId = paramValue(req.params.libraryId);
+  const data = await updateAdminLibraryStatus({ libraryId, status: "INACTIVE", ownerActive: false });
+  await createAuditLog({
+    actorUserId: req.auth.userId,
+    libraryId,
+    action: "admin.library.archive",
+    entityType: "library",
+    entityId: libraryId,
+    metadata: { softDelete: true },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.json({ success: true, data });
+}
+
+export async function listPlatformAdminsController(_req: Request, res: Response) {
+  const data = await listPlatformAdmins();
+  res.json({ success: true, data });
+}
+
+export async function createPlatformAdminController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
+  }
+  const parsed = createPlatformAdminBodySchema.parse(req.body);
+  const data = await createPlatformAdmin({
+    actorUserId: req.auth.userId,
+    fullName: parsed.fullName,
+    email: parsed.email || undefined,
+    phone: parsed.phone || undefined,
+    roleCode: parsed.roleCode,
+    permissions: parsed.permissions,
+  });
+  await createAuditLog({
+    actorUserId: req.auth.userId,
+    action: "admin.platform_admin.create",
+    entityType: "platform_admin",
+    entityId: data.userId,
+    metadata: { roleCode: parsed.roleCode, permissions: parsed.permissions },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updatePlatformAdminController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "SUPER_ADMIN") {
+    throw new AppError(401, "Super admin authentication required", "ADMIN_AUTH_REQUIRED");
+  }
+  const parsed = updatePlatformAdminBodySchema.parse(req.body);
+  const userId = paramValue(req.params.userId);
+  const data = await updatePlatformAdmin({
+    actorUserId: req.auth.userId,
+    userId,
+    fullName: parsed.fullName,
+    email: parsed.email || undefined,
+    phone: parsed.phone || undefined,
+    roleCode: parsed.roleCode,
+    permissions: parsed.permissions,
+    isActive: parsed.isActive,
+  });
+  await createAuditLog({
+    actorUserId: req.auth.userId,
+    action: "admin.platform_admin.update",
+    entityType: "platform_admin",
+    entityId: userId,
+    metadata: { roleCode: parsed.roleCode ?? null, permissions: parsed.permissions ?? null, isActive: parsed.isActive ?? null },
     ipAddress: req.ip,
     userAgent: req.header("user-agent") ?? null,
   });

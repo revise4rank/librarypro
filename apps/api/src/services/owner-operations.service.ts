@@ -1642,6 +1642,410 @@ export async function updateAdminLibrary(input: {
   }
 }
 
+export async function getAdminLibraryOverview(libraryId: string) {
+  const db = requireDb();
+  const [overview, users, students, payments, seats, website, activity] = await Promise.all([
+    db.query(
+      `
+      SELECT
+        l.id::text,
+        l.name,
+        l.slug,
+        l.city,
+        l.area,
+        l.address,
+        l.status::text,
+        l.total_seats,
+        l.available_seats,
+        l.starting_price::text,
+        l.offer_text,
+        l.created_at::text,
+        l.updated_at::text,
+        u.id::text AS owner_user_id,
+        u.full_name AS owner_name,
+        u.email AS owner_email,
+        u.phone AS owner_phone,
+        u.is_active AS owner_active,
+        s.plan_name,
+        s.plan_code,
+        s.status::text AS subscription_status,
+        s.current_period_end::date::text,
+        COALESCE(stats.active_students, '0') AS active_students,
+        COALESCE(stats.admins, '0') AS admins,
+        COALESCE(stats.pending_join_requests, '0') AS pending_join_requests,
+        COALESCE(stats.unpaid_amount, '0') AS unpaid_amount,
+        COALESCE(stats.today_checkins, '0') AS today_checkins
+      FROM libraries l
+      INNER JOIN users u ON u.id = l.owner_user_id
+      LEFT JOIN subscriptions s ON s.library_id = l.id
+      LEFT JOIN LATERAL (
+        SELECT
+          (SELECT COUNT(*)::text FROM student_assignments sa WHERE sa.library_id = l.id AND sa.status = 'ACTIVE') AS active_students,
+          (SELECT COUNT(*)::text FROM user_library_roles ulr WHERE ulr.library_id = l.id AND ulr.role = 'LIBRARY_OWNER') AS admins,
+          (SELECT COUNT(*)::text FROM library_join_requests ljr WHERE ljr.library_id = l.id AND ljr.status = 'PENDING') AS pending_join_requests,
+          (SELECT COALESCE(SUM(amount), 0)::text FROM payments p WHERE p.library_id = l.id AND p.status IN ('DUE', 'PENDING')) AS unpaid_amount,
+          (SELECT COUNT(*)::text FROM checkins c WHERE c.library_id = l.id AND c.checked_in_at::date = CURRENT_DATE) AS today_checkins
+      ) stats ON TRUE
+      WHERE l.id = $1
+      LIMIT 1
+      `,
+      [libraryId],
+    ),
+    listAdminLibraryUsers(libraryId),
+    listAdminLibraryStudents(libraryId),
+    listAdminLibraryPayments(libraryId),
+    db.query(
+      `
+      SELECT
+        COUNT(*)::text AS total,
+        COUNT(*) FILTER (WHERE status = 'AVAILABLE')::text AS available,
+        COUNT(*) FILTER (WHERE status = 'OCCUPIED')::text AS occupied,
+        COUNT(*) FILTER (WHERE status = 'RESERVED')::text AS reserved,
+        COUNT(*) FILTER (WHERE status = 'DISABLED')::text AS disabled
+      FROM seats
+      WHERE library_id = $1
+      `,
+      [libraryId],
+    ),
+    db.query(
+      `
+      SELECT
+        p.subdomain,
+        CASE WHEN p.is_published THEN 'Published' ELSE 'Draft' END AS status,
+        p.published_at::text,
+        p.brand_logo_url,
+        p.hero_banner_url,
+        p.show_in_marketplace,
+        p.listing_published,
+        p.site_pages,
+        l.slug
+      FROM libraries l
+      LEFT JOIN libraries_public_profiles p ON p.library_id = l.id
+      WHERE l.id = $1
+      LIMIT 1
+      `,
+      [libraryId],
+    ),
+    listAdminLibraryActivity(libraryId),
+  ]);
+
+  const row = overview.rows[0];
+  if (!row) {
+    throw new AppError(404, "Library not found", "LIBRARY_NOT_FOUND");
+  }
+
+  return {
+    overview: row,
+    users: users.slice(0, 8),
+    students: students.slice(0, 8),
+    payments: payments.slice(0, 8),
+    seats: seats.rows[0] ?? { total: "0", available: "0", occupied: "0", reserved: "0", disabled: "0" },
+    website: website.rows[0] ?? null,
+    activity: activity.slice(0, 10),
+  };
+}
+
+export async function listAdminLibraryUsers(libraryId: string) {
+  const result = await requireDb().query(
+    `
+    SELECT
+      u.id::text,
+      u.full_name,
+      u.email,
+      u.phone,
+      u.global_role::text,
+      u.is_active,
+      ulr.role::text AS library_role,
+      COALESCE(lap.permissions, '[]'::jsonb) AS permissions,
+      u.created_at::text,
+      (
+        SELECT MAX(al.created_at)::text
+        FROM audit_logs al
+        WHERE al.actor_user_id = u.id
+          AND al.action = 'auth.login'
+      ) AS last_login_at
+    FROM user_library_roles ulr
+    INNER JOIN users u ON u.id = ulr.user_id
+    LEFT JOIN library_admin_permissions lap ON lap.library_id = ulr.library_id AND lap.user_id = u.id
+    WHERE ulr.library_id = $1
+    ORDER BY CASE WHEN u.id = (SELECT owner_user_id FROM libraries WHERE id = $1) THEN 0 ELSE 1 END, u.full_name ASC
+    LIMIT 100
+    `,
+    [libraryId],
+  );
+  return result.rows;
+}
+
+export async function listAdminLibraryStudents(libraryId: string) {
+  const result = await requireDb().query(
+    `
+    SELECT
+      sa.id::text AS assignment_id,
+      u.id::text AS student_user_id,
+      u.full_name,
+      u.email,
+      u.phone,
+      u.is_active,
+      s.seat_number,
+      sa.status::text,
+      sa.payment_status::text,
+      sa.plan_name,
+      sa.plan_price::text,
+      sa.starts_at::date::text,
+      sa.ends_at::date::text,
+      sa.created_at::text
+    FROM student_assignments sa
+    INNER JOIN users u ON u.id = sa.student_user_id
+    LEFT JOIN seats s ON s.id = sa.seat_id
+    WHERE sa.library_id = $1
+    ORDER BY sa.created_at DESC
+    LIMIT 200
+    `,
+    [libraryId],
+  );
+  return result.rows;
+}
+
+export async function listAdminLibraryPayments(libraryId: string) {
+  const result = await requireDb().query(
+    `
+    SELECT
+      p.id::text,
+      p.amount::text,
+      p.currency,
+      p.status::text,
+      p.method,
+      p.due_date::text,
+      p.paid_at::text,
+      p.reference_no,
+      u.full_name AS student_name,
+      p.created_at::text
+    FROM payments p
+    LEFT JOIN users u ON u.id = p.student_user_id
+    WHERE p.library_id = $1
+    ORDER BY p.created_at DESC
+    LIMIT 200
+    `,
+    [libraryId],
+  );
+  return result.rows;
+}
+
+export async function listAdminLibraryActivity(libraryId: string) {
+  const result = await requireDb().query(
+    `
+    SELECT
+      al.id::text,
+      al.action,
+      al.entity_type,
+      al.entity_id,
+      al.metadata,
+      al.created_at::text,
+      u.full_name AS actor_name
+    FROM audit_logs al
+    LEFT JOIN users u ON u.id = al.actor_user_id
+    WHERE al.library_id = $1
+    ORDER BY al.created_at DESC
+    LIMIT 200
+    `,
+    [libraryId],
+  );
+  return result.rows;
+}
+
+export async function updateAdminLibraryStatus(input: {
+  libraryId: string;
+  status: "ACTIVE" | "SUSPENDED" | "INACTIVE";
+  ownerActive?: boolean;
+}) {
+  const db = requireDb();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query<{ id: string; owner_user_id: string; status: string }>(
+      `
+      UPDATE libraries
+      SET status = $2::library_status, updated_at = NOW()
+      WHERE id = $1
+      RETURNING id::text, owner_user_id::text, status::text
+      `,
+      [input.libraryId, input.status],
+    );
+    const row = result.rows[0];
+    if (!row) {
+      throw new AppError(404, "Library not found", "LIBRARY_NOT_FOUND");
+    }
+    if (typeof input.ownerActive === "boolean") {
+      await client.query(
+        `
+        UPDATE users
+        SET is_active = $2, session_version = session_version + 1, updated_at = NOW()
+        WHERE id = $1
+        `,
+        [row.owner_user_id, input.ownerActive],
+      );
+    }
+    await client.query("COMMIT");
+    return row;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function archiveAdminLibrary(input: { libraryId: string }) {
+  return updateAdminLibraryStatus({ libraryId: input.libraryId, status: "INACTIVE", ownerActive: false });
+}
+
+const defaultPlatformPermissionsByRole: Record<string, string[]> = {
+  SUPER_ADMIN_FULL: ["TENANTS", "USERS", "PAYMENTS", "PLANS", "CONTENT", "OPS", "SETTINGS", "ACCESS"],
+  SUPPORT: ["TENANTS", "USERS", "OPS"],
+  FINANCE: ["TENANTS", "PAYMENTS", "PLANS"],
+  CONTENT: ["CONTENT", "TENANTS"],
+  OPS: ["TENANTS", "USERS", "OPS"],
+};
+
+export async function listPlatformAdmins() {
+  const result = await requireDb().query(
+    `
+    SELECT
+      u.id::text,
+      u.full_name,
+      u.email,
+      u.phone,
+      u.is_active,
+      COALESCE(pap.role_code, 'SUPER_ADMIN_FULL') AS role_code,
+      COALESCE(pap.permissions, '["TENANTS","USERS","PAYMENTS","PLANS","CONTENT","OPS","SETTINGS","ACCESS"]'::jsonb) AS permissions,
+      u.created_at::text,
+      (
+        SELECT MAX(al.created_at)::text
+        FROM audit_logs al
+        WHERE al.actor_user_id = u.id
+          AND al.action = 'auth.login'
+      ) AS last_login_at
+    FROM users u
+    LEFT JOIN platform_admin_permissions pap ON pap.user_id = u.id
+    WHERE u.global_role = 'SUPER_ADMIN'
+    ORDER BY u.created_at DESC
+    `,
+  );
+  return result.rows;
+}
+
+export async function createPlatformAdmin(input: {
+  actorUserId: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  roleCode: string;
+  permissions: string[];
+}) {
+  if (!input.email && !input.phone) {
+    throw new AppError(400, "Email or phone is required", "CONTACT_REQUIRED");
+  }
+  const db = requireDb();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query("SELECT id FROM users WHERE email = NULLIF($1, '') OR phone = NULLIF($2, '') LIMIT 1", [input.email ?? "", input.phone ?? ""]);
+    if (existing.rows[0]) {
+      throw new AppError(409, "User already exists with this email or phone", "USER_ALREADY_EXISTS");
+    }
+    const temporaryPassword = "admin123456";
+    const passwordHash = await hashPassword(temporaryPassword);
+    const created = await client.query<{ id: string }>(
+      `
+      INSERT INTO users (full_name, email, phone, password_hash, global_role)
+      VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), $4, 'SUPER_ADMIN')
+      RETURNING id::text
+      `,
+      [input.fullName, input.email ?? "", input.phone ?? "", passwordHash],
+    );
+    const userId = created.rows[0].id;
+    await client.query(
+      `
+      INSERT INTO platform_admin_permissions (user_id, role_code, permissions, created_by, updated_by)
+      VALUES ($1, $2, $3::jsonb, $4, $4)
+      `,
+      [userId, input.roleCode, JSON.stringify(input.permissions.length ? input.permissions : defaultPlatformPermissionsByRole[input.roleCode] ?? []), input.actorUserId],
+    );
+    await client.query("COMMIT");
+    return { userId, temporaryPassword };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updatePlatformAdmin(input: {
+  actorUserId: string;
+  userId: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  roleCode?: string;
+  permissions?: string[];
+  isActive?: boolean;
+}) {
+  if (input.userId === input.actorUserId && input.isActive === false) {
+    throw new AppError(409, "You cannot disable your own superadmin access", "SELF_DISABLE_BLOCKED");
+  }
+  const db = requireDb();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query<{ id: string; full_name: string; email: string | null; phone: string | null; is_active: boolean }>(
+      "SELECT id::text, full_name, email, phone, is_active FROM users WHERE id = $1 AND global_role = 'SUPER_ADMIN' LIMIT 1",
+      [input.userId],
+    );
+    const user = existing.rows[0];
+    if (!user) {
+      throw new AppError(404, "Platform admin not found", "PLATFORM_ADMIN_NOT_FOUND");
+    }
+    await client.query(
+      `
+      UPDATE users
+      SET
+        full_name = COALESCE($2, full_name),
+        email = COALESCE(NULLIF($3, ''), email),
+        phone = COALESCE(NULLIF($4, ''), phone),
+        is_active = COALESCE($5, is_active),
+        session_version = CASE WHEN $5 IS NOT NULL AND is_active <> $5 THEN session_version + 1 ELSE session_version END,
+        updated_at = NOW()
+      WHERE id = $1
+      `,
+      [input.userId, input.fullName ?? null, input.email ?? null, input.phone ?? null, typeof input.isActive === "boolean" ? input.isActive : null],
+    );
+    if (input.roleCode || input.permissions) {
+      const roleCode = input.roleCode ?? "SUPPORT";
+      const permissions = input.permissions ?? defaultPlatformPermissionsByRole[roleCode] ?? [];
+      await client.query(
+        `
+        INSERT INTO platform_admin_permissions (user_id, role_code, permissions, updated_by)
+        VALUES ($1, $2, $3::jsonb, $4)
+        ON CONFLICT (user_id) DO UPDATE
+        SET role_code = EXCLUDED.role_code,
+            permissions = EXCLUDED.permissions,
+            updated_by = EXCLUDED.updated_by,
+            updated_at = NOW()
+        `,
+        [input.userId, roleCode, JSON.stringify(permissions), input.actorUserId],
+      );
+    }
+    await client.query("COMMIT");
+    return { updated: true };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function listAdminPlanSummaries() {
   return repository().listAdminPlanSummaries();
 }

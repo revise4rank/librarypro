@@ -92,6 +92,7 @@ import {
 import {
   assignOwnerSeatController,
   assignOwnerStudentSeatController,
+  archiveAdminLibraryController,
   createOwnerAdmissionController,
   createOwnerFloorController,
   createOwnerNotificationController,
@@ -100,6 +101,7 @@ import {
   createOwnerCouponController,
   createOwnerManualAttendanceController,
   createOwnerPaymentController,
+  createPlatformAdminController,
   createOwnerSeatsController,
   createOwnerStudentController,
   createOwnerStudentPlanController,
@@ -113,6 +115,7 @@ import {
   deleteOwnerAdminController,
   getAdminDataOverviewController,
   getAdminDashboardController,
+  getAdminLibraryOverviewController,
   getAdminMarketplaceSettingsController,
   getAdminIntegrationSettingsController,
   getOwnerDashboardController,
@@ -138,8 +141,13 @@ import {
   listOwnerStudentPlansController,
   listOwnerStudentsController,
   listAdminLibrariesController,
+  listAdminLibraryActivityController,
+  listAdminLibraryPaymentsController,
+  listAdminLibraryStudentsController,
+  listAdminLibraryUsersController,
   listAdminPaymentsController,
   listAdminPlanSummariesController,
+  listPlatformAdminsController,
   listStudentNotificationsController,
   listStudentPaymentsController,
   payStudentPaymentController,
@@ -166,7 +174,9 @@ import {
   updateAdminMarketplaceSettingsController,
   updateAdminIntegrationSettingsController,
   updateAdminLibraryController,
+  updateAdminLibraryStatusController,
   updateAdminPlanConfigController,
+  updatePlatformAdminController,
 } from "../controllers/owner-operations.controller";
 import { uploadAdmissionDocumentController, uploadPublicProfileAssetController } from "../controllers/upload.controller";
 import { asyncHandler } from "../lib/async-handler";
@@ -311,7 +321,17 @@ router.get("/student/notifications", requireRole(["STUDENT"]), asyncHandler(list
 router.get("/admin/dashboard", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminDashboardController));
 router.get("/admin/data-overview", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminDataOverviewController));
 router.get("/admin/libraries", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminLibrariesController));
+router.get("/admin/libraries/:libraryId/overview", requireRole(["SUPER_ADMIN"]), asyncHandler(getAdminLibraryOverviewController));
+router.get("/admin/libraries/:libraryId/users", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminLibraryUsersController));
+router.get("/admin/libraries/:libraryId/students", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminLibraryStudentsController));
+router.get("/admin/libraries/:libraryId/payments", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminLibraryPaymentsController));
+router.get("/admin/libraries/:libraryId/activity", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminLibraryActivityController));
 router.patch("/admin/libraries/:libraryId", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminLibraryController));
+router.patch("/admin/libraries/:libraryId/status", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminLibraryStatusController));
+router.post("/admin/libraries/:libraryId/archive", requireRole(["SUPER_ADMIN"]), asyncHandler(archiveAdminLibraryController));
+router.get("/admin/platform-admins", requireRole(["SUPER_ADMIN"]), asyncHandler(listPlatformAdminsController));
+router.post("/admin/platform-admins", requireRole(["SUPER_ADMIN"]), asyncHandler(createPlatformAdminController));
+router.patch("/admin/platform-admins/:userId", requireRole(["SUPER_ADMIN"]), asyncHandler(updatePlatformAdminController));
 router.get("/admin/plans", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPlanSummariesController));
 router.patch("/admin/plans/:planCode", requireRole(["SUPER_ADMIN"]), asyncHandler(updateAdminPlanConfigController));
 router.get("/admin/payments", requireRole(["SUPER_ADMIN"]), asyncHandler(listAdminPaymentsController));
