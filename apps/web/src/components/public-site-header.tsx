@@ -2,13 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import {
-  emptyPublicSiteSettings,
-  fetchPublicSiteSettings,
-  type PublicSiteSettings,
-  whatsappHref,
-} from "../lib/public-site-settings";
+import { BookDemoCta } from "./book-demo-cta";
 
 type PublicSiteHeaderProps = {
   ctaHref?: string;
@@ -34,20 +28,9 @@ export function PublicSiteHeader({
   demoHref,
   showDemo = true,
 }: PublicSiteHeaderProps) {
-  const [settings, setSettings] = useState<PublicSiteSettings>(emptyPublicSiteSettings);
   const baseLinkClass = "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition md:text-sm";
   const activeLinkClass = "bg-emerald-50 !text-emerald-700 ring-1 ring-emerald-100";
   const inactiveLinkClass = "!text-slate-700 hover:bg-slate-50 hover:!text-emerald-700";
-  const computedDemoHref = useMemo(
-    () => demoHref || whatsappHref(settings.demoWhatsappNumber || settings.supportWhatsappNumber, settings.demoWhatsappMessage),
-    [demoHref, settings.demoWhatsappMessage, settings.demoWhatsappNumber, settings.supportWhatsappNumber],
-  );
-  const shouldShowDemo = showDemo && settings.enableBookDemoCta && Boolean(computedDemoHref);
-
-  useEffect(() => {
-    if (demoHref) return;
-    fetchPublicSiteSettings().then(setSettings).catch(() => setSettings(emptyPublicSiteSettings));
-  }, [demoHref]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
@@ -89,15 +72,19 @@ export function PublicSiteHeader({
             Explore Libraries
           </Link>
 
-          {shouldShowDemo ? (
+          {showDemo && demoHref ? (
             <a
-              href={computedDemoHref}
+              href={demoHref}
               target="_blank"
               rel="noreferrer"
               className="hidden items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold !text-emerald-700 transition hover:bg-emerald-50 sm:inline-flex"
             >
               Book Demo
             </a>
+          ) : showDemo ? (
+            <BookDemoCta className="hidden items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold !text-emerald-700 transition hover:bg-emerald-50 sm:inline-flex">
+              Book Demo
+            </BookDemoCta>
           ) : null}
 
           <Link
@@ -132,15 +119,19 @@ export function PublicSiteHeader({
                 >
                   Explore Libraries
                 </Link>
-                {shouldShowDemo ? (
+                {showDemo && demoHref ? (
                   <a
-                    href={computedDemoHref}
+                    href={demoHref}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
                     Book Demo
                   </a>
+                ) : showDemo ? (
+                  <BookDemoCta className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Book Demo
+                  </BookDemoCta>
                 ) : null}
               </div>
             </div>

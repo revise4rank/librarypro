@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { BookDemoCta } from "../components/book-demo-cta";
 import { FloatingWhatsapp } from "../components/floating-whatsapp";
 import { PublicSiteHeader } from "../components/public-site-header";
 
@@ -282,6 +283,7 @@ export default function HomePage() {
               Start free trial
               <ArrowRight className="h-5 w-5" />
             </Link>
+            <BookDemoCta className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-7 text-base font-bold text-emerald-700 transition hover:bg-emerald-50" />
             <Link
               href="/marketplace"
               className="inline-flex min-h-12 items-center justify-center rounded-lg border border-emerald-200 bg-white px-7 text-base font-bold text-emerald-700 transition hover:bg-emerald-50"
