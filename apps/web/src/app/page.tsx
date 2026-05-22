@@ -2,89 +2,147 @@
 
 import {
   ArrowRight,
+  BadgeCheck,
   BookOpenCheck,
-  BriefcaseBusiness,
+  CalendarCheck,
+  CheckCircle2,
+  ClipboardList,
   Compass,
   LayoutDashboard,
-  Mail,
-  MapPin,
+  MessageCircle,
+  QrCode,
+  ReceiptText,
+  ShieldCheck,
   Sparkles,
   Users,
+  WalletCards,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { FloatingWhatsapp } from "../components/floating-whatsapp";
 import { PublicSiteHeader } from "../components/public-site-header";
 
-const proofStats = [
-  { value: "1,200+", label: "libraries onboarded" },
-  { value: "48k+", label: "students active" },
-  { value: "10 min", label: "average setup time" },
-  { value: "4.8/5", label: "operator satisfaction" },
+const stats = [
+  { value: "1,200+", label: "libraries managed" },
+  { value: "48k+", label: "student profiles" },
+  { value: "10 min", label: "guided setup" },
 ];
 
-const accessCards = [
+const features = [
   {
-    title: "Library Access",
-    text: "Create your library account or open the owner workspace to manage setup, admissions, roster, seats, and dues.",
-    href: "/owner/register",
-    icon: BriefcaseBusiness,
-  },
-  {
-    title: "Student Portal",
-    text: "Students log in for QR access, dues, notices, and daily self-service actions.",
-    href: "/student/access",
+    title: "Admissions desk",
+    text: "Create enquiries, approve joins, add plans, apply coupons, and move students into roster without scattered registers.",
     icon: Users,
-  },
-];
-
-const journeySteps = [
-  {
-    title: "Onboard",
-    text: "Create plans, configure coupons, and admit students into the roster through one clean onboarding desk.",
-    icon: BriefcaseBusiness,
-    accent: "from-emerald-400/30 to-cyan-400/10",
+    tone: "bg-blue-50 text-blue-600 ring-blue-100",
   },
   {
-    title: "Seat Map",
-    text: "Keep floors and occupancy visible, then allot seats later only for students who are still unallotted.",
+    title: "Seat map and allotment",
+    text: "Select a student, choose a free seat, and confirm allotment from a clean visual workspace.",
     icon: LayoutDashboard,
-    accent: "from-indigo-400/30 to-cyan-400/10",
+    tone: "bg-emerald-50 text-emerald-600 ring-emerald-100",
   },
   {
-    title: "Marketplace",
-    text: "Publish your listing and library page so students can discover and compare you online.",
+    title: "QR attendance",
+    text: "One library QR handles student join, check-in, and checkout. Manual attendance is available for staff.",
+    icon: QrCode,
+    tone: "bg-pink-50 text-pink-600 ring-pink-100",
+  },
+  {
+    title: "Payments and receipts",
+    text: "Track dues, receive payments, export reports, and keep fee receipts organized for every student.",
+    icon: WalletCards,
+    tone: "bg-amber-50 text-amber-600 ring-amber-100",
+  },
+  {
+    title: "Marketplace listing",
+    text: "Publish plans, offers, gallery, contact details, and public library profile so students can discover you online.",
     icon: Compass,
-    accent: "from-sky-400/30 to-emerald-400/10",
+    tone: "bg-violet-50 text-violet-600 ring-violet-100",
   },
   {
-    title: "Growth",
-    text: "Keep students engaged with notices, QR access, dues clarity, and continuity tools.",
-    icon: Sparkles,
-    accent: "from-violet-400/30 to-indigo-400/10",
-  },
-];
-
-const benefitCards = [
-  {
-    title: "Calmer library operations",
-    text: "Replace scattered admin work with one operator journey: pricing first, admissions next, roster daily, seats only when needed.",
+    title: "Website builder",
+    text: "Build a modern subdomain website with logo, banner, plans, gallery, offer, pages, and contact actions.",
     icon: BookOpenCheck,
+    tone: "bg-orange-50 text-orange-600 ring-orange-100",
   },
   {
-    title: "Discovery that converts",
-    text: "Show students a polished marketplace and branded presence that moves them from search to enquiry faster.",
-    icon: Compass,
+    title: "Reports export",
+    text: "Export admission, roster, payment, attendance, and daily operation reports when the team needs records.",
+    icon: ReceiptText,
+    tone: "bg-cyan-50 text-cyan-600 ring-cyan-100",
   },
   {
-    title: "One journey for every student",
-    text: "Keep portal access, QR check-in, notices, and payments in one reliable place students can actually use.",
-    icon: Users,
+    title: "Student portal",
+    text: "Students get library access, payments, scanner, study zone, syllabus tracker, alerts, and study tools.",
+    icon: ClipboardList,
+    tone: "bg-slate-100 text-slate-700 ring-slate-200",
+  },
+  {
+    title: "Owner controls",
+    text: "Plans, coupons, offers, referrals, team/admin access, website, listing, and billing stay in owner workspace.",
+    icon: ShieldCheck,
+    tone: "bg-emerald-50 text-emerald-700 ring-emerald-100",
   },
 ];
 
-const trustedBy = ["City libraries", "Premium study spaces", "Coaching hubs", "Multi-floor operators"];
+const benefitBlocks = [
+  {
+    title: "For library owners",
+    text: "Run admissions, roster, seats, attendance, payments, plans, coupons, offers, staff access, and public growth from one dashboard.",
+    points: ["Less manual work", "Better seat visibility", "Cleaner fee tracking"],
+  },
+  {
+    title: "For students",
+    text: "Students can join a library, scan QR, check attendance state, track dues, get notices, and use study tools in one place.",
+    points: ["Simple portal", "QR based entry", "Study zone support"],
+  },
+  {
+    title: "For growth",
+    text: "Your listing, public website, offers, plans, referrals, and gallery work together to turn discovery into enquiries.",
+    points: ["Marketplace listing", "Subdomain website", "Offer visibility"],
+  },
+];
+
+const steps = [
+  { title: "Create library", text: "Add profile, timing, location, contact, and owner settings.", icon: BadgeCheck },
+  { title: "Add plans", text: "Set trial, paid plans, coupons, and public offers.", icon: WalletCards },
+  { title: "Admit students", text: "Approve joins, collect details, and build your roster.", icon: Users },
+  { title: "Run daily ops", text: "Use seats, QR attendance, payments, reports, and notices.", icon: CalendarCheck },
+];
+
+const faqItems = [
+  {
+    question: "Can BookLib handle both owner and student workflows?",
+    answer: "Yes. Owners manage library operations, while students get their own portal for QR scanning, payments, alerts, and study tools.",
+  },
+  {
+    question: "Can my library get a public listing and website?",
+    answer: "Yes. Paid libraries can publish marketplace listings and a subdomain website with plans, offers, gallery, and contact actions.",
+  },
+  {
+    question: "What happens if a student does not have a phone?",
+    answer: "Owner and approved team members can mark manual attendance, so daily check-in does not depend only on the student's phone.",
+  },
+  {
+    question: "Can I export reports?",
+    answer: "Yes. BookLib supports export flows for key operational data like roster, payments, attendance, and reports.",
+  },
+];
+
+const blogCards = [
+  {
+    title: "Best Library Management Software for Reading Rooms in India",
+    text: "A practical guide for owners comparing tools for admissions, seats, fees, attendance, and growth.",
+  },
+  {
+    title: "How QR Attendance Reduces Manual Work",
+    text: "See how one reception QR can simplify join requests, check-ins, checkouts, and staff attendance fallback.",
+  },
+  {
+    title: "How to Grow a Study Library Online",
+    text: "Use listings, offers, public plans, website pages, and referrals to increase student enquiries.",
+  },
+];
 
 const footerColumns = [
   {
@@ -93,6 +151,7 @@ const footerColumns = [
       { label: "Features", href: "/#features" },
       { label: "Pricing", href: "/#pricing" },
       { label: "Blog", href: "/blog" },
+      { label: "Marketplace", href: "/marketplace" },
     ],
   },
   {
@@ -107,363 +166,362 @@ const footerColumns = [
   {
     title: "Company",
     links: [
-      { label: "About BookLib", href: "/#features" },
-      { label: "Contact support", href: "mailto:support@booklib.in" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
+      { label: "About", href: "/#about" },
+      { label: "Contact", href: "mailto:support@booklib.in" },
       { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms of Service", href: "/terms" },
     ],
   },
 ];
 
-const sectionMotion = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.55,
-    },
-  },
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.14,
-      delayChildren: 0.08,
-    },
-  },
-};
+function HeroMockup() {
+  return (
+    <div className="relative mx-auto w-full max-w-[920px]">
+      <div className="rounded-lg border border-slate-200 bg-slate-950 p-3 shadow-xl">
+        <div className="overflow-hidden rounded-lg bg-white">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <div>
+              <p className="text-xs font-semibold uppercase text-emerald-600">BookLib owner dashboard</p>
+              <h3 className="text-lg font-bold text-slate-950">Focus Library</h3>
+            </div>
+            <div className="flex gap-2">
+              <span className="rounded-lg bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Live seats</span>
+              <span className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">QR ready</span>
+            </div>
+          </div>
+          <div className="grid gap-4 p-5 lg:grid-cols-[0.7fr_1.3fr_0.9fr]">
+            <div className="grid gap-3">
+              {["Admissions", "Roster", "Seats", "Payments"].map((item, index) => (
+                <div
+                  key={item}
+                  className={[
+                    "rounded-lg border px-3 py-3 text-sm font-semibold",
+                    index === 2
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : "border-slate-200 bg-slate-50 text-slate-700",
+                  ].join(" ")}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-sm font-bold text-slate-950">Seat map</p>
+                <p className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-600">32 free</p>
+              </div>
+              <div className="grid grid-cols-6 gap-2">
+                {Array.from({ length: 30 }).map((_, index) => (
+                  <span
+                    key={index}
+                    className={[
+                      "h-9 rounded-lg border",
+                      index % 5 === 0
+                        ? "border-amber-200 bg-amber-100"
+                        : index % 3 === 0
+                          ? "border-slate-200 bg-white"
+                          : "border-emerald-200 bg-emerald-100",
+                    ].join(" ")}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-3">
+              {[
+                ["Pending joins", "18"],
+                ["Dues today", "Rs. 12,400"],
+                ["Check-ins", "86"],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase text-slate-400">{label}</p>
+                  <p className="mt-2 text-xl font-bold text-slate-950">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="absolute -bottom-7 left-4 w-[220px] rounded-lg border border-slate-200 bg-white p-3 shadow-lg md:left-10 md:w-[270px]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+            <QrCode className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-400">Reception QR</p>
+            <p className="text-sm font-bold text-slate-950">Join, check-in, checkout</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   return (
-    <AnimatePresence mode="wait">
-      <motion.main
-        key="landing"
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-        className="min-h-screen bg-[#FAFAFA] text-[#FFFFFF]"
-      >
-        <PublicSiteHeader />
-        <FloatingWhatsapp />
+    <main className="min-h-screen bg-white text-slate-950">
+      <PublicSiteHeader />
+      <FloatingWhatsapp />
 
-        <section className="bg-[#FAFAFA] text-[#0F172A]">
-          <div className="mx-auto w-full max-w-[1120px] px-4 py-16 md:py-24">
-            <motion.div variants={sectionMotion} className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-end">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Visual-first library journey
-                </div>
-                <h1 className="mt-6 max-w-3xl text-[clamp(2.25rem,5vw,4.25rem)] font-bold leading-[1.02] tracking-[-0.045em]">
-                  Your Library, Managed &amp; Discovered.
-                </h1>
-                <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                  Create pricing once, admit students cleanly, manage the active roster daily, and only then allot seats when placement is ready.
-                </p>
-              </div>
-
-              <motion.div
-                variants={sectionMotion}
-                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <div className="grid gap-4">
-                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Library Journey</p>
-                      <p className="mt-1 text-base font-semibold text-slate-900">One flow from onboarding to daily growth</p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {[
-                      ["Library setup", "10 min"],
-                      ["Seat visibility", "Live map"],
-                      ["Student continuity", "QR + dues"],
-                    ].map(([label, value]) => (
-                      <div key={label} className="rounded-lg border border-slate-200 bg-white p-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
-                        <p className="mt-3 text-xl font-bold tracking-tight text-slate-950">{value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            <motion.div variants={sectionMotion} className="mt-12 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Access Center</p>
-                  <h2 className="mt-2 text-[clamp(1.5rem,3vw,2.4rem)] font-bold tracking-[-0.04em] text-slate-950">
-                    Pick the part of the platform you need.
-                  </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-                    Owners start with library access, set up plans, admit students, and manage the roster before seat placement. Students get their own clean portal entry.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {accessCards.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.title}
-                      href={item.href}
-                      className="group rounded-xl border border-slate-200 bg-[#F8FAFC] p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-sm"
-                    >
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0F172A] text-white transition group-hover:scale-105">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <h3 className="mt-5 text-xl font-bold tracking-tight text-slate-950">{item.title}</h3>
-                      <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
-                      <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-950">
-                        Open
-                        <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </motion.div>
+      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#f4fbf8_45%,#eefbf5_100%)]">
+        <div className="mx-auto w-full max-w-[1200px] px-4 py-16 text-center md:py-24">
+          <div className="mx-auto inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+            <BadgeCheck className="h-4 w-4 text-emerald-600" />
+            Trusted by modern reading rooms and study libraries
           </div>
-        </section>
+          <h1 className="mx-auto mt-8 max-w-5xl text-[clamp(2.7rem,6.6vw,6rem)] font-bold leading-[1.04] text-slate-900">
+            One-stop digital solution for your <span className="text-emerald-600">library</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-600 md:text-2xl md:leading-9">
+            Manage admissions, seats, QR attendance, dues, reports, public listing, website, and student portal from one simple BookLib dashboard.
+          </p>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/owner/register"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-7 text-base font-bold text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              Start free trial
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+            <Link
+              href="/marketplace"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-emerald-200 bg-white px-7 text-base font-bold text-emerald-700 transition hover:bg-emerald-50"
+            >
+              Explore libraries
+            </Link>
+          </div>
+          <div className="mt-14">
+            <HeroMockup />
+          </div>
+        </div>
+      </section>
 
-        <motion.section
-          variants={sectionMotion}
-          className="border-y border-white/10 bg-[#0F172A] text-white"
-        >
-          <div className="mx-auto grid w-full max-w-[1120px] gap-4 px-4 py-8 sm:grid-cols-2 lg:grid-cols-4">
-            {proofStats.map((item) => (
-              <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 px-4 py-4 text-center">
-                <p className="text-2xl font-bold tracking-tight">{item.value}</p>
-                <p className="mt-1 text-sm text-slate-300">{item.label}</p>
+      <section className="bg-emerald-600 text-white">
+        <div className="mx-auto w-full max-w-[1200px] px-4 py-16 text-center md:py-20">
+          <h2 className="text-[clamp(2rem,4vw,3.2rem)] font-bold">Trusted by libraries nationwide</h2>
+          <p className="mt-3 text-lg text-emerald-50">Built for owners who want operations, students, and growth in one place.</p>
+          <div className="mt-12 grid gap-8 md:grid-cols-3">
+            {stats.map((item) => (
+              <div key={item.label} className="rounded-lg border border-white/15 bg-white/10 p-6">
+                <p className="text-5xl font-bold">{item.value}</p>
+                <p className="mt-3 text-xl font-bold">{item.label}</p>
               </div>
             ))}
           </div>
-        </motion.section>
+        </div>
+      </section>
 
-        <section id="features" className="bg-[#0F172A] text-white">
-          <div className="mx-auto w-full max-w-[1120px] px-4 py-20 md:py-24">
-            <motion.div variants={sectionMotion} className="max-w-2xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Interactive roadmap</p>
-              <h2 className="mt-3 text-[clamp(1.8rem,3.5vw,2.8rem)] font-bold tracking-[-0.04em]">
-                Follow the library journey from setup to growth.
-              </h2>
-              <p className="mt-4 text-base leading-7 text-slate-300">
-                This is how BookLib works in practice. Each step in the journey becomes visible as the page moves,
-                keeping the story simple and product-first.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.3 }}
-              variants={staggerContainer}
-              className="mt-12 grid gap-6 lg:grid-cols-4"
-            >
-              {journeySteps.map((step, index) => {
-                const Icon = step.icon;
-                return (
-                  <motion.article
-                    key={step.title}
-                    variants={sectionMotion}
-                    whileInView={{
-                      scale: [0.98, 1.02, 1],
-                      boxShadow: [
-                        "0 0 0 rgba(16,185,129,0)",
-                        "0 0 40px rgba(16,185,129,0.18)",
-                        "0 0 0 rgba(16,185,129,0)",
-                      ],
-                    }}
-                    viewport={{ once: true, amount: 0.45 }}
-                    transition={{ duration: 0.65, delay: index * 0.08 }}
-                    className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-4"
-                  >
-                    {index < journeySteps.length - 1 ? (
-                      <div className="absolute left-[calc(100%-8px)] top-11 hidden h-[2px] w-8 bg-white/15 lg:block" />
-                    ) : null}
-                    <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${step.accent} opacity-80`} />
-                    <div className="relative">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#111C33] text-white">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">Step 0{index + 1}</p>
-                      <h3 className="mt-2 text-xl font-bold tracking-tight">{step.title}</h3>
-                      <p className="mt-3 text-sm leading-7 text-slate-300">{step.text}</p>
-                    </div>
-                  </motion.article>
-                );
-              })}
-            </motion.div>
+      <section id="features" className="bg-white">
+        <div className="mx-auto w-full max-w-[1200px] px-4 py-16 md:py-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+              <Sparkles className="h-4 w-4" />
+              Powerful features
+            </div>
+            <h2 className="mt-7 text-[clamp(2.2rem,4.5vw,4.2rem)] font-bold leading-[1.08] text-slate-900">
+              Everything your library needs to run and grow
+            </h2>
+            <p className="mt-5 text-lg leading-8 text-slate-600">
+              BookLib connects daily operations with student experience and online discovery, so every workflow feels clear.
+            </p>
           </div>
-        </section>
 
-        <section className="bg-[#FAFAFA] text-[#0F172A]">
-          <div className="mx-auto w-full max-w-[1120px] px-4 py-20 md:py-24">
-            <motion.div variants={sectionMotion} className="mx-auto max-w-2xl text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Benefit-first product design</p>
-              <h2 className="mt-3 text-[clamp(1.8rem,3.4vw,2.75rem)] font-bold tracking-[-0.04em]">
-                Less noise. More clarity. Better library decisions.
-              </h2>
-              <p className="mt-4 text-base leading-7 text-slate-600">
-                Start with plans and admissions, keep the roster under control, then use seats and discovery as the next step instead of mixing everything at once.
-              </p>
-            </motion.div>
-
-            <motion.div variants={staggerContainer} className="mt-12 grid gap-4 md:grid-cols-3">
-              {benefitCards.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <motion.article key={item.title} variants={sectionMotion} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0F172A] text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="mt-5 text-xl font-bold tracking-tight text-slate-950">{item.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
-                  </motion.article>
-                );
-              })}
-            </motion.div>
-          </div>
-        </section>
-
-        <section id="pricing" className="bg-[#FAFAFA] text-[#0F172A]">
-          <div className="mx-auto w-full max-w-[1120px] px-4 py-16 md:py-20">
-            <motion.div variants={sectionMotion} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                <div className="max-w-2xl">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Pricing</p>
-                  <h2 className="mt-3 text-[clamp(1.8rem,3vw,2.8rem)] font-bold tracking-[-0.045em] text-slate-950">
-                    Start with access that feels simple from day one.
-                  </h2>
-                  <p className="mt-3 text-base leading-7 text-slate-600">
-                    Launch your library workspace, train your team, and open your student-facing portal without a heavy setup project.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-                  <p className="text-sm font-semibold text-emerald-800">Owner onboarding in minutes</p>
-                  <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Free trial available</p>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                {[
-                  {
-                    title: "Operations",
-                    text: "Seats, admissions, dues, and attendance in one owner workspace.",
-                  },
-                  {
-                    title: "Discovery",
-                    text: "Marketplace visibility and a polished public library presence.",
-                  },
-                  {
-                    title: "Student continuity",
-                    text: "Portal access, QR entry, notices, and payments in one flow.",
-                  },
-                ].map((item) => (
-                  <div key={item.title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-lg font-bold tracking-tight text-slate-950">{item.title}</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">{item.text}</p>
+          <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {features.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.title} className="rounded-lg border border-slate-200 bg-white p-7 shadow-sm">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-lg ring-1 ${item.tone}`}>
+                    <Icon className="h-7 w-7" />
                   </div>
-                ))}
-              </div>
-            </motion.div>
+                  <h3 className="mt-8 text-2xl font-bold text-slate-900">{item.title}</h3>
+                  <p className="mt-4 text-base leading-7 text-slate-600">{item.text}</p>
+                </article>
+              );
+            })}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <motion.footer variants={sectionMotion} className="bg-[#0F172A] text-white">
-          <div className="mx-auto w-full max-w-[1120px] px-4 py-14 md:py-16">
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5 shadow-sm md:p-6">
-              <div className="grid gap-6 lg:grid-cols-[1.2fr_1.8fr]">
-                <div>
-                  <Link href="/" className="inline-flex items-center gap-3">
-                    <Image
-                      src="/icons/booklib-logo.png"
-                      alt="BookLib"
-                      width={143}
-                      height={116}
-                      className="h-14 w-20 rounded-2xl bg-white object-contain p-1.5"
-                    />
-                    <span>
-                      <span className="block text-[12px] font-semibold uppercase tracking-[0.28em] text-emerald-300">
-                        BookLib
-                      </span>
-                      <span className="mt-1 block text-sm text-slate-300">
-                        Library growth and operations platform
-                      </span>
-                    </span>
-                  </Link>
+      <section id="about" className="bg-slate-50">
+        <div className="mx-auto w-full max-w-[1200px] px-4 py-16 md:py-24">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700">
+              <CheckCircle2 className="h-4 w-4" />
+              Why choose BookLib
+            </div>
+            <h2 className="mt-7 text-[clamp(2.2rem,4.3vw,4rem)] font-bold leading-[1.08] text-slate-900">
+              Simple for owners. Useful for students. Built for growth.
+            </h2>
+          </div>
 
-                  <p className="mt-5 max-w-md text-sm leading-7 text-slate-300">
-                    Manage admissions, seats, dues, student access, and marketplace discovery from one clean workspace.
-                  </p>
-
-                  <div className="mt-5 grid gap-3 text-sm text-slate-300">
-                    <a href="mailto:support@booklib.in" className="inline-flex items-center gap-2 transition hover:text-white">
-                      <Mail className="h-4 w-4 text-emerald-300" />
-                      support@booklib.in
-                    </a>
-                    <p className="inline-flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-emerald-300" />
-                      Built for Indian library operators
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                  {footerColumns.map((column) => (
-                    <div key={column.title}>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{column.title}</p>
-                      <div className="mt-4 grid gap-3">
-                        {column.links.map((link) => (
-                          <Link
-                            key={link.label}
-                            href={link.href}
-                            className="text-sm text-slate-300 transition hover:text-white"
-                          >
-                            {link.label}
-                          </Link>
-                        ))}
-                      </div>
+          <div className="mt-14 grid gap-6 lg:grid-cols-3">
+            {benefitBlocks.map((item) => (
+              <article key={item.title} className="rounded-lg border border-slate-200 bg-white p-7 shadow-sm">
+                <h3 className="text-2xl font-bold text-slate-900">{item.title}</h3>
+                <p className="mt-4 text-base leading-7 text-slate-600">{item.text}</p>
+                <div className="mt-7 grid gap-3">
+                  {item.points.map((point) => (
+                    <div key={point} className="flex items-center gap-3 text-sm font-semibold text-slate-700">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                      {point}
                     </div>
                   ))}
                 </div>
-              </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              <div className="mt-9 border-t border-white/10 pt-5">
-                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Trusted by modern operators</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {trustedBy.map((item) => (
-                        <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200">
-                          {item}
-                        </span>
-                      ))}
+      <section className="bg-white">
+        <div className="mx-auto w-full max-w-[1100px] px-4 py-16 md:py-24">
+          <div className="text-center">
+            <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-bold text-slate-900">How it works</h2>
+            <p className="mt-4 text-lg text-slate-600">Get your digital library running in four practical steps.</p>
+          </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <article key={step.title} className="rounded-lg border border-slate-200 bg-white p-7 shadow-sm">
+                  <div className="flex flex-col gap-5 sm:flex-row">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                      <Icon className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <p className="inline-flex rounded-lg bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">Step {index + 1}</p>
+                      <h3 className="mt-3 text-2xl font-bold text-slate-900">{step.title}</h3>
+                      <p className="mt-3 text-base leading-7 text-slate-600">{step.text}</p>
                     </div>
                   </div>
-                  <p className="text-xs leading-6 text-slate-400 md:text-right">
-                    (c) 2026 BookLib. All rights reserved.
-                    <br />
-                    Secure owner workflows, student access, and public discovery.
-                  </p>
-                </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="bg-emerald-600 text-white">
+        <div className="mx-auto w-full max-w-[1120px] px-4 py-16 text-center md:py-24">
+          <h2 className="mx-auto max-w-4xl text-[clamp(2rem,4vw,3.7rem)] font-bold leading-[1.12]">
+            Start your digital library journey with a guided trial
+          </h2>
+          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-emerald-50">
+            Trial access helps owners set up their library, test admissions, and understand the platform before upgrading to full growth features.
+          </p>
+          <div className="mt-12 grid gap-5 md:grid-cols-3">
+            {[
+              ["Trial setup", "Create your library and experience the core workflow."],
+              ["Paid growth", "Unlock listing, website builder, offers, admins, and ads."],
+              ["Superadmin control", "Plans and access rules stay configurable from admin."],
+            ].map(([title, text]) => (
+              <div key={title} className="rounded-lg border border-white/15 bg-white/10 p-6">
+                <p className="text-2xl font-bold">{title}</p>
+                <p className="mt-3 leading-7 text-emerald-50">{text}</p>
               </div>
+            ))}
+          </div>
+          <Link
+            href="/owner/register"
+            className="mt-10 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-7 text-base font-bold text-emerald-700 transition hover:bg-emerald-50"
+          >
+            Get started free
+            <ArrowRight className="h-5 w-5" />
+          </Link>
+        </div>
+      </section>
+
+      <section className="bg-white">
+        <div className="mx-auto w-full max-w-[1200px] px-4 py-16 md:py-24">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                <BookOpenCheck className="h-4 w-4" />
+                Blog
+              </div>
+              <h2 className="mt-6 text-[clamp(2rem,4vw,3.6rem)] font-bold text-slate-900">Practical guides for library owners</h2>
+              <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
+                Learn how to manage seats, attendance, fees, public listings, and student retention with better systems.
+              </p>
+            </div>
+            <Link href="/blog" className="inline-flex items-center gap-2 text-base font-bold text-emerald-700">
+              Read all blogs
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {blogCards.map((post) => (
+              <Link key={post.title} href="/blog" className="rounded-lg border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+                <p className="text-sm font-bold text-emerald-700">BookLib guide</p>
+                <h3 className="mt-5 text-2xl font-bold leading-tight text-slate-900">{post.title}</h3>
+                <p className="mt-4 text-base leading-7 text-slate-600">{post.text}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-50">
+        <div className="mx-auto w-full max-w-[980px] px-4 py-16 md:py-24">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700">
+              <MessageCircle className="h-4 w-4" />
+              Got questions?
+            </div>
+            <h2 className="mt-7 text-[clamp(2rem,4vw,3.6rem)] font-bold text-slate-900">
+              Frequently asked questions
+            </h2>
+          </div>
+          <div className="mt-10 grid gap-4">
+            {faqItems.map((item, index) => (
+              <details key={item.question} open={index === 0} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                <summary className="cursor-pointer list-none text-xl font-bold text-slate-900">{item.question}</summary>
+                <p className="mt-4 border-t border-slate-100 pt-4 text-base leading-7 text-slate-600">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="bg-white">
+        <div className="mx-auto w-full max-w-[1200px] px-4 py-14">
+          <div className="grid gap-10 border-t border-slate-200 pt-10 lg:grid-cols-[1.3fr_2fr]">
+            <div>
+              <Link href="/" className="inline-flex items-center gap-3">
+                <Image
+                  src="/icons/booklib-mark.png"
+                  alt="BookLib"
+                  width={88}
+                  height={44}
+                  className="h-12 w-14 rounded-lg border border-slate-200 object-contain p-1"
+                />
+                <span className="text-3xl font-bold text-emerald-600">BookLib</span>
+              </Link>
+              <p className="mt-5 max-w-md text-base leading-7 text-slate-600">
+                Modern library management made simple for Indian reading rooms, study halls, and coaching library operators.
+              </p>
+            </div>
+            <div className="grid gap-8 sm:grid-cols-3">
+              {footerColumns.map((column) => (
+                <div key={column.title}>
+                  <p className="text-lg font-bold text-slate-900">{column.title}</p>
+                  <div className="mt-5 grid gap-3">
+                    {column.links.map((link) => (
+                      <Link key={link.label} href={link.href} className="text-base text-slate-600 transition hover:text-emerald-700">
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </motion.footer>
-      </motion.main>
-    </AnimatePresence>
+          <div className="mt-10 flex flex-col gap-3 border-t border-slate-200 pt-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+            <p>(c) 2026 BookLib. All rights reserved.</p>
+            <p>Built for library owners, students, and growth teams.</p>
+          </div>
+        </div>
+      </footer>
+    </main>
   );
 }
