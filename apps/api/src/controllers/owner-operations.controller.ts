@@ -1639,7 +1639,7 @@ export async function updateAdminIntegrationSettingsController(req: Request, res
     actorUserId: req.auth.userId,
     action: "admin.integration_settings.update",
     entityType: "platform_integration_settings",
-    entityId: "default",
+    entityId: null,
     metadata: {
       googleOAuthClientId: Boolean(data.googleOAuthClientId),
       googleOAuthClientSecret: Boolean(data.googleOAuthClientSecret),
