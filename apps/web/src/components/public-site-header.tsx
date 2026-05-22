@@ -1,5 +1,14 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import {
+  emptyPublicSiteSettings,
+  fetchPublicSiteSettings,
+  type PublicSiteSettings,
+  whatsappHref,
+} from "../lib/public-site-settings";
 
 type PublicSiteHeaderProps = {
   ctaHref?: string;
@@ -12,9 +21,10 @@ type PublicSiteHeaderProps = {
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Features", href: "/#features" },
-  { label: "Blog", href: "/blog" },
   { label: "Pricing", href: "/#pricing" },
-  { label: "Contact", href: "/#contact" },
+  { label: "Blog", href: "/blog" },
+  { label: "Library Access", href: "/owner/login" },
+  { label: "Student Login", href: "/student/login" },
 ];
 
 export function PublicSiteHeader({
@@ -24,9 +34,20 @@ export function PublicSiteHeader({
   demoHref,
   showDemo = true,
 }: PublicSiteHeaderProps) {
+  const [settings, setSettings] = useState<PublicSiteSettings>(emptyPublicSiteSettings);
   const baseLinkClass = "rounded-lg px-2.5 py-1.5 text-xs font-semibold !text-white transition md:text-sm";
   const activeLinkClass = "bg-white/15 !text-white ring-1 ring-white/20";
   const inactiveLinkClass = "!text-white/90 hover:bg-white/10 hover:!text-white";
+  const computedDemoHref = useMemo(
+    () => demoHref || whatsappHref(settings.demoWhatsappNumber || settings.supportWhatsappNumber, settings.demoWhatsappMessage),
+    [demoHref, settings.demoWhatsappMessage, settings.demoWhatsappNumber, settings.supportWhatsappNumber],
+  );
+  const shouldShowDemo = showDemo && settings.enableBookDemoCta && Boolean(computedDemoHref);
+
+  useEffect(() => {
+    if (demoHref) return;
+    fetchPublicSiteSettings().then(setSettings).catch(() => setSettings(emptyPublicSiteSettings));
+  }, [demoHref]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[rgba(15,23,42,0.9)] backdrop-blur">
@@ -62,9 +83,16 @@ export function PublicSiteHeader({
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          {showDemo && demoHref ? (
+          <Link
+            href="/marketplace"
+            className="hidden items-center justify-center rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold !text-white transition hover:bg-white/10 lg:inline-flex"
+          >
+            Explore Libraries
+          </Link>
+
+          {shouldShowDemo ? (
             <a
-              href={demoHref}
+              href={computedDemoHref}
               target="_blank"
               rel="noreferrer"
               className="hidden items-center justify-center rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold !text-white transition hover:bg-white/15 sm:inline-flex"
@@ -107,9 +135,9 @@ export function PublicSiteHeader({
                 >
                   Explore Libraries
                 </Link>
-                {showDemo && demoHref ? (
+                {shouldShowDemo ? (
                   <a
-                    href={demoHref}
+                    href={computedDemoHref}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-xl px-3 py-2 text-sm font-medium text-white hover:bg-white/8"
