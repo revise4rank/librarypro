@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { BookOpenCheck, CheckCircle2, QrCode, WalletCards } from "lucide-react";
 
 type BrandState = {
   library_name: string;
@@ -66,41 +67,57 @@ export function StudentLoginBrandPanel({
   );
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-[#0F172A] p-4 text-white shadow-sm md:p-5">
+    <div className="rounded-lg border border-slate-200 bg-white p-5 text-slate-950 shadow-sm md:p-7">
       <div className="flex items-center gap-3">
         {brand.brand_logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={brand.brand_logo_url} alt={brand.library_name} className="h-12 w-12 rounded-lg object-cover" />
         ) : (
-          <div className="grid h-12 w-12 place-items-center rounded-lg bg-white text-base font-black text-[#0F172A]">
+          <div className="grid h-12 w-12 place-items-center rounded-lg border border-emerald-100 bg-emerald-50 text-base font-black text-emerald-700">
             {fallbackInitials}
           </div>
         )}
         <div>
-          <p className="text-xs font-semibold text-emerald-300">Student portal</p>
-          <h1 className="mt-1 text-xl font-bold tracking-tight">{brand.library_name}</h1>
+          <p className="text-xs font-bold text-emerald-700">Student portal</p>
+          <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-950">{brand.library_name}</h1>
         </div>
       </div>
 
-      <h2 className="mt-4 max-w-3xl text-[clamp(1.8rem,4vw,3.2rem)] font-bold leading-[0.98] tracking-[-0.04em]">
+      <h2 className="mt-5 max-w-3xl text-[clamp(2rem,4.2vw,3.65rem)] font-bold leading-[1.06] text-slate-900">
         {brand.hero_title}
       </h2>
-      <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
+      <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
         {brand.hero_tagline}
       </p>
 
-      {showLibraryLink ? (
-        <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
-          <p className="text-xs font-semibold text-emerald-300">Portal includes</p>
-          <p className="mt-2 text-sm leading-6 text-slate-200">{brand.offer_text}</p>
-        </div>
-      ) : null}
+      <div className="mt-6 grid gap-3 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
+        <p className="text-sm font-bold text-emerald-800">Student portal includes</p>
+        {[
+          { label: "QR scanner for join, check-in, and checkout", icon: QrCode },
+          { label: "Dues, payments, notices, and library alerts", icon: WalletCards },
+          { label: "Study Zone, syllabus tracker, and study tools", icon: BookOpenCheck },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label} className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-white p-3">
+              <Icon className="h-5 w-5 shrink-0 text-emerald-600" />
+              <p className="text-sm font-semibold leading-5 text-slate-700">{item.label}</p>
+            </div>
+          );
+        })}
+        {showLibraryLink && brand.offer_text ? (
+          <div className="flex items-start gap-3 rounded-lg border border-emerald-100 bg-white p-3">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+            <p className="text-sm leading-6 text-slate-700">{brand.offer_text}</p>
+          </div>
+        ) : null}
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {showLibraryLink ? (
           <Link
             href={`/library-site?slug=${brand.subdomain || libraryKey}`}
-            className="lp-button border-white/10 bg-white/5 text-white hover:bg-white/10"
+            className="inline-flex rounded-lg border border-emerald-200 bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
           >
             View library site
           </Link>
@@ -108,7 +125,7 @@ export function StudentLoginBrandPanel({
         {!showLibraryLink ? (
           <Link
             href="/student/access"
-            className="lp-button border-emerald-400/20 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/15"
+            className="inline-flex rounded-lg border border-emerald-200 bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
           >
             Find library
           </Link>

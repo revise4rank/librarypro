@@ -22,29 +22,29 @@ export default async function StudentLoginPage({
     library_name: friendlyLibraryName,
     subdomain: libraryKey ?? "",
     brand_logo_url: null,
-    hero_title: libraryKey ? "Continue your library routine from one student portal." : "Student login stays direct and simple.",
+    hero_title: libraryKey ? "Continue your study routine from one portal." : "Student login stays direct and simple.",
     hero_tagline: libraryKey
-      ? "Log in for QR access, dues, notices, and your daily study flow without waiting on a heavy page load."
-      : "Use your owner-issued student ID, mobile number, email, or your student app password to enter the portal.",
+      ? "Log in for QR access, dues, notices, study tools, and your daily library flow without a heavy page."
+      : "Use your owner-issued student ID, mobile number, email, or student app password to enter your portal.",
     offer_text: libraryKey
       ? "Owner-issued student login for QR entry, payments, notices, and study continuity in one place."
       : "Direct login first. Find or join a library only when you need a new connection.",
   };
 
   return (
-    <main className="lp-density-surface min-h-screen bg-[#FAFAFA] text-[#0F172A]">
+    <main className="min-h-screen bg-[linear-gradient(135deg,#ffffff_0%,#f4fbf8_48%,#eefbf5_100%)] text-[#0F172A]">
       <PublicSiteHeader
         ctaHref="/owner/register"
         ctaLabel="Start Free Trial"
         activeLabel="Student Login"
       />
 
-      <section className="mx-auto grid w-full max-w-[1040px] gap-4 px-4 py-6 md:py-8 lg:grid-cols-[0.95fr_1.05fr] lg:py-10">
+      <section className="mx-auto grid w-full max-w-[1080px] gap-5 px-4 py-8 md:py-12 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
         <StudentLoginBrandPanel libraryKey={loginLibraryKey} initialBrand={initialBrand} showLibraryLink={Boolean(libraryKey)} />
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-          <p className="lp-label text-emerald-700">Student login</p>
-          <h3 className="mt-2 text-[clamp(1.45rem,2vw,2.2rem)] font-bold tracking-[-0.04em] text-slate-950">Open your student portal</h3>
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-lg shadow-emerald-900/5 md:p-7">
+          <p className="text-sm font-bold text-emerald-700">Student login</p>
+          <h3 className="mt-2 text-[clamp(1.5rem,2.3vw,2.2rem)] font-bold text-slate-950">Open your student portal</h3>
           <div className="mt-4">
             <RoleLoginForm
               expectedRole="STUDENT"

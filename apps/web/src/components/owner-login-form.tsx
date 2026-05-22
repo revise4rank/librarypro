@@ -151,7 +151,7 @@ export function RoleLoginForm({
       </div> : null}
       <button
         disabled={submitting}
-        className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#0F172A] shadow-sm transition hover:bg-emerald-300 disabled:opacity-60"
+        className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
       >
         {submitting ? "Signing in..." : submitLabel}
       </button>

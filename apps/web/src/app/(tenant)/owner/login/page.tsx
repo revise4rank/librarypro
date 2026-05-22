@@ -6,13 +6,13 @@ export default function OwnerLoginPage() {
   return (
     <AuthPageLayout
       eyebrow="Library Access"
-      title="Open your library workspace and keep daily operations moving."
-      description="Manage seats, students, dues, attendance, notices, and your public library presence from one calm operating surface."
-      accentTitle="Library access gives you"
+      title="Run your library from one simple workspace."
+      description="Open your owner dashboard for admissions, roster, seats, QR attendance, payments, reports, and public growth tools."
+      accentTitle="Owner workspace highlights"
       accentPoints={[
-        "Seat layout and student assignment control",
-        "Payments, dues, notices, and expiry tracking",
-        "Public subdomain website and marketplace presence",
+        "Admissions, roster, seats, and manual attendance control",
+        "Payments, dues, coupons, plans, receipts, and reports",
+        "Marketplace listing, website builder, offers, and referrals",
       ]}
       formTitle="Library access"
       formSubtitle="Use your owner email or phone to enter the dashboard."
