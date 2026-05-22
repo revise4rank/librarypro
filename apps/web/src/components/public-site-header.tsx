@@ -39,10 +39,10 @@ export function PublicSiteHeader({
   const activeLinkClass = "bg-emerald-50 !text-emerald-700 ring-1 ring-emerald-100";
   const inactiveLinkClass = "!text-slate-700 hover:bg-slate-50 hover:!text-emerald-700";
   const computedDemoHref = useMemo(
-    () => demoHref || whatsappHref(settings.demoWhatsappNumber || settings.supportWhatsappNumber, settings.demoWhatsappMessage),
+    () => demoHref || whatsappHref(settings.demoWhatsappNumber || settings.supportWhatsappNumber, settings.demoWhatsappMessage) || "/owner/register?demo=1",
     [demoHref, settings.demoWhatsappMessage, settings.demoWhatsappNumber, settings.supportWhatsappNumber],
   );
-  const shouldShowDemo = showDemo && settings.enableBookDemoCta && Boolean(computedDemoHref);
+  const shouldShowDemo = showDemo && settings.enableBookDemoCta;
 
   useEffect(() => {
     if (demoHref) return;
