@@ -252,25 +252,25 @@ export function MarketplaceSearch() {
   const filterPanel = (
     <Surface title="Advanced filters" subtitle="Use only when city search is not enough">
       <div className="grid gap-3">
-        <label className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
-          <span className="lp-label text-[var(--lp-accent)]">City</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="mt-3 w-full bg-transparent text-base font-semibold text-[var(--lp-text)] outline-none" />
+        <label className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+          <span className="text-xs font-bold uppercase text-emerald-700">City</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="mt-3 w-full bg-transparent text-base font-semibold text-slate-950 outline-none" />
         </label>
-        <label className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
-          <span className="lp-label text-[var(--lp-accent)]">Locality</span>
-          <input value={area} onChange={(event) => setArea(event.target.value)} className="mt-3 w-full bg-transparent text-base font-semibold text-[var(--lp-text)] outline-none" />
+        <label className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+          <span className="text-xs font-bold uppercase text-emerald-700">Locality</span>
+          <input value={area} onChange={(event) => setArea(event.target.value)} className="mt-3 w-full bg-transparent text-base font-semibold text-slate-950 outline-none" />
         </label>
         <div className="grid gap-3 md:grid-cols-2">
-          <label className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
-            <span className="lp-label text-[var(--lp-accent)]">Min budget</span>
-            <input value={minPrice} onChange={(event) => setMinPrice(event.target.value)} className="mt-3 w-full bg-transparent text-base font-semibold text-[var(--lp-text)] outline-none" />
+          <label className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <span className="text-xs font-bold uppercase text-emerald-700">Min budget</span>
+            <input value={minPrice} onChange={(event) => setMinPrice(event.target.value)} className="mt-3 w-full bg-transparent text-base font-semibold text-slate-950 outline-none" />
           </label>
-          <label className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
-            <span className="lp-label text-[var(--lp-accent)]">Max budget</span>
-            <input value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} className="mt-3 w-full bg-transparent text-base font-semibold text-[var(--lp-text)] outline-none" />
+          <label className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <span className="text-xs font-bold uppercase text-emerald-700">Max budget</span>
+            <input value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} className="mt-3 w-full bg-transparent text-base font-semibold text-slate-950 outline-none" />
           </label>
         </div>
-        <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-medium text-[var(--lp-text)]">
+        <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
           <input type="checkbox" checked={availableOnly} onChange={(event) => setAvailableOnly(event.target.checked)} />
           Show only libraries with available seats
         </label>
@@ -282,7 +282,7 @@ export function MarketplaceSearch() {
                 key={filter}
                 type="button"
                 onClick={() => toggleAmenity(filter)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${active ? "border border-[#b7d1bb] bg-[#e6f3e8] text-[var(--lp-primary)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-muted)]"}`}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold ${active ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-slate-200 bg-white text-slate-500"}`}
               >
                 {filter} ({amenityCounts[filter] ?? 0})
               </button>
@@ -296,11 +296,11 @@ export function MarketplaceSearch() {
               searchFromFirstPage();
               setIsMobileFiltersOpen(false);
             }}
-            className="lp-button lp-button-primary"
+            className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
           >
             Search libraries
           </button>
-          <button type="button" onClick={useMyLocation} className="lp-button">
+          <button type="button" onClick={useMyLocation} className="rounded-lg border border-emerald-200 bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50">
             Near me
           </button>
         </div>
@@ -311,24 +311,24 @@ export function MarketplaceSearch() {
   );
 
   return (
-    <div className="grid min-w-0 gap-4 pb-24 xl:pb-0">
+    <div className="grid min-w-0 gap-5 pb-24 xl:pb-0">
       <div className="grid min-w-0 gap-4">
-        <section className="sticky top-[50px] z-20 min-w-0 rounded-xl border border-[var(--lp-border)] bg-[rgba(255,255,255,0.96)] p-3 shadow-sm backdrop-blur">
+        <section className="sticky top-[72px] z-20 min-w-0 rounded-lg border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(180px,0.55fr)_minmax(150px,0.45fr)_auto] xl:items-end">
             <div className="relative">
-              <div className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
-                <p className="lp-label text-[var(--lp-accent)]">Marketplace search</p>
+              <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+                <p className="text-xs font-bold uppercase text-emerald-700">Marketplace search</p>
                 <input
                   value={query}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search by city, library name, locality"
-                  className="mt-1 w-full bg-transparent text-base font-semibold text-[var(--lp-text)] outline-none"
+                  className="mt-1 w-full bg-transparent text-base font-semibold text-slate-950 outline-none"
                 />
               </div>
               {showSuggestions && suggestions.length > 0 ? (
-                <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] rounded-xl border border-[var(--lp-border)] bg-white p-2 shadow-sm">
+                <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
                   {suggestions.map((item) => (
                     <button
                       key={item}
@@ -338,30 +338,30 @@ export function MarketplaceSearch() {
                         setShowSuggestions(false);
                         searchFromFirstPage({ query: item });
                       }}
-                      className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-medium text-[var(--lp-text)] hover:bg-[#f4faf5]"
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-800 hover:bg-emerald-50"
                     >
                       <span>{item}</span>
-                      <span className="text-xs font-semibold text-[var(--lp-accent)]">suggestion</span>
+                      <span className="text-xs font-bold text-emerald-700">suggestion</span>
                     </button>
                   ))}
                 </div>
               ) : null}
             </div>
 
-            <label className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
-              <span className="lp-label text-[var(--lp-accent)]">Locality</span>
+            <label className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <span className="text-xs font-bold uppercase text-emerald-700">Locality</span>
               <input
                 value={area}
                 onChange={(event) => setArea(event.target.value)}
                 placeholder="Vijay Nagar"
-                className="mt-1 w-full bg-transparent text-sm font-semibold text-[var(--lp-text)] outline-none"
+                className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-950 outline-none"
               />
             </label>
 
             <select
               value={sortBy}
               onChange={(event) => setSortBy(event.target.value as SortValue)}
-              className="h-full min-h-14 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] outline-none"
+              className="h-full min-h-14 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-emerald-700 outline-none"
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -371,10 +371,10 @@ export function MarketplaceSearch() {
             </select>
 
             <div className="flex flex-wrap gap-2 xl:justify-end">
-              <button type="button" onClick={() => searchFromFirstPage()} className="lp-button lp-button-primary">
+              <button type="button" onClick={() => searchFromFirstPage()} className="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">
                 Search now
               </button>
-              <button type="button" onClick={() => setIsMobileFiltersOpen(true)} className="lp-button">
+              <button type="button" onClick={() => setIsMobileFiltersOpen(true)} className="rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50">
                 Filters
               </button>
             </div>
@@ -395,8 +395,8 @@ export function MarketplaceSearch() {
                   }}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
                     active
-                      ? "lp-active-dark"
-                      : "border border-[var(--lp-border)] bg-white text-[var(--lp-muted)] hover:bg-slate-50"
+                      ? "bg-emerald-600 text-white"
+                      : "border border-slate-200 bg-white text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
                   }`}
                 >
                   {filter.label} ({quickCounts[filter.value]})
@@ -406,13 +406,13 @@ export function MarketplaceSearch() {
           </div>
         </section>
 
-        <section className="min-w-0 rounded-xl border border-[var(--lp-border)] bg-[rgba(251,254,251,0.96)] p-4 shadow-sm">
+        <section className="min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="lp-label text-[var(--lp-accent)]">Libraries</p>
-              <h2 className="mt-1 text-xl font-extrabold">Browse library tiles</h2>
+              <p className="text-xs font-bold uppercase text-emerald-700">Libraries</p>
+              <h2 className="mt-1 text-2xl font-bold text-slate-900">Browse library tiles</h2>
             </div>
-            <p className="text-sm font-semibold text-[var(--lp-muted)]">
+            <p className="text-sm font-semibold text-slate-500">
               {loading ? "Loading..." : `${visibleResults.length} shown`}
             </p>
           </div>
@@ -450,7 +450,7 @@ export function MarketplaceSearch() {
                   key={`${library.subdomain}-${library.library_slug}`}
                   href={`/libraries/${library.library_slug}`}
                   aria-label={`Open ${library.library_name} details`}
-                  className="group overflow-hidden rounded-xl border border-[var(--lp-border)] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
+                  className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                     <img
@@ -466,8 +466,8 @@ export function MarketplaceSearch() {
                   </div>
                   <div className="grid gap-2 p-3">
                     <div>
-                      <h3 className="truncate text-base font-bold tracking-tight text-[var(--lp-text)]">{library.library_name}</h3>
-                      <p className="truncate text-sm text-[var(--lp-muted)]">{locationFor(library)}</p>
+                      <h3 className="truncate text-base font-bold tracking-tight text-slate-950">{library.library_name}</h3>
+                      <p className="truncate text-sm text-slate-500">{locationFor(library)}</p>
                     </div>
                     <div className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
                       <span className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Plans from</span>
@@ -486,8 +486,8 @@ export function MarketplaceSearch() {
             </div>
 
             {pagination.totalPages > 1 ? (
-              <div className="flex flex-col gap-3 rounded-xl border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                <p className="text-sm font-semibold text-[var(--lp-muted)]">
+              <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-slate-500">
                   Page {pagination.page} of {pagination.totalPages}
                 </p>
                 <div className="grid grid-cols-2 gap-3 sm:flex">
@@ -495,7 +495,7 @@ export function MarketplaceSearch() {
                     type="button"
                     disabled={pagination.page <= 1}
                     onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:opacity-50"
+                    className="rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-bold text-emerald-700 disabled:opacity-50"
                   >
                     Previous
                   </button>
@@ -503,7 +503,7 @@ export function MarketplaceSearch() {
                     type="button"
                     disabled={pagination.page >= pagination.totalPages}
                     onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}
-                    className="rounded-xl bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                    className="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
                   >
                     Next
                   </button>
@@ -514,15 +514,15 @@ export function MarketplaceSearch() {
         ) : null}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--lp-border)] bg-[rgba(248,252,248,0.96)] p-3 shadow-sm backdrop-blur xl:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur xl:hidden">
         <div className="mx-auto grid max-w-[1280px] grid-cols-3 gap-2 sm:flex sm:gap-3">
-          <button type="button" onClick={() => setIsMobileFiltersOpen(true)} className="rounded-xl border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">
+          <button type="button" onClick={() => setIsMobileFiltersOpen(true)} className="rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm font-bold text-emerald-700">
             Open filters
           </button>
-          <button type="button" onClick={useMyLocation} className="rounded-xl border border-[var(--lp-border)] bg-[var(--lp-surface)] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">
+          <button type="button" onClick={useMyLocation} className="rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm font-bold text-emerald-700">
             Near me
           </button>
-          <button type="button" onClick={() => searchFromFirstPage()} className="rounded-xl bg-[var(--lp-primary)] px-3 py-3 text-sm font-semibold text-white">
+          <button type="button" onClick={() => searchFromFirstPage()} className="rounded-lg bg-emerald-600 px-3 py-3 text-sm font-bold text-white">
             Search
           </button>
         </div>
@@ -530,16 +530,16 @@ export function MarketplaceSearch() {
 
       {isMobileFiltersOpen ? (
         <div className="fixed inset-0 z-50 bg-[rgba(18,29,21,0.24)] px-3 py-4 xl:hidden">
-          <div className="mx-auto flex max-h-[calc(100vh-2rem)] max-w-[1280px] flex-col overflow-hidden rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] shadow-sm">
-            <div className="flex items-center justify-between border-b border-[var(--lp-border)] px-5 py-4">
+          <div className="mx-auto flex max-h-[calc(100vh-2rem)] max-w-[1280px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
-                <p className="lp-label text-[var(--lp-accent)]">Mobile filters</p>
-                <h3 className="mt-1 text-xl font-extrabold text-[var(--lp-text)]">Refine marketplace search</h3>
+                <p className="text-xs font-bold uppercase text-emerald-700">Mobile filters</p>
+                <h3 className="mt-1 text-xl font-bold text-slate-950">Refine marketplace search</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsMobileFiltersOpen(false)}
-                className="rounded-full border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-2 text-sm font-semibold text-[var(--lp-primary)]"
+                className="rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-bold text-emerald-700"
               >
                 Close
               </button>
