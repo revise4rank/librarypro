@@ -26,6 +26,16 @@ type SettingsResponse = {
   };
 };
 
+type OwnerPublicProfileResponse = {
+  success: boolean;
+  data: {
+    contact_name: string | null;
+    contact_phone: string | null;
+    whatsapp_phone: string | null;
+    allow_direct_contact: boolean;
+  } | null;
+};
+
 export type OwnerSettingsTab = "profile" | "account" | "team" | "billing";
 
 function normalizeSettingsTab(tab: OwnerSettingsTab): OwnerSettingsTab {
@@ -89,6 +99,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [publicContactSaving, setPublicContactSaving] = useState(false);
   const [accountSaving, setAccountSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [account, setAccount] = useState<SessionUser | null>(null);
@@ -101,6 +112,12 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
     wifiPassword: "",
     noticeMessage: "",
     allowOfflineCheckin: true,
+  });
+  const [publicContactForm, setPublicContactForm] = useState({
+    contactName: "",
+    contactPhone: "",
+    whatsappPhone: "",
+    allowDirectContact: true,
   });
   const [accountForm, setAccountForm] = useState({
     fullName: "",
@@ -134,7 +151,10 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
 
   async function loadSettings() {
     try {
-      const settingsResponse = await apiFetch<SettingsResponse>("/owner/settings");
+      const [settingsResponse, publicProfileResponse] = await Promise.all([
+        apiFetch<SettingsResponse>("/owner/settings"),
+        apiFetch<OwnerPublicProfileResponse>("/owner/public-profile").catch(() => null),
+      ]);
       setData(settingsResponse.data);
       setForm({
         libraryName: settingsResponse.data.library_name,
@@ -145,6 +165,12 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
         wifiPassword: settingsResponse.data.wifi_password ?? "",
         noticeMessage: settingsResponse.data.notice_message ?? "",
         allowOfflineCheckin: settingsResponse.data.allow_offline_checkin,
+      });
+      setPublicContactForm({
+        contactName: publicProfileResponse?.data?.contact_name ?? settingsResponse.data.library_name,
+        contactPhone: publicProfileResponse?.data?.contact_phone ?? "",
+        whatsappPhone: publicProfileResponse?.data?.whatsapp_phone ?? "",
+        allowDirectContact: publicProfileResponse?.data?.allow_direct_contact ?? true,
       });
       setError(null);
     } catch (loadError) {
@@ -181,6 +207,29 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
       await loadSettings();
     } catch (regenerateError) {
       setError(regenerateError instanceof Error ? regenerateError.message : "Unable to regenerate QR.");
+    }
+  }
+
+  async function savePublicContact(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPublicContactSaving(true);
+    try {
+      const response = await apiFetch<OwnerPublicProfileResponse>("/owner/public-profile/contact", {
+        method: "PATCH",
+        body: JSON.stringify(publicContactForm),
+      });
+      setPublicContactForm({
+        contactName: response.data?.contact_name ?? publicContactForm.contactName,
+        contactPhone: response.data?.contact_phone ?? publicContactForm.contactPhone,
+        whatsappPhone: response.data?.whatsapp_phone ?? publicContactForm.whatsappPhone,
+        allowDirectContact: response.data?.allow_direct_contact ?? publicContactForm.allowDirectContact,
+      });
+      setMessage("Public contact updated for marketplace and subdomain website.");
+      setError(null);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Unable to save public contact.");
+    } finally {
+      setPublicContactSaving(false);
     }
   }
 
@@ -321,22 +370,58 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
             </form>
           </DashboardCard>
 
-          <DashboardCard title="QR access" subtitle="Library-level QR validation state and entry image.">
-            <div className="grid gap-3 text-sm text-[var(--lp-text-soft)]">
-              <div className="overflow-hidden rounded-lg border border-[var(--lp-border)] bg-white p-4">
-                <img
-                  src={buildQrImageUrl(data.qr_payload)}
-                  alt={`${data.library_name} library QR`}
-                  className="mx-auto h-52 w-52 rounded-lg bg-white object-cover"
+          <div className="grid gap-4">
+            <DashboardCard title="Public contact" subtitle="This appears on your subdomain website and marketplace contact actions.">
+              <form className="grid gap-3" onSubmit={savePublicContact}>
+                <input
+                  value={publicContactForm.contactName}
+                  onChange={(event) => setPublicContactForm((current) => ({ ...current, contactName: event.target.value }))}
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none"
+                  placeholder="Contact person"
                 />
+                <input
+                  value={publicContactForm.contactPhone}
+                  onChange={(event) => setPublicContactForm((current) => ({ ...current, contactPhone: event.target.value }))}
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none"
+                  placeholder="Public call number"
+                />
+                <input
+                  value={publicContactForm.whatsappPhone}
+                  onChange={(event) => setPublicContactForm((current) => ({ ...current, whatsappPhone: event.target.value }))}
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none"
+                  placeholder="Public WhatsApp number"
+                />
+                <label className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--lp-text)]">
+                  <input
+                    type="checkbox"
+                    checked={publicContactForm.allowDirectContact}
+                    onChange={(event) => setPublicContactForm((current) => ({ ...current, allowDirectContact: event.target.checked }))}
+                  />
+                  Allow public contact buttons and WhatsApp leads
+                </label>
+                <button disabled={publicContactSaving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                  {publicContactSaving ? "Saving..." : "Save public contact"}
+                </button>
+              </form>
+            </DashboardCard>
+
+            <DashboardCard title="QR access" subtitle="Library-level QR validation state and entry image.">
+              <div className="grid gap-3 text-sm text-[var(--lp-text-soft)]">
+                <div className="overflow-hidden rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                  <img
+                    src={buildQrImageUrl(data.qr_payload)}
+                    alt={`${data.library_name} library QR`}
+                    className="mx-auto h-52 w-52 rounded-lg bg-white object-cover"
+                  />
+                </div>
+                <p>Active QR key: <span className="font-semibold text-[var(--lp-text)]">{data.qr_key_id}</span></p>
+                <p>Offline check-in: <span className="font-semibold text-[var(--lp-text)]">{data.allow_offline_checkin ? "Enabled" : "Disabled"}</span></p>
+                <button onClick={() => void regenerateQr()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
+                  Regenerate QR key
+                </button>
               </div>
-              <p>Active QR key: <span className="font-semibold text-[var(--lp-text)]">{data.qr_key_id}</span></p>
-              <p>Offline check-in: <span className="font-semibold text-[var(--lp-text)]">{data.allow_offline_checkin ? "Enabled" : "Disabled"}</span></p>
-              <button onClick={() => void regenerateQr()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
-                Regenerate QR key
-              </button>
-            </div>
-          </DashboardCard>
+            </DashboardCard>
+          </div>
         </div>
       ) : null}
 

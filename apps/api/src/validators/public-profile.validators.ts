@@ -122,6 +122,13 @@ export const publishPublicProfileBodySchema = z.object({
   isPublished: z.boolean(),
 });
 
+export const updatePublicProfileContactBodySchema = z.object({
+  contactName: z.string().trim().max(150).optional().default(""),
+  contactPhone: z.string().trim().max(20).optional().default(""),
+  whatsappPhone: z.string().trim().max(20).optional().default(""),
+  allowDirectContact: z.boolean().optional().default(true),
+});
+
 export const createContactLeadBodySchema = z.object({
   channel: z.enum(["CALL", "WHATSAPP", "CHAT", "FORM"]),
   studentName: z.string().trim().max(150).optional(),

@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { createAuditLog } from "../lib/audit";
-import { checkSubdomainAvailability, createPublicLibraryContactLead, createStudentLibraryReview, getOwnerPublicProfile, getPublicLibrarySite, listAdminReviewReports, listOwnerLeads, listPublicLibraryReviews, moderateLibraryReview, publishOwnerPublicProfile, reportLibraryReview, saveOwnerMarketplaceListing, saveOwnerPublicProfile, searchMarketplaceLibraries, searchMarketplaceSuggestions, updateOwnerLead } from "../services/public-profile.service";
-import { createContactLeadBodySchema, createLibraryReviewBodySchema, librarySuggestionsQuerySchema, moderateLibraryReviewBodySchema, ownerLeadsQuerySchema, publishPublicProfileBodySchema, reportLibraryReviewBodySchema, saveMarketplaceListingBodySchema, savePublicProfileBodySchema, searchLibrariesQuerySchema, subdomainAvailabilitySchema, updateOwnerLeadBodySchema } from "../validators/public-profile.validators";
+import { checkSubdomainAvailability, createPublicLibraryContactLead, createStudentLibraryReview, getOwnerPublicProfile, getPublicLibrarySite, listAdminReviewReports, listOwnerLeads, listPublicLibraryReviews, moderateLibraryReview, publishOwnerPublicProfile, reportLibraryReview, saveOwnerMarketplaceListing, saveOwnerPublicProfile, searchMarketplaceLibraries, searchMarketplaceSuggestions, updateOwnerLead, updateOwnerPublicProfileContact } from "../services/public-profile.service";
+import { createContactLeadBodySchema, createLibraryReviewBodySchema, librarySuggestionsQuerySchema, moderateLibraryReviewBodySchema, ownerLeadsQuerySchema, publishPublicProfileBodySchema, reportLibraryReviewBodySchema, saveMarketplaceListingBodySchema, savePublicProfileBodySchema, searchLibrariesQuerySchema, subdomainAvailabilitySchema, updateOwnerLeadBodySchema, updatePublicProfileContactBodySchema } from "../validators/public-profile.validators";
 import { AppError } from "../lib/errors";
 
 export async function getSubdomainAvailabilityController(req: Request, res: Response) {
@@ -93,6 +93,22 @@ export async function publishOwnerPublicProfileController(req: Request, res: Res
 
   const parsed = publishPublicProfileBodySchema.parse(req.body);
   const profile = await publishOwnerPublicProfile(req.auth.libraryIds[0], parsed.isPublished);
+  res.json({ success: true, data: profile });
+}
+
+export async function updateOwnerPublicProfileContactController(req: Request, res: Response) {
+  if (!req.auth || req.auth.role !== "LIBRARY_OWNER" || !req.auth.libraryIds[0]) {
+    throw new AppError(401, "Library owner authentication required", "OWNER_AUTH_REQUIRED");
+  }
+
+  const parsed = updatePublicProfileContactBodySchema.parse(req.body);
+  const profile = await updateOwnerPublicProfileContact({
+    libraryId: req.auth.libraryIds[0],
+    contactName: parsed.contactName,
+    contactPhone: parsed.contactPhone,
+    whatsappPhone: parsed.whatsappPhone,
+    allowDirectContact: parsed.allowDirectContact,
+  });
   res.json({ success: true, data: profile });
 }
 

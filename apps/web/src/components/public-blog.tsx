@@ -66,9 +66,11 @@ function renderBlock(block: BlogBlock, index: number, demoHref: string) {
       <div key={index} className="mt-8 rounded-lg bg-emerald-600 p-6 text-white">
         <h3 className="text-2xl font-bold">{block.title ?? "Book a demo"}</h3>
         <p className="mt-3 text-sm leading-7 text-emerald-50">{block.text}</p>
-        <a href={demoHref || "/owner/register?demo=1"} target={demoHref?.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-bold text-emerald-700">
-          <MessageCircle className="h-4 w-4" /> Book Demo
-        </a>
+        {demoHref ? (
+          <a href={demoHref} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-bold text-emerald-700">
+            <MessageCircle className="h-4 w-4" /> Book Demo
+          </a>
+        ) : null}
       </div>
     );
   }
@@ -95,7 +97,7 @@ export function PublicBlogList() {
       .catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Unable to load blogs."));
   }, []);
 
-  const demoHref = useMemo(() => whatsappHref(settings.demoWhatsappNumber || settings.supportWhatsappNumber, settings.demoWhatsappMessage) || "/owner/register?demo=1", [settings]);
+  const demoHref = useMemo(() => whatsappHref(settings.demoWhatsappNumber || settings.supportWhatsappNumber, settings.demoWhatsappMessage), [settings]);
   const featured = posts[0];
   const rest = posts.slice(1);
 
@@ -112,10 +114,12 @@ export function PublicBlogList() {
           <h1 className="mx-auto mt-7 max-w-4xl text-[clamp(2.7rem,5.8vw,5.4rem)] font-bold leading-[1.04] text-slate-900">Growth ideas for serious study libraries.</h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-600">Original guides on admissions, QR attendance, seat management, student retention, and library discovery.</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a href={demoHref} target={demoHref.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-7 text-base font-bold text-white shadow-sm transition hover:bg-emerald-700">
-              Book Demo
-              <ArrowRight className="h-5 w-5" />
-            </a>
+            {demoHref ? (
+              <a href={demoHref} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-7 text-base font-bold text-white shadow-sm transition hover:bg-emerald-700">
+                Book Demo
+                <ArrowRight className="h-5 w-5" />
+              </a>
+            ) : null}
             <Link href="/owner/register" className="inline-flex min-h-12 items-center justify-center rounded-lg border border-emerald-200 bg-white px-7 text-base font-bold text-emerald-700 transition hover:bg-emerald-50">
               Start Free Trial
             </Link>
@@ -168,7 +172,7 @@ export function PublicBlogDetail({ slug }: { slug: string }) {
       .catch(() => setRelated([]));
   }, [slug]);
 
-  const demoHref = useMemo(() => whatsappHref(settings.demoWhatsappNumber || settings.supportWhatsappNumber, settings.demoWhatsappMessage) || "/owner/register?demo=1", [settings]);
+  const demoHref = useMemo(() => whatsappHref(settings.demoWhatsappNumber || settings.supportWhatsappNumber, settings.demoWhatsappMessage), [settings]);
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
@@ -193,9 +197,11 @@ export function PublicBlogDetail({ slug }: { slug: string }) {
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">{post.excerpt}</p>
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <p className="rounded-lg bg-white px-3 py-2 text-sm font-bold text-slate-600 shadow-sm">{post.readTimeMinutes} min read</p>
-                  <a href={demoHref} target={demoHref.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">
-                    Book Demo
-                  </a>
+                  {demoHref ? (
+                    <a href={demoHref} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">
+                      Book Demo
+                    </a>
+                  ) : null}
                 </div>
               </div>
               <div className="overflow-hidden rounded-lg border border-slate-200 shadow-xl">

@@ -10,6 +10,7 @@ import {
   type PublicLibrarySearchRow,
   type SaveMarketplaceListingInput,
   type SavePublicProfileInput,
+  type UpdatePublicProfileContactInput,
 } from "../repositories/public-profile.repository";
 
 const RESERVED_SUBDOMAINS = new Set(["www", "admin", "api", "app", "assets"]);
@@ -73,6 +74,20 @@ export async function publishOwnerPublicProfile(libraryId: string, isPublished: 
   await invalidatePublicProfileCache({
     slugOrSubdomain: updated.subdomain,
     libraryId,
+  });
+  return updated;
+}
+
+export async function updateOwnerPublicProfileContact(input: UpdatePublicProfileContactInput) {
+  const updated = await repository().updateContact(input);
+  if (!updated) {
+    throw new AppError(404, "Library not found", "LIBRARY_NOT_FOUND");
+  }
+
+  await repository().refreshMarketplaceSearchIndex().catch(() => undefined);
+  await invalidatePublicProfileCache({
+    slugOrSubdomain: updated.subdomain,
+    libraryId: input.libraryId,
   });
   return updated;
 }

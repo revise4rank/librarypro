@@ -59,6 +59,7 @@ import {
   saveOwnerMarketplaceListingController,
   saveOwnerPublicProfileController,
   searchMarketplaceLibrariesController,
+  updateOwnerPublicProfileContactController,
   updateOwnerLeadController,
 } from "../controllers/public-profile.controller";
 import {
@@ -237,6 +238,7 @@ router.post("/public/reviews/:reviewId/report", asyncHandler(reportLibraryReview
 router.get("/owner/public-profile", requireRole(["LIBRARY_OWNER"]), asyncHandler(getOwnerPublicProfileController));
 router.post("/owner/marketplace-listing", requireRole(["LIBRARY_OWNER"]), asyncHandler(saveOwnerMarketplaceListingController));
 router.post("/owner/public-profile", requireRole(["LIBRARY_OWNER"]), asyncHandler(saveOwnerPublicProfileController));
+router.patch("/owner/public-profile/contact", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerPublicProfileContactController));
 router.patch("/owner/public-profile/publish", requireRole(["LIBRARY_OWNER"]), asyncHandler(publishOwnerPublicProfileController));
 router.get("/owner/leads", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(listOwnerLeadsController));
 router.get("/owner/admins", requireRole(["LIBRARY_OWNER"]), asyncHandler(listOwnerAdminsController));

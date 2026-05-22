@@ -5,6 +5,7 @@ import { ContactActions } from "./contact-actions";
 import { formatLibraryHost } from "../lib/domain";
 import { PublicLibraryPlan, PublicLibrarySite, PublicLibraryReview, SitePageConfig, getGalleryUrl, resolvePublicAssetUrl } from "../lib/public-library";
 import { LibraryReviewsPanel } from "./library-reviews-panel";
+import { PublicLibraryFloatingWhatsapp } from "./public-library-floating-whatsapp";
 
 type PublicLibraryPageProps = {
   profile: PublicLibrarySite;
@@ -247,6 +248,12 @@ export function PublicLibraryPage({
 
   return (
     <main style={pageStyle} className="min-h-screen bg-[#FAFAFA] text-slate-950">
+      <PublicLibraryFloatingWhatsapp
+        slugOrSubdomain={profile.subdomain}
+        libraryName={profile.library_name}
+        whatsappPhone={profile.whatsapp_phone}
+        enabled={profile.allow_direct_contact !== false}
+      />
       <section className="relative overflow-hidden bg-slate-950 text-white">
         <div
           className="absolute inset-0 opacity-95"

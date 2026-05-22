@@ -205,6 +205,14 @@ export type CreateContactLeadInput = {
   metadata: Record<string, unknown>;
 };
 
+export type UpdatePublicProfileContactInput = {
+  libraryId: string;
+  contactName: string;
+  contactPhone: string;
+  whatsappPhone: string;
+  allowDirectContact: boolean;
+};
+
 export class PublicProfileRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -474,6 +482,66 @@ export class PublicProfileRepository {
       RETURNING *
       `,
       [libraryId, isPublished],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async updateContact(input: UpdatePublicProfileContactInput) {
+    const result = await this.pool.query<OwnerPublicProfileRow>(
+      `
+      INSERT INTO libraries_public_profiles (
+        library_id,
+        subdomain,
+        hero_title,
+        hero_tagline,
+        about_text,
+        contact_name,
+        contact_phone,
+        whatsapp_phone,
+        address_text,
+        amenities,
+        gallery_images,
+        site_pages,
+        show_in_marketplace,
+        allow_direct_contact,
+        ad_budget,
+        updated_at
+      )
+      SELECT
+        l.id,
+        l.slug,
+        'Welcome to ' || l.name,
+        'Contact the library owner for seats, plans, and visits.',
+        '',
+        $2,
+        $3,
+        $4,
+        l.address,
+        '[]'::jsonb,
+        '[]'::jsonb,
+        '{}'::jsonb,
+        TRUE,
+        $5,
+        0,
+        NOW()
+      FROM libraries l
+      WHERE l.id = $1
+      ON CONFLICT (library_id) DO UPDATE SET
+        contact_name = EXCLUDED.contact_name,
+        contact_phone = EXCLUDED.contact_phone,
+        whatsapp_phone = EXCLUDED.whatsapp_phone,
+        allow_direct_contact = EXCLUDED.allow_direct_contact,
+        updated_at = NOW()
+      RETURNING *
+      `,
+      [
+        input.libraryId,
+        input.contactName,
+        input.contactPhone,
+        input.whatsappPhone,
+        input.allowDirectContact,
+      ],
     );
 
     return result.rows[0] ?? null;
