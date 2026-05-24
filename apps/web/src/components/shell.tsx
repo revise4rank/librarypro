@@ -7,16 +7,23 @@ type NavItem = {
   label: string;
 };
 
+type NavGroup = {
+  id: string;
+  label: string;
+  icon: string;
+};
+
 type ShellProps = {
   eyebrow: string;
   title: string;
   description: string;
   children: ReactNode;
   nav?: NavItem[];
+  navGroups?: NavGroup[];
   actions?: ReactNode;
 };
 
-export function AppShell({ eyebrow, title, description, children, nav, actions }: ShellProps) {
+export function AppShell({ eyebrow, title, description, children, nav, navGroups, actions }: ShellProps) {
   if (nav && nav.length > 0) {
     return (
       <DashboardShell
@@ -25,6 +32,7 @@ export function AppShell({ eyebrow, title, description, children, nav, actions }
         title={title}
         description={description}
         nav={nav.map((item) => ({ ...item, shortLabel: item.label.slice(0, 3).toUpperCase() }))}
+        navGroups={navGroups}
         actions={actions}
       >
         {children}
