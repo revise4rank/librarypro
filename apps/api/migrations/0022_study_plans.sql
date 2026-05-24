@@ -14,4 +14,3 @@ CREATE TABLE IF NOT EXISTS study_plan_entries (
 );
 
 CREATE INDEX IF NOT EXISTS idx_study_plan_user_date ON study_plan_entries(student_user_id, plan_date);
-CREATE INDEX IF NOT EXISTS idx_study_plan_user_month ON study_plan_entries(student_user_id, DATE_TRUNC('month', plan_date));
