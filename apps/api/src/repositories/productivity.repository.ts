@@ -1945,6 +1945,168 @@ export class ProductivityRepository {
     return result.rows;
   }
 
+  // ─── Feed Likes ─────────────────────────────────────────────────────────────
+
+  async toggleFeedLike(postId: string, studentUserId: string): Promise<{ liked: boolean; likesCount: number }> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const existing = await client.query<{ id: string }>(
+        `SELECT id FROM feed_likes WHERE feed_post_id = $1 AND student_user_id = $2 LIMIT 1`,
+        [postId, studentUserId],
+      );
+
+      let liked: boolean;
+      if (existing.rows.length > 0) {
+        await client.query(
+          `DELETE FROM feed_likes WHERE feed_post_id = $1 AND student_user_id = $2`,
+          [postId, studentUserId],
+        );
+        liked = false;
+      } else {
+        await client.query(
+          `INSERT INTO feed_likes (feed_post_id, student_user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [postId, studentUserId],
+        );
+        liked = true;
+      }
+
+      const countResult = await client.query<{ cnt: string }>(
+        `SELECT COUNT(*)::text AS cnt FROM feed_likes WHERE feed_post_id = $1`,
+        [postId],
+      );
+
+      await client.query("COMMIT");
+      return { liked, likesCount: parseInt(countResult.rows[0]?.cnt ?? "0", 10) };
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  // ─── Study Planner ───────────────────────────────────────────────────────────
+
+  async listPlannerWeek(studentUserId: string, weekStart: string) {
+    const result = await this.pool.query<{
+      id: string;
+      plan_date: string;
+      subject: string | null;
+      target_minutes: number;
+      actual_minutes: number;
+      notes: string | null;
+      completed: boolean;
+    }>(
+      `
+      SELECT
+        id::text,
+        plan_date::text,
+        subject,
+        target_minutes,
+        actual_minutes,
+        notes,
+        completed
+      FROM study_plan_entries
+      WHERE student_user_id = $1
+        AND plan_date >= $2::date
+        AND plan_date < ($2::date + INTERVAL '7 days')
+      ORDER BY plan_date ASC, created_at ASC
+      `,
+      [studentUserId, weekStart],
+    );
+    return result.rows;
+  }
+
+  async listPlannerMonth(studentUserId: string, monthStart: string) {
+    const result = await this.pool.query<{
+      plan_date: string;
+      total_entries: string;
+      completed_entries: string;
+      total_target: string;
+      total_actual: string;
+    }>(
+      `
+      SELECT
+        plan_date::text,
+        COUNT(*)::text AS total_entries,
+        SUM(CASE WHEN completed THEN 1 ELSE 0 END)::text AS completed_entries,
+        COALESCE(SUM(target_minutes), 0)::text AS total_target,
+        COALESCE(SUM(actual_minutes), 0)::text AS total_actual
+      FROM study_plan_entries
+      WHERE student_user_id = $1
+        AND plan_date >= $2::date
+        AND plan_date < ($2::date + INTERVAL '1 month')
+      GROUP BY plan_date
+      ORDER BY plan_date ASC
+      `,
+      [studentUserId, monthStart],
+    );
+    return result.rows;
+  }
+
+  async createPlannerEntry(input: {
+    studentUserId: string;
+    planDate: string;
+    subject?: string | null;
+    targetMinutes: number;
+    notes?: string | null;
+  }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      INSERT INTO study_plan_entries (student_user_id, plan_date, subject, target_minutes, notes)
+      VALUES ($1, $2::date, $3, $4, $5)
+      RETURNING id::text
+      `,
+      [input.studentUserId, input.planDate, input.subject ?? null, input.targetMinutes, input.notes ?? null],
+    );
+    return result.rows[0];
+  }
+
+  async updatePlannerEntry(input: {
+    entryId: string;
+    studentUserId: string;
+    actualMinutes?: number;
+    completed?: boolean;
+    notes?: string | null;
+    subject?: string | null;
+    targetMinutes?: number;
+  }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      UPDATE study_plan_entries
+      SET
+        actual_minutes = COALESCE($3, actual_minutes),
+        completed = COALESCE($4, completed),
+        notes = COALESCE($5, notes),
+        subject = COALESCE($6, subject),
+        target_minutes = COALESCE($7, target_minutes),
+        updated_at = NOW()
+      WHERE id = $1 AND student_user_id = $2
+      RETURNING id::text
+      `,
+      [
+        input.entryId,
+        input.studentUserId,
+        input.actualMinutes ?? null,
+        input.completed ?? null,
+        input.notes ?? null,
+        input.subject ?? null,
+        input.targetMinutes ?? null,
+      ],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async deletePlannerEntry(entryId: string, studentUserId: string) {
+    const result = await this.pool.query<{ id: string }>(
+      `DELETE FROM study_plan_entries WHERE id = $1 AND student_user_id = $2 RETURNING id::text`,
+      [entryId, studentUserId],
+    );
+    return result.rows[0] ?? null;
+  }
+
   async listOwnerRecipientIds(libraryId: string) {
     const result = await this.pool.query<{ user_id: string }>(
       `

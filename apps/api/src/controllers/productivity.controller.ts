@@ -37,6 +37,12 @@ import {
   updateStudentFeedVisibility,
   updateOwnerStudentInterventionStatus,
   updateSyllabusTopicProgress,
+  toggleFeedLike,
+  listStudentPlannerWeek,
+  listStudentPlannerMonth,
+  createStudentPlannerEntry,
+  updateStudentPlannerEntry,
+  deleteStudentPlannerEntry,
 } from "../services/productivity.service";
 import {
   completeRevisionBodySchema,
@@ -722,5 +728,88 @@ export async function getOwnerProductivityTrendsController(req: Request, res: Re
   const rawWindow = Array.isArray(req.query.window) ? req.query.window[0] : req.query.window;
   const window = rawWindow === "30d" ? "30d" : "7d";
   const data = await getOwnerProductivityTrends(libraryId, window);
+  res.json({ success: true, data });
+}
+
+// ─── Feed Likes ───────────────────────────────────────────────────────────────
+
+export async function toggleFeedLikeController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const postId = paramValue(req.params.postId, "POST_ID_REQUIRED");
+  const data = await toggleFeedLike(postId, studentUserId);
+  res.json({ success: true, data });
+}
+
+// ─── Study Planner ────────────────────────────────────────────────────────────
+
+export async function listStudentPlannerWeekController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const rawWeek = Array.isArray(req.query.weekStart) ? req.query.weekStart[0] : req.query.weekStart;
+  // Default to current Monday
+  const weekStart = rawWeek ?? (() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0, 10);
+  })();
+  const data = await listStudentPlannerWeek(studentUserId, weekStart as string);
+  res.json({ success: true, data });
+}
+
+export async function listStudentPlannerMonthController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const rawMonth = Array.isArray(req.query.month) ? req.query.month[0] : req.query.month;
+  const month = rawMonth ?? new Date().toISOString().slice(0, 7);
+  const monthStart = `${month as string}-01`;
+  const data = await listStudentPlannerMonth(studentUserId, monthStart);
+  res.json({ success: true, data });
+}
+
+export async function createStudentPlannerEntryController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const { planDate, subject, targetMinutes, notes } = req.body as {
+    planDate: string;
+    subject?: string;
+    targetMinutes?: number;
+    notes?: string;
+  };
+  if (!planDate) throw new AppError(400, "planDate is required", "PLAN_DATE_REQUIRED");
+  const data = await createStudentPlannerEntry({
+    studentUserId,
+    planDate,
+    subject: subject ?? null,
+    targetMinutes: targetMinutes ?? 60,
+    notes: notes ?? null,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateStudentPlannerEntryController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const entryId = paramValue(req.params.entryId, "ENTRY_ID_REQUIRED");
+  const { actualMinutes, completed, notes, subject, targetMinutes } = req.body as {
+    actualMinutes?: number;
+    completed?: boolean;
+    notes?: string;
+    subject?: string;
+    targetMinutes?: number;
+  };
+  const data = await updateStudentPlannerEntry({
+    entryId,
+    studentUserId,
+    actualMinutes,
+    completed,
+    notes,
+    subject,
+    targetMinutes,
+  });
+  res.json({ success: true, data });
+}
+
+export async function deleteStudentPlannerEntryController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const entryId = paramValue(req.params.entryId, "ENTRY_ID_REQUIRED");
+  const data = await deleteStudentPlannerEntry(entryId, studentUserId);
   res.json({ success: true, data });
 }

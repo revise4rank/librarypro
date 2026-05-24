@@ -114,6 +114,12 @@ import {
   updateStudentFeedVisibilityController,
   updateOwnerStudentInterventionStatusController,
   updateSyllabusTopicProgressController,
+  toggleFeedLikeController,
+  listStudentPlannerWeekController,
+  listStudentPlannerMonthController,
+  createStudentPlannerEntryController,
+  updateStudentPlannerEntryController,
+  deleteStudentPlannerEntryController,
 } from "../controllers/productivity.controller";
 import {
   assignOwnerSeatController,
@@ -321,7 +327,13 @@ router.post("/student/revisions", requireRole(["STUDENT"]), asyncHandler(createM
 router.patch("/student/revisions/:revisionId/complete", requireRole(["STUDENT"]), asyncHandler(completeStudentRevisionController));
 router.get("/student/feed", requireRole(["STUDENT"]), asyncHandler(getStudentFeedController));
 router.post("/student/feed/posts", requireRole(["STUDENT"]), asyncHandler(createStudentFeedPostController));
+router.post("/student/feed/posts/:postId/like", requireRole(["STUDENT"]), asyncHandler(toggleFeedLikeController));
 router.patch("/student/feed/visibility", requireRole(["STUDENT"]), asyncHandler(updateStudentFeedVisibilityController));
+router.get("/student/planner/week", requireRole(["STUDENT"]), asyncHandler(listStudentPlannerWeekController));
+router.get("/student/planner/month", requireRole(["STUDENT"]), asyncHandler(listStudentPlannerMonthController));
+router.post("/student/planner", requireRole(["STUDENT"]), asyncHandler(createStudentPlannerEntryController));
+router.patch("/student/planner/:entryId", requireRole(["STUDENT"]), asyncHandler(updateStudentPlannerEntryController));
+router.delete("/student/planner/:entryId", requireRole(["STUDENT"]), asyncHandler(deleteStudentPlannerEntryController));
 router.get("/student/libraries", requireRole(["STUDENT"]), asyncHandler(listStudentLibrariesController));
 router.get("/student/libraries/search", requireRole(["STUDENT"]), asyncHandler(searchStudentLibrariesController));
 router.patch("/student/libraries/:libraryId/active", requireRole(["STUDENT"]), asyncHandler(setActiveStudentLibraryController));

@@ -36,6 +36,8 @@ export function StudentFeedManager() {
   const [message, setMessage] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  // postId → { liked: boolean; count: number }
+  const [likeState, setLikeState] = useState<Record<string, { liked: boolean; count: number }>>({});
   const [postForm, setPostForm] = useState({
     eventType: "CUSTOM_PROGRESS",
     title: "",
@@ -72,6 +74,30 @@ export function StudentFeedManager() {
       await loadFeed();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to share progress.");
+    }
+  }
+
+  async function toggleLike(postId: string, currentCount: number, currentLiked: boolean) {
+    // Optimistic update
+    setLikeState((prev) => ({
+      ...prev,
+      [postId]: { liked: !currentLiked, count: currentLiked ? currentCount - 1 : currentCount + 1 },
+    }));
+    try {
+      const res = await apiFetch<{ success: boolean; data: { liked: boolean; likesCount: number } }>(
+        `/student/feed/posts/${postId}/like`,
+        { method: "POST" },
+      );
+      setLikeState((prev) => ({
+        ...prev,
+        [postId]: { liked: res.data.liked, count: res.data.likesCount },
+      }));
+    } catch {
+      // Revert on error
+      setLikeState((prev) => ({
+        ...prev,
+        [postId]: { liked: currentLiked, count: currentCount },
+      }));
     }
   }
 
@@ -222,7 +248,26 @@ export function StudentFeedManager() {
               <p className="mt-3 text-sm leading-7 text-slate-600">{item.body}</p>
               <div className="mt-4 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
                 <span>{item.actorName}</span>
-                <span>{item.createdAt.slice(0, 16).replace("T", " ")}</span>
+                <div className="flex items-center gap-3">
+                  <span>{item.createdAt.slice(0, 16).replace("T", " ")}</span>
+                  {(() => {
+                    const ls = likeState[item.id];
+                    const liked = ls?.liked ?? false;
+                    const count = ls?.count ?? item.likeCount ?? 0;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => void toggleLike(item.id, count, liked)}
+                        className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                          liked ? "bg-rose-100 text-rose-600" : "border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
+                        }`}
+                      >
+                        <span>{liked ? "♥" : "♡"}</span>
+                        <span>{count > 0 ? count : ""}</span>
+                      </button>
+                    );
+                  })()}
+                </div>
               </div>
             </article>
           ))}

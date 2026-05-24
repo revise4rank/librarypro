@@ -27,6 +27,7 @@ export const studentNav = [
   { href: "/student/scanner", label: "Scanner", shortLabel: "QR", group: "Library" },
   { href: "/student/focus", label: "Study Zone", shortLabel: "STZ", group: "Study" },
   { href: "/student/syllabus", label: "Syllabus", shortLabel: "SYL", group: "Study" },
+  { href: "/student/planner", label: "Planner", shortLabel: "PLN", group: "Study" },
   { href: "/student/revisions", label: "Revision", shortLabel: "REV", group: "Study" },
   { href: "/student/tools", label: "Study Tools", shortLabel: "TLS", group: "Study" },
   { href: "/student/focus-mode", label: "Focus Mode", shortLabel: "ZEN", group: "Study" },
