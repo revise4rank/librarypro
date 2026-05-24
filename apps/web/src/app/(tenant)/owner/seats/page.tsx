@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DashboardShell } from "../../../../components/dashboard-shell";
 import { OwnerSeatsManager } from "../../../../components/owner-seats-manager";
 import { ownerNav, ownerNavGroups } from "../../../../lib/role-nav";
