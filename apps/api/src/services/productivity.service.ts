@@ -1101,18 +1101,17 @@ export async function runOverdueFollowUpReminders() {
 // ─── Feed Likes ───────────────────────────────────────────────────────────────
 
 export async function toggleFeedLike(postId: string, studentUserId: string) {
-  return repo.toggleFeedLike(postId, studentUserId);
+  return repository().toggleFeedLike(postId, studentUserId);
 }
 
 // ─── Study Planner ────────────────────────────────────────────────────────────
 
 export async function listStudentPlannerWeek(studentUserId: string, weekStart: string) {
-  const rows = await repo.listPlannerWeek(studentUserId, weekStart);
-  return rows;
+  return repository().listPlannerWeek(studentUserId, weekStart);
 }
 
 export async function listStudentPlannerMonth(studentUserId: string, monthStart: string) {
-  const rows = await repo.listPlannerMonth(studentUserId, monthStart);
+  const rows = await repository().listPlannerMonth(studentUserId, monthStart);
   return rows.map((row) => ({
     planDate: row.plan_date,
     totalEntries: parseInt(row.total_entries, 10),
@@ -1129,7 +1128,7 @@ export async function createStudentPlannerEntry(input: {
   targetMinutes: number;
   notes?: string | null;
 }) {
-  return repo.createPlannerEntry(input);
+  return repository().createPlannerEntry(input);
 }
 
 export async function updateStudentPlannerEntry(input: {
@@ -1141,13 +1140,13 @@ export async function updateStudentPlannerEntry(input: {
   subject?: string | null;
   targetMinutes?: number;
 }) {
-  const row = await repo.updatePlannerEntry(input);
+  const row = await repository().updatePlannerEntry(input);
   if (!row) throw new AppError(404, "Planner entry not found", "ENTRY_NOT_FOUND");
   return row;
 }
 
 export async function deleteStudentPlannerEntry(entryId: string, studentUserId: string) {
-  const row = await repo.deletePlannerEntry(entryId, studentUserId);
+  const row = await repository().deletePlannerEntry(entryId, studentUserId);
   if (!row) throw new AppError(404, "Planner entry not found", "ENTRY_NOT_FOUND");
   return row;
 }
