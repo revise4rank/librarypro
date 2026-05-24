@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { DashboardShell } from "../../../../components/dashboard-shell";
 import { OwnerSeatsManager } from "../../../../components/owner-seats-manager";
 import { ownerNav, ownerNavGroups } from "../../../../lib/role-nav";
@@ -28,7 +29,9 @@ export default function OwnerSeatsPage() {
         </>
       }
     >
-      <OwnerSeatsManager />
+      <Suspense fallback={<div className="py-8 text-center text-sm text-[var(--lp-muted)]">Loading seat map…</div>}>
+        <OwnerSeatsManager />
+      </Suspense>
     </DashboardShell>
   );
 }
