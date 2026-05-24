@@ -9,7 +9,8 @@ type RealtimeEventName =
   | "notification.created"
   | "seat.updated"
   | "payment.updated"
-  | "student.updated";
+  | "student.updated"
+  | "checkin.created";
 
 let io: Server | null = null;
 
