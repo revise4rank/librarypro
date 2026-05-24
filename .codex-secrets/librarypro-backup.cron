@@ -1,0 +1,1 @@
+15 2 * * * root /usr/local/bin/librarypro-backup.sh >/var/log/librarypro-backup.log 2>&1

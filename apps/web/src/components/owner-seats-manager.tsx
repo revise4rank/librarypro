@@ -1,0 +1,2440 @@
+﻿"use client";
+
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { apiFetch } from "../lib/api";
+import { getRealtimeSocket } from "../lib/realtime";
+import { DashboardCard } from "./dashboard-shell";
+
+type SeatRow = {
+  id: string;
+  floor_name: string | null;
+  floor_id?: string | null;
+  section_name?: string | null;
+  seat_number: string;
+  row_no: number;
+  col_no: number;
+  pos_x: number;
+  pos_y: number;
+  status: string;
+  reserved_until?: string | null;
+  assignment_id: string | null;
+  student_name: string | null;
+  student_user_id: string | null;
+  plan_name?: string | null;
+  payment_status?: string | null;
+  ends_at?: string | null;
+  last_check_in_at?: string | null;
+};
+
+type StudentRow = {
+  assignment_id: string;
+  student_name: string;
+  seat_number: string | null;
+  plan_name: string;
+  payment_status: string;
+  ends_at: string;
+};
+
+type FloorRow = {
+  id: string;
+  name: string;
+  floor_number: number;
+  layout_columns: number;
+  layout_rows: number;
+  layout_meta?: {
+    aisleCells?: string[];
+    sectionColors?: Record<string, string>;
+  } | null;
+};
+
+type FloorDrafts = Record<string, { name: string; layoutRows: number; layoutColumns: number }>;
+type FloorMetaDrafts = Record<string, { aisleCells: string[]; sectionColors: Record<string, string> }>;
+
+const seatToneClasses: Record<string, string> = {
+  AVAILABLE: "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-[0_10px_18px_rgba(16,185,129,0.10)]",
+  OCCUPIED: "border-rose-300 bg-rose-50 text-rose-900 shadow-[0_10px_18px_rgba(244,63,94,0.10)]",
+  RESERVED: "border-amber-300 bg-amber-50 text-amber-900 shadow-[0_10px_18px_rgba(245,158,11,0.10)]",
+  DISABLED: "border-slate-300 bg-slate-100 text-slate-500 shadow-[0_10px_18px_rgba(100,116,139,0.10)]",
+};
+
+function formatReserveTimer(value?: string | null) {
+  if (!value) return "No timer";
+  const target = new Date(value).getTime();
+  const diff = target - Date.now();
+  if (diff <= 0) return "Expired";
+  const totalMinutes = Math.floor(diff / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours <= 0) return `${minutes}m left`;
+  return `${hours}h ${minutes}m`;
+}
+
+function formatStudentInitials(value?: string | null) {
+  if (!value) return "FS";
+  const parts = value.split(" ").filter(Boolean).slice(0, 2);
+  return parts.map((part) => part[0]?.toUpperCase() ?? "").join("") || "ST";
+}
+
+function describeSeatState(seat: SeatRow) {
+  if (seat.status === "OCCUPIED") return seat.student_name ?? "Occupied";
+  if (seat.status === "RESERVED") return `Reserved - ${formatReserveTimer(seat.reserved_until)}`;
+  if (seat.status === "DISABLED") return "Blocked";
+  return "Free";
+}
+
+function formatSeatDateTime(value?: string | null) {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function inferZone(seat: SeatRow) {
+  const value = `${seat.section_name ?? ""} ${seat.seat_number}`.toLowerCase();
+  if (value.includes("girl") || value.includes("female")) return "Girls Zone";
+  if (value.includes("boy") || value.includes("male")) return "Boys Zone";
+  if (value.includes("quiet") || value.includes("silent")) return "Quiet Zone";
+  return "Open Hall";
+}
+
+function inferSeatShape(seat: SeatRow) {
+  const value = `${seat.section_name ?? ""} ${seat.seat_number}`.toLowerCase();
+  if (value.includes("cabin")) return "Cabin";
+  if (value.includes("wall") || value.includes("window")) return "Wall Desk";
+  return "Study Desk";
+}
+
+function getClusterType(col: number) {
+  const mod = (col - 1) % 6;
+  if (mod <= 1) return "2 Seat Desk";
+  if (mod <= 3) return "4 Seat Table";
+  return "6 Seat Table";
+}
+
+function getPlannerColumnWidth(columns: number) {
+  if (columns >= 14) return 48;
+  if (columns >= 12) return 54;
+  if (columns >= 10) return 62;
+  return 74;
+}
+
+function buildNextSeatCode(existingSeatNumbers: string[], prefix: string) {
+  const cleanPrefix = prefix.trim().toUpperCase() || "S";
+  const seen = new Set(existingSeatNumbers.map((item) => item.trim().toUpperCase()));
+  let maxNumber = 0;
+
+  for (const seatNumber of seen) {
+    const normalized = seatNumber.trim().toUpperCase();
+    if (!normalized.startsWith(cleanPrefix)) continue;
+    const suffix = normalized.slice(cleanPrefix.length).replace(/[^0-9]/g, "");
+    const numeric = Number.parseInt(suffix || "0", 10);
+    if (Number.isFinite(numeric)) {
+      maxNumber = Math.max(maxNumber, numeric);
+    }
+  }
+
+  let candidate = maxNumber + 1;
+  while (seen.has(`${cleanPrefix}${candidate}`)) {
+    candidate += 1;
+  }
+
+  return `${cleanPrefix}${candidate}`;
+}
+
+function getZoneTone(zone: string) {
+  if (zone === "Girls Zone") return "bg-fuchsia-100 text-fuchsia-700";
+  if (zone === "Boys Zone") return "bg-sky-100 text-sky-700";
+  if (zone === "Quiet Zone") return "bg-violet-100 text-violet-700";
+  return "bg-emerald-100 text-emerald-700";
+}
+
+function getZoneAccent(zone: string) {
+  if (zone === "Girls Zone") return "#ec4899";
+  if (zone === "Boys Zone") return "#0ea5e9";
+  if (zone === "Quiet Zone") return "#8b5cf6";
+  return "#10b981";
+}
+
+function SeatStatusGlyph({ status }: { status: string }) {
+  const tone =
+    status === "AVAILABLE"
+      ? "text-emerald-300"
+      : status === "OCCUPIED"
+        ? "text-rose-300"
+        : status === "RESERVED"
+          ? "text-amber-300"
+          : "text-slate-300";
+
+  if (status === "AVAILABLE") {
+    return (
+      <svg viewBox="0 0 20 20" className={`h-4 w-4 ${tone}`} aria-hidden="true">
+        <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.18" />
+        <path d="m6.2 10.4 2.3 2.2 5.3-5.4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+
+  if (status === "OCCUPIED") {
+    return (
+      <svg viewBox="0 0 20 20" className={`h-4 w-4 ${tone}`} aria-hidden="true">
+        <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.18" />
+        <circle cx="10" cy="7.5" r="2.2" fill="currentColor" />
+        <path d="M6.5 14c.8-2.1 2-3.2 3.5-3.2S12.7 11.9 13.5 14" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+      </svg>
+    );
+  }
+
+  if (status === "RESERVED") {
+    return (
+      <svg viewBox="0 0 20 20" className={`h-4 w-4 ${tone}`} aria-hidden="true">
+        <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.18" />
+        <path d="M10 5.8v4.5l2.8 1.8" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.9" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 20 20" className={`h-4 w-4 ${tone}`} aria-hidden="true">
+      <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.18" />
+      <path d="M7 7l6 6M13 7l-6 6" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.9" />
+    </svg>
+  );
+}
+
+const roomLayoutPresets = [
+  {
+    id: "reading-hall",
+    title: "Reading Hall",
+    subtitle: "Straight desk lanes with clear aisle",
+    cluster: "2" as const,
+    sectionName: "Open Hall",
+    sectionColor: "#6ee7b7",
+  },
+  {
+    id: "cabin-zone",
+    title: "Cabin Zone",
+    subtitle: "Focused cabin-style blocks",
+    cluster: "4" as const,
+    sectionName: "Quiet Zone",
+    sectionColor: "#c4b5fd",
+  },
+  {
+    id: "window-wing",
+    title: "Window Wing",
+    subtitle: "Wall desks with side aisle",
+    cluster: "6" as const,
+    sectionName: "Girls Zone",
+    sectionColor: "#f9a8d4",
+  },
+];
+
+function RoomLayoutThumbnail({ presetId }: { presetId: string }) {
+  if (presetId === "cabin-zone") {
+    return (
+      <svg viewBox="0 0 180 96" className="h-24 w-full text-slate-900/65" aria-hidden="true">
+        <rect x="10" y="10" width="44" height="28" rx="9" fill="currentColor" opacity="0.16" />
+        <rect x="64" y="10" width="44" height="28" rx="9" fill="currentColor" opacity="0.16" />
+        <rect x="118" y="10" width="44" height="28" rx="9" fill="currentColor" opacity="0.16" />
+        <rect x="10" y="56" width="44" height="28" rx="9" fill="currentColor" opacity="0.16" />
+        <rect x="64" y="56" width="44" height="28" rx="9" fill="currentColor" opacity="0.16" />
+        <rect x="118" y="56" width="44" height="28" rx="9" fill="currentColor" opacity="0.16" />
+        <rect x="55" y="0" width="8" height="96" rx="4" fill="currentColor" opacity="0.1" />
+        <rect x="109" y="0" width="8" height="96" rx="4" fill="currentColor" opacity="0.1" />
+      </svg>
+    );
+  }
+
+  if (presetId === "window-wing") {
+    return (
+      <svg viewBox="0 0 180 96" className="h-24 w-full text-slate-900/65" aria-hidden="true">
+        <rect x="12" y="8" width="8" height="80" rx="4" fill="currentColor" opacity="0.12" />
+        <rect x="30" y="14" width="38" height="18" rx="9" fill="currentColor" opacity="0.18" />
+        <rect x="30" y="40" width="38" height="18" rx="9" fill="currentColor" opacity="0.18" />
+        <rect x="30" y="66" width="38" height="18" rx="9" fill="currentColor" opacity="0.18" />
+        <rect x="98" y="14" width="56" height="18" rx="9" fill="currentColor" opacity="0.18" />
+        <rect x="98" y="40" width="56" height="18" rx="9" fill="currentColor" opacity="0.18" />
+        <rect x="98" y="66" width="56" height="18" rx="9" fill="currentColor" opacity="0.18" />
+        <rect x="78" y="0" width="10" height="96" rx="5" fill="currentColor" opacity="0.1" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 180 96" className="h-24 w-full text-slate-900/65" aria-hidden="true">
+      <rect x="18" y="14" width="42" height="16" rx="8" fill="currentColor" opacity="0.18" />
+      <rect x="68" y="14" width="42" height="16" rx="8" fill="currentColor" opacity="0.18" />
+      <rect x="118" y="14" width="42" height="16" rx="8" fill="currentColor" opacity="0.18" />
+      <rect x="18" y="64" width="42" height="16" rx="8" fill="currentColor" opacity="0.18" />
+      <rect x="68" y="64" width="42" height="16" rx="8" fill="currentColor" opacity="0.18" />
+      <rect x="118" y="64" width="42" height="16" rx="8" fill="currentColor" opacity="0.18" />
+      <rect x="0" y="40" width="180" height="12" rx="6" fill="currentColor" opacity="0.08" />
+    </svg>
+  );
+}
+
+function makeSeatDragPreview(label: string) {
+  const preview = document.createElement("div");
+  preview.style.position = "absolute";
+  preview.style.top = "-9999px";
+  preview.style.left = "-9999px";
+  preview.style.width = "108px";
+  preview.style.height = "72px";
+  preview.style.borderRadius = "16px";
+  preview.style.border = "2px solid #d2723d";
+  preview.style.background = "linear-gradient(180deg,#fffaf4 0%,#f7eadc 100%)";
+  preview.style.color = "#1e293b";
+  preview.style.display = "flex";
+  preview.style.flexDirection = "column";
+  preview.style.justifyContent = "center";
+  preview.style.alignItems = "center";
+  preview.style.boxShadow = "0 14px 28px rgba(15,23,42,0.16)";
+  preview.innerHTML = `<div style="font: 800 14px system-ui">${label}</div><div style="font: 600 10px system-ui; letter-spacing: .18em; text-transform: uppercase; opacity: .7">Seat Move</div>`;
+  document.body.appendChild(preview);
+  return preview;
+}
+
+function SeatSilhouette({ shape }: { shape: string }) {
+  if (shape === "Cabin") {
+    return (
+      <svg viewBox="0 0 120 64" className="h-6 w-full text-slate-900/55" aria-hidden="true">
+        <rect x="22" y="16" width="76" height="34" rx="10" fill="currentColor" opacity="0.14" />
+        <rect x="30" y="22" width="60" height="22" rx="7" fill="currentColor" opacity="0.22" />
+        <rect x="20" y="14" width="4" height="38" rx="2" fill="currentColor" />
+        <rect x="96" y="14" width="4" height="38" rx="2" fill="currentColor" />
+        <rect x="24" y="12" width="72" height="4" rx="2" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (shape === "Wall Desk") {
+    return (
+      <svg viewBox="0 0 120 64" className="h-6 w-full text-slate-900/55" aria-hidden="true">
+        <rect x="12" y="10" width="7" height="44" rx="3" fill="currentColor" />
+        <rect x="24" y="18" width="58" height="20" rx="8" fill="currentColor" opacity="0.18" />
+        <rect x="36" y="42" width="10" height="10" rx="3" fill="currentColor" />
+        <rect x="60" y="42" width="10" height="10" rx="3" fill="currentColor" />
+        <rect x="86" y="16" width="16" height="28" rx="7" fill="currentColor" opacity="0.16" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 120 64" className="h-6 w-full text-slate-900/55" aria-hidden="true">
+      <rect x="28" y="18" width="64" height="20" rx="9" fill="currentColor" opacity="0.2" />
+      <rect x="40" y="42" width="10" height="10" rx="3" fill="currentColor" />
+      <rect x="70" y="42" width="10" height="10" rx="3" fill="currentColor" />
+      <rect x="18" y="20" width="14" height="24" rx="7" fill="currentColor" opacity="0.14" />
+      <rect x="88" y="20" width="14" height="24" rx="7" fill="currentColor" opacity="0.14" />
+    </svg>
+  );
+}
+
+function SeatPodIcon({ status, occupied }: { status: string; occupied: boolean }) {
+  const tone =
+    status === "AVAILABLE"
+      ? "text-emerald-400"
+      : status === "OCCUPIED"
+        ? "text-rose-400"
+        : status === "RESERVED"
+          ? "text-amber-400"
+          : "text-slate-400";
+
+  return (
+    <svg viewBox="0 0 72 72" className={`h-10 w-10 drop-shadow-[0_6px_12px_rgba(15,23,42,0.08)] ${tone}`} aria-hidden="true">
+      <defs>
+        <linearGradient id={`seat-shell-${status}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0.38" />
+        </linearGradient>
+      </defs>
+      <rect x="18" y="10" width="36" height="22" rx="10" fill={`url(#seat-shell-${status})`} />
+      <rect x="22" y="15" width="28" height="12" rx="6" fill="currentColor" opacity="0.22" />
+      <rect x="11" y="18" width="8" height="24" rx="4" fill="currentColor" opacity="0.18" />
+      <rect x="53" y="18" width="8" height="24" rx="4" fill="currentColor" opacity="0.18" />
+      <rect x="23" y="35" width="26" height="12" rx="6" fill="currentColor" opacity="0.26" />
+      <rect x="21" y="46" width="7" height="11" rx="3.5" fill="currentColor" opacity="0.65" />
+      <rect x="44" y="46" width="7" height="11" rx="3.5" fill="currentColor" opacity="0.65" />
+      <rect x="15" y="58" width="42" height="4" rx="2" fill="currentColor" opacity="0.14" />
+      {occupied ? (
+        <>
+          <circle cx="36" cy="22" r="4.5" fill="currentColor" opacity="0.92" />
+          <path d="M31 29c1.2-2 2.9-3 5-3s3.8 1 5 3l1.8 3.4H29.2L31 29Z" fill="currentColor" opacity="0.9" />
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+function createMainFloor(columns: number, rows: number): FloorRow {
+  return {
+    id: "main-floor",
+    name: "Main Floor",
+    floor_number: 0,
+    layout_columns: columns,
+    layout_rows: rows,
+  };
+}
+
+function suggestNextFloor(floors: FloorRow[]) {
+  const maxFloorNumber = floors.reduce((max, floor) => Math.max(max, floor.floor_number), 0);
+  const nextFloorNumber = maxFloorNumber + 1;
+  return {
+    floorNumber: nextFloorNumber,
+    floorName: nextFloorNumber === 1 ? "First Floor" : `Floor ${nextFloorNumber}`,
+  };
+}
+
+export function OwnerSeatsManager() {
+  const searchParams = useSearchParams();
+  const [seats, setSeats] = useState<SeatRow[]>([]);
+  const [floors, setFloors] = useState<FloorRow[]>([]);
+  const [students, setStudents] = useState<StudentRow[]>([]);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
+  const [selectedSeatId, setSelectedSeatId] = useState<string | null>(null);
+  const [selectedFloorId, setSelectedFloorId] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [liveStatus, setLiveStatus] = useState("Connecting");
+  const [floorName, setFloorName] = useState("First Floor");
+  const [floorNumber, setFloorNumber] = useState(1);
+  const [layoutColumns, setLayoutColumns] = useState(8);
+  const [layoutRows, setLayoutRows] = useState(6);
+  const [seatPrefix, setSeatPrefix] = useState("A");
+  const [sectionName, setSectionName] = useState("Reading Hall");
+  const [manualSeatCode, setManualSeatCode] = useState("");
+  const [startNumber, setStartNumber] = useState(1);
+  const [seatCount, setSeatCount] = useState(12);
+  const [columnsPerRow, setColumnsPerRow] = useState(4);
+  const [rowStart, setRowStart] = useState(1);
+  const [colStart, setColStart] = useState(1);
+  const [seatFilter, setSeatFilter] = useState<"ALL" | "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DUE" | "EXPIRING">("ALL");
+  const [drawerSeatCode, setDrawerSeatCode] = useState("");
+  const [drawerSectionName, setDrawerSectionName] = useState("");
+  const [drawerReservedUntil, setDrawerReservedUntil] = useState("");
+  const [dragSeatId, setDragSeatId] = useState<string | null>(null);
+  const [hoverCellKey, setHoverCellKey] = useState<string | null>(null);
+  const [layoutMode, setLayoutMode] = useState(false);
+  const [floorDrafts, setFloorDrafts] = useState<FloorDrafts>({});
+  const [recentlyMovedSeatId, setRecentlyMovedSeatId] = useState<string | null>(null);
+  const [plannerTool, setPlannerTool] = useState<"move" | "aisle" | "paint">("move");
+  const [paintSectionName, setPaintSectionName] = useState("Girls Zone");
+  const [paintSectionColor, setPaintSectionColor] = useState("#f472b6");
+  const [floorMetaDrafts, setFloorMetaDrafts] = useState<FloorMetaDrafts>({});
+  const [activeAislePaint, setActiveAislePaint] = useState<{ floorId: string; mode: "add" | "remove" } | null>(null);
+  const [ribbonTab, setRibbonTab] = useState<"floor" | "room" | "bank" | "single">("floor");
+  const [rooms, setRooms] = useState<Array<{ id: string; floor_id: string; name: string; capacity: number; seat_count: number }>>([]);
+  const [roomName, setRoomName] = useState("");
+  const [roomFloorId, setRoomFloorId] = useState("");
+  const [roomCapacity, setRoomCapacity] = useState(10);
+  const [filterRoomId, setFilterRoomId] = useState("");
+  const [plannerRibbonTab, setPlannerRibbonTab] = useState<"templates" | "layout" | "paint" | "students">("templates");
+  const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("layout");
+  const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
+  const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
+  const [setupRibbonOpen, setSetupRibbonOpen] = useState(true);
+  const [hallSettingsOpen, setHallSettingsOpen] = useState(false);
+  const [plannerLegendOpen, setPlannerLegendOpen] = useState(false);
+  const [inspectorControlsOpen, setInspectorControlsOpen] = useState(false);
+  const [floorSwitcherOpen, setFloorSwitcherOpen] = useState(false);
+  const [seatFiltersOpen, setSeatFiltersOpen] = useState(false);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [seatResponse, studentResponse, floorResponse, roomResponse] = await Promise.all([
+        apiFetch<{ success: boolean; data: SeatRow[] }>("/owner/seats"),
+        apiFetch<{ success: boolean; data: StudentRow[] }>("/owner/students"),
+        apiFetch<{ success: boolean; data: FloorRow[] }>("/owner/floors"),
+        apiFetch<{ success: boolean; data: Array<{ id: string; floor_id: string; name: string; capacity: number; seat_count: number }> }>("/owner/rooms"),
+      ]);
+      setSeats(seatResponse.data);
+      setStudents(studentResponse.data);
+      setFloors(floorResponse.data);
+      setRooms(roomResponse.data);
+      setError(null);
+    } catch (loadError) {
+      setSeats([]);
+      setStudents([]);
+      setFloors([]);
+      setError(loadError instanceof Error ? loadError.message : "Unable to load live seat map.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadData();
+  }, []);
+
+  useEffect(() => {
+    const nextDrafts: FloorDrafts = {};
+    const nextMetaDrafts: FloorMetaDrafts = {};
+    for (const floor of floors) {
+      nextDrafts[floor.id] = {
+        name: floor.name,
+        layoutRows: floor.layout_rows,
+        layoutColumns: floor.layout_columns,
+      };
+      nextMetaDrafts[floor.id] = {
+        aisleCells: floor.layout_meta?.aisleCells ?? [],
+        sectionColors: floor.layout_meta?.sectionColors ?? {},
+      };
+    }
+    setFloorDrafts(nextDrafts);
+    setFloorMetaDrafts(nextMetaDrafts);
+    if (!selectedFloorId && floors[0]) {
+      setSelectedFloorId(floors[0].id);
+    }
+  }, [floors, selectedFloorId]);
+
+  useEffect(() => {
+    const suggestion = suggestNextFloor(floors);
+    setFloorNumber((current) => {
+      const duplicate = floors.some((floor) => floor.floor_number === current);
+      return duplicate ? suggestion.floorNumber : current;
+    });
+    setFloorName((current) => {
+      if (!current.trim() || current === "First Floor" || /^Floor \d+$/i.test(current)) {
+        return suggestion.floorName;
+      }
+      return current;
+    });
+  }, [floors]);
+
+  useEffect(() => {
+    const workspace = searchParams.get("workspace");
+    const ribbon = searchParams.get("ribbon");
+    const planner = searchParams.get("planner");
+
+    if (workspace === "setup" || workspace === "layout" || workspace === "assign") {
+      setWorkspaceMode(workspace);
+    }
+
+    if (ribbon === "floor" || ribbon === "bank" || ribbon === "single") {
+      setRibbonTab(ribbon);
+    }
+
+    if (planner === "templates" || planner === "layout" || planner === "paint" || planner === "students") {
+      setPlannerRibbonTab(planner);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!activeAislePaint) return;
+    const handleMouseUp = () => {
+      const draft = floorMetaDrafts[activeAislePaint.floorId];
+      void saveFloorMeta(activeAislePaint.floorId, {
+        aisleCells: draft?.aisleCells ?? [],
+        sectionColors: draft?.sectionColors ?? {},
+      });
+      setActiveAislePaint(null);
+    };
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => window.removeEventListener("mouseup", handleMouseUp);
+  }, [activeAislePaint, floorMetaDrafts]);
+
+  useEffect(() => {
+    const socket = getRealtimeSocket();
+    if (!socket) {
+      setLiveStatus("Offline");
+      return;
+    }
+
+    const ready = () => setLiveStatus("Live");
+    const disconnected = () => setLiveStatus("Disconnected");
+    const onSeatUpdate = () => {
+      setLiveStatus("Live");
+      void loadData();
+    };
+
+    socket.on("connect", ready);
+    socket.on("disconnect", disconnected);
+    socket.on("realtime.ready", ready);
+    socket.on("seat.updated", onSeatUpdate);
+    socket.on("student.updated", onSeatUpdate);
+
+    if (socket.connected) {
+      setLiveStatus("Live");
+    }
+
+    return () => {
+      socket.off("connect", ready);
+      socket.off("disconnect", disconnected);
+      socket.off("realtime.ready", ready);
+      socket.off("seat.updated", onSeatUpdate);
+      socket.off("student.updated", onSeatUpdate);
+    };
+  }, []);
+
+  const selectedSeat = useMemo(() => seats.find((seat) => seat.id === selectedSeatId) ?? null, [seats, selectedSeatId]);
+
+  useEffect(() => {
+    if (!selectedSeat) return;
+    setDrawerSeatCode(selectedSeat.seat_number);
+    setDrawerSectionName(selectedSeat.section_name ?? "");
+    setDrawerReservedUntil(selectedSeat.reserved_until ? selectedSeat.reserved_until.slice(0, 16) : "");
+  }, [selectedSeat]);
+
+  const availableStudents = useMemo(() => students.filter((student) => student.assignment_id), [students]);
+  const existingSeatNumbers = useMemo(() => seats.map((seat) => seat.seat_number), [seats]);
+
+  const sectionOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: string[] = [];
+    for (const seat of seats) {
+      if (seat.section_name && !seen.has(seat.section_name)) {
+        seen.add(seat.section_name);
+        options.push(seat.section_name);
+      }
+    }
+    return options;
+  }, [seats]);
+  const activeRibbonSectionColors = useMemo(
+    () => (selectedFloorId ? floorMetaDrafts[selectedFloorId]?.sectionColors ?? {} : {}),
+    [floorMetaDrafts, selectedFloorId],
+  );
+
+  const floorCards = useMemo(() => {
+    const seatsByFloor = new Map<string, SeatRow[]>();
+    const mainFloorSeats: SeatRow[] = [];
+
+    for (const seat of seats) {
+      if (seat.floor_id) {
+        const current = seatsByFloor.get(seat.floor_id) ?? [];
+        current.push(seat);
+        seatsByFloor.set(seat.floor_id, current);
+      } else {
+        mainFloorSeats.push(seat);
+      }
+    }
+
+    const built = floors.map((floor) => {
+      const floorSeats = (seatsByFloor.get(floor.id) ?? []).sort((a, b) => a.pos_y - b.pos_y || a.pos_x - b.pos_x || a.seat_number.localeCompare(b.seat_number));
+      const maxX = floorSeats.reduce((value, seat) => Math.max(value, seat.pos_x, seat.col_no), floor.layout_columns);
+      const maxY = floorSeats.reduce((value, seat) => Math.max(value, seat.pos_y, seat.row_no), floor.layout_rows);
+      return {
+        floor,
+        seats: floorSeats,
+        columns: Math.max(floor.layout_columns, maxX, 1),
+        rows: Math.max(floor.layout_rows, maxY, 1),
+      };
+    });
+
+    if (mainFloorSeats.length > 0) {
+      const maxX = mainFloorSeats.reduce((value, seat) => Math.max(value, seat.pos_x, seat.col_no), 0);
+      const maxY = mainFloorSeats.reduce((value, seat) => Math.max(value, seat.pos_y, seat.row_no), 0);
+      built.unshift({
+        floor: createMainFloor(Math.max(maxX, 6), Math.max(maxY, 4)),
+        seats: mainFloorSeats.sort((a, b) => a.pos_y - b.pos_y || a.pos_x - b.pos_x || a.seat_number.localeCompare(b.seat_number)),
+        columns: Math.max(maxX, 6),
+        rows: Math.max(maxY, 4),
+      });
+    }
+
+    return built
+      .map((item) => ({
+        ...item,
+        seats: item.seats.filter((seat) => {
+          if (seatFilter === "ALL") return true;
+          if (seatFilter === "DUE") return seat.payment_status === "DUE" || seat.payment_status === "PENDING";
+          if (seatFilter === "EXPIRING") {
+            const today = new Date().toISOString().slice(0, 10);
+            const sevenDaysLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            return !!seat.ends_at && seat.ends_at >= today && seat.ends_at <= sevenDaysLater;
+          }
+          return seat.status === seatFilter;
+        }),
+      }))
+      .filter((item) => item.seats.length > 0 || item.floor.id === selectedFloorId);
+  }, [floors, seats, seatFilter, selectedFloorId]);
+
+  const activeFloorCard = useMemo(() => {
+    if (floorCards.length === 0) {
+      return null;
+    }
+
+    if (selectedFloorId) {
+      return floorCards.find((item) => item.floor.id === selectedFloorId) ?? floorCards[0];
+    }
+
+    return floorCards[0];
+  }, [floorCards, selectedFloorId]);
+
+  const visibleFloorCards = useMemo(() => (activeFloorCard ? [activeFloorCard] : []), [activeFloorCard]);
+
+  const totals = useMemo(() => {
+    return seats.reduce(
+      (acc, seat) => {
+        acc[seat.status] = (acc[seat.status] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+  }, [seats]);
+
+  async function assignSeat(seatId: string) {
+    if (!selectedAssignmentId) {
+      setError("Pehle student select karo, phir seat choose karo.");
+      return;
+    }
+
+    setMessage(null);
+    setError(null);
+    try {
+      await apiFetch("/owner/seats/assign", {
+        method: "POST",
+        body: JSON.stringify({
+          assignmentId: selectedAssignmentId,
+          seatId,
+        }),
+      });
+      setMessage("Seat assignment saved.");
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Seat assignment failed.");
+    }
+  }
+
+  async function createFloor(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setError(null);
+
+    try {
+      const result = await apiFetch<{ success: boolean; data: FloorRow }>("/owner/floors", {
+        method: "POST",
+        body: JSON.stringify({
+          name: floorName,
+          floorNumber,
+          layoutColumns,
+          layoutRows,
+        }),
+      });
+      setSelectedFloorId(result.data.id);
+      setMessage(`New floor created. "${result.data.name}" ab seat bank create ke liye selected hai.`);
+      await loadData();
+    } catch (submitError) {
+      const rawMessage = submitError instanceof Error ? submitError.message : "Floor create failed.";
+      if (rawMessage.includes("Floor number already exists")) {
+        const suggestion = suggestNextFloor(floors);
+        setFloorNumber(suggestion.floorNumber);
+        setFloorName(suggestion.floorName);
+        setError(`Ye floor number already use ho raha hai. Ab next available floor auto-fill kar diya gaya hai: ${suggestion.floorName}.`);
+        return;
+      }
+      setError(rawMessage);
+    }
+  }
+
+  async function createRoom(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setError(null);
+    try {
+      const result = await apiFetch<{ success: boolean; data: { id: string; name: string; capacity: number } }>("/owner/rooms", {
+        method: "POST",
+        body: JSON.stringify({ floorId: roomFloorId, name: roomName, capacity: roomCapacity }),
+      });
+      setMessage(`Room "${result.data.name}" created successfully.`);
+      setRoomName("");
+      setRoomCapacity(10);
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Room create failed.");
+    }
+  }
+
+  async function deleteRoom(roomId: string) {
+    setMessage(null);
+    setError(null);
+    try {
+      await apiFetch(`/owner/rooms/${roomId}`, { method: "DELETE" });
+      setMessage("Room deleted.");
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Room delete failed.");
+    }
+  }
+
+  async function saveFloorLayout(floorId: string) {
+    const draft = floorDrafts[floorId];
+    if (!draft) return;
+
+    setMessage(null);
+    setError(null);
+    try {
+      await apiFetch(`/owner/floors/${floorId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: draft.name,
+          layoutColumns: draft.layoutColumns,
+          layoutRows: draft.layoutRows,
+        }),
+      });
+      setMessage("Floor layout updated.");
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Floor update failed.");
+    }
+  }
+
+  async function saveFloorMeta(floorId: string, nextMeta: FloorRow["layout_meta"]) {
+    const floor = floors.find((item) => item.id === floorId);
+    if (!floor) return;
+
+    setMessage(null);
+    setError(null);
+    try {
+      await apiFetch(`/owner/floors/${floorId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: floor.name,
+          layoutColumns: floor.layout_columns,
+          layoutRows: floor.layout_rows,
+          aisleCells: nextMeta?.aisleCells ?? [],
+          sectionColors: nextMeta?.sectionColors ?? {},
+        }),
+      });
+      setMessage("Floor painter changes saved.");
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Floor metadata update failed.");
+    }
+  }
+
+  function updateAisleDraft(floorId: string, cellKey: string, mode: "add" | "remove") {
+    setFloorMetaDrafts((current) => {
+      const existing = current[floorId] ?? { aisleCells: [], sectionColors: {} };
+      const nextSet = new Set(existing.aisleCells);
+      if (mode === "add") nextSet.add(cellKey);
+      else nextSet.delete(cellKey);
+      return {
+        ...current,
+        [floorId]: {
+          aisleCells: Array.from(nextSet),
+          sectionColors: existing.sectionColors,
+        },
+      };
+    });
+  }
+
+  function deleteSectionColor(floorId: string, sectionName: string) {
+    const draft = floorMetaDrafts[floorId] ?? { aisleCells: [], sectionColors: {} };
+    const nextColors = { ...draft.sectionColors };
+    delete nextColors[sectionName];
+    setFloorMetaDrafts((current) => ({
+      ...current,
+      [floorId]: {
+        aisleCells: draft.aisleCells,
+        sectionColors: nextColors,
+      },
+    }));
+    void saveFloorMeta(floorId, {
+      aisleCells: draft.aisleCells,
+      sectionColors: nextColors,
+    });
+  }
+
+  async function createSeats(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setError(null);
+
+    if (!selectedFloorId) {
+      setError("Pehle floor select karo ya naya floor create karo, phir seat bank banao.");
+      return;
+    }
+
+    try {
+      const result = await apiFetch<{ success: boolean; data: { createdCount: number } }>("/owner/seats", {
+        method: "POST",
+        body: JSON.stringify({
+          floorId: selectedFloorId === "main-floor" ? undefined : selectedFloorId || undefined,
+          sectionName,
+          seatPrefix,
+          startNumber,
+          seatCount,
+          rowStart,
+          colStart,
+          columnsPerRow,
+        }),
+      });
+      setMessage(`${result.data.createdCount} seats added successfully.`);
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Seat create failed.");
+    }
+  }
+
+  async function createSingleSeat(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setError(null);
+
+    if (!selectedFloorId) {
+      setError("Single seat create karne se pehle floor select karo.");
+      return;
+    }
+
+    if (!manualSeatCode.trim()) {
+      setError("Seat code likho, jaise G-12 ya A7.");
+      return;
+    }
+
+    try {
+      await apiFetch("/owner/seats", {
+        method: "POST",
+        body: JSON.stringify({
+          floorId: selectedFloorId === "main-floor" ? undefined : selectedFloorId || undefined,
+          sectionName,
+          seatPrefix,
+          customSeatCode: manualSeatCode.trim(),
+          startNumber: 1,
+          seatCount: 1,
+          rowStart,
+          colStart,
+          columnsPerRow: 1,
+        }),
+      });
+      setMessage(`Seat ${manualSeatCode} created successfully.`);
+      setManualSeatCode("");
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Seat create failed.");
+    }
+  }
+
+  async function createSeatAtCell(floorId: string, posX: number, posY: number) {
+    const nextSeatCode = buildNextSeatCode(existingSeatNumbers, seatPrefix);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const result = await apiFetch<{ success: boolean; data: { createdCount: number; seatNumbers: string[] } }>("/owner/seats", {
+        method: "POST",
+        body: JSON.stringify({
+          floorId: floorId === "main-floor" ? undefined : floorId,
+          sectionName,
+          seatPrefix,
+          customSeatCode: nextSeatCode,
+          startNumber: 1,
+          seatCount: 1,
+          rowStart: posY,
+          colStart: posX,
+          columnsPerRow: 1,
+        }),
+      });
+      setManualSeatCode(result.data.seatNumbers[0] ?? nextSeatCode);
+      setMessage(`New seat ${result.data.seatNumbers[0] ?? nextSeatCode} created at X${posX} Y${posY}.`);
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Seat create failed.");
+    }
+  }
+
+  async function updateSeatAction(status?: "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED", markFree = false) {
+    if (!selectedSeat) return;
+
+    setMessage(null);
+    setError(null);
+    try {
+      await apiFetch(`/owner/seats/${selectedSeat.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          seatCode: drawerSeatCode,
+          sectionName: drawerSectionName,
+          status,
+          reservedUntil: status === "RESERVED" ? drawerReservedUntil : "",
+          posX: selectedSeat.pos_x,
+          posY: selectedSeat.pos_y,
+          markFree,
+        }),
+      });
+      setMessage("Seat updated successfully.");
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Seat update failed.");
+    }
+  }
+
+  async function moveSeatToPosition(seatId: string, posX: number, posY: number) {
+    const seat = seats.find((item) => item.id === seatId);
+    if (!seat) return;
+
+    setMessage(null);
+    setError(null);
+    try {
+      await apiFetch(`/owner/seats/${seat.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          posX,
+          posY,
+        }),
+      });
+      setRecentlyMovedSeatId(seat.id);
+      setMessage(`Seat ${seat.seat_number} moved to X${posX} Y${posY}.`);
+      setHoverCellKey(null);
+      window.setTimeout(() => setRecentlyMovedSeatId((current) => (current === seat.id ? null : current)), 1800);
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Seat move failed.");
+    }
+  }
+
+  async function applyDeskPreset(floorId: string, preset: "2" | "4" | "6") {
+    const floorSeats = seats
+      .filter((seat) => (floorId === "main-floor" ? !seat.floor_id : seat.floor_id === floorId))
+      .sort((a, b) => a.seat_number.localeCompare(b.seat_number));
+    if (floorSeats.length === 0) return;
+
+    const size = preset === "2" ? 2 : preset === "4" ? 4 : 6;
+    const positions = floorSeats.map((seat, index) => {
+      const cluster = Math.floor(index / size);
+      const offset = index % size;
+      const clusterWidth = size === 2 ? 2 : size === 4 ? 2 : 3;
+      const clusterHeight = size === 2 ? 1 : 2;
+      const baseX = (cluster % 3) * (clusterWidth + 2) + 1;
+      const baseY = Math.floor(cluster / 3) * (clusterHeight + 2) + 1;
+      const localX = size === 6 ? offset % 3 : offset % 2;
+      const localY = size === 2 ? 0 : Math.floor(offset / clusterWidth);
+      return {
+        seat,
+        posX: baseX + localX,
+        posY: baseY + localY,
+      };
+    });
+
+    setMessage(null);
+    setError(null);
+    try {
+      await Promise.all(
+        positions.map((item) =>
+          apiFetch(`/owner/seats/${item.seat.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              posX: item.posX,
+              posY: item.posY,
+            }),
+          }),
+        ),
+      );
+      setMessage(`Applied ${size}-seat desk preset.`);
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Desk preset apply failed.");
+    }
+  }
+
+  async function applyRoomLayoutPreset(
+    floorId: string,
+    preset: { cluster: "2" | "4" | "6"; sectionName: string; sectionColor: string; id: string },
+  ) {
+    const floorSeats = seats
+      .filter((seat) => (floorId === "main-floor" ? !seat.floor_id : seat.floor_id === floorId))
+      .sort((a, b) => a.seat_number.localeCompare(b.seat_number));
+    if (floorSeats.length === 0) {
+      setError("Is floor par pehle seats create karo, tab room layout apply hoga.");
+      return;
+    }
+
+    const size = preset.cluster === "2" ? 2 : preset.cluster === "4" ? 4 : 6;
+    const positions = floorSeats.map((seat, index) => {
+      const cluster = Math.floor(index / size);
+      const offset = index % size;
+      const clusterWidth = size === 2 ? 2 : size === 4 ? 2 : 3;
+      const clusterHeight = size === 2 ? 1 : 2;
+      const gapX = preset.id === "window-wing" ? 3 : 2;
+      const baseX = (cluster % 3) * (clusterWidth + gapX) + 1;
+      const baseY = Math.floor(cluster / 3) * (clusterHeight + 2) + 1;
+      const localX = size === 6 ? offset % 3 : offset % 2;
+      const localY = size === 2 ? 0 : Math.floor(offset / clusterWidth);
+      return {
+        seat,
+        posX: baseX + localX,
+        posY: baseY + localY,
+      };
+    });
+
+    const sectionColors = {
+      ...(floorMetaDrafts[floorId]?.sectionColors ?? {}),
+      [preset.sectionName]: preset.sectionColor,
+    };
+
+    setMessage(null);
+    setError(null);
+    try {
+      await Promise.all(
+        positions.map((item) =>
+          apiFetch(`/owner/seats/${item.seat.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              sectionName: preset.sectionName,
+              posX: item.posX,
+              posY: item.posY,
+            }),
+          }),
+        ),
+      );
+      if (floorId !== "main-floor") {
+        await saveFloorMeta(floorId, {
+          aisleCells: floorMetaDrafts[floorId]?.aisleCells ?? [],
+          sectionColors,
+        });
+      } else {
+        await loadData();
+      }
+      setPaintSectionName(preset.sectionName);
+      setPaintSectionColor(preset.sectionColor);
+      setMessage(`${preset.sectionName} layout apply ho gaya.`);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Room layout apply failed.");
+    }
+  }
+
+  async function paintSeatSection(seat: SeatRow) {
+    if (plannerTool !== "paint") return;
+    setMessage(null);
+    setError(null);
+    try {
+      await apiFetch(`/owner/seats/${seat.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          seatCode: seat.seat_number,
+          sectionName: paintSectionName,
+          posX: seat.pos_x,
+          posY: seat.pos_y,
+        }),
+      });
+
+      const floorId = seat.floor_id ?? "main-floor";
+      const currentFloor = floorCards.find((item) => item.floor.id === floorId)?.floor;
+      const nextMeta = {
+        aisleCells: floorMetaDrafts[floorId]?.aisleCells ?? currentFloor?.layout_meta?.aisleCells ?? [],
+        sectionColors: {
+          ...(floorMetaDrafts[floorId]?.sectionColors ?? currentFloor?.layout_meta?.sectionColors ?? {}),
+          [paintSectionName]: paintSectionColor,
+        },
+      };
+      setFloorMetaDrafts((current) => ({
+        ...current,
+        [floorId]: {
+          aisleCells: nextMeta.aisleCells ?? [],
+          sectionColors: nextMeta.sectionColors ?? {},
+        },
+      }));
+      if (seat.floor_id) {
+        await saveFloorMeta(seat.floor_id, nextMeta);
+      } else {
+        await loadData();
+      }
+      setMessage(`Painted ${seat.seat_number} as ${paintSectionName}.`);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Section paint failed.");
+    }
+  }
+
+  async function swapSeatPositions(sourceSeatId: string, targetSeatId: string) {
+    const sourceSeat = seats.find((seat) => seat.id === sourceSeatId);
+    const targetSeat = seats.find((seat) => seat.id === targetSeatId);
+    if (!sourceSeat || !targetSeat || sourceSeat.id === targetSeat.id) {
+      return;
+    }
+
+    setMessage(null);
+    setError(null);
+    try {
+      await Promise.all([
+        apiFetch(`/owner/seats/${sourceSeat.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            posX: targetSeat.pos_x,
+            posY: targetSeat.pos_y,
+          }),
+        }),
+        apiFetch(`/owner/seats/${targetSeat.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            posX: sourceSeat.pos_x,
+            posY: sourceSeat.pos_y,
+          }),
+        }),
+      ]);
+      setRecentlyMovedSeatId(sourceSeat.id);
+      setMessage(`Layout updated: ${sourceSeat.seat_number} swapped with ${targetSeat.seat_number}.`);
+      setHoverCellKey(null);
+      window.setTimeout(() => setRecentlyMovedSeatId((current) => (current === sourceSeat.id ? null : current)), 1800);
+      await loadData();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Seat layout update failed.");
+    }
+  }
+
+  async function nudgeSelectedSeat(deltaX: number, deltaY: number) {
+    if (!selectedSeat) return;
+    await moveSeatToPosition(selectedSeat.id, Math.max(1, selectedSeat.pos_x + deltaX), Math.max(1, selectedSeat.pos_y + deltaY));
+  }
+
+  async function deleteSeat() {
+    if (!selectedSeat) return;
+    if (!window.confirm(`"${selectedSeat.seat_number}" seat permanently delete karna chahte ho? Ye action undo nahi hoga.`)) return;
+    setMessage(null);
+    setError(null);
+    try {
+      await apiFetch(`/owner/seats/${selectedSeat.id}`, { method: "DELETE" });
+      setMessage(`Seat ${selectedSeat.seat_number} delete ho gaya.`);
+      setSelectedSeatId(null);
+      await loadData();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Seat delete failed.");
+    }
+  }
+
+  function updateFloorDraft(floorId: string, partial: Partial<{ name: string; layoutRows: number; layoutColumns: number }>) {
+    setFloorDrafts((current) => ({
+      ...current,
+      [floorId]: {
+        name: partial.name ?? current[floorId]?.name ?? "",
+        layoutRows: partial.layoutRows ?? current[floorId]?.layoutRows ?? 1,
+        layoutColumns: partial.layoutColumns ?? current[floorId]?.layoutColumns ?? 1,
+      },
+    }));
+  }
+
+  return (
+    <div className="grid gap-3 md:gap-6">
+      <DashboardCard title="Workspace mode" subtitle="Ek waqt ek kaam — mode choose karo, baaki clutter apne aap chhupta hai.">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {([
+            ["setup", "1. Setup", "Floor aur seats banao"],
+            ["layout", "2. Layout", "Seats arrange, zones paint karo"],
+            ["assign", "3. Assign", "Students ko seats allot karo"],
+          ] as const).map(([value, label, desc]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setWorkspaceMode(value)}
+              className={`rounded-[1.25rem] px-4 py-4 text-left transition ${
+                workspaceMode === value
+                  ? "bg-slate-950 text-white shadow-[0_12px_28px_rgba(15,23,42,0.18)]"
+                  : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)] hover:border-slate-400"
+              }`}
+            >
+              <p className="text-xs font-black uppercase tracking-[0.18em]">{label}</p>
+              <p className={`mt-1 text-[11px] leading-5 ${workspaceMode === value ? "text-white/70" : "text-slate-500"}`}>{desc}</p>
+            </button>
+          ))}
+        </div>
+      </DashboardCard>
+      <div className="sticky top-[88px] z-10">
+      <DashboardCard
+        title={workspaceMode === "setup" ? "Setup ribbon" : workspaceMode === "layout" ? "Layout ribbon" : "Assign ribbon"}
+        subtitle={
+          workspaceMode === "setup"
+            ? "Floor aur seats ko yahin se create karo."
+            : workspaceMode === "layout"
+              ? "Templates aur layout tools yahin se control karo."
+              : "Student assignment tools yahin se manage karo."
+        }
+      >
+        <div className="grid gap-4">
+          {error ? (
+            <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+              {error}
+            </div>
+          ) : null}
+          {message ? (
+            <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+              {message}
+            </div>
+          ) : null}
+
+          {workspaceMode === "setup" ? (
+            <>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-sm font-black text-[var(--lp-text)]">Create only what you need</p>
+              <p className="mt-1 text-sm text-slate-500">Ek waqt par ek form kholo, planner ko clean rakho.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["floor", "Floor"],
+                  ["room", "Room"],
+                  ["bank", "Bank"],
+                  ["single", "Single"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setRibbonTab(value as typeof ribbonTab);
+                      setSetupRibbonOpen(true);
+                    }}
+                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                      ribbonTab === value
+                        ? "bg-[var(--lp-primary)] text-white shadow-[0_10px_22px_rgba(210,114,61,0.22)]"
+                        : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setSetupRibbonOpen((current) => !current)}
+                className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+              >
+                {setupRibbonOpen ? "Hide form" : "Open form"}
+              </button>
+            </div>
+          </div>
+
+          {setupRibbonOpen && ribbonTab === "floor" ? (
+            <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
+              <div className="lg:col-span-5 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+                Existing floors ke basis par next floor number auto-suggest hota hai. Duplicate hua to next available floor suggest hoga.
+              </div>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Floor Name
+                <input value={floorName} onChange={(event) => setFloorName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Floor name" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Floor No.
+                <input value={floorNumber} onChange={(event) => setFloorNumber(Number(event.target.value) || 0)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Floor number" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Rows
+                <input value={layoutRows} onChange={(event) => setLayoutRows(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Rows" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Columns
+                <input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns" type="number" />
+              </label>
+              <button type="submit" className="rounded-[1rem] bg-[var(--lp-primary)] px-5 py-3 text-sm font-semibold text-white">Create floor</button>
+            </form>
+          ) : null}
+
+          {setupRibbonOpen && ribbonTab === "room" ? (
+            <div className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
+              <div className="rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+                Floor ke andar rooms banao — jaise "Hall A", "Cabin Zone", "Girls Room". Rooms se seat map me alag-alag sections dikh sakti hain.
+              </div>
+              <form onSubmit={createRoom} className="grid gap-3 lg:grid-cols-[1.4fr_1fr_0.6fr_auto] lg:items-end">
+                <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                  Floor
+                  <select
+                    value={roomFloorId}
+                    onChange={(event) => setRoomFloorId(event.target.value)}
+                    required
+                    className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none"
+                  >
+                    <option value="">Choose floor</option>
+                    {floors.map((floor) => (
+                      <option key={floor.id} value={floor.id}>{floor.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                  Room Name
+                  <input
+                    value={roomName}
+                    onChange={(event) => setRoomName(event.target.value)}
+                    required
+                    placeholder="e.g. Hall A, Cabin Zone"
+                    className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none"
+                  />
+                </label>
+                <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                  Capacity
+                  <input
+                    value={roomCapacity}
+                    onChange={(event) => setRoomCapacity(Number(event.target.value) || 0)}
+                    type="number"
+                    min="1"
+                    className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none"
+                  />
+                </label>
+                <button type="submit" disabled={!roomFloorId || !roomName} className="rounded-[1rem] bg-[var(--lp-primary)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+                  Create room
+                </button>
+              </form>
+              {rooms.filter((room) => !roomFloorId || room.floor_id === roomFloorId).length > 0 ? (
+                <div className="mt-2 grid gap-2">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Existing rooms</p>
+                  {rooms.filter((room) => !roomFloorId || room.floor_id === roomFloorId).map((room) => (
+                    <div key={room.id} className="flex items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-2">
+                      <div>
+                        <span className="text-sm font-bold text-[var(--lp-text)]">{room.name}</span>
+                        <span className="ml-2 text-xs text-slate-500">Capacity: {room.capacity} · Seats: {room.seat_count}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void deleteRoom(room.id)}
+                        className="rounded-full border border-rose-200 px-3 py-1 text-xs font-bold text-rose-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {setupRibbonOpen && ribbonTab === "bank" ? (
+            <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
+              <div className="lg:col-span-9 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+                Floor choose karke bulk seat bank banao. Prefix, count, row/column start aur columns per row yahin se set karo.
+              </div>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Floor
+                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none">
+                  <option value="">Choose floor</option>
+                  {floorCards.map((item) => (
+                    <option key={item.floor.id} value={item.floor.id}>
+                      {item.floor.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Section
+                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} list="seat-sections-ribbon" className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Prefix
+                <input value={seatPrefix} onChange={(event) => setSeatPrefix(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Seat prefix" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Start
+                <input value={startNumber} onChange={(event) => setStartNumber(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Start number" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Count
+                <input value={seatCount} onChange={(event) => setSeatCount(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Seat count" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Row
+                <input value={rowStart} onChange={(event) => setRowStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Row start" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Column
+                <input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Column start" type="number" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Per Row
+                <input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Columns per row" type="number" />
+              </label>
+              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-5 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create seat bank</button>
+              <datalist id="seat-sections-ribbon">
+                {sectionOptions.map((section) => (
+                  <option key={section} value={section} />
+                ))}
+              </datalist>
+            </form>
+          ) : null}
+
+          {setupRibbonOpen && ribbonTab === "single" ? (
+            <form id="seat-create-single" onSubmit={createSingleSeat} className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+              <div className="lg:col-span-4 rounded-[1rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-3 py-2 text-sm text-[var(--lp-muted)]">
+                Ek exact custom seat banana ho to yahin se code likho, floor choose rakho, aur direct create karo.
+              </div>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Seat Code
+                <input value={manualSeatCode} onChange={(event) => setManualSeatCode(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Exact seat code e.g. G-12" />
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Floor
+                <select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none">
+                  <option value="">Choose floor</option>
+                  {floorCards.map((item) => (
+                    <option key={item.floor.id} value={item.floor.id}>
+                      {item.floor.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">
+                Section
+                <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm font-medium text-[var(--lp-text)] outline-none" placeholder="Room / section name" />
+              </label>
+              <button type="submit" disabled={!selectedFloorId} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--lp-primary)] disabled:cursor-not-allowed disabled:opacity-50">Create one seat</button>
+            </form>
+          ) : null}
+          {!setupRibbonOpen ? (
+            <div className="rounded-[1.25rem] border border-dashed border-[var(--lp-border)] bg-white px-4 py-5 text-sm text-[var(--lp-muted)]">
+              Setup form hidden hai. Jab naya floor, seat bank, ya single seat banana ho tab relevant tab open karo.
+            </div>
+          ) : null}
+            </>
+          ) : null}
+
+          {workspaceMode !== "setup" ? (
+          <div className="grid gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-[rgba(255,255,255,0.92)] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Tool palette</p>
+                <p className="mt-1 text-sm text-[var(--lp-muted)]">Secondary layout tools. Canvas ko primary rehne do.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    ["templates", "Templates"],
+                    ["layout", "Layout"],
+                    ["paint", "Paint"],
+                    ["students", "Students"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setPlannerRibbonTab(value as typeof plannerRibbonTab);
+                        setPlannerToolbarOpen(true);
+                      }}
+                      className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${
+                        plannerRibbonTab === value
+                          ? "bg-slate-900 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
+                          : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPlannerToolbarOpen((current) => !current)}
+                  className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                >
+                  {plannerToolbarOpen ? "Hide panel" : "Open panel"}
+                </button>
+              </div>
+            </div>
+
+            {plannerToolbarOpen && plannerRibbonTab === "templates" ? (
+              <div className="grid gap-3">
+                <p className="text-xs text-[var(--lp-muted)]">Existing seats ko ek desk pattern mein instantly rearrange karo.</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "2")} disabled={!selectedFloorId} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] disabled:opacity-50">2 Seat Desk</button>
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "4")} disabled={!selectedFloorId} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] disabled:opacity-50">4 Seat Table</button>
+                  <button type="button" onClick={() => selectedFloorId && void applyDeskPreset(selectedFloorId, "6")} disabled={!selectedFloorId} className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] disabled:opacity-50">6 Seat Table</button>
+                </div>
+                <p className="text-xs text-[var(--lp-muted)]">Room layout presets (Reading Hall, Cabin Zone, Window Wing) Layout mode → canvas mein milenge thumbnail ke saath.</p>
+              </div>
+            ) : null}
+
+            {plannerToolbarOpen && plannerRibbonTab === "layout" ? (
+              <div className="grid gap-3 xl:grid-cols-[auto_auto_1fr]">
+                <button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-[1rem] px-4 py-3 text-sm font-black ${layoutMode ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
+                  {layoutMode ? "Planner Active" : "Enable Planner"}
+                </button>
+                <div className="rounded-[1rem] bg-[#f5faf6] px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Socket</p>
+                  <p className="mt-1 text-sm font-black text-[var(--lp-text)]">{liveStatus}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[["move", "Move"], ["aisle", "Aisle"], ["paint", "Paint"]].map(([value, label]) => (
+                    <button key={value} type="button" onClick={() => setPlannerTool(value as typeof plannerTool)} className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] ${plannerTool === value ? "bg-slate-900 text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>{label}</button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {plannerToolbarOpen && plannerRibbonTab === "paint" ? (
+              <div className="grid gap-3 xl:grid-cols-[1fr_auto_1fr]">
+                <input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" />
+                <input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-20 rounded-[1rem] border border-[var(--lp-border)] bg-white p-1" />
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(activeRibbonSectionColors).length ? Object.entries(activeRibbonSectionColors).map(([section, color]) => (
+                    <button key={section} type="button" onClick={() => { setPaintSectionName(section); setPaintSectionColor(color); setPlannerTool("paint"); }} className="rounded-full px-3 py-2 text-[11px] font-bold text-white" style={{ backgroundColor: color }}>
+                      {section}
+                    </button>
+                  )) : <p className="text-sm text-[var(--lp-muted)]">Painted section colors yahan dikhenge.</p>}
+                </div>
+              </div>
+            ) : null}
+
+            {plannerToolbarOpen && plannerRibbonTab === "students" ? (
+              <div className="grid gap-3">
+                <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm outline-none">
+                  <option value="">Select student assignment</option>
+                  {availableStudents.map((student) => (
+                    <option key={student.assignment_id} value={student.assignment_id}>
+                      {student.student_name} | {student.seat_number ?? "No seat"} | {student.plan_name}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {availableStudents.map((student) => (
+                    <div
+                      key={student.assignment_id}
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData("text/assignment-id", student.assignment_id);
+                        setSelectedAssignmentId(student.assignment_id);
+                        const preview = makeSeatDragPreview(student.student_name);
+                        event.dataTransfer.setDragImage(preview, 54, 36);
+                        window.setTimeout(() => preview.remove(), 0);
+                      }}
+                      className={`min-w-[240px] cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-primary)] bg-[#fff7ef]" : "border-slate-200 bg-white"}`}
+                    >
+                      <p className="font-black text-slate-950">{student.student_name}</p>
+                      <p className="text-sm text-slate-500">{student.seat_number ?? "No seat"} | {student.plan_name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          ) : null}
+        </div>
+      </DashboardCard>
+      </div>
+
+      <section className={`grid gap-4 ${workspaceMode === "assign" ? "xl:grid-cols-[1.5fr_0.85fr]" : "xl:grid-cols-[1.6fr_0.8fr]"}`}>
+        <DashboardCard
+          title={workspaceMode === "setup" ? "Planner preview" : workspaceMode === "layout" ? "Planner studio" : "Assignment canvas"}
+          subtitle={
+            workspaceMode === "setup"
+              ? "Setup complete hote hi yahin room preview ready hoga."
+              : workspaceMode === "layout"
+                ? "Move, paint, aur presets ke saath clean hall editing."
+                : "Focused seat assignment canvas."
+          }
+        >
+          <div className="grid gap-4">
+            <div className="rounded-[1rem] border border-[var(--lp-border)] bg-white p-4">
+              {workspaceMode === "setup" ? (
+                <div className="grid gap-2 text-sm leading-7 text-[var(--lp-muted)]">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-primary)]">Setup steps</p>
+                  <p>① Floor tab → Floor create karo (e.g. "Ground Floor")</p>
+                  <p>② Bank tab → Seat prefix, count set karke bulk seats banao</p>
+                  <p>③ Single tab → Koi specific seat manually add karo</p>
+                  <p className="text-xs text-slate-400">Setup ke baad Layout mode mein jao aur room arrange karo.</p>
+                </div>
+              ) : workspaceMode === "layout" ? (
+                <div className="grid gap-2 text-sm leading-7 text-[var(--lp-muted)]">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-primary)]">Layout tips</p>
+                  <p>① Move tool → Seat drag karke position change karo</p>
+                  <p>② Aisle tool → Empty cells par click karke passage mark karo</p>
+                  <p>③ Paint tool → Seats ko section color se group karo</p>
+                  <p>④ Room presets → One-click layout apply karo neeche se</p>
+                </div>
+              ) : (
+                <div className="grid gap-2 text-sm leading-7 text-[var(--lp-muted)]">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-primary)]">Assign steps</p>
+                  <p>① Ribbon → Students tab → Student choose karo ya drag karo</p>
+                  <p>② Canvas pe occupied seat par drop karo assignment update ke liye</p>
+                  <p>③ Seat drawer mein "Allot" button bhi use kar sakte ho</p>
+                </div>
+              )}
+            </div>
+
+            {workspaceMode === "layout" ? (
+            <div className="grid gap-4">
+              <div>
+                <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-muted)]">Active tool</p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["move", "Move seats", "Drag ya click karke position change karo"],
+                    ["aisle", "Mark aisle", "Empty cells click karke passage banao"],
+                    ["paint", "Paint zone", "Seats click karke section color lagao"],
+                  ] as const).map(([value, label, hint]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setPlannerTool(value as typeof plannerTool)}
+                      className={`rounded-[1rem] px-4 py-3 text-left transition ${plannerTool === value ? "bg-slate-900 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)] hover:border-slate-400"}`}
+                    >
+                      <p className="text-xs font-black uppercase tracking-[0.14em]">{label}</p>
+                      <p className={`mt-0.5 text-[10px] ${plannerTool === value ? "text-white/65" : "text-slate-500"}`}>{hint}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {plannerTool === "paint" ? (
+                <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                  <input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name (e.g. Girls Zone)" />
+                  <input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-20 rounded-[1rem] border border-[var(--lp-border)] bg-white p-1" />
+                </div>
+              ) : null}
+              <div>
+                <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-muted)]">Room layout presets</p>
+                <div className="grid gap-3 xl:grid-cols-3">
+                  {roomLayoutPresets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => selectedFloorId && void applyRoomLayoutPreset(selectedFloorId, preset)}
+                      disabled={!selectedFloorId}
+                      className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4 text-left shadow-[0_12px_24px_rgba(15,23,42,0.06)] transition hover:border-[var(--lp-primary)] hover:shadow-[0_16px_28px_rgba(210,114,61,0.12)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-[var(--lp-text)]">{preset.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-[var(--lp-muted)]">{preset.subtitle}</p>
+                        </div>
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--lp-primary)] text-lg font-black text-white">+</span>
+                      </div>
+                      <div className="mt-3 rounded-[1rem] bg-[#f7f4ee] p-3">
+                        <RoomLayoutThumbnail presetId={preset.id} />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em]" style={{ backgroundColor: `${preset.sectionColor}33`, color: preset.sectionColor }}>
+                          {preset.sectionName}
+                        </span>
+                        <span className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--lp-primary)]">Apply layout</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {!selectedFloorId ? <p className="mt-2 text-xs text-amber-600">Pehle ek floor select karo tab preset apply hoga.</p> : null}
+              </div>
+            </div>
+            ) : null}
+
+            <div className="grid gap-3 md:grid-cols-2">
+              {["AVAILABLE", "OCCUPIED", "RESERVED", "DISABLED"].map((status) => (
+                <div key={status} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-2.5 md:px-4 md:py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">{status}</p>
+                  <p className="mt-2 text-2xl md:text-3xl font-black text-slate-950">{totals[status] ?? 0}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DashboardCard>
+
+        {workspaceMode === "assign" ? (
+        <DashboardCard title="Assignment tray" subtitle="Student select karo, phir seat par drop karo.">
+          <div className="grid gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-black text-slate-950">Student tray</p>
+                <p className="mt-1 text-sm text-slate-500">Active allotment ke time hi isko kholo.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssignmentTrayOpen((current) => !current)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+              >
+                {assignmentTrayOpen ? "Hide tray" : "Open tray"}
+              </button>
+            </div>
+            {assignmentTrayOpen ? (
+              <>
+                <select
+                  value={selectedAssignmentId}
+                  onChange={(event) => setSelectedAssignmentId(event.target.value)}
+                  className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 md:px-4 md:py-4 outline-none"
+                >
+                  <option value="">Select student assignment</option>
+                  {availableStudents.map((student) => (
+                    <option key={student.assignment_id} value={student.assignment_id}>
+                      {student.student_name} | {student.seat_number ?? "No seat"} | {student.plan_name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="max-h-[24rem] overflow-auto rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                  <div className="space-y-3">
+                    {availableStudents.map((student) => (
+                      <div
+                        key={student.assignment_id}
+                        draggable
+                        onDragStart={(event) => {
+                          event.dataTransfer.setData("text/assignment-id", student.assignment_id);
+                          setSelectedAssignmentId(student.assignment_id);
+                          const preview = makeSeatDragPreview(student.student_name);
+                          event.dataTransfer.setDragImage(preview, 54, 36);
+                          window.setTimeout(() => preview.remove(), 0);
+                        }}
+                        className={`cursor-grab rounded-[1rem] border px-4 py-3 active:cursor-grabbing ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-primary)] bg-[#fff7ef]" : "border-slate-200 bg-white"}`}
+                      >
+                        <p className="font-black text-slate-950">{student.student_name}</p>
+                        <p className="text-sm text-slate-500">
+                          {student.seat_number ?? "No seat"} | {student.plan_name}
+                        </p>
+                        <p className="text-xs text-slate-400">{student.payment_status} - Valid till {student.ends_at}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-[1rem] border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                Tray hidden hai. Allotment ke time open karo.
+              </div>
+            )}
+          </div>
+        </DashboardCard>
+        ) : (
+          <DashboardCard title="Focused inspector" subtitle="Selection details quietly yahin appear hongi.">
+            <div className="grid gap-3">
+              <p className="text-sm leading-7 text-slate-600">
+                {workspaceMode === "setup"
+                  ? "Setup mode me yeh panel selection summary dikhayega. Floor aur seat structure ready karne ke baad layout ya assign mode me shift karo."
+                  : "Layout mode me ek seat select karke uski properties aur fine controls yahan dekh sakte ho."}
+              </p>
+              <div className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-2.5 md:px-4 md:py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Selection</p>
+                <p className="mt-2 text-lg font-black text-[var(--lp-text)]">{selectedSeat?.seat_number ?? "No seat selected"}</p>
+                <p className="mt-1 text-sm text-slate-500">{selectedSeat ? `${selectedSeat.floor_name ?? "Main floor"} | ${selectedSeat.section_name ?? "Main section"}` : "Canvas se ek seat choose karo."}</p>
+              </div>
+            </div>
+          </DashboardCard>
+        )}
+      </section>
+
+      <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-[var(--lp-text)]">Seat filters</p>
+            <p className="mt-1 text-sm text-slate-500">Keep filters closed unless you need a narrower view.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-[#fff4eb] px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-primary)]">
+              {seatFilter}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSeatFiltersOpen((current) => !current)}
+              className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+            >
+              {seatFiltersOpen ? "Hide filters" : "Show filters"}
+            </button>
+          </div>
+        </div>
+        {seatFiltersOpen ? (
+          <div className="mt-4 grid gap-3">
+            <div className="flex flex-wrap gap-3">
+              {[
+                ["ALL", "All seats"],
+                ["AVAILABLE", "Free"],
+                ["OCCUPIED", "Occupied"],
+                ["RESERVED", "Reserved"],
+                ["DUE", "Due students"],
+                ["EXPIRING", "Expiring soon"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSeatFilter(value as typeof seatFilter)}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                    seatFilter === value ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {rooms.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--lp-accent)]">Room filter:</p>
+                <button
+                  type="button"
+                  onClick={() => setFilterRoomId("")}
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold ${filterRoomId === "" ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+                >
+                  All rooms
+                </button>
+                {rooms.map((room) => (
+                  <button
+                    key={room.id}
+                    type="button"
+                    onClick={() => setFilterRoomId(room.id)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${filterRoomId === room.id ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}
+                  >
+                    {room.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <section id="seat-planner" className="grid gap-3 md:gap-6 xl:grid-cols-[1.22fr_0.78fr]">
+        <div className="grid gap-3 md:gap-6">
+          {floorCards.length > 1 ? (
+            <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-white px-3 py-2.5 md:px-4 md:py-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">Floor switcher</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-black text-slate-950">{activeFloorCard?.floor.name ?? "No floor selected"}</span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      {activeFloorCard ? `${activeFloorCard.seats.length} seats` : "0 seats"}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      {activeFloorCard ? `${activeFloorCard.columns} x ${activeFloorCard.rows}` : "--"}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFloorSwitcherOpen((current) => !current)}
+                  className="rounded-full border border-[var(--lp-border)] bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                >
+                  {floorSwitcherOpen ? "Hide floors" : "Switch floor"}
+                </button>
+              </div>
+              {floorSwitcherOpen ? (
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--lp-border)] pt-3">
+                  {floorCards.map((item) => {
+                    const active = activeFloorCard?.floor.id === item.floor.id;
+                    return (
+                      <button
+                        key={item.floor.id}
+                        type="button"
+                        onClick={() => setSelectedFloorId(item.floor.id)}
+                        className={`rounded-full border px-3 py-2 text-left transition ${
+                          active
+                            ? "border-[var(--lp-primary)] bg-[#fff1e6] text-[var(--lp-primary)]"
+                            : "border-[var(--lp-border)] bg-white text-[var(--lp-text)]"
+                        }`}
+                      >
+                        <span className="text-sm font-black">{item.floor.name}</span>
+                        <span className="ml-2 text-[10px] font-bold uppercase tracking-[0.12em] opacity-70">
+                          {item.seats.length} seats
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {visibleFloorCards.map((item) => {
+            const draft = floorDrafts[item.floor.id] ?? {
+              name: item.floor.name,
+              layoutRows: item.floor.layout_rows,
+              layoutColumns: item.floor.layout_columns,
+            };
+            const zones = Array.from(new Set(item.seats.map((seat) => inferZone(seat))));
+            const aisleCells = new Set(floorMetaDrafts[item.floor.id]?.aisleCells ?? item.floor.layout_meta?.aisleCells ?? []);
+            const sectionColors = floorMetaDrafts[item.floor.id]?.sectionColors ?? item.floor.layout_meta?.sectionColors ?? {};
+            const seatByCell = new Map(item.seats.map((seat) => [`${seat.pos_x}-${seat.pos_y}`, seat]));
+            const cells = Array.from({ length: item.rows * item.columns }, (_, index) => {
+              const y = Math.floor(index / item.columns) + 1;
+              const x = (index % item.columns) + 1;
+              return { x, y, key: `${x}-${y}`, seat: seatByCell.get(`${x}-${y}`) };
+            });
+
+            return (
+              <DashboardCard key={item.floor.id} title="Active floor workspace" subtitle="Only one floor stays open, so the planner feels lighter and easier to edit.">
+                <div className="grid gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-slate-50 px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-[var(--lp-text)]">{item.floor.name}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                        <span className="rounded-full bg-white px-2.5 py-1">{item.columns} cols</span>
+                        <span className="rounded-full bg-white px-2.5 py-1">{item.rows} rows</span>
+                        <span className="rounded-full bg-white px-2.5 py-1">{item.seats.length} seats</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {item.floor.id !== "main-floor" ? (
+                        <button
+                          type="button"
+                          onClick={() => setHallSettingsOpen((current) => !current)}
+                          className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                        >
+                          {hallSettingsOpen ? "Hide hall" : "Hall settings"}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setPlannerLegendOpen((current) => !current)}
+                        className="rounded-full border border-[var(--lp-border)] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-primary)]"
+                      >
+                        {plannerLegendOpen ? "Hide legend" : "Show legend"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {item.floor.id !== "main-floor" ? (
+                    <div className={`grid gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-white p-3 md:grid-cols-[1.2fr_0.7fr_0.7fr_auto] ${hallSettingsOpen ? "" : "hidden"}`}>
+                      <input
+                        value={draft.name}
+                        onChange={(event) => updateFloorDraft(item.floor.id, { name: event.target.value })}
+                        className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none"
+                        placeholder="Floor name"
+                      />
+                      <input
+                        type="number"
+                        value={draft.layoutColumns}
+                        onChange={(event) => updateFloorDraft(item.floor.id, { layoutColumns: Number(event.target.value) || 1 })}
+                        className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none"
+                        placeholder="Columns"
+                      />
+                      <input
+                        type="number"
+                        value={draft.layoutRows}
+                        onChange={(event) => updateFloorDraft(item.floor.id, { layoutRows: Number(event.target.value) || 1 })}
+                        className="rounded-[1rem] border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none"
+                        placeholder="Rows"
+                      />
+                      <button type="button" onClick={() => void saveFloorLayout(item.floor.id)} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">
+                        Save hall
+                      </button>
+                    </div>
+                  ) : null}
+
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[42rem] rounded-[1.75rem] border border-[var(--lp-border)] bg-[radial-gradient(circle_at_top,#ffffff_0%,#fcf7ef_100%)] p-4">
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lp-muted)]">Floor Planner</p>
+                          <p className="text-sm text-slate-500">{item.columns} columns • {item.rows} rows • drag seats to design the room</p>
+                        </div>
+                        <button type="button" onClick={() => setSelectedFloorId(item.floor.id)} className={`rounded-full px-4 py-2 text-xs font-bold ${selectedFloorId === item.floor.id ? "bg-[var(--lp-primary)] text-white" : "border border-[var(--lp-border)] bg-white text-[var(--lp-text)]"}`}>
+                          {selectedFloorId === item.floor.id ? "Editing this floor" : "Use this floor"}
+                        </button>
+                      </div>
+
+                      {plannerLegendOpen ? (
+                        <>
+                          <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                            <span className="rounded-full bg-emerald-100 px-3 py-2 text-emerald-700">Free desk</span>
+                            <span className="rounded-full bg-rose-100 px-3 py-2 text-rose-700">Occupied desk</span>
+                            <span className="rounded-full bg-amber-100 px-3 py-2 text-amber-700">Reserved desk</span>
+                            <span className="rounded-full bg-slate-200 px-3 py-2 text-slate-600">Aisle / empty tile</span>
+                            {message ? <span className="rounded-full bg-[#fff4eb] px-3 py-2 text-[var(--lp-primary)]">Saved: {message}</span> : null}
+                          </div>
+
+                          <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                            {zones.map((zone) => (
+                              <span key={zone} className={`rounded-full px-3 py-2 ${getZoneTone(zone)}`}>
+                                {zone}
+                              </span>
+                            ))}
+                          </div>
+
+                          {Object.keys(sectionColors).length > 0 ? (
+                            <div className="mb-4 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                              <div className="mb-2 flex items-center justify-between">
+                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-muted)]">Section Legend</p>
+                                <span className="text-[11px] text-slate-500">Tap chip to load color</span>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {Object.entries(sectionColors).map(([section, color]) => (
+                                  <div key={section} className="flex items-center gap-2 rounded-full border border-[var(--lp-border)] bg-[#fffaf4] px-2 py-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPaintSectionName(section);
+                                        setPaintSectionColor(color);
+                                        setPlannerTool("paint");
+                                      }}
+                                      className="rounded-full px-3 py-1 text-[11px] font-bold text-white"
+                                      style={{ backgroundColor: color }}
+                                    >
+                                      {section}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteSectionColor(item.floor.id, section)}
+                                      className="rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-rose-600"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </>
+                      ) : null}
+
+                      <div
+                        className="grid gap-2 rounded-[1.5rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-3"
+                        style={{ gridTemplateColumns: `repeat(${item.columns}, minmax(${getPlannerColumnWidth(item.columns)}px, 1fr))` }}
+                      >
+                        {cells.map((cell) => {
+                          const seat = cell.seat;
+                          const isAisleCell = aisleCells.has(cell.key);
+                          const seatShape = seat ? inferSeatShape(seat) : "Study Desk";
+                          return (
+                            <div
+                              key={cell.key}
+                              onMouseDown={() => {
+                                if (plannerTool === "aisle" && item.floor.id === "main-floor") {
+                                  setError("Aisle tool sirf named floors par kaam karta hai. Pehle Setup → Floor tab se ek floor create karo.");
+                                  return;
+                                }
+                                if (plannerTool === "aisle" && !seat && item.floor.id !== "main-floor") {
+                                  const mode = isAisleCell ? "remove" : "add";
+                                  updateAisleDraft(item.floor.id, cell.key, mode);
+                                  setActiveAislePaint({ floorId: item.floor.id, mode });
+                                }
+                              }}
+                              onClick={() => {
+                                if (plannerTool !== "aisle" && layoutMode && selectedSeat && !seat) {
+                                  void moveSeatToPosition(selectedSeat.id, cell.x, cell.y);
+                                  return;
+                                }
+
+                                if (plannerTool !== "aisle" && !selectedSeat && !seat && !isAisleCell && workspaceMode !== "assign") {
+                                  void createSeatAtCell(item.floor.id, cell.x, cell.y);
+                                }
+                              }}
+                              onDragOver={(event) => {
+                                event.preventDefault();
+                                setHoverCellKey(cell.key);
+                              }}
+                              onMouseEnter={() => {
+                                if (activeAislePaint?.floorId === item.floor.id && !seat) {
+                                  updateAisleDraft(item.floor.id, cell.key, activeAislePaint.mode);
+                                }
+                              }}
+                              onDragLeave={() => {
+                                if (hoverCellKey === cell.key) {
+                                  setHoverCellKey(null);
+                                }
+                              }}
+                              onDrop={(event) => {
+                                event.preventDefault();
+                                const assignmentId = event.dataTransfer.getData("text/assignment-id");
+                                const sourceSeatId = event.dataTransfer.getData("text/seat-id");
+
+                                if (assignmentId && seat) {
+                                  setSelectedAssignmentId(assignmentId);
+                                  setSelectedSeatId(seat.id);
+                                  void assignSeat(seat.id);
+                                  return;
+                                }
+
+                                if (assignmentId && !seat && !isAisleCell) {
+                                  setError("Is empty cell mein seat nahi hai. Pehle + button se seat banao, phir student drop karo.");
+                                  return;
+                                }
+
+                                if (sourceSeatId && seat) {
+                                  setSelectedSeatId(seat.id);
+                                  void swapSeatPositions(sourceSeatId, seat.id);
+                                  return;
+                                }
+
+                                if (sourceSeatId && !seat) {
+                                  void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
+                                }
+                              }}
+                            className={`relative min-h-[4rem] rounded-[0.85rem] border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : ""} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                            >
+                              {seat ? (
+                                <button
+                                  draggable
+                                  onClick={() => {
+                                    if (plannerTool === "paint") {
+                                      void paintSeatSection(seat);
+                                      return;
+                                    }
+                                    setSelectedSeatId(seat.id);
+                                    setSelectedFloorId(item.floor.id);
+                                  }}
+                                  onDragStart={(event) => {
+                                    event.dataTransfer.setData("text/seat-id", seat.id);
+                                    setDragSeatId(seat.id);
+                                    const preview = makeSeatDragPreview(seat.seat_number);
+                                    event.dataTransfer.setDragImage(preview, 54, 36);
+                                    window.setTimeout(() => preview.remove(), 0);
+                                  }}
+                                  onDragEnd={() => setDragSeatId(null)}
+                                  className={`group relative flex h-full w-full flex-col items-center overflow-visible rounded-[1.1rem] border px-1.5 py-1.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.12)] ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "ring-2 ring-[var(--lp-primary)]" : ""} ${dragSeatId === seat.id ? "opacity-70" : ""} ${recentlyMovedSeatId === seat.id ? "animate-pulse ring-2 ring-emerald-400" : ""}`}
+                                  style={sectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${sectionColors[seat.section_name ?? ""]} inset` } : undefined}
+                                >
+                                  <div className="flex w-full items-center justify-between gap-1">
+                                    <span className="text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
+                                    <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] ${
+                                      seat.status === "AVAILABLE"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : seat.status === "OCCUPIED"
+                                          ? "bg-rose-100 text-rose-700"
+                                          : seat.status === "RESERVED"
+                                            ? "bg-amber-100 text-amber-700"
+                                          : "bg-slate-200 text-slate-600"
+                                    }`}>
+                                      {seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Sold" : seat.status === "RESERVED" ? "Hold" : "Off"}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 flex min-h-[2.8rem] w-full items-center justify-center rounded-[0.95rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.82))] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
+                                    <SeatPodIcon status={seat.status} occupied={Boolean(seat.student_name)} />
+                                  </div>
+                                  <div className="mt-1 flex w-full items-center justify-between gap-1">
+                                    <span className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.12em] text-slate-500 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">
+                                      {seatShape === "Study Desk" ? "Desk" : seatShape === "Wall Desk" ? "Wall" : "Cabin"}
+                                    </span>
+                                    {seat.student_name ? (
+                                      <p className="rounded-full bg-slate-900 px-2 py-0.5 text-[7px] font-black text-white shadow-[0_6px_12px_rgba(15,23,42,0.16)]">{formatStudentInitials(seat.student_name)}</p>
+                                    ) : <p className="rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.1em] text-slate-400 shadow-[0_4px_8px_rgba(15,23,42,0.06)]">Open</p>}
+                                  </div>
+                                  <div className="pointer-events-none absolute left-1/2 top-[calc(100%+12px)] z-50 hidden w-60 -translate-x-1/2 overflow-hidden rounded-[1.1rem] border border-white/15 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0.92))] p-0 text-left text-white shadow-[0_22px_44px_rgba(15,23,42,0.34)] backdrop-blur-xl group-hover:block">
+                                    <div className="h-1.5 w-full" style={{ backgroundColor: getZoneAccent(inferZone(seat)) }} />
+                                    <div className="p-3">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div>
+                                        <p className="text-sm font-black">{seat.seat_number}</p>
+                                        <p className="text-[11px] uppercase tracking-[0.14em] text-slate-300">{describeSeatState(seat)}</p>
+                                      </div>
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white backdrop-blur-sm">
+                                        <SeatStatusGlyph status={seat.status} />
+                                        {seat.status}
+                                      </span>
+                                    </div>
+                                    <div className="mt-3 flex items-center gap-2">
+                                      <span
+                                        className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/95"
+                                        style={{ backgroundColor: `${getZoneAccent(inferZone(seat))}55` }}
+                                      >
+                                        {inferZone(seat)}
+                                      </span>
+                                      <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/90">
+                                        {seatShape}
+                                      </span>
+                                    </div>
+                                    <div className="mt-3 grid gap-2 text-[11px] leading-5 text-slate-200">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Floor</span>
+                                        <span className="font-semibold text-white">{seat.floor_name ?? "Main floor"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Section</span>
+                                        <span className="font-semibold text-white">{seat.section_name ?? "Main section"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Student</span>
+                                        <span className="font-semibold text-white">{seat.student_name ?? "Not assigned"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Plan</span>
+                                        <span className="font-semibold text-white">{seat.plan_name ?? "Not allotted"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Payment</span>
+                                        <span className="font-semibold text-white">{seat.payment_status ?? "-"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Valid till</span>
+                                        <span className="font-semibold text-white">{formatSeatDateTime(seat.ends_at)}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="uppercase tracking-[0.14em] text-slate-400">Check-in</span>
+                                        <span className="font-semibold text-white">{formatSeatDateTime(seat.last_check_in_at)}</span>
+                                      </div>
+                                    </div>
+                                    </div>
+                                    <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-l border-t border-slate-200 bg-[rgba(15,23,42,0.96)]" />
+                                  </div>
+                                </button>
+                              ) : (
+                                <div className={`flex h-full flex-col items-center justify-center rounded-[0.8rem] p-1.5 text-[9px] text-slate-400 ${layoutMode ? "animate-pulse" : ""} ${isAisleCell ? "bg-transparent" : "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,240,231,0.92))]"}`}>
+                                  <span className="text-[8px] font-semibold uppercase tracking-[0.12em]">{isAisleCell ? "Aisle" : "Empty"}</span>
+                                  {!isAisleCell && workspaceMode !== "assign" ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          void createSeatAtCell(item.floor.id, cell.x, cell.y);
+                                        }}
+                                        className="mt-1 rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-center text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]"
+                                        aria-label={`Create seat at X${cell.x} Y${cell.y}`}
+                                      >
+                                        +
+                                      </button>
+                                      <span className="mt-1 text-[7px] font-semibold text-[var(--lp-primary)]">Create</span>
+                                    </>
+                                  ) : (
+                                    <div className="mt-1 flex flex-col items-center gap-1">
+                                      <span className={`rounded-full px-2 py-1 text-[7px] font-black uppercase tracking-[0.12em] ${selectedAssignmentId ? "bg-[var(--lp-primary)] text-white" : "bg-slate-200 text-slate-600"}`}>
+                                        Student assign
+                                      </span>
+                                      <span className="text-[8px]">{selectedAssignmentId ? "Drop student" : "Select student"}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </DashboardCard>
+            );
+          })}
+          {!loading && floorCards.length === 0 ? (
+            <DashboardCard title="Library abhi empty hai" subtitle="3 steps mein seat planner ready ho jata hai.">
+              <div className="grid gap-4">
+                <div className="rounded-[1.25rem] border border-dashed border-[var(--lp-border)] bg-[#fff9f2] px-5 py-5">
+                  <p className="text-sm font-black text-slate-950">Quick start guide</p>
+                  <ol className="mt-3 grid gap-3 text-sm leading-7 text-slate-600">
+                    <li className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--lp-primary)] text-xs font-black text-white">1</span>
+                      <span><span className="font-bold text-slate-800">Setup mode → Floor tab</span> — pehle ek floor banao (e.g. "Ground Floor", rows: 6, columns: 8)</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--lp-primary)] text-xs font-black text-white">2</span>
+                      <span><span className="font-bold text-slate-800">Setup mode → Bank tab</span> — floor choose karo, prefix "A", count 30, bank create karo</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--lp-primary)] text-xs font-black text-white">3</span>
+                      <span><span className="font-bold text-slate-800">Layout mode</span> — room layout preset apply karo ya seats drag karke arrange karo</span>
+                    </li>
+                  </ol>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setWorkspaceMode("setup"); setRibbonTab("floor"); setSetupRibbonOpen(true); }}
+                  className="rounded-[1rem] bg-[var(--lp-primary)] px-5 py-3 text-sm font-semibold text-white"
+                >
+                  Floor banao (Step 1 start karo) →
+                </button>
+              </div>
+            </DashboardCard>
+          ) : null}
+        </div>
+
+        <div className="grid gap-3 md:gap-6 xl:sticky xl:top-[156px] xl:self-start">
+          <DashboardCard title="Seat drawer" subtitle="Selected seat ki summary aur controls yahin rahenge.">
+            <div className="grid gap-4">
+              {selectedSeat ? (
+                <>
+                  <div className="rounded-[1.25rem] border border-[var(--lp-border)] bg-[#fff7ef] px-3 py-2.5 md:px-4 md:py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-black text-[var(--lp-text)]">{selectedSeat.seat_number}</p>
+                        <p className="text-sm text-[var(--lp-muted)]">{selectedSeat.floor_name ?? "Main floor"} - {selectedSeat.section_name ?? "Main section"}</p>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--lp-accent)]">
+                        {selectedSeat.status}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">{formatReserveTimer(selectedSeat.reserved_until)}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
+                        {selectedSeat.floor_name ?? "Main floor"}
+                      </span>
+                      <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
+                        {selectedSeat.section_name ?? "Main section"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 rounded-[1rem] border border-[var(--lp-border)] bg-white px-3 py-2.5 md:px-4 md:py-4 text-sm text-slate-600">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Occupant</span>
+                      <span className="text-sm font-bold text-slate-950">{selectedSeat.student_name ?? "Not assigned"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Plan</span>
+                      <span className="text-sm font-bold text-slate-950">{selectedSeat.plan_name ?? "Not allotted"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Payment</span>
+                      <span className="text-sm font-bold text-slate-950">{selectedSeat.payment_status ?? "-"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Valid till</span>
+                      <span className="text-sm font-bold text-slate-950">{selectedSeat.ends_at ?? "-"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Last check-in</span>
+                      <span className="text-sm font-bold text-slate-950">
+                        {selectedSeat.last_check_in_at ? new Date(selectedSeat.last_check_in_at).toLocaleString() : "No entry yet"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-black text-slate-950">Seat controls</p>
+                      <p className="mt-1 text-sm text-slate-500">Advanced actions hidden by default rakhe hain.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setInspectorControlsOpen((current) => !current)}
+                      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700"
+                    >
+                      {inspectorControlsOpen ? "Hide controls" : "Open controls"}
+                    </button>
+                  </div>
+
+                  {inspectorControlsOpen ? (
+                    <>
+                      <input value={drawerSeatCode} onChange={(event) => setDrawerSeatCode(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 md:px-4 md:py-4 outline-none" placeholder="Seat code" />
+                      <input value={drawerSectionName} onChange={(event) => setDrawerSectionName(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 md:px-4 md:py-4 outline-none" placeholder="Room / section" />
+                      {(workspaceMode === "layout" || selectedSeat.status === "RESERVED") ? (
+                        <input type="datetime-local" value={drawerReservedUntil} onChange={(event) => setDrawerReservedUntil(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 md:px-4 md:py-4 outline-none" />
+                      ) : null}
+
+                      {workspaceMode !== "setup" ? (
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <input value={selectedSeat.pos_x} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 md:px-4 md:py-4 outline-none" placeholder="Pos X" />
+                        <input value={selectedSeat.pos_y} readOnly className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 md:px-4 md:py-4 outline-none" placeholder="Pos Y" />
+                      </div>
+                      ) : null}
+
+                      {workspaceMode === "layout" ? (
+                      <div className="grid grid-cols-3 gap-3 rounded-[1.25rem] border border-[var(--lp-border)] bg-white p-3">
+                        <div />
+                        <button type="button" onClick={() => void nudgeSelectedSeat(0, -1)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Up</button>
+                        <div />
+                        <button type="button" onClick={() => void nudgeSelectedSeat(-1, 0)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Left</button>
+                        <button type="button" onClick={() => void moveSeatToPosition(selectedSeat.id, selectedSeat.pos_x, selectedSeat.pos_y)} className="rounded-[1rem] bg-[#eff7f0] px-3 py-3 text-sm font-semibold text-[var(--lp-primary)]">Save pos</button>
+                        <button type="button" onClick={() => void nudgeSelectedSeat(1, 0)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Right</button>
+                        <div />
+                        <button type="button" onClick={() => void nudgeSelectedSeat(0, 1)} className="rounded-[1rem] border border-[var(--lp-border)] px-3 py-3 text-sm font-semibold">Down</button>
+                        <div />
+                      </div>
+                      ) : null}
+
+                      <div className="grid gap-3 md:grid-cols-2">
+                    <button type="button" onClick={() => void updateSeatAction("RESERVED")} className="rounded-[1rem] bg-amber-500 px-4 py-3 text-sm font-semibold text-white">Reserve till</button>
+                    <button type="button" onClick={() => void updateSeatAction("DISABLED")} className="rounded-[1rem] bg-slate-900 px-4 py-3 text-sm font-semibold text-white">Block seat</button>
+                    <button type="button" onClick={() => void updateSeatAction("AVAILABLE", true)} className="rounded-[1rem] border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--lp-text)]">Mark free</button>
+                    <button type="button" onClick={() => void updateSeatAction(selectedSeat.status as "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DISABLED")} className="rounded-[1rem] border border-[var(--lp-border)] bg-[#eff7f0] px-4 py-3 text-sm font-semibold text-[var(--lp-primary)]">Save edits</button>
+                  </div>
+                      {selectedAssignmentId ? (
+                        <button type="button" onClick={() => void assignSeat(selectedSeat.id)} className="rounded-[1rem] bg-[var(--lp-primary)] px-4 py-3 text-sm font-semibold text-white">
+                          Allot selected student to this seat
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => void deleteSeat()}
+                        className="rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+                      >
+                        Delete this seat
+                      </button>
+                    </>
+                  ) : null}
+
+                </>
+              ) : (
+                <p className="text-sm leading-7 text-slate-600">Seat pod select karo. Yahin se hall planner ke exact controls milenge.</p>
+              )}
+
+              {message ? <p className="text-sm font-semibold text-emerald-700">{message}</p> : null}
+              {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+              {loading ? <p className="text-sm text-slate-500">Loading live seat map...</p> : null}
+            </div>
+          </DashboardCard>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+
+

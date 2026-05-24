@@ -1,0 +1,20 @@
+[Unit]
+Description=LibraryPro API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=librarypro
+Group=librarypro
+WorkingDirectory=/opt/librarypro/app
+EnvironmentFile=/opt/librarypro/app/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run start -w @librarypro/api
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+SyslogIdentifier=librarypro-api
+
+[Install]
+WantedBy=multi-user.target

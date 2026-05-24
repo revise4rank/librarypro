@@ -1,0 +1,21 @@
+[Unit]
+Description=LibraryPro Web
+After=network.target librarypro-api.service
+Wants=librarypro-api.service
+
+[Service]
+Type=simple
+User=librarypro
+Group=librarypro
+WorkingDirectory=/opt/librarypro/app
+EnvironmentFile=/opt/librarypro/app/.env
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStart=/usr/bin/npm run start -w @librarypro/web -- -p 3000 -H 127.0.0.1
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+SyslogIdentifier=librarypro-web
+
+[Install]
+WantedBy=multi-user.target

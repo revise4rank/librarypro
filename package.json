@@ -1,0 +1,23 @@
+{
+  "name": "librarypro",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @librarypro/api && npm run build -w @librarypro/web",
+    "test": "npm run test -w @librarypro/api",
+    "ci": "npm run test && npm run build",
+    "e2e:smoke": "node scripts/e2e-smoke.mjs",
+    "audit:routes": "node scripts/ui-route-audit.mjs",
+    "audit:deep-ui": "node scripts/deep-ui-audit.mjs",
+    "perf:smoke": "node scripts/perf-scale-smoke.mjs",
+    "qa:mobile": "node scripts/mobile-qa.mjs"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "autocannon": "^8.0.0",
+    "playwright": "^1.59.1"
+  }
+}

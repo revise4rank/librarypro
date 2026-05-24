@@ -1,0 +1,13 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="40" fill="#E7F2E8"/>
+  <rect x="80" y="80" width="1040" height="560" rx="30" fill="#F8FCF8"/>
+  <rect x="140" y="160" width="920" height="120" rx="24" fill="#D2E6D5"/>
+  <rect x="180" y="350" width="840" height="180" rx="28" fill="#C0DCC6"/>
+  <rect x="230" y="220" width="260" height="24" rx="12" fill="#7BA985"/>
+  <rect x="520" y="220" width="320" height="24" rx="12" fill="#8DB897"/>
+  <rect x="870" y="220" width="120" height="24" rx="12" fill="#7BA985"/>
+  <circle cx="280" cy="440" r="58" fill="#F8FCF8"/>
+  <circle cx="920" cy="440" r="58" fill="#F8FCF8"/>
+  <text x="140" y="600" fill="#355A3E" font-family="Arial, sans-serif" font-size="42" font-weight="700">Reception</text>
+  <text x="140" y="640" fill="#5B7762" font-family="Arial, sans-serif" font-size="22">Entry desk, QR scan point, and owner-controlled access counter</text>
+</svg>
