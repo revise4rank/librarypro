@@ -15,15 +15,17 @@ type BookRequest = {
   subject: string | null;
   message: string | null;
   toc_image_url: string | null;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "FULFILLED";
+  status: "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED" | "FULFILLED";
   created_at: string;
   reviewed_at?: string | null;
+  linked_global_book_id?: string | null;
 };
 
-const statusOptions = ["ALL", "PENDING", "APPROVED", "FULFILLED", "REJECTED"] as const;
+const statusOptions = ["ALL", "PENDING", "IN_REVIEW", "APPROVED", "FULFILLED", "REJECTED"] as const;
 type StatusFilter = (typeof statusOptions)[number];
 
 const actions: Array<{ status: BookRequest["status"]; label: string; className: string }> = [
+  { status: "IN_REVIEW", label: "Review", className: "border-blue-200 bg-blue-50 text-blue-700" },
   { status: "APPROVED", label: "Approve", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
   { status: "FULFILLED", label: "Mark added", className: "border-[var(--lp-primary)] bg-[var(--lp-primary-soft)] text-[var(--lp-primary)]" },
   { status: "REJECTED", label: "Reject", className: "border-rose-200 bg-rose-50 text-rose-700" },
@@ -45,6 +47,7 @@ export function SuperadminBookRequestsManager() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [linkBookIds, setLinkBookIds] = useState<Record<string, string>>({});
 
   async function loadRequests() {
     setLoading(true);
@@ -84,6 +87,27 @@ export function SuperadminBookRequestsManager() {
     }
   }
 
+  async function linkBookRequest(requestId: string) {
+    const bookId = linkBookIds[requestId]?.trim();
+    if (!bookId) {
+      setError("Paste the global book id before linking.");
+      return;
+    }
+    try {
+      setUpdatingId(requestId);
+      await apiFetch(`/admin/book-requests/${requestId}/link-book`, {
+        method: "PATCH",
+        body: JSON.stringify({ bookId }),
+      });
+      setMessage("Book request linked and fulfilled.");
+      await loadRequests();
+    } catch (linkError) {
+      setError(linkError instanceof Error ? linkError.message : "Unable to link book.");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   return (
     <div className="grid gap-4">
       {error ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">{error}</p> : null}
@@ -91,6 +115,7 @@ export function SuperadminBookRequestsManager() {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Pending" value={countByStatus(rows, "PENDING")} note="Needs superadmin review." />
+        <StatCard label="In review" value={countByStatus(rows, "IN_REVIEW")} note="Being converted into a tracker." />
         <StatCard label="Approved" value={countByStatus(rows, "APPROVED")} note="Accepted for sourcing." />
         <StatCard label="Added" value={countByStatus(rows, "FULFILLED")} note="Closed after completion." />
         <StatCard label="Rejected" value={countByStatus(rows, "REJECTED")} note="Not planned right now." />
@@ -116,11 +141,11 @@ export function SuperadminBookRequestsManager() {
                   ) : null}
                   <button
                     type="button"
-                    onClick={() => void updateBookRequest(request.id, "APPROVED")}
+                    onClick={() => void updateBookRequest(request.id, "IN_REVIEW")}
                     disabled={updatingId === request.id}
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 disabled:opacity-50"
+                    className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 disabled:opacity-50"
                   >
-                    Approve
+                    Review
                   </button>
                   <button
                     type="button"
@@ -168,6 +193,9 @@ export function SuperadminBookRequestsManager() {
                     <span className="rounded-full bg-[var(--lp-surface-muted)] px-3 py-1 text-xs font-black text-[var(--lp-muted)]">{request.status}</span>
                   </div>
                   {request.message ? <p className="mt-3 rounded-lg bg-[var(--lp-surface-muted)] p-3 text-sm leading-6 text-[var(--lp-text)]">{request.message}</p> : null}
+                  {request.linked_global_book_id ? (
+                    <p className="mt-3 rounded-lg bg-emerald-50 p-2 text-xs font-bold text-emerald-700">Linked book: {request.linked_global_book_id}</p>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap gap-2">
                     {request.toc_image_url ? (
                       <a href={request.toc_image_url} target="_blank" className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-bold text-[var(--lp-text)]">
@@ -185,6 +213,22 @@ export function SuperadminBookRequestsManager() {
                         {action.label}
                       </button>
                     ))}
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+                    <input
+                      value={linkBookIds[request.id] ?? ""}
+                      onChange={(event) => setLinkBookIds((current) => ({ ...current, [request.id]: event.target.value }))}
+                      placeholder="Paste global book id after creating it in Syllabus"
+                      className="min-w-0 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-semibold outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void linkBookRequest(request.id)}
+                      disabled={updatingId === request.id}
+                      className="rounded-lg bg-[var(--lp-primary)] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                    >
+                      Link fulfilled book
+                    </button>
                   </div>
                 </article>
               ))}

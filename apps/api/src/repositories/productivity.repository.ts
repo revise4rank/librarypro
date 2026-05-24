@@ -47,6 +47,52 @@ export type GlobalSyllabusSubjectRow = {
   }>;
 };
 
+export type GlobalBookTopicRow = {
+  id: string;
+  chapter_id: string;
+  topic_title: string;
+  topic_order: number;
+  estimated_minutes: number;
+};
+
+export type GlobalBookChapterRow = {
+  id: string;
+  chapter_title: string;
+  chapter_order: number;
+  topics: GlobalBookTopicRow[];
+};
+
+export type GlobalBookRow = {
+  id: string;
+  title: string;
+  author: string | null;
+  class_name: string | null;
+  subject: string | null;
+  language: string | null;
+  status: "DRAFT" | "PUBLISHED" | "UNPUBLISHED";
+  chapter_count: string;
+  topic_count: string;
+  student_count: string;
+  updated_at: string;
+  chapters?: GlobalBookChapterRow[];
+};
+
+export type StudentBookRow = {
+  id: string;
+  book_id: string;
+  title: string;
+  author: string | null;
+  class_name: string | null;
+  subject: string | null;
+  language: string | null;
+  added_at: string;
+  total_topics: string;
+  completed_topics: string;
+  in_progress_topics: string;
+  new_topics_available: string;
+  chapters: GlobalBookChapterRow[];
+};
+
 export type StudentBadgeRow = {
   badge_code: string;
   badge_label: string;
@@ -271,6 +317,202 @@ export class ProductivityRepository {
     return { ...topic, created: true };
   }
 
+  async addBookForStudent(client: PoolClient, input: { studentUserId: string; bookId: string }) {
+    const studentBookResult = await client.query<{ id: string }>(
+      `
+      INSERT INTO student_books (student_user_id, book_id, is_active, last_synced_at, updated_at)
+      VALUES ($1, $2, TRUE, NOW(), NOW())
+      ON CONFLICT (student_user_id, book_id)
+      DO UPDATE SET is_active = TRUE, updated_at = NOW()
+      RETURNING id::text
+      `,
+      [input.studentUserId, input.bookId],
+    );
+    const studentBookId = studentBookResult.rows[0].id;
+    const bookResult = await client.query<{
+      title: string;
+      class_name: string | null;
+      subject: string | null;
+    }>(
+      "SELECT title, class_name, subject FROM global_books WHERE id = $1 AND status = 'PUBLISHED' LIMIT 1",
+      [input.bookId],
+    );
+    const book = bookResult.rows[0] ?? null;
+    if (!book) return { studentBookId, topicsImported: 0 };
+
+    let subject = await this.findSubjectByStudentTitleClass(client, {
+      studentUserId: input.studentUserId,
+      title: book.title,
+      className: book.class_name,
+    });
+    if (!subject) {
+      subject = await this.createSubject(client, {
+        studentUserId: input.studentUserId,
+        title: book.title,
+        className: book.class_name,
+        colorHex: "#10b981",
+      });
+    }
+
+    const topicsResult = await client.query<{
+      id: string;
+      chapter_id: string;
+      chapter_title: string;
+      topic_title: string;
+      topic_order: number;
+      estimated_minutes: number;
+    }>(
+      `
+      SELECT
+        t.id::text,
+        t.chapter_id::text,
+        c.chapter_title,
+        t.topic_title,
+        t.topic_order,
+        t.estimated_minutes
+      FROM global_book_topics t
+      INNER JOIN global_book_chapters c ON c.id = t.chapter_id
+      WHERE t.book_id = $1
+      ORDER BY c.chapter_order ASC, t.topic_order ASC, t.created_at ASC
+      `,
+      [input.bookId],
+    );
+
+    let topicsImported = 0;
+    for (const topic of topicsResult.rows) {
+      const inserted = await client.query<{ id: string }>(
+        `
+        INSERT INTO topics (
+          student_user_id, subject_id, title, estimated_minutes, topic_order,
+          student_book_id, global_book_id, global_book_chapter_id, global_book_topic_id
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT (student_user_id, global_book_topic_id)
+        WHERE global_book_topic_id IS NOT NULL
+        DO NOTHING
+        RETURNING id::text
+        `,
+        [
+          input.studentUserId,
+          subject.id,
+          topic.topic_title,
+          topic.estimated_minutes,
+          topic.topic_order,
+          studentBookId,
+          input.bookId,
+          topic.chapter_id,
+          topic.id,
+        ],
+      );
+      if (inserted.rows[0]) topicsImported += 1;
+    }
+
+    await client.query("UPDATE student_books SET last_synced_at = NOW(), updated_at = NOW() WHERE id = $1", [studentBookId]);
+    return { studentBookId, topicsImported };
+  }
+
+  async listStudentBooks(studentUserId: string): Promise<StudentBookRow[]> {
+    const booksResult = await this.pool.query<StudentBookRow>(
+      `
+      SELECT
+        sb.id::text,
+        sb.book_id::text,
+        b.title,
+        b.author,
+        b.class_name,
+        b.subject,
+        b.language,
+        sb.added_at::text,
+        COUNT(DISTINCT t.id)::text AS total_topics,
+        COUNT(DISTINCT t.id) FILTER (WHERE sp.status = 'COMPLETED')::text AS completed_topics,
+        COUNT(DISTINCT t.id) FILTER (WHERE sp.status = 'IN_PROGRESS')::text AS in_progress_topics,
+        GREATEST(COUNT(DISTINCT gbt.id) - COUNT(DISTINCT t.global_book_topic_id), 0)::text AS new_topics_available
+      FROM student_books sb
+      INNER JOIN global_books b ON b.id = sb.book_id
+      LEFT JOIN global_book_topics gbt ON gbt.book_id = b.id
+      LEFT JOIN topics t
+        ON t.student_book_id = sb.id
+       AND t.student_user_id = sb.student_user_id
+      LEFT JOIN student_progress sp
+        ON sp.topic_id = t.id
+       AND sp.student_user_id = sb.student_user_id
+      WHERE sb.student_user_id = $1
+        AND sb.is_active = TRUE
+      GROUP BY sb.id, b.id
+      ORDER BY sb.pinned DESC, sb.added_at DESC
+      `,
+      [studentUserId],
+    );
+    const books = booksResult.rows;
+    for (const book of books) {
+      book.chapters = await this.listStudentBookChapters(studentUserId, book.id);
+    }
+    return books;
+  }
+
+  async getStudentBook(studentUserId: string, studentBookId: string) {
+    const books = await this.listStudentBooks(studentUserId);
+    return books.find((book) => book.id === studentBookId) ?? null;
+  }
+
+  async listStudentBookChapters(studentUserId: string, studentBookId: string): Promise<GlobalBookChapterRow[]> {
+    const chaptersResult = await this.pool.query<{
+      id: string;
+      chapter_title: string;
+      chapter_order: number;
+    }>(
+      `
+      SELECT DISTINCT c.id::text, c.chapter_title, c.chapter_order
+      FROM topics t
+      INNER JOIN global_book_chapters c ON c.id = t.global_book_chapter_id
+      WHERE t.student_user_id = $1
+        AND t.student_book_id = $2
+      ORDER BY c.chapter_order ASC, c.chapter_title ASC
+      `,
+      [studentUserId, studentBookId],
+    );
+    if (chaptersResult.rows.length === 0) return [];
+
+    const topicsResult = await this.pool.query<GlobalBookTopicRow & {
+      status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+      progress_percent: number;
+      completed_at: string | null;
+      local_topic_id: string;
+    }>(
+      `
+      SELECT
+        t.id::text AS local_topic_id,
+        COALESCE(t.global_book_topic_id, t.id)::text AS id,
+        t.global_book_chapter_id::text AS chapter_id,
+        t.title AS topic_title,
+        t.topic_order,
+        t.estimated_minutes,
+        COALESCE(sp.status, 'NOT_STARTED')::text AS status,
+        COALESCE(sp.progress_percent, 0) AS progress_percent,
+        sp.completed_at::text
+      FROM topics t
+      LEFT JOIN student_progress sp
+        ON sp.topic_id = t.id
+       AND sp.student_user_id = t.student_user_id
+      WHERE t.student_user_id = $1
+        AND t.student_book_id = $2
+      ORDER BY t.topic_order ASC, t.created_at ASC
+      `,
+      [studentUserId, studentBookId],
+    );
+
+    const topicsByChapter = new Map<string, GlobalBookChapterRow["topics"]>();
+    for (const topic of topicsResult.rows) {
+      const current = topicsByChapter.get(topic.chapter_id) ?? [];
+      current.push(topic);
+      topicsByChapter.set(topic.chapter_id, current);
+    }
+    return chaptersResult.rows.map((chapter) => ({
+      ...chapter,
+      topics: topicsByChapter.get(chapter.id) ?? [],
+    }));
+  }
+
   async updateTopicProgress(client: PoolClient, input: {
     studentUserId: string;
     topicId: string;
@@ -480,6 +722,340 @@ export class ProductivityRepository {
     }
 
     return { subjectsTouched, topicsTouched };
+  }
+
+  async listAdminBooks(filters: { q?: string | null; className?: string | null; subject?: string | null; status?: string | null }) {
+    const result = await this.pool.query<GlobalBookRow>(
+      `
+      SELECT
+        b.id::text,
+        b.title,
+        b.author,
+        b.class_name,
+        b.subject,
+        b.language,
+        b.status,
+        b.updated_at::text,
+        COUNT(DISTINCT c.id)::text AS chapter_count,
+        COUNT(DISTINCT t.id)::text AS topic_count,
+        COUNT(DISTINCT sb.id)::text AS student_count
+      FROM global_books b
+      LEFT JOIN global_book_chapters c ON c.book_id = b.id
+      LEFT JOIN global_book_topics t ON t.book_id = b.id
+      LEFT JOIN student_books sb ON sb.book_id = b.id
+      WHERE (
+          $1::text IS NULL
+          OR b.title ILIKE '%' || $1 || '%'
+          OR COALESCE(b.author, '') ILIKE '%' || $1 || '%'
+          OR COALESCE(b.class_name, '') ILIKE '%' || $1 || '%'
+          OR COALESCE(b.subject, '') ILIKE '%' || $1 || '%'
+        )
+        AND ($2::text IS NULL OR b.class_name = $2)
+        AND ($3::text IS NULL OR b.subject = $3)
+        AND ($4::text IS NULL OR b.status = $4)
+      GROUP BY b.id
+      ORDER BY b.updated_at DESC, b.title ASC
+      LIMIT 200
+      `,
+      [filters.q || null, filters.className || null, filters.subject || null, filters.status || null],
+    );
+    return result.rows;
+  }
+
+  async getGlobalBook(bookId: string) {
+    const books = await this.pool.query<GlobalBookRow>(
+      `
+      SELECT
+        b.id::text,
+        b.title,
+        b.author,
+        b.class_name,
+        b.subject,
+        b.language,
+        b.status,
+        b.updated_at::text,
+        COUNT(DISTINCT c.id)::text AS chapter_count,
+        COUNT(DISTINCT t.id)::text AS topic_count,
+        COUNT(DISTINCT sb.id)::text AS student_count
+      FROM global_books b
+      LEFT JOIN global_book_chapters c ON c.book_id = b.id
+      LEFT JOIN global_book_topics t ON t.book_id = b.id
+      LEFT JOIN student_books sb ON sb.book_id = b.id
+      WHERE b.id = $1
+      GROUP BY b.id
+      LIMIT 1
+      `,
+      [bookId],
+    );
+    const book = books.rows[0] ?? null;
+    if (!book) return null;
+    return { ...book, chapters: await this.listBookChapters(bookId) };
+  }
+
+  async listBookChapters(bookId: string): Promise<GlobalBookChapterRow[]> {
+    const chaptersResult = await this.pool.query<{
+      id: string;
+      chapter_title: string;
+      chapter_order: number;
+    }>(
+      `
+      SELECT id::text, chapter_title, chapter_order
+      FROM global_book_chapters
+      WHERE book_id = $1
+      ORDER BY chapter_order ASC, created_at ASC
+      `,
+      [bookId],
+    );
+    if (chaptersResult.rows.length === 0) return [];
+
+    const topicsResult = await this.pool.query<GlobalBookTopicRow>(
+      `
+      SELECT id::text, chapter_id::text, topic_title, topic_order, estimated_minutes
+      FROM global_book_topics
+      WHERE chapter_id = ANY($1::uuid[])
+      ORDER BY topic_order ASC, created_at ASC
+      `,
+      [chaptersResult.rows.map((chapter) => chapter.id)],
+    );
+
+    const topicsByChapter = new Map<string, GlobalBookTopicRow[]>();
+    for (const topic of topicsResult.rows) {
+      const current = topicsByChapter.get(topic.chapter_id) ?? [];
+      current.push(topic);
+      topicsByChapter.set(topic.chapter_id, current);
+    }
+
+    return chaptersResult.rows.map((chapter) => ({
+      ...chapter,
+      topics: topicsByChapter.get(chapter.id) ?? [],
+    }));
+  }
+
+  async importGlobalBookRows(client: PoolClient, input: {
+    createdByUserId: string;
+    rows: Array<{
+      bookTitle: string;
+      author?: string | null;
+      className?: string | null;
+      subject?: string | null;
+      language?: string | null;
+      chapterTitle: string;
+      chapterOrder: number;
+      topicTitle: string;
+      topicOrder: number;
+      estimatedMinutes: number;
+    }>;
+  }) {
+    let booksTouched = 0;
+    let chaptersTouched = 0;
+    let topicsTouched = 0;
+    const touchedBooks = new Set<string>();
+    const touchedChapters = new Set<string>();
+
+    for (const row of input.rows) {
+      const existingBook = await client.query<{ id: string }>(
+        `
+        SELECT id::text
+        FROM global_books
+        WHERE lower(title) = lower($1)
+          AND lower(COALESCE(author, '')) = lower(COALESCE(NULLIF($2, ''), ''))
+        LIMIT 1
+        `,
+        [row.bookTitle, row.author ?? ""],
+      );
+
+      const bookResult = existingBook.rows[0]
+        ? await client.query<{ id: string }>(
+            `
+            UPDATE global_books
+            SET
+              class_name = COALESCE(NULLIF($2, ''), class_name),
+              subject = COALESCE(NULLIF($3, ''), subject),
+              language = COALESCE(NULLIF($4, ''), language),
+              updated_at = NOW()
+            WHERE id = $1
+            RETURNING id::text
+            `,
+            [existingBook.rows[0].id, row.className ?? "", row.subject ?? "", row.language ?? ""],
+          )
+        : await client.query<{ id: string }>(
+            `
+            INSERT INTO global_books (title, author, class_name, subject, language, created_by_user_id, updated_at)
+            VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''), $6, NOW())
+            RETURNING id::text
+            `,
+            [row.bookTitle, row.author ?? "", row.className ?? "", row.subject ?? "", row.language ?? "", input.createdByUserId],
+          );
+      const bookId = bookResult.rows[0].id;
+      if (!touchedBooks.has(bookId)) {
+        touchedBooks.add(bookId);
+        booksTouched += 1;
+      }
+
+      const chapterResult = await client.query<{ id: string }>(
+        `
+        INSERT INTO global_book_chapters (book_id, chapter_title, chapter_order, updated_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (book_id, chapter_title)
+        DO UPDATE SET chapter_order = EXCLUDED.chapter_order, updated_at = NOW()
+        RETURNING id::text
+        `,
+        [bookId, row.chapterTitle, row.chapterOrder],
+      );
+      const chapterId = chapterResult.rows[0].id;
+      if (!touchedChapters.has(chapterId)) {
+        touchedChapters.add(chapterId);
+        chaptersTouched += 1;
+      }
+
+      await client.query(
+        `
+        INSERT INTO global_book_topics (book_id, chapter_id, topic_title, topic_order, estimated_minutes, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        ON CONFLICT (chapter_id, topic_title)
+        DO UPDATE SET
+          topic_order = EXCLUDED.topic_order,
+          estimated_minutes = EXCLUDED.estimated_minutes,
+          updated_at = NOW()
+        `,
+        [bookId, chapterId, row.topicTitle, row.topicOrder, row.estimatedMinutes],
+      );
+      topicsTouched += 1;
+    }
+
+    return { booksTouched, chaptersTouched, topicsTouched };
+  }
+
+  async updateGlobalBook(client: PoolClient, bookId: string, input: {
+    title?: string;
+    author?: string | null;
+    className?: string | null;
+    subject?: string | null;
+    language?: string | null;
+    status?: "DRAFT" | "PUBLISHED" | "UNPUBLISHED";
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      UPDATE global_books
+      SET
+        title = COALESCE($2, title),
+        author = COALESCE($3, author),
+        class_name = COALESCE($4, class_name),
+        subject = COALESCE($5, subject),
+        language = COALESCE($6, language),
+        status = COALESCE($7, status),
+        updated_at = NOW()
+      WHERE id = $1
+      RETURNING id::text
+      `,
+      [
+        bookId,
+        input.title ?? null,
+        input.author ?? null,
+        input.className ?? null,
+        input.subject ?? null,
+        input.language ?? null,
+        input.status ?? null,
+      ],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async updateGlobalBookChapter(client: PoolClient, input: {
+    bookId: string;
+    chapterId: string;
+    chapterTitle?: string;
+    chapterOrder?: number;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      UPDATE global_book_chapters
+      SET
+        chapter_title = COALESCE($3, chapter_title),
+        chapter_order = COALESCE($4, chapter_order),
+        updated_at = NOW()
+      WHERE id = $2
+        AND book_id = $1
+      RETURNING id::text
+      `,
+      [input.bookId, input.chapterId, input.chapterTitle ?? null, input.chapterOrder ?? null],
+    );
+    await client.query("UPDATE global_books SET updated_at = NOW() WHERE id = $1", [input.bookId]);
+    return result.rows[0] ?? null;
+  }
+
+  async createOrUpdateGlobalBookChapter(client: PoolClient, input: { bookId: string; chapterTitle: string; chapterOrder: number }) {
+    const result = await client.query<{ id: string }>(
+      `
+      INSERT INTO global_book_chapters (book_id, chapter_title, chapter_order, updated_at)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (book_id, chapter_title)
+      DO UPDATE SET chapter_order = EXCLUDED.chapter_order, updated_at = NOW()
+      RETURNING id::text
+      `,
+      [input.bookId, input.chapterTitle, input.chapterOrder],
+    );
+    await client.query("UPDATE global_books SET updated_at = NOW() WHERE id = $1", [input.bookId]);
+    return result.rows[0];
+  }
+
+  async createOrUpdateGlobalBookTopic(client: PoolClient, input: {
+    bookId: string;
+    chapterId: string;
+    topicTitle: string;
+    topicOrder: number;
+    estimatedMinutes: number;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      INSERT INTO global_book_topics (book_id, chapter_id, topic_title, topic_order, estimated_minutes, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+      ON CONFLICT (chapter_id, topic_title)
+      DO UPDATE SET topic_order = EXCLUDED.topic_order, estimated_minutes = EXCLUDED.estimated_minutes, updated_at = NOW()
+      RETURNING id::text
+      `,
+      [input.bookId, input.chapterId, input.topicTitle, input.topicOrder, input.estimatedMinutes],
+    );
+    await client.query("UPDATE global_books SET updated_at = NOW() WHERE id = $1", [input.bookId]);
+    return result.rows[0];
+  }
+
+  async updateGlobalBookTopic(client: PoolClient, input: {
+    bookId: string;
+    topicId: string;
+    chapterId?: string;
+    topicTitle?: string;
+    topicOrder?: number;
+    estimatedMinutes?: number;
+  }) {
+    const result = await client.query<{ id: string }>(
+      `
+      UPDATE global_book_topics
+      SET
+        chapter_id = COALESCE($3, chapter_id),
+        topic_title = COALESCE($4, topic_title),
+        topic_order = COALESCE($5, topic_order),
+        estimated_minutes = COALESCE($6, estimated_minutes),
+        updated_at = NOW()
+      WHERE id = $2
+        AND book_id = $1
+      RETURNING id::text
+      `,
+      [
+        input.bookId,
+        input.topicId,
+        input.chapterId ?? null,
+        input.topicTitle ?? null,
+        input.topicOrder ?? null,
+        input.estimatedMinutes ?? null,
+      ],
+    );
+    await client.query("UPDATE global_books SET updated_at = NOW() WHERE id = $1", [input.bookId]);
+    return result.rows[0] ?? null;
+  }
+
+  async searchPublishedBooks(filters: { q?: string | null; className?: string | null; subject?: string | null }) {
+    return this.listAdminBooks({ ...filters, status: "PUBLISHED" });
   }
 
   async getSyllabusAnalytics(studentUserId: string) {

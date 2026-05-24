@@ -3,6 +3,9 @@ import ExcelJS from "exceljs";
 import { AppError } from "../lib/errors";
 import {
   createOwnerStudentInterventionNote,
+  addStudentBook,
+  createAdminBookChapter,
+  createAdminBookTopic,
   createManualRevision,
   createStudentFeedPost,
   createSyllabusSubject,
@@ -11,16 +14,26 @@ import {
   getStudentFeed,
   getOwnerStudentProductivity,
   getOwnerProductivityTrends,
+  getAdminBook,
   getStudentRevisionDashboard,
   listOwnerFollowUpQueue,
   getStudentAnalytics,
   getStudentFocusLeaderboard,
   getStudentSyllabus,
+  getStudentBook,
+  importGlobalBookRows,
   importGlobalSyllabusRows,
   importSyllabusTemplateForStudent,
+  listAdminBooks,
   listGlobalSyllabusTemplates,
+  listStudentBooks,
   listStudentLibraries,
+  searchStudentBooks,
   setActiveStudentLibrary,
+  syncStudentBook,
+  updateAdminBook,
+  updateAdminBookChapter,
+  updateAdminBookTopic,
   updateStudentFeedVisibility,
   updateOwnerStudentInterventionStatus,
   updateSyllabusTopicProgress,
@@ -33,8 +46,14 @@ import {
   createSyllabusSubjectBodySchema,
   createSyllabusTopicBodySchema,
   adminSyllabusImportBodySchema,
+  adminBookImportBodySchema,
+  createAdminBookChapterBodySchema,
+  createAdminBookTopicBodySchema,
   importSyllabusTemplateBodySchema,
   updateFeedVisibilityBodySchema,
+  updateAdminBookBodySchema,
+  updateAdminBookChapterBodySchema,
+  updateAdminBookTopicBodySchema,
   updateStudentInterventionStatusBodySchema,
   updateTopicProgressBodySchema,
 } from "../validators/productivity.validators";
@@ -150,6 +169,65 @@ async function rowsFromSpreadsheet(buffer: Buffer) {
       estimatedMinutes: normalizeHeader(row.estimatedMinutes) || 60,
       topicOrder: normalizeHeader(row.topicOrder) || index,
       colorHex: normalizeHeader(row.colorHex),
+    }));
+}
+
+function bookRowsFromCsv(buffer: Buffer) {
+  const lines = buffer.toString("utf8").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map((header) => header.trim());
+  return lines.slice(1).map((line, index) => {
+    const values = line.split(",").map((value) => value.trim());
+    const row = Object.fromEntries(headers.map((header, headerIndex) => [header, values[headerIndex] ?? ""]));
+    return {
+      bookTitle: row.bookTitle,
+      author: row.author || "",
+      className: row.className || "",
+      subject: row.subject || "",
+      language: row.language || "",
+      chapterTitle: row.chapterTitle,
+      chapterOrder: row.chapterOrder || index,
+      topicTitle: row.topicTitle,
+      topicOrder: row.topicOrder || index,
+      estimatedMinutes: row.estimatedMinutes || 60,
+    };
+  });
+}
+
+async function bookRowsFromSpreadsheet(buffer: Buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) return [];
+  const headers: string[] = [];
+  worksheet.getRow(1).eachCell((cell, colNumber) => {
+    headers[colNumber - 1] = normalizeHeader(cell.value);
+  });
+
+  const rows: Record<string, unknown>[] = [];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const current: Record<string, unknown> = {};
+    headers.forEach((header, index) => {
+      if (!header) return;
+      current[header] = row.getCell(index + 1).text;
+    });
+    rows.push(current);
+  });
+
+  return rows
+    .filter((row) => Object.values(row).some((value) => String(value ?? "").trim()))
+    .map((row, index) => ({
+      bookTitle: normalizeHeader(row.bookTitle),
+      author: normalizeHeader(row.author),
+      className: normalizeHeader(row.className),
+      subject: normalizeHeader(row.subject),
+      language: normalizeHeader(row.language),
+      chapterTitle: normalizeHeader(row.chapterTitle),
+      chapterOrder: normalizeHeader(row.chapterOrder) || index,
+      topicTitle: normalizeHeader(row.topicTitle),
+      topicOrder: normalizeHeader(row.topicOrder) || index,
+      estimatedMinutes: normalizeHeader(row.estimatedMinutes) || 60,
     }));
 }
 
@@ -284,10 +362,198 @@ export async function getStudentFocusLeaderboardController(req: Request, res: Re
   res.json({ success: true, data });
 }
 
+export async function listAdminBooksController(req: Request, res: Response) {
+  const q = typeof req.query.q === "string" ? req.query.q.trim() : null;
+  const className = typeof req.query.className === "string" ? req.query.className.trim() : null;
+  const subject = typeof req.query.subject === "string" ? req.query.subject.trim() : null;
+  const status = typeof req.query.status === "string" ? req.query.status.trim() : null;
+  const data = await listAdminBooks({ q, className, subject, status });
+  res.json({ success: true, data });
+}
+
+export async function getAdminBookController(req: Request, res: Response) {
+  const bookId = paramValue(req.params.bookId, "BOOK_ID_REQUIRED");
+  const data = await getAdminBook(bookId);
+  res.json({ success: true, data });
+}
+
+export async function downloadAdminBookTemplateController(_req: Request, res: Response) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "BookLib";
+  workbook.created = new Date();
+  const sheet = workbook.addWorksheet("Book TOC Import");
+  sheet.columns = [
+    { header: "bookTitle", key: "bookTitle", width: 34 },
+    { header: "author", key: "author", width: 24 },
+    { header: "className", key: "className", width: 18 },
+    { header: "subject", key: "subject", width: 20 },
+    { header: "language", key: "language", width: 14 },
+    { header: "chapterTitle", key: "chapterTitle", width: 34 },
+    { header: "chapterOrder", key: "chapterOrder", width: 14 },
+    { header: "topicTitle", key: "topicTitle", width: 42 },
+    { header: "topicOrder", key: "topicOrder", width: 14 },
+    { header: "estimatedMinutes", key: "estimatedMinutes", width: 18 },
+  ];
+  sheet.getRow(1).font = { bold: true };
+  sheet.addRows([
+    {
+      bookTitle: "NCERT Physics Class 12",
+      author: "NCERT",
+      className: "Class 12",
+      subject: "Physics",
+      language: "English",
+      chapterTitle: "Current Electricity",
+      chapterOrder: 1,
+      topicTitle: "Electric current and drift velocity",
+      topicOrder: 1,
+      estimatedMinutes: 60,
+    },
+    {
+      bookTitle: "NCERT Physics Class 12",
+      author: "NCERT",
+      className: "Class 12",
+      subject: "Physics",
+      language: "English",
+      chapterTitle: "Current Electricity",
+      chapterOrder: 1,
+      topicTitle: "Ohm's law and resistance",
+      topicOrder: 2,
+      estimatedMinutes: 75,
+    },
+  ]);
+  const notes = workbook.addWorksheet("Instructions");
+  notes.addRows([
+    ["Required columns", "bookTitle, chapterTitle, topicTitle"],
+    ["Update behavior", "Same book + author updates the existing book; same chapter/topic updates order and minutes."],
+    ["Publish", "After import, publish the book so students can search and add it."],
+  ]);
+  notes.columns = [{ width: 24 }, { width: 96 }];
+  const buffer = await workbook.xlsx.writeBuffer();
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", 'attachment; filename="booklib-book-toc-template.xlsx"');
+  res.send(Buffer.from(buffer));
+}
+
+export async function importAdminBooksController(req: Request, res: Response) {
+  if (!req.auth) throw new AppError(401, "Super admin authentication required", "SUPER_ADMIN_AUTH_REQUIRED");
+  const parsed = adminBookImportBodySchema.parse(req.body);
+  const data = await importGlobalBookRows({ createdByUserId: req.auth.userId, rows: parsed.rows });
+  res.status(201).json({ success: true, data });
+}
+
+export async function uploadAdminBooksController(req: Request, res: Response) {
+  if (!req.auth) throw new AppError(401, "Super admin authentication required", "SUPER_ADMIN_AUTH_REQUIRED");
+  if (!req.file) throw new AppError(400, "File is required", "FILE_REQUIRED");
+  const fileName = req.file.originalname.toLowerCase();
+  if (fileName.endsWith(".xls")) {
+    throw new AppError(400, "Legacy .xls files are not supported for secure import. Upload CSV or XLSX instead.", "UNSUPPORTED_LEGACY_XLS");
+  }
+  const rawRows = fileName.endsWith(".csv") || req.file.mimetype.toLowerCase().includes("csv")
+    ? bookRowsFromCsv(req.file.buffer)
+    : await bookRowsFromSpreadsheet(req.file.buffer);
+  const parsed = adminBookImportBodySchema.parse({ rows: rawRows });
+  const data = await importGlobalBookRows({ createdByUserId: req.auth.userId, rows: parsed.rows });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateAdminBookController(req: Request, res: Response) {
+  const bookId = paramValue(req.params.bookId, "BOOK_ID_REQUIRED");
+  const parsed = updateAdminBookBodySchema.parse(req.body);
+  const data = await updateAdminBook({
+    bookId,
+    title: parsed.title,
+    author: parsed.author || undefined,
+    className: parsed.className || undefined,
+    subject: parsed.subject || undefined,
+    language: parsed.language || undefined,
+    status: parsed.status,
+  });
+  res.json({ success: true, data });
+}
+
+export async function createAdminBookChapterController(req: Request, res: Response) {
+  const bookId = paramValue(req.params.bookId, "BOOK_ID_REQUIRED");
+  const parsed = createAdminBookChapterBodySchema.parse(req.body);
+  const data = await createAdminBookChapter({ bookId, chapterTitle: parsed.chapterTitle, chapterOrder: parsed.chapterOrder });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateAdminBookChapterController(req: Request, res: Response) {
+  const bookId = paramValue(req.params.bookId, "BOOK_ID_REQUIRED");
+  const chapterId = paramValue(req.params.chapterId, "CHAPTER_ID_REQUIRED");
+  const parsed = updateAdminBookChapterBodySchema.parse(req.body);
+  const data = await updateAdminBookChapter({ bookId, chapterId, chapterTitle: parsed.chapterTitle, chapterOrder: parsed.chapterOrder });
+  res.json({ success: true, data });
+}
+
+export async function createAdminBookTopicController(req: Request, res: Response) {
+  const bookId = paramValue(req.params.bookId, "BOOK_ID_REQUIRED");
+  const parsed = createAdminBookTopicBodySchema.parse(req.body);
+  const data = await createAdminBookTopic({
+    bookId,
+    chapterId: parsed.chapterId,
+    topicTitle: parsed.topicTitle,
+    topicOrder: parsed.topicOrder,
+    estimatedMinutes: parsed.estimatedMinutes,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateAdminBookTopicController(req: Request, res: Response) {
+  const bookId = paramValue(req.params.bookId, "BOOK_ID_REQUIRED");
+  const topicId = paramValue(req.params.topicId, "TOPIC_ID_REQUIRED");
+  const parsed = updateAdminBookTopicBodySchema.parse(req.body);
+  const data = await updateAdminBookTopic({
+    bookId,
+    topicId,
+    chapterId: parsed.chapterId,
+    topicTitle: parsed.topicTitle,
+    topicOrder: parsed.topicOrder,
+    estimatedMinutes: parsed.estimatedMinutes,
+  });
+  res.json({ success: true, data });
+}
+
 export async function listAdminSyllabusTemplatesController(req: Request, res: Response) {
   const rawClassName = Array.isArray(req.query.className) ? req.query.className[0] : req.query.className;
   const className = typeof rawClassName === "string" && rawClassName.trim() ? rawClassName.trim() : null;
   const data = await listGlobalSyllabusTemplates(className);
+  res.json({ success: true, data });
+}
+
+export async function searchStudentBooksController(req: Request, res: Response) {
+  requireStudentContext(req);
+  const q = typeof req.query.q === "string" ? req.query.q.trim() : null;
+  const className = typeof req.query.className === "string" ? req.query.className.trim() : null;
+  const subject = typeof req.query.subject === "string" ? req.query.subject.trim() : null;
+  const data = await searchStudentBooks({ q, className, subject });
+  res.json({ success: true, data });
+}
+
+export async function listStudentBooksController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const data = await listStudentBooks(studentUserId);
+  res.json({ success: true, data });
+}
+
+export async function addStudentBookController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const bookId = paramValue(req.params.bookId, "BOOK_ID_REQUIRED");
+  const data = await addStudentBook({ studentUserId, bookId });
+  res.status(201).json({ success: true, data });
+}
+
+export async function getStudentBookController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const studentBookId = paramValue(req.params.studentBookId, "STUDENT_BOOK_ID_REQUIRED");
+  const data = await getStudentBook({ studentUserId, studentBookId });
+  res.json({ success: true, data });
+}
+
+export async function syncStudentBookController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const studentBookId = paramValue(req.params.studentBookId, "STUDENT_BOOK_ID_REQUIRED");
+  const data = await syncStudentBook({ studentUserId, studentBookId });
   res.json({ success: true, data });
 }
 

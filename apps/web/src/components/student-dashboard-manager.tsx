@@ -81,6 +81,12 @@ type SyllabusAnalyticsResponse = {
     totalSubjects: number;
     totalTopics: number;
     completedTopics: number;
+    activeBooks?: number;
+    bookTopics?: number;
+    completedBookTopics?: number;
+    booksWithNewTopics?: number;
+    completionStreakDays?: number;
+    longestCompletionStreak?: number;
     dailyCompletedTopics: number;
   };
 };
@@ -195,7 +201,12 @@ export function StudentDashboardManager() {
     { label: "Assigned Seat", value: data.assignment?.seat_number ?? "-", note: "Your active desk", tone: "bg-cyan-50 text-cyan-700" },
     { label: "Weekly Study", value: `${analytics.weeklyStudyHours} hrs`, note: "Focus tracker total", tone: "bg-emerald-50 text-emerald-700" },
     { label: "Attendance", value: `${analytics.attendanceDays} days`, note: "Rolling discipline signal", tone: "bg-amber-50 text-amber-700" },
-    { label: "Syllabus", value: `${syllabusAnalytics.completedTopics}/${syllabusAnalytics.totalTopics}`, note: "Topics completed", tone: "bg-violet-50 text-violet-700" },
+    {
+      label: "Books",
+      value: `${syllabusAnalytics.completedBookTopics ?? syllabusAnalytics.completedTopics}/${syllabusAnalytics.bookTopics ?? syllabusAnalytics.totalTopics}`,
+      note: `${syllabusAnalytics.activeBooks ?? 0} active book trackers`,
+      tone: "bg-violet-50 text-violet-700",
+    },
   ];
   const calendarDays = [...(data.focusCalendar ?? [])]
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -446,20 +457,22 @@ export function StudentDashboardManager() {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Syllabus progress" subtitle="Long-term chapter coverage stays visible">
+        <DashboardCard title="Book progress" subtitle="Personal book trackers, streak, and new topic sync">
           <div className="grid gap-4">
             <div className="rounded-xl border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Completed topics</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{syllabusAnalytics.completedTopics}/{syllabusAnalytics.totalTopics}</p>
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Completed book topics</p>
+              <p className="mt-3 text-2xl font-black text-slate-950">
+                {syllabusAnalytics.completedBookTopics ?? syllabusAnalytics.completedTopics}/{syllabusAnalytics.bookTopics ?? syllabusAnalytics.totalTopics}
+              </p>
               <p className="mt-2 text-sm text-slate-500">{syllabusAnalytics.dailyCompletedTopics} topics completed today</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Subjects</p>
-              <p className="mt-3 text-2xl font-black text-slate-950">{syllabusAnalytics.totalSubjects}</p>
-              <p className="mt-2 text-sm text-slate-500">Build your own syllabus instead of keeping prep vague.</p>
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Reading streak</p>
+              <p className="mt-3 text-2xl font-black text-slate-950">{syllabusAnalytics.completionStreakDays ?? 0} days</p>
+              <p className="mt-2 text-sm text-slate-500">{syllabusAnalytics.booksWithNewTopics ?? 0} books have new topics available.</p>
             </div>
             <Link href="/student/syllabus" className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-800">
-              Open full syllabus tracker
+              Open My Books tracker
             </Link>
           </div>
         </DashboardCard>

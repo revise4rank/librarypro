@@ -6,254 +6,316 @@ import { DashboardCard } from "./dashboard-shell";
 import { FormDrawer } from "./form-drawer";
 import { StatCard } from "./stat-card";
 
-type SyllabusTemplate = {
+type BookStatus = "DRAFT" | "PUBLISHED" | "UNPUBLISHED";
+
+type BookTopic = {
   id: string;
-  class_name: string;
-  subject_title: string;
-  color_hex?: string | null;
-  topics: Array<{ id: string; topic_title: string; estimated_minutes?: number | null; topic_order?: number | null }>;
+  chapter_id: string;
+  topic_title: string;
+  topic_order: number;
+  estimated_minutes: number;
 };
 
-function parseCsvRows(csvText: string) {
-  const lines = csvText
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map((header) => header.trim());
-  return lines.slice(1).map((line, index) => {
-    const values = line.split(",").map((value) => value.trim());
-    const row = Object.fromEntries(headers.map((header, headerIndex) => [header, values[headerIndex] ?? ""]));
-    return {
-      className: row.className,
-      subjectTitle: row.subjectTitle,
-      topicTitle: row.topicTitle,
-      estimatedMinutes: Number(row.estimatedMinutes || 60),
-      topicOrder: Number(row.topicOrder || index),
-      colorHex: row.colorHex || "",
-    };
-  });
+type BookChapter = {
+  id: string;
+  chapter_title: string;
+  chapter_order: number;
+  topics: BookTopic[];
+};
+
+type AdminBook = {
+  id: string;
+  title: string;
+  author: string | null;
+  class_name: string | null;
+  subject: string | null;
+  language: string | null;
+  status: BookStatus;
+  chapter_count: string;
+  topic_count: string;
+  student_count: string;
+  chapters?: BookChapter[];
+};
+
+function statusTone(status: BookStatus) {
+  if (status === "PUBLISHED") return "bg-emerald-100 text-emerald-700";
+  if (status === "UNPUBLISHED") return "bg-slate-100 text-slate-700";
+  return "bg-amber-100 text-amber-700";
 }
 
 export function SuperadminSyllabusManager() {
-  const [templates, setTemplates] = useState<SyllabusTemplate[]>([]);
+  const [books, setBooks] = useState<AdminBook[]>([]);
+  const [selected, setSelected] = useState<AdminBook | null>(null);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("All");
   const [error, setError] = useState<string | null>(null);
-  const [classFilter, setClassFilter] = useState("All");
-  const [syllabusCsv, setSyllabusCsv] = useState(
-    "className,subjectTitle,topicTitle,estimatedMinutes,topicOrder,colorHex\nClass 12,Physics,Current Electricity,90,1,#2563eb\nClass 12,Physics,Ray Optics,90,2,#2563eb\nClass 12,Chemistry,Solid State,75,1,#16a34a",
-  );
-  const [importStatus, setImportStatus] = useState<string | null>(null);
-  const [importing, setImporting] = useState(false);
-  const [uploadingFile, setUploadingFile] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [editForm, setEditForm] = useState({ title: "", author: "", className: "", subject: "", language: "", status: "DRAFT" as BookStatus });
+  const [chapterForm, setChapterForm] = useState({ chapterTitle: "", chapterOrder: "1" });
+  const [topicForm, setTopicForm] = useState({ chapterId: "", topicTitle: "", topicOrder: "1", estimatedMinutes: "60" });
 
-  async function loadTemplates() {
-    const response = await apiFetch<{ success: boolean; data: SyllabusTemplate[] }>("/admin/syllabus/templates");
-    setTemplates(response.data);
+  async function loadBooks() {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    if (status !== "All") params.set("status", status);
+    const response = await apiFetch<{ success: boolean; data: AdminBook[] }>(`/admin/books${params.toString() ? `?${params}` : ""}`);
+    setBooks(response.data);
     setError(null);
   }
 
-  useEffect(() => {
-    loadTemplates().catch((loadError) => {
-      setTemplates([]);
-      setError(loadError instanceof Error ? loadError.message : "Unable to load syllabus templates.");
+  async function openBook(bookId: string) {
+    const response = await apiFetch<{ success: boolean; data: AdminBook }>(`/admin/books/${bookId}`);
+    setSelected(response.data);
+    setEditForm({
+      title: response.data.title,
+      author: response.data.author ?? "",
+      className: response.data.class_name ?? "",
+      subject: response.data.subject ?? "",
+      language: response.data.language ?? "",
+      status: response.data.status,
     });
-  }, []);
-
-  const classOptions = useMemo(() => Array.from(new Set(templates.map((template) => template.class_name))).sort(), [templates]);
-  const visibleTemplates = classFilter === "All" ? templates : templates.filter((template) => template.class_name === classFilter);
-  const topicCount = templates.reduce((sum, template) => sum + template.topics.length, 0);
-  const visibleTopicCount = visibleTemplates.reduce((sum, template) => sum + template.topics.length, 0);
-
-  async function importSyllabusTemplates() {
-    try {
-      setImporting(true);
-      const rows = parseCsvRows(syllabusCsv);
-      if (rows.length === 0) {
-        setImportStatus("CSV needs a header row and at least one topic row.");
-        return;
-      }
-      const response = await apiFetch<{ success: boolean; data: { subjectsTouched: number; topicsTouched: number } }>("/admin/syllabus/import", {
-        method: "POST",
-        body: JSON.stringify({ rows }),
-      });
-      setImportStatus(`${response.data.subjectsTouched} subjects and ${response.data.topicsTouched} topics imported.`);
-      await loadTemplates();
-      setImportOpen(false);
-    } catch (importError) {
-      setImportStatus(null);
-      setError(importError instanceof Error ? importError.message : "Unable to import syllabus CSV.");
-    } finally {
-      setImporting(false);
-    }
+    setTopicForm((current) => ({ ...current, chapterId: response.data.chapters?.[0]?.id ?? "" }));
   }
 
-  async function uploadSyllabusFile(file: File) {
+  useEffect(() => {
+    loadBooks().catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Unable to load books."));
+  }, []);
+
+  const stats = useMemo(() => {
+    const published = books.filter((book) => book.status === "PUBLISHED").length;
+    const chapters = books.reduce((sum, book) => sum + Number(book.chapter_count), 0);
+    const topics = books.reduce((sum, book) => sum + Number(book.topic_count), 0);
+    return { published, drafts: books.length - published, chapters, topics };
+  }, [books]);
+
+  async function uploadFile(file: File) {
     try {
-      setUploadingFile(true);
+      setBusy(true);
       const formData = new FormData();
       formData.append("file", file);
-      const response = await apiFetch<{ success: boolean; data: { subjectsTouched: number; topicsTouched: number } }>("/admin/syllabus/import-file", {
+      const response = await apiFetch<{ success: boolean; data: { booksTouched: number; chaptersTouched: number; topicsTouched: number } }>("/admin/books/import-file", {
         method: "POST",
         body: formData,
       });
-      setImportStatus(`${response.data.subjectsTouched} subjects and ${response.data.topicsTouched} topics imported from ${file.name}.`);
-      await loadTemplates();
+      setMessage(`${response.data.booksTouched} books, ${response.data.chaptersTouched} chapters, ${response.data.topicsTouched} topics imported.`);
       setImportOpen(false);
+      await loadBooks();
     } catch (uploadError) {
-      setImportStatus(null);
-      setError(uploadError instanceof Error ? uploadError.message : "Unable to upload syllabus file.");
+      setError(uploadError instanceof Error ? uploadError.message : "Unable to import book file.");
     } finally {
-      setUploadingFile(false);
+      setBusy(false);
     }
   }
 
-  function downloadCsvTemplate() {
-    const csv = [
-      "className,subjectTitle,topicTitle,estimatedMinutes,topicOrder,colorHex",
-      "Class 12,Physics,Current Electricity,90,1,#2563eb",
-      "Class 12,Physics,Ray Optics,90,2,#2563eb",
-      "Class 12,Chemistry,Solid State,75,1,#16a34a",
-    ].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "booklib-syllabus-import-template.csv";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    window.URL.revokeObjectURL(url);
+  async function saveBook(nextStatus?: BookStatus) {
+    if (!selected) return;
+    try {
+      setBusy(true);
+      await apiFetch(`/admin/books/${selected.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          title: editForm.title,
+          author: editForm.author,
+          className: editForm.className,
+          subject: editForm.subject,
+          language: editForm.language,
+          status: nextStatus ?? editForm.status,
+        }),
+      });
+      setMessage("Book updated.");
+      await loadBooks();
+      await openBook(selected.id);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Unable to update book.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addChapter() {
+    if (!selected) return;
+    try {
+      await apiFetch(`/admin/books/${selected.id}/chapters`, {
+        method: "POST",
+        body: JSON.stringify({ chapterTitle: chapterForm.chapterTitle, chapterOrder: Number(chapterForm.chapterOrder) }),
+      });
+      setChapterForm({ chapterTitle: "", chapterOrder: "1" });
+      await openBook(selected.id);
+      await loadBooks();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Unable to add chapter.");
+    }
+  }
+
+  async function addTopic() {
+    if (!selected) return;
+    try {
+      await apiFetch(`/admin/books/${selected.id}/topics`, {
+        method: "POST",
+        body: JSON.stringify({
+          chapterId: topicForm.chapterId,
+          topicTitle: topicForm.topicTitle,
+          topicOrder: Number(topicForm.topicOrder),
+          estimatedMinutes: Number(topicForm.estimatedMinutes),
+        }),
+      });
+      setTopicForm((current) => ({ ...current, topicTitle: "" }));
+      await openBook(selected.id);
+      await loadBooks();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Unable to add topic.");
+    }
   }
 
   return (
     <div className="grid gap-4">
-      {error ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">{error}</p> : null}
+      {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p> : null}
+      {message ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</p> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Classes" value={classOptions.length} note="Unique class filters available for students." />
-        <StatCard label="Subjects" value={templates.length} note="Class-wise subject templates." />
-        <StatCard label="Topics" value={topicCount} note="Checklist rows students can import." />
-        <StatCard label="Visible now" value={visibleTopicCount} note={classFilter === "All" ? "All uploaded topics." : `${classFilter} topics.`} />
+        <StatCard label="Published books" value={stats.published} note="Searchable by students." />
+        <StatCard label="Draft/unpublished" value={stats.drafts} note="Hidden from student search." />
+        <StatCard label="Chapters" value={stats.chapters} note="Book table of contents." />
+        <StatCard label="Topics" value={stats.topics} note="Trackable checklist rows." />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardCard title="Upload syllabus" subtitle="Import CSV or XLSX files with class, subject, and topic rows.">
+      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+        <DashboardCard title="Book syllabus library" subtitle="Import, publish, and extend book-wise trackers for all students.">
           <div className="grid gap-3">
-            <button
-              type="button"
-              onClick={() => setImportOpen(true)}
-              className="rounded-full border border-[var(--lp-primary)] bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
-            >
-              Import syllabus template
-            </button>
-            {importStatus ? <p className="text-sm font-semibold text-emerald-700">{importStatus}</p> : null}
-          </div>
-        </DashboardCard>
-
-        <FormDrawer
-          open={importOpen}
-          onClose={() => setImportOpen(false)}
-          title="Import syllabus template"
-          description="Download the template, fill class-wise topics, then upload CSV or XLSX for students."
-        >
-          <div className="grid gap-4">
-            <div className="flex flex-wrap gap-3">
-              <a
-                href="/api-proxy/v1/admin/syllabus/template.xlsx"
-                className="rounded-full border border-[var(--lp-primary)] bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
-              >
-                Download Excel template
-              </a>
-              <button
-                type="button"
-                onClick={downloadCsvTemplate}
-                className="rounded-full border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-[var(--lp-text)]"
-              >
-                Download CSV template
+            <div className="grid gap-2 lg:grid-cols-[1fr_auto_auto]">
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search book or author"
+                className="min-w-0 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[var(--lp-primary)]"
+              />
+              <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold">
+                <option>All</option>
+                <option>DRAFT</option>
+                <option>PUBLISHED</option>
+                <option>UNPUBLISHED</option>
+              </select>
+              <button type="button" onClick={() => void loadBooks()} className="rounded-lg bg-[var(--lp-primary)] px-4 py-3 text-sm font-bold text-white">
+                Apply filter
               </button>
             </div>
-            <input
-              type="file"
-              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (!file) return;
-                void uploadSyllabusFile(file);
-                event.currentTarget.value = "";
-              }}
-              className="rounded-xl border border-[var(--lp-border)] bg-white p-3 text-sm font-semibold text-[var(--lp-muted)]"
-            />
-            {uploadingFile ? <p className="text-sm font-semibold text-[var(--lp-muted)]">Uploading syllabus file...</p> : null}
-            <textarea
-              value={syllabusCsv}
-              onChange={(event) => setSyllabusCsv(event.target.value)}
-              className="min-h-56 rounded-xl border border-[var(--lp-border)] bg-white p-4 font-mono text-xs text-[var(--lp-text)] outline-none"
-              spellCheck={false}
-            />
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-semibold text-[var(--lp-muted)]">
-                Headers: className, subjectTitle, topicTitle, estimatedMinutes, topicOrder, colorHex
-              </p>
-              <button
-                type="button"
-                onClick={() => void importSyllabusTemplates()}
-                disabled={importing}
-                className="rounded-full border border-[var(--lp-primary)] bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
-              >
-                {importing ? "Importing..." : "Import syllabus"}
-              </button>
-            </div>
-            {importStatus ? <p className="text-sm font-semibold text-emerald-700">{importStatus}</p> : null}
-          </div>
-        </FormDrawer>
-
-        <DashboardCard title="Student import library" subtitle="Review what students can pull into Study Zone by class and subject.">
-          <div className="grid gap-4">
             <div className="flex flex-wrap gap-2">
-              {["All", ...classOptions].map((className) => (
+              <button type="button" onClick={() => setImportOpen(true)} className="rounded-lg bg-[var(--lp-primary)] px-4 py-2 text-sm font-bold text-white">
+                Import books
+              </button>
+              <a href="/api-proxy/v1/admin/books/template.xlsx" className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]">
+                Download book template
+              </a>
+            </div>
+            <div className="grid max-h-[34rem] gap-2 overflow-y-auto pr-1">
+              {books.map((book) => (
                 <button
-                  key={className}
+                  key={book.id}
                   type="button"
-                  onClick={() => setClassFilter(className)}
-                  className={`rounded-full border px-3 py-2 text-xs font-bold ${
-                    classFilter === className
-                      ? "border-[var(--lp-primary)] bg-[var(--lp-primary)] text-white"
-                      : "border-[var(--lp-border)] bg-white text-[var(--lp-muted)]"
-                  }`}
+                  onClick={() => void openBook(book.id)}
+                  className={`rounded-lg border p-3 text-left ${selected?.id === book.id ? "border-[var(--lp-primary)] bg-emerald-50" : "border-[var(--lp-border)] bg-white"}`}
                 >
-                  {className}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-[var(--lp-text)]">{book.title}</p>
+                      <p className="mt-1 text-xs font-semibold text-[var(--lp-muted)]">{book.author || "Unknown author"} · {book.subject || "General"}</p>
+                    </div>
+                    <span className={`rounded-full px-2 py-1 text-xs font-black ${statusTone(book.status)}`}>{book.status}</span>
+                  </div>
+                  <p className="mt-3 text-xs font-bold uppercase text-[var(--lp-muted)]">{book.chapter_count} chapters · {book.topic_count} topics · {book.student_count} students</p>
                 </button>
               ))}
             </div>
-
-            <div className="grid gap-2 md:grid-cols-2">
-              {visibleTemplates.map((template) => (
-                <div key={template.id} className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-[var(--lp-muted)]">{template.class_name}</p>
-                      <p className="mt-1 truncate text-sm font-bold text-[var(--lp-text)]">{template.subject_title}</p>
-                    </div>
-                    <span className="rounded-md bg-[var(--lp-surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--lp-muted)]">
-                      {template.topics.length} topics
-                    </span>
-                  </div>
-                  <div className="mt-3 grid gap-1">
-                    {template.topics.slice(0, 4).map((topic) => (
-                      <p key={topic.id} className="truncate text-xs text-[var(--lp-muted)]">
-                        {topic.topic_title}
-                      </p>
-                    ))}
-                    {template.topics.length > 4 ? <p className="text-xs font-semibold text-[var(--lp-muted)]">+{template.topics.length - 4} more topics</p> : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {visibleTemplates.length === 0 ? <p className="text-sm text-[var(--lp-muted)]">No syllabus templates uploaded yet.</p> : null}
           </div>
         </DashboardCard>
+
+        <DashboardCard title={selected ? selected.title : "Book detail"} subtitle="Edit metadata and add future topics without touching student progress.">
+          {selected ? (
+            <div className="grid gap-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <input value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+                <input value={editForm.author} onChange={(event) => setEditForm((current) => ({ ...current, author: event.target.value }))} placeholder="Author" className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+                <input value={editForm.className} onChange={(event) => setEditForm((current) => ({ ...current, className: event.target.value }))} placeholder="Class/exam" className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+                <input value={editForm.subject} onChange={(event) => setEditForm((current) => ({ ...current, subject: event.target.value }))} placeholder="Subject" className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={busy} onClick={() => void saveBook()} className="rounded-lg bg-[var(--lp-primary)] px-4 py-2 text-sm font-bold text-white">
+                  Save book
+                </button>
+                <button type="button" onClick={() => void saveBook(selected.status === "PUBLISHED" ? "UNPUBLISHED" : "PUBLISHED")} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]">
+                  {selected.status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                </button>
+                <button type="button" onClick={() => setEditOpen(true)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 text-sm font-bold text-[var(--lp-text)]">
+                  Add chapters/topics
+                </button>
+              </div>
+              <div className="grid max-h-[34rem] gap-3 overflow-y-auto pr-1">
+                {(selected.chapters ?? []).map((chapter) => (
+                  <div key={chapter.id} className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
+                    <p className="text-sm font-black text-[var(--lp-text)]">{chapter.chapter_order}. {chapter.chapter_title}</p>
+                    <div className="mt-2 grid gap-1">
+                      {chapter.topics.map((topic) => (
+                        <p key={topic.id} className="text-xs font-semibold text-[var(--lp-muted)]">{topic.topic_order}. {topic.topic_title} · {topic.estimated_minutes} min</p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--lp-muted)]">Select a book to inspect chapters and topics.</p>
+          )}
+        </DashboardCard>
       </section>
+
+      <FormDrawer open={importOpen} onClose={() => setImportOpen(false)} title="Import book syllabus" description="Upload Excel or CSV using the BookLib book TOC template.">
+        <div className="grid gap-4">
+          <a href="/api-proxy/v1/admin/books/template.xlsx" className="rounded-lg bg-[var(--lp-primary)] px-4 py-3 text-center text-sm font-bold text-white">
+            Download Excel template
+          </a>
+          <input
+            type="file"
+            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void uploadFile(file);
+              event.currentTarget.value = "";
+            }}
+            className="rounded-xl border border-[var(--lp-border)] bg-white p-3 text-sm font-semibold text-[var(--lp-muted)]"
+          />
+          {busy ? <p className="text-sm font-semibold text-[var(--lp-muted)]">Importing file...</p> : null}
+        </div>
+      </FormDrawer>
+
+      <FormDrawer open={editOpen} onClose={() => setEditOpen(false)} title="Add chapters and topics" description="Add new topics later. Students who already use the book can sync only missing topics.">
+        <div className="grid gap-5">
+          <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+            <p className="text-sm font-black text-[var(--lp-text)]">Add chapter</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+              <input value={chapterForm.chapterTitle} onChange={(event) => setChapterForm((current) => ({ ...current, chapterTitle: event.target.value }))} placeholder="Chapter title" className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+              <input value={chapterForm.chapterOrder} onChange={(event) => setChapterForm((current) => ({ ...current, chapterOrder: event.target.value }))} placeholder="Order" className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+              <button type="button" onClick={() => void addChapter()} className="rounded-lg bg-[var(--lp-primary)] px-4 py-2 text-sm font-bold text-white">Add</button>
+            </div>
+          </div>
+          <div className="rounded-lg border border-[var(--lp-border)] bg-white p-4">
+            <p className="text-sm font-black text-[var(--lp-text)]">Add topic</p>
+            <div className="mt-3 grid gap-2">
+              <select value={topicForm.chapterId} onChange={(event) => setTopicForm((current) => ({ ...current, chapterId: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold">
+                {(selected?.chapters ?? []).map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.chapter_title}</option>)}
+              </select>
+              <input value={topicForm.topicTitle} onChange={(event) => setTopicForm((current) => ({ ...current, topicTitle: event.target.value }))} placeholder="Topic title" className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+              <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                <input value={topicForm.topicOrder} onChange={(event) => setTopicForm((current) => ({ ...current, topicOrder: event.target.value }))} placeholder="Order" className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+                <input value={topicForm.estimatedMinutes} onChange={(event) => setTopicForm((current) => ({ ...current, estimatedMinutes: event.target.value }))} placeholder="Minutes" className="rounded-lg border border-[var(--lp-border)] px-3 py-2 text-sm font-semibold" />
+                <button type="button" onClick={() => void addTopic()} className="rounded-lg bg-[var(--lp-primary)] px-4 py-2 text-sm font-bold text-white">Add topic</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FormDrawer>
     </div>
   );
 }

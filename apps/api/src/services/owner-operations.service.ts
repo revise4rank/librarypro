@@ -32,6 +32,10 @@ function buildStudentCode(fullName: string) {
   return `${prefix}${suffix}`;
 }
 
+function buildTemporaryStudentPassword() {
+  return `BL${crypto.randomBytes(3).toString("hex").toUpperCase()}${crypto.randomInt(10, 99)}`;
+}
+
 function isWithinDateRange(value: string | null | undefined, fromDate?: string, toDate?: string) {
   if (!value) return false;
   const current = value.slice(0, 10);
@@ -169,6 +173,7 @@ async function createAdmissionRecord(input: {
   email?: string;
   phone?: string;
   emergencyContact?: string;
+  temporaryPassword?: string;
   studentPlanId: string;
   planAmountOverride?: number;
   durationMonthsOverride?: number;
@@ -209,7 +214,7 @@ async function createAdmissionRecord(input: {
           }
         : await repo.findStudentByEmailOrPhone(client, input.email, input.phone);
     let isNewStudent = false;
-    const temporaryPassword = "changeme123";
+    const temporaryPassword = input.temporaryPassword?.trim() || buildTemporaryStudentPassword();
 
     if (!student) {
       const passwordHash = await hashPassword(temporaryPassword);
@@ -309,8 +314,10 @@ async function createAdmissionRecord(input: {
       assignmentId: assignment.id,
       paymentId: payment.id,
       studentUserId: student.id,
+      studentCode: (student as { student_code?: string | null }).student_code ?? null,
       loginId: (student as { student_code?: string | null }).student_code ?? student.email ?? student.phone ?? null,
       temporaryPassword: isNewStudent ? temporaryPassword : null,
+      isNewStudent,
       planName: pricing.plan.name,
       finalAmount: pricing.pricing.finalAmount,
     };
@@ -457,6 +464,7 @@ export async function createOwnerAdmission(input: {
   email?: string;
   phone?: string;
   emergencyContact?: string;
+  temporaryPassword?: string;
   studentPlanId: string;
   planAmountOverride?: number;
   durationMonthsOverride?: number;
@@ -2817,6 +2825,7 @@ export async function approveOwnerJoinRequest(input: {
   email?: string;
   phone?: string;
   emergencyContact?: string;
+  temporaryPassword?: string;
   studentPlanId: string;
   planAmountOverride?: number;
   durationMonthsOverride?: number;
@@ -2852,6 +2861,7 @@ export async function approveOwnerJoinRequest(input: {
       email: input.email || request.student_email || undefined,
       phone: input.phone || request.student_phone || undefined,
       emergencyContact: input.emergencyContact,
+      temporaryPassword: input.temporaryPassword,
       studentPlanId: input.studentPlanId,
       planAmountOverride: input.planAmountOverride,
       durationMonthsOverride: input.durationMonthsOverride,

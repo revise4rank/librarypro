@@ -38,6 +38,7 @@ import {
 } from "../controllers/referral.controller";
 import {
   createStudentBookRequestController,
+  linkAdminBookRequestController,
   listAdminBookRequestsController,
   listStudentBookRequestsController,
   updateAdminBookRequestStatusController,
@@ -73,9 +74,15 @@ import {
 } from "../controllers/offers.controller";
 import {
   completeStudentRevisionController,
+  addStudentBookController,
+  createAdminBookChapterController,
+  createAdminBookTopicController,
   createManualRevisionController,
+  downloadAdminBookTemplateController,
   downloadAdminSyllabusTemplateController,
+  getAdminBookController,
   importAdminSyllabusTemplatesController,
+  importAdminBooksController,
   importStudentSyllabusTemplateController,
   createOwnerStudentInterventionNoteController,
   createStudentFeedPostController,
@@ -90,11 +97,20 @@ import {
   getStudentFocusLeaderboardController,
   getStudentSyllabusAnalyticsController,
   getStudentSyllabusController,
+  getStudentBookController,
+  listAdminBooksController,
   listAdminSyllabusTemplatesController,
+  listStudentBooksController,
   listStudentLibrariesController,
   listStudentSyllabusTemplatesController,
+  searchStudentBooksController,
   setActiveStudentLibraryController,
+  syncStudentBookController,
+  uploadAdminBooksController,
   uploadAdminSyllabusTemplatesController,
+  updateAdminBookController,
+  updateAdminBookChapterController,
+  updateAdminBookTopicController,
   updateStudentFeedVisibilityController,
   updateOwnerStudentInterventionStatusController,
   updateSyllabusTopicProgressController,
@@ -320,6 +336,12 @@ router.post("/student/join-requests/resolve-qr", requireRole(["STUDENT"]), async
 router.get("/student/join-requests", requireRole(["STUDENT"]), asyncHandler(listStudentJoinRequestsController));
 router.get("/student/book-requests", requireRole(["STUDENT"]), asyncHandler(listStudentBookRequestsController));
 router.post("/student/book-requests", requireRole(["STUDENT"]), bookRequestTocUpload.single("tocImage"), asyncHandler(createStudentBookRequestController));
+router.get("/student/books/search", requireRole(["STUDENT"]), asyncHandler(searchStudentBooksController));
+router.get("/student/books", requireRole(["STUDENT"]), asyncHandler(listStudentBooksController));
+router.post("/student/books/:bookId/add", requireRole(["STUDENT"]), asyncHandler(addStudentBookController));
+router.get("/student/books/:studentBookId", requireRole(["STUDENT"]), asyncHandler(getStudentBookController));
+router.post("/student/books/:studentBookId/sync", requireRole(["STUDENT"]), asyncHandler(syncStudentBookController));
+router.patch("/student/books/topics/:topicId/progress", requireRole(["STUDENT"]), asyncHandler(updateSyllabusTopicProgressController));
 router.get("/student/syllabus", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusController));
 router.get("/student/syllabus/analytics", requireRole(["STUDENT"]), asyncHandler(getStudentSyllabusAnalyticsController));
 router.get("/student/syllabus/templates", requireRole(["STUDENT"]), asyncHandler(listStudentSyllabusTemplatesController));
@@ -356,6 +378,17 @@ router.post("/admin/blogs", requireRole(["SUPER_ADMIN"]), requirePlatformPermiss
 router.patch("/admin/blogs/:blogId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(updateAdminBlogController));
 router.delete("/admin/blogs/:blogId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(archiveAdminBlogController));
 router.patch("/admin/book-requests/:requestId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(updateAdminBookRequestStatusController));
+router.patch("/admin/book-requests/:requestId/link-book", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(linkAdminBookRequestController));
+router.get("/admin/books", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(listAdminBooksController));
+router.get("/admin/books/template.xlsx", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(downloadAdminBookTemplateController));
+router.post("/admin/books/import", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(importAdminBooksController));
+router.post("/admin/books/import-file", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), syllabusTemplateUpload.single("file"), asyncHandler(uploadAdminBooksController));
+router.get("/admin/books/:bookId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(getAdminBookController));
+router.patch("/admin/books/:bookId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(updateAdminBookController));
+router.post("/admin/books/:bookId/chapters", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(createAdminBookChapterController));
+router.patch("/admin/books/:bookId/chapters/:chapterId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(updateAdminBookChapterController));
+router.post("/admin/books/:bookId/topics", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(createAdminBookTopicController));
+router.patch("/admin/books/:bookId/topics/:topicId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("CONTENT"), asyncHandler(updateAdminBookTopicController));
 router.get("/admin/referrals", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("PAYMENTS"), asyncHandler(listAdminReferralsController));
 router.patch("/admin/referrals/:referralId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("PAYMENTS"), asyncHandler(updateAdminReferralStatusController));
 router.patch("/admin/student-referrals/:referralId", requireRole(["SUPER_ADMIN"]), requirePlatformPermission("PAYMENTS"), asyncHandler(updateAdminStudentReferralStatusController));

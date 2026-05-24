@@ -44,8 +44,10 @@ type CouponConfig = {
 type AdmissionResult = {
   assignmentId: string;
   paymentId: string;
+  studentCode: string | null;
   loginId: string | null;
   temporaryPassword: string | null;
+  isNewStudent?: boolean;
   planName: string;
   finalAmount: number;
 };
@@ -59,6 +61,7 @@ type AdmissionFormState = {
   email: string;
   phone: string;
   emergencyContact: string;
+  temporaryPassword: string;
   studentPlanId: string;
   planAmountOverride: string;
   durationMonthsOverride: string;
@@ -79,6 +82,7 @@ function createEmptyForm(): AdmissionFormState {
     email: "",
     phone: "",
     emergencyContact: "",
+    temporaryPassword: "",
     studentPlanId: "",
     planAmountOverride: "",
     durationMonthsOverride: "",
@@ -180,6 +184,7 @@ export function OwnerAdmissionsManager() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AdmissionResult | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const studentLoginUrl = typeof window === "undefined" ? "/student/login" : `${window.location.origin}/student/login`;
 
   async function load() {
     try {
@@ -265,6 +270,7 @@ export function OwnerAdmissionsManager() {
         email: form.email,
         phone: form.phone,
         emergencyContact: form.emergencyContact,
+        temporaryPassword: form.temporaryPassword || undefined,
         studentPlanId: form.studentPlanId,
         planAmountOverride: form.planAmountOverride ? Number(form.planAmountOverride) : undefined,
         durationMonthsOverride: form.durationMonthsOverride ? Number(form.durationMonthsOverride) : undefined,
@@ -308,6 +314,18 @@ export function OwnerAdmissionsManager() {
     } catch (rejectError) {
       setError(rejectError instanceof Error ? rejectError.message : "Unable to reject request.");
     }
+  }
+
+  async function copyLatestCredentials() {
+    if (!result) return;
+    const lines = [
+      "BookLib student login",
+      `Login page: ${studentLoginUrl}`,
+      `Login ID / student code: ${result.loginId ?? result.studentCode ?? "Use registered phone/email"}`,
+      result.temporaryPassword ? `Temporary password: ${result.temporaryPassword}` : "Password: Existing password, or use Forgot password on Student Login.",
+    ];
+    await navigator.clipboard?.writeText(lines.join("\n"));
+    setMessage("Student login details copied.");
   }
 
   return (
@@ -413,6 +431,36 @@ export function OwnerAdmissionsManager() {
               {selectedRequest ? selectedRequest.student_email ?? selectedRequest.student_phone ?? "Student details pending" : "Select a pending request to approve it into roster."}
             </p>
           </div>
+          {result ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Latest student login</p>
+                  <p className="mt-1 font-black text-emerald-950">{result.isNewStudent ? "New student credentials ready" : "Existing student linked"}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void copyLatestCredentials()}
+                  className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-800"
+                >
+                  Copy details
+                </button>
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg bg-white px-3 py-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Login ID / student code</p>
+                  <p className="mt-1 break-all font-mono text-sm font-black text-emerald-950">{result.loginId ?? result.studentCode ?? "Use registered phone/email"}</p>
+                </div>
+                <div className="rounded-lg bg-white px-3 py-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Password</p>
+                  <p className="mt-1 break-all font-mono text-sm font-black text-emerald-950">{result.temporaryPassword ?? "Existing password / Forgot password"}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs leading-5 text-emerald-800">
+                Student Login kholo: <span className="font-semibold">{studentLoginUrl}</span>. New student ko yahi code aur password dena hai.
+              </p>
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={() => {
@@ -460,6 +508,22 @@ export function OwnerAdmissionsManager() {
             <input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Contact number" />
             <input value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Email" />
             <input value={form.emergencyContact} onChange={(event) => setForm((current) => ({ ...current, emergencyContact: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Emergency contact" />
+          </div>
+
+          <div className="grid gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+            <div>
+              <p className="text-sm font-black text-emerald-950">Student login setup</p>
+              <p className="mt-1 text-xs leading-5 text-emerald-800">
+                Student code admission ke baad auto-generate hoga. Password blank chhodoge to system temporary password bana kar save ke baad dikha dega.
+              </p>
+            </div>
+            <input
+              value={form.temporaryPassword}
+              onChange={(event) => setForm((current) => ({ ...current, temporaryPassword: event.target.value }))}
+              className="rounded-lg border border-emerald-200 bg-white px-4 py-2 outline-none"
+              placeholder="Temporary password (optional)"
+              minLength={6}
+            />
           </div>
 
           <div className="grid gap-3 rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] p-4 md:grid-cols-2">
@@ -518,24 +582,27 @@ export function OwnerAdmissionsManager() {
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
               <p className="font-semibold">Assignment {result.assignmentId} created. Payment {result.paymentId} added.</p>
               <p className="mt-1">Plan: {result.planName} • Final amount Rs. {result.finalAmount.toLocaleString("en-IN")}</p>
-              {result.temporaryPassword ? (
-                <div className="mt-3 rounded-lg border border-emerald-200 bg-white/75 p-3">
+              <div className="mt-3 rounded-lg border border-emerald-200 bg-white/75 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-semibold text-emerald-950">Student portal credentials</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-lg bg-emerald-50 px-3 py-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Login ID</p>
-                      <p className="mt-1 font-mono text-sm font-bold text-emerald-950">{result.loginId ?? "student code"}</p>
-                    </div>
-                    <div className="rounded-lg bg-emerald-50 px-3 py-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Temporary password</p>
-                      <p className="mt-1 font-mono text-sm font-bold text-emerald-950">{result.temporaryPassword}</p>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-emerald-800">
-                    Student opens Student Login, selects this library, then enters these credentials.
-                  </p>
+                  <button type="button" onClick={() => void copyLatestCredentials()} className="rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">
+                    Copy
+                  </button>
                 </div>
-              ) : null}
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-lg bg-emerald-50 px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Login ID / student code</p>
+                    <p className="mt-1 break-all font-mono text-sm font-bold text-emerald-950">{result.loginId ?? result.studentCode ?? "Use phone/email"}</p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Password</p>
+                    <p className="mt-1 break-all font-mono text-sm font-bold text-emerald-950">{result.temporaryPassword ?? "Existing password / Forgot password"}</p>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-emerald-800">
+                  Student opens Student Login, selects this library, then enters these details. Existing student apna old password ya Forgot password use karega.
+                </p>
+              </div>
             </div>
           ) : null}
 

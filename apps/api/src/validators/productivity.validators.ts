@@ -31,6 +31,52 @@ export const adminSyllabusImportBodySchema = z.object({
   ).min(1).max(2000),
 });
 
+export const adminBookImportBodySchema = z.object({
+  rows: z.array(
+    z.object({
+      bookTitle: z.string().trim().min(1).max(180),
+      author: z.string().trim().max(140).optional().or(z.literal("")),
+      className: z.string().trim().max(80).optional().or(z.literal("")),
+      subject: z.string().trim().max(120).optional().or(z.literal("")),
+      language: z.string().trim().max(40).optional().or(z.literal("")),
+      chapterTitle: z.string().trim().min(1).max(180),
+      chapterOrder: z.coerce.number().int().min(0).max(5000).optional().default(0),
+      topicTitle: z.string().trim().min(1).max(180),
+      topicOrder: z.coerce.number().int().min(0).max(5000).optional().default(0),
+      estimatedMinutes: z.coerce.number().int().min(15).max(1440).optional().default(60),
+    }),
+  ).min(1).max(5000),
+});
+
+export const updateAdminBookBodySchema = z.object({
+  title: z.string().trim().min(1).max(180).optional(),
+  author: z.string().trim().max(140).optional().or(z.literal("")),
+  className: z.string().trim().max(80).optional().or(z.literal("")),
+  subject: z.string().trim().max(120).optional().or(z.literal("")),
+  language: z.string().trim().max(40).optional().or(z.literal("")),
+  status: z.enum(["DRAFT", "PUBLISHED", "UNPUBLISHED"]).optional(),
+});
+
+export const createAdminBookChapterBodySchema = z.object({
+  chapterTitle: z.string().trim().min(1).max(180),
+  chapterOrder: z.coerce.number().int().min(0).max(5000).default(0),
+});
+
+export const createAdminBookTopicBodySchema = z.object({
+  chapterId: z.string().uuid(),
+  topicTitle: z.string().trim().min(1).max(180),
+  topicOrder: z.coerce.number().int().min(0).max(5000).default(0),
+  estimatedMinutes: z.coerce.number().int().min(15).max(1440).default(60),
+});
+
+export const updateAdminBookChapterBodySchema = createAdminBookChapterBodySchema.partial();
+
+export const updateAdminBookTopicBodySchema = createAdminBookTopicBodySchema.partial();
+
+export const linkBookRequestBodySchema = z.object({
+  bookId: z.string().uuid(),
+});
+
 export const updateTopicProgressBodySchema = z.object({
   status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]),
   progressPercent: z.coerce.number().int().min(0).max(100).default(0),

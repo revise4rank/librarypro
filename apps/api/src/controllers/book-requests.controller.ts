@@ -41,6 +41,7 @@ function normalizeBookRequest(row: Record<string, unknown>) {
     status: row.status,
     created_at: row.created_at,
     reviewed_at: row.reviewed_at ?? null,
+    linked_global_book_id: row.linked_global_book_id ?? null,
   };
 }
 
@@ -63,7 +64,7 @@ export async function createStudentBookRequestController(req: Request, res: Resp
       student_user_id, library_id, title, author, class_name, subject, message, toc_image_url
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING id::text, student_user_id::text, library_id::text, title, author, class_name, subject, message, toc_image_url, status, created_at::text, reviewed_at::text
+    RETURNING id::text, student_user_id::text, library_id::text, title, author, class_name, subject, message, toc_image_url, status, created_at::text, reviewed_at::text, linked_global_book_id::text
     `,
     [
       studentUserId,
@@ -84,7 +85,7 @@ export async function listStudentBookRequestsController(req: Request, res: Respo
   const { studentUserId } = requireStudent(req);
   const result = await requireDb().query(
     `
-    SELECT id::text, student_user_id::text, library_id::text, title, author, class_name, subject, message, toc_image_url, status, created_at::text, reviewed_at::text
+    SELECT id::text, student_user_id::text, library_id::text, title, author, class_name, subject, message, toc_image_url, status, created_at::text, reviewed_at::text, linked_global_book_id::text
     FROM student_book_requests
     WHERE student_user_id = $1
     ORDER BY created_at DESC
@@ -112,7 +113,8 @@ export async function listAdminBookRequestsController(_req: Request, res: Respon
       sbr.toc_image_url,
       sbr.status,
       sbr.created_at::text,
-      sbr.reviewed_at::text
+      sbr.reviewed_at::text,
+      sbr.linked_global_book_id::text
     FROM student_book_requests sbr
     INNER JOIN users u ON u.id = sbr.student_user_id
     LEFT JOIN libraries l ON l.id = sbr.library_id
@@ -127,7 +129,7 @@ export async function updateAdminBookRequestStatusController(req: Request, res: 
   const { adminUserId } = requireSuperAdmin(req);
   const requestId = req.params.requestId;
   const status = String(req.body.status ?? "").trim();
-  if (!["PENDING", "APPROVED", "REJECTED", "FULFILLED"].includes(status)) {
+  if (!["PENDING", "IN_REVIEW", "APPROVED", "REJECTED", "FULFILLED"].includes(status)) {
     throw new AppError(400, "Invalid book request status", "INVALID_BOOK_REQUEST_STATUS");
   }
 
@@ -139,9 +141,41 @@ export async function updateAdminBookRequestStatusController(req: Request, res: 
         reviewed_at = CASE WHEN $2 = 'PENDING' THEN NULL ELSE NOW() END,
         updated_at = NOW()
     WHERE id = $1
-    RETURNING id::text, student_user_id::text, library_id::text, title, author, class_name, subject, message, toc_image_url, status, created_at::text, reviewed_at::text
+    RETURNING id::text, student_user_id::text, library_id::text, title, author, class_name, subject, message, toc_image_url, status, created_at::text, reviewed_at::text, linked_global_book_id::text
     `,
     [requestId, status, adminUserId],
+  );
+  if (!result.rows[0]) {
+    throw new AppError(404, "Book request not found", "BOOK_REQUEST_NOT_FOUND");
+  }
+  res.json({ success: true, data: normalizeBookRequest(result.rows[0]) });
+}
+
+export async function linkAdminBookRequestController(req: Request, res: Response) {
+  const { adminUserId } = requireSuperAdmin(req);
+  const requestId = req.params.requestId;
+  const bookId = String(req.body.bookId ?? "").trim();
+  if (!bookId) {
+    throw new AppError(400, "Book id is required", "BOOK_ID_REQUIRED");
+  }
+
+  const book = await requireDb().query("SELECT id FROM global_books WHERE id = $1 LIMIT 1", [bookId]);
+  if (!book.rows[0]) {
+    throw new AppError(404, "Book not found", "BOOK_NOT_FOUND");
+  }
+
+  const result = await requireDb().query(
+    `
+    UPDATE student_book_requests
+    SET status = 'FULFILLED',
+        linked_global_book_id = $2,
+        reviewed_by_user_id = $3,
+        reviewed_at = NOW(),
+        updated_at = NOW()
+    WHERE id = $1
+    RETURNING id::text, student_user_id::text, library_id::text, title, author, class_name, subject, message, toc_image_url, status, created_at::text, reviewed_at::text, linked_global_book_id::text
+    `,
+    [requestId, bookId, adminUserId],
   );
   if (!result.rows[0]) {
     throw new AppError(404, "Book request not found", "BOOK_REQUEST_NOT_FOUND");

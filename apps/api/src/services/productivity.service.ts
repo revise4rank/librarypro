@@ -159,6 +159,207 @@ export async function importGlobalSyllabusRows(input: {
   }
 }
 
+export async function listAdminBooks(filters: {
+  q?: string | null;
+  className?: string | null;
+  subject?: string | null;
+  status?: string | null;
+}) {
+  return repository().listAdminBooks(filters);
+}
+
+export async function getAdminBook(bookId: string) {
+  const book = await repository().getGlobalBook(bookId);
+  if (!book) {
+    throw new AppError(404, "Book not found", "BOOK_NOT_FOUND");
+  }
+  return book;
+}
+
+export async function importGlobalBookRows(input: {
+  createdByUserId: string;
+  rows: Array<{
+    bookTitle: string;
+    author?: string | null;
+    className?: string | null;
+    subject?: string | null;
+    language?: string | null;
+    chapterTitle: string;
+    chapterOrder: number;
+    topicTitle: string;
+    topicOrder: number;
+    estimatedMinutes: number;
+  }>;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await repo.importGlobalBookRows(client, input);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateAdminBook(input: {
+  bookId: string;
+  title?: string;
+  author?: string | null;
+  className?: string | null;
+  subject?: string | null;
+  language?: string | null;
+  status?: "DRAFT" | "PUBLISHED" | "UNPUBLISHED";
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await repo.updateGlobalBook(client, input.bookId, input);
+    if (!result) {
+      throw new AppError(404, "Book not found", "BOOK_NOT_FOUND");
+    }
+    await client.query("COMMIT");
+    return await repo.getGlobalBook(input.bookId);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createAdminBookChapter(input: { bookId: string; chapterTitle: string; chapterOrder: number }) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const chapter = await repo.createOrUpdateGlobalBookChapter(client, input);
+    await client.query("COMMIT");
+    return chapter;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateAdminBookChapter(input: {
+  bookId: string;
+  chapterId: string;
+  chapterTitle?: string;
+  chapterOrder?: number;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const chapter = await repo.updateGlobalBookChapter(client, input);
+    if (!chapter) throw new AppError(404, "Chapter not found", "BOOK_CHAPTER_NOT_FOUND");
+    await client.query("COMMIT");
+    return chapter;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createAdminBookTopic(input: {
+  bookId: string;
+  chapterId: string;
+  topicTitle: string;
+  topicOrder: number;
+  estimatedMinutes: number;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const topic = await repo.createOrUpdateGlobalBookTopic(client, input);
+    await client.query("COMMIT");
+    return topic;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateAdminBookTopic(input: {
+  bookId: string;
+  topicId: string;
+  chapterId?: string;
+  topicTitle?: string;
+  topicOrder?: number;
+  estimatedMinutes?: number;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const topic = await repo.updateGlobalBookTopic(client, input);
+    if (!topic) throw new AppError(404, "Topic not found", "BOOK_TOPIC_NOT_FOUND");
+    await client.query("COMMIT");
+    return topic;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function searchStudentBooks(filters: { q?: string | null; className?: string | null; subject?: string | null }) {
+  return repository().searchPublishedBooks(filters);
+}
+
+export async function listStudentBooks(studentUserId: string) {
+  return repository().listStudentBooks(studentUserId);
+}
+
+export async function getStudentBook(input: { studentUserId: string; studentBookId: string }) {
+  const book = await repository().getStudentBook(input.studentUserId, input.studentBookId);
+  if (!book) throw new AppError(404, "Student book not found", "STUDENT_BOOK_NOT_FOUND");
+  return book;
+}
+
+export async function addStudentBook(input: { studentUserId: string; bookId: string }) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await repo.addBookForStudent(client, input);
+    await client.query("COMMIT");
+    return { ...result, book: await repo.getStudentBook(input.studentUserId, result.studentBookId) };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function syncStudentBook(input: { studentUserId: string; studentBookId: string }) {
+  const current = await repository().getStudentBook(input.studentUserId, input.studentBookId);
+  if (!current) throw new AppError(404, "Student book not found", "STUDENT_BOOK_NOT_FOUND");
+  return addStudentBook({ studentUserId: input.studentUserId, bookId: current.book_id });
+}
+
 export async function importSyllabusTemplateForStudent(input: {
   studentUserId: string;
   className: string;
@@ -334,11 +535,15 @@ export async function updateSyllabusTopicProgress(input: {
 }
 
 export async function getStudentSyllabus(studentUserId: string) {
-  const [subjects, analytics, habit] = await Promise.all([
+  const [subjects, books, analytics, habit] = await Promise.all([
     repository().listSyllabus(studentUserId),
+    repository().listStudentBooks(studentUserId),
     repository().getSyllabusAnalytics(studentUserId),
     repository().getSyllabusHabitAnalytics(studentUserId),
   ]);
+  const bookTopicTotal = books.reduce((sum, book) => sum + Number(book.total_topics), 0);
+  const completedBookTopics = books.reduce((sum, book) => sum + Number(book.completed_topics), 0);
+  const booksWithNewTopics = books.filter((book) => Number(book.new_topics_available) > 0).length;
   const completedDays = new Set(habit.completionDays.map((row) => row.day_value));
   const today = new Date();
   const todayKey = today.toISOString().slice(0, 10);
@@ -372,10 +577,15 @@ export async function getStudentSyllabus(studentUserId: string) {
     ).best;
   return {
     subjects,
+    books,
     analytics: {
       totalSubjects: Number(analytics.total_subjects),
       totalTopics: Number(analytics.total_topics),
       completedTopics: Number(analytics.completed_topics),
+      activeBooks: books.length,
+      bookTopics: bookTopicTotal,
+      completedBookTopics,
+      booksWithNewTopics,
       dailyCompletedTopics: Number(analytics.daily_completed_topics),
       completionPercent:
         Number(analytics.total_topics) > 0
