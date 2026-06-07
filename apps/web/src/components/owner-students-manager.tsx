@@ -115,6 +115,34 @@ function isLikelyLegacySeatRoom(room: RoomOption) {
   return /^[A-Z]{1,3}\d{1,4}$/i.test(room.name.trim()) && (room.seat_count ?? 0) <= 1;
 }
 
+function deriveFloorsFromSeats(seats: OwnerSeatOption[]) {
+  const floorMap = new Map<string, FloorOption>();
+  seats.forEach((seat) => {
+    if (!seat.floor_id || !seat.floor_name) return;
+    floorMap.set(seat.floor_id, { id: seat.floor_id, name: seat.floor_name });
+  });
+  return Array.from(floorMap.values());
+}
+
+function deriveRoomsFromSeats(seats: OwnerSeatOption[]) {
+  const roomMap = new Map<string, RoomOption>();
+  seats.forEach((seat) => {
+    if (!seat.floor_id) return;
+    const roomName = seat.room_name ?? seat.section_name;
+    if (!roomName) return;
+    const roomId = seat.room_id ?? `${seat.floor_id}:${roomName}`;
+    const existing = roomMap.get(roomId);
+    roomMap.set(roomId, {
+      id: roomId,
+      floor_id: seat.floor_id,
+      name: roomName,
+      status: "ACTIVE",
+      seat_count: (existing?.seat_count ?? 0) + 1,
+    });
+  });
+  return Array.from(roomMap.values()).filter((room) => !isLikelyLegacySeatRoom(room));
+}
+
 async function uploadStudentDocument(file: File) {
   const formData = new FormData();
   formData.append("file", file);
@@ -249,18 +277,25 @@ export function OwnerStudentsManager() {
   async function loadStudents() {
     setLoading(true);
     try {
-      const [studentsResponse, seatsResponse, plansResponse, floorsResponse, roomsResponse] = await Promise.all([
+      const [studentsResponse, seatsResponse, plansResponse] = await Promise.all([
         apiFetch<{ success: boolean; data: StudentRow[] }>("/owner/students"),
         apiFetch<{ success: boolean; data: OwnerSeatOption[] }>("/owner/seats"),
         apiFetch<{ success: boolean; data: StudentPlanConfig[] }>("/owner/student-plans"),
+      ]);
+      const [floorsResponse, roomsResponse] = await Promise.allSettled([
         apiFetch<{ success: boolean; data: FloorOption[] }>("/owner/floors"),
         apiFetch<{ success: boolean; data: RoomOption[] }>("/owner/rooms"),
       ]);
+      const loadedFloors = floorsResponse.status === "fulfilled" ? floorsResponse.value.data : deriveFloorsFromSeats(seatsResponse.data);
+      const loadedRooms =
+        roomsResponse.status === "fulfilled"
+          ? roomsResponse.value.data.filter((room) => room.status !== "INACTIVE" && !isLikelyLegacySeatRoom(room))
+          : deriveRoomsFromSeats(seatsResponse.data);
       setRows(studentsResponse.data);
       setSeats(seatsResponse.data);
       setPlans(plansResponse.data);
-      setFloors(floorsResponse.data);
-      setRooms(roomsResponse.data.filter((room) => room.status !== "INACTIVE" && !isLikelyLegacySeatRoom(room)));
+      setFloors(loadedFloors);
+      setRooms(loadedRooms);
       setSelectedAssignmentId((current) => current ?? studentsResponse.data[0]?.assignment_id ?? null);
       setError(null);
     } catch (loadError) {
