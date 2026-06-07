@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
+import { buildQrFileName, buildQrImageUrl, downloadBrandedQrPng } from "../lib/branded-qr";
 import { DashboardCard } from "./dashboard-shell";
 
 type CheckinRow = {
@@ -85,10 +86,6 @@ function buildQuery(filters: FilterState) {
   if (filters.fromDate) params.set("fromDate", filters.fromDate);
   if (filters.toDate) params.set("toDate", filters.toDate);
   return params.toString();
-}
-
-function buildQrImageUrl(payload: string, size = 640) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=16&data=${encodeURIComponent(payload)}`;
 }
 
 function escapeHtml(value: string) {
@@ -192,24 +189,18 @@ export function OwnerCheckinsManager() {
   async function downloadQrImage() {
     if (!qrSettings?.qr_payload) return;
     const qrUrl = buildQrImageUrl(qrSettings.qr_payload, 960);
-    const filename = `${qrSettings.library_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-attendance-qr.png`;
+    const filename = buildQrFileName(qrSettings.library_name);
 
-    setQrDownloadStatus("Preparing QR download...");
+    setQrDownloadStatus("Preparing branded QR download...");
     try {
-      const response = await fetch(qrUrl);
-      if (!response.ok) {
-        throw new Error("Unable to fetch QR image.");
-      }
-      const blob = await response.blob();
-      const objectUrl = window.URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = filename;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(objectUrl);
-      setQrDownloadStatus("QR image downloaded.");
+      await downloadBrandedQrPng({
+        payload: qrSettings.qr_payload,
+        libraryName: qrSettings.library_name,
+        location: [qrSettings.area, qrSettings.city].filter(Boolean).join(", "),
+        qrKeyId: qrSettings.qr_key_id,
+        filename,
+      });
+      setQrDownloadStatus("Branded QR image downloaded.");
     } catch (downloadError) {
       const anchor = document.createElement("a");
       anchor.href = qrUrl;
@@ -217,7 +208,7 @@ export function OwnerCheckinsManager() {
       anchor.rel = "noopener";
       anchor.target = "_blank";
       anchor.click();
-      setQrDownloadStatus(downloadError instanceof Error ? "Opened QR image in a new tab for download." : "Opened QR image in a new tab.");
+      setQrDownloadStatus(downloadError instanceof Error ? "Opened raw QR image in a new tab for download." : "Opened raw QR image in a new tab.");
     }
   }
 
@@ -247,23 +238,32 @@ export function OwnerCheckinsManager() {
         <head>
           <title>${safeLibraryName} QR</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 36px; color: #0f172a; }
-            .poster { min-height: calc(100vh - 72px); border: 2px solid #0f172a; border-radius: 20px; display: grid; place-items: center; text-align: center; padding: 32px; }
-            h1 { font-size: 38px; margin: 0 0 8px; }
+            body { font-family: Arial, sans-serif; margin: 0; padding: 32px; color: #0f172a; background: #f8fafc; }
+            .poster { min-height: calc(100vh - 64px); border: 2px solid #0f766e; border-radius: 28px; display: grid; place-items: center; text-align: center; padding: 32px; background: white; box-shadow: 0 18px 50px rgba(15,23,42,.12); }
+            .brand { display: inline-flex; align-items: center; gap: 12px; border-radius: 999px; border: 1px solid #bbf7d0; background: #ecfdf5; padding: 10px 18px; color: #0f766e; font-weight: 900; }
+            .brand img { width: 46px; height: 46px; margin: 0; object-fit: contain; border-radius: 12px; background: white; }
+            h1 { font-size: 42px; margin: 28px 0 8px; }
             p { margin: 0; color: #475569; font-size: 18px; }
-            img { width: min(72vw, 520px); height: min(72vw, 520px); margin: 28px auto; }
-            .key { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #64748b; }
-            .hint { font-weight: 700; color: #0f766e; }
+            .qr-wrap { margin: 30px auto 24px; display: inline-block; border-radius: 28px; border: 10px solid #d1fae5; background: #fff; padding: 18px; }
+            .qr-wrap img { width: min(72vw, 520px); height: min(72vw, 520px); margin: 0; display: block; }
+            .key { margin-top: 12px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #64748b; }
+            .hint { font-weight: 900; color: #0f766e; }
+            .powered { margin-top: 24px; font-size: 14px; font-weight: 800; color: #64748b; }
           </style>
         </head>
         <body>
           <main class="poster">
             <section>
+              <div class="brand">
+                <img src="/icons/booklib-mark.png" alt="" />
+                BookLib Attendance QR
+              </div>
               <h1>${safeLibraryName}</h1>
               <p>${safeLocation}</p>
-              <img src="${qrUrl}" alt="Library QR" />
+              <div class="qr-wrap"><img src="${qrUrl}" alt="Library QR" /></div>
               <p class="hint">Students scan this QR from their BookLib app for check-in and check-out.</p>
               <p class="key">QR Key: ${safeQrKey}</p>
+              <p class="powered">Powered by BookLib</p>
             </section>
           </main>
           <script>window.onload = () => { window.print(); };</script>
@@ -387,23 +387,28 @@ export function OwnerCheckinsManager() {
       </DashboardCard>
 
       <DashboardCard title="Library QR scanner board" subtitle="Download or print the reception QR that students scan from their app.">
-        <div className="grid gap-4 lg:grid-cols-[150px_1fr]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-3">
+        <div className="grid gap-4 lg:grid-cols-[190px_1fr]">
+          <div className="rounded-2xl border border-emerald-100 bg-[linear-gradient(180deg,#ecfdf5,#ffffff)] p-3 text-center">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-emerald-100">
+              <img src="/icons/booklib-mark.png" alt="" className="h-5 w-5 rounded object-contain" />
+              <span className="text-[11px] font-black text-emerald-700">BookLib QR</span>
+            </div>
             {qrSettings?.qr_payload ? (
               <img
                 src={buildQrImageUrl(qrSettings.qr_payload, 420)}
                 alt={`${qrSettings.library_name} library QR`}
-                className="h-28 w-28 rounded-xl bg-white object-cover"
+                className="mx-auto h-36 w-36 rounded-xl bg-white object-cover shadow-sm ring-1 ring-slate-200"
               />
             ) : (
-              <div className="grid h-28 w-28 place-items-center rounded-xl bg-slate-100 text-xs text-slate-500">Loading QR...</div>
+              <div className="mx-auto grid h-36 w-36 place-items-center rounded-xl bg-slate-100 text-xs text-slate-500">Loading QR...</div>
             )}
+            <p className="mt-2 text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">Scan-safe code</p>
           </div>
           <div className="grid content-start gap-3">
             <div>
               <p className="text-xl font-black text-slate-950">{qrSettings?.library_name ?? "Library QR"}</p>
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                Place this QR at reception or entry gate. Students can scan it for check-in/check-out and join requests.
+                Place this branded QR at reception or entry gate. Students can scan it for check-in/check-out and join requests.
               </p>
             </div>
             <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
@@ -417,7 +422,7 @@ export function OwnerCheckinsManager() {
                 disabled={!qrSettings?.qr_payload}
                 className="rounded-xl bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-black text-[var(--lp-accent)] disabled:opacity-50"
               >
-                Download QR
+                Download branded QR
               </button>
               <button
                 type="button"
@@ -425,7 +430,7 @@ export function OwnerCheckinsManager() {
                 disabled={!qrSettings?.qr_payload}
                 className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 disabled:opacity-50"
               >
-                Open QR image
+                Open raw QR
               </button>
               <button
                 type="button"

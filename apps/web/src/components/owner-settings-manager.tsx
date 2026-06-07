@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { apiFetch, clearClientSession, logoutSession, saveSession, type SessionState, type SessionUser } from "../lib/api";
+import { buildQrImageUrl } from "../lib/branded-qr";
 import { OwnerAdminsManager } from "./owner-admins-manager";
 import { DashboardCard } from "./dashboard-shell";
 
@@ -63,10 +64,6 @@ const settingsGroups: Array<{
 
 function getSettingsGroupForTab(tab: OwnerSettingsTab) {
   return settingsGroups.find((group) => group.tabs.includes(tab)) ?? settingsGroups[0];
-}
-
-function buildQrImageUrl(payload: string) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data=${encodeURIComponent(payload)}`;
 }
 
 function SettingsTabButton({
@@ -407,12 +404,17 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
 
             <DashboardCard title="QR access" subtitle="Library-level QR validation state and entry image.">
               <div className="grid gap-3 text-sm text-[var(--lp-text-soft)]">
-                <div className="overflow-hidden rounded-lg border border-[var(--lp-border)] bg-white p-4">
+                <div className="overflow-hidden rounded-lg border border-emerald-100 bg-[linear-gradient(180deg,#ecfdf5,#ffffff)] p-4 text-center">
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-emerald-100">
+                    <img src="/icons/booklib-mark.png" alt="" className="h-5 w-5 rounded object-contain" />
+                    <span className="text-[11px] font-black text-emerald-700">BookLib QR</span>
+                  </div>
                   <img
-                    src={buildQrImageUrl(data.qr_payload)}
+                    src={buildQrImageUrl(data.qr_payload, 360)}
                     alt={`${data.library_name} library QR`}
-                    className="mx-auto h-52 w-52 rounded-lg bg-white object-cover"
+                    className="mx-auto h-52 w-52 rounded-lg bg-white object-cover shadow-sm ring-1 ring-slate-200"
                   />
+                  <p className="mt-3 text-xs font-bold text-slate-500">Download branded poster from Attendance.</p>
                 </div>
                 <p>Active QR key: <span className="font-semibold text-[var(--lp-text)]">{data.qr_key_id}</span></p>
                 <p>Offline check-in: <span className="font-semibold text-[var(--lp-text)]">{data.allow_offline_checkin ? "Enabled" : "Disabled"}</span></p>

@@ -16,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { apiFetch, dashboardPathForRole, hydrateSessionFromServer, logoutSession, type SessionUser } from "../lib/api";
+import { buildQrFileName, buildQrImageUrl, downloadBrandedQrPng } from "../lib/branded-qr";
 import {
   loginPathForRole,
   groupNavItems,
@@ -44,14 +45,6 @@ type OwnerQrSettingsResponse = {
     allow_offline_checkin: boolean;
   };
 };
-
-function buildQrImageUrl(payload: string, size = 640) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=16&data=${encodeURIComponent(payload)}`;
-}
-
-function qrFilename(libraryName: string) {
-  return `${libraryName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "library"}-attendance-qr.png`;
-}
 
 function initialsFromName(value?: string | null) {
   if (!value) return "U";
@@ -179,24 +172,18 @@ export function DashboardShell({
   async function downloadOwnerQrImage() {
     if (!ownerQrSettings?.qr_payload) return;
     const qrUrl = buildQrImageUrl(ownerQrSettings.qr_payload, 960);
-    const filename = qrFilename(ownerQrSettings.library_name);
+    const filename = buildQrFileName(ownerQrSettings.library_name);
 
-    setOwnerQrDownloadStatus("Preparing QR...");
+    setOwnerQrDownloadStatus("Preparing branded QR...");
     try {
-      const response = await fetch(qrUrl);
-      if (!response.ok) {
-        throw new Error("Unable to fetch QR image.");
-      }
-      const blob = await response.blob();
-      const objectUrl = window.URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = filename;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(objectUrl);
-      setOwnerQrDownloadStatus("QR downloaded.");
+      await downloadBrandedQrPng({
+        payload: ownerQrSettings.qr_payload,
+        libraryName: ownerQrSettings.library_name,
+        location: [ownerQrSettings.area, ownerQrSettings.city].filter(Boolean).join(", "),
+        qrKeyId: ownerQrSettings.qr_key_id,
+        filename,
+      });
+      setOwnerQrDownloadStatus("Branded QR downloaded.");
     } catch {
       const anchor = document.createElement("a");
       anchor.href = qrUrl;
@@ -204,7 +191,7 @@ export function DashboardShell({
       anchor.rel = "noopener";
       anchor.target = "_blank";
       anchor.click();
-      setOwnerQrDownloadStatus("Opened QR image.");
+      setOwnerQrDownloadStatus("Opened raw QR image.");
     }
   }
 
@@ -341,16 +328,20 @@ export function DashboardShell({
                         </div>
 
                         <div className="mt-3 grid gap-3">
-                          <div className="mx-auto grid h-44 w-44 place-items-center rounded-xl border border-slate-200 bg-slate-50 p-2">
+                          <div className="mx-auto grid w-52 place-items-center rounded-xl border border-emerald-100 bg-[linear-gradient(180deg,#ecfdf5,#ffffff)] p-3">
+                            <div className="mb-2 flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-emerald-100">
+                              <Image src="/icons/booklib-mark.png" alt="" width={20} height={20} className="h-5 w-5 rounded object-contain" />
+                              <span className="text-[11px] font-black text-emerald-700">BookLib QR</span>
+                            </div>
                             {ownerQrSettings?.qr_payload ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={buildQrImageUrl(ownerQrSettings.qr_payload, 360)}
                                 alt={`${ownerQrSettings.library_name} attendance QR`}
-                                className="h-full w-full rounded-lg bg-white object-cover"
+                                className="h-40 w-40 rounded-lg bg-white object-cover shadow-sm ring-1 ring-slate-200"
                               />
                             ) : (
-                              <p className="px-3 text-center text-sm font-semibold text-slate-500">{ownerQrLoading ? "Loading QR..." : "QR not loaded"}</p>
+                              <p className="grid h-40 w-40 place-items-center px-3 text-center text-sm font-semibold text-slate-500">{ownerQrLoading ? "Loading QR..." : "QR not loaded"}</p>
                             )}
                           </div>
 
@@ -378,7 +369,7 @@ export function DashboardShell({
                             disabled={!ownerQrSettings?.qr_payload}
                             className="rounded-lg bg-[var(--lp-primary)] px-4 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            Download QR
+                            Download branded QR
                           </button>
                           {ownerQrDownloadStatus ? <p className="text-xs font-bold text-emerald-700">{ownerQrDownloadStatus}</p> : null}
                         </div>
