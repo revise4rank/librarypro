@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
 import { FormDrawer } from "./form-drawer";
@@ -98,6 +99,9 @@ export function OwnerLeadsManager() {
   return (
     <>
     <div className="grid gap-6">
+      <Link href="/owner/marketing" className="w-fit rounded-full border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-black text-[var(--lp-accent)]">
+        Back to Marketing
+      </Link>
       <DashboardCard title="Lead inbox" subtitle="Marketplace call, WhatsApp, and form interest in one CRM-style inbox">
         <div className="grid gap-4">
           <div className="grid gap-3 sm:grid-cols-4">

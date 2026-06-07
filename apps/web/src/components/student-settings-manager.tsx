@@ -42,6 +42,8 @@ function buildSession(data: AuthMeResponse["data"]) {
       studentCode: data.studentCode,
       email: data.email,
       phone: data.phone,
+      dateOfBirth: data.dateOfBirth,
+      gender: data.gender,
       role: data.role,
       libraryIds: data.libraryIds,
     },
@@ -53,7 +55,7 @@ export function StudentSettingsManager({ initialTab = "account" }: { initialTab?
   const [activeTab, setActiveTab] = useState<StudentSettingsTab>(initialTab);
   const [account, setAccount] = useState<SessionUser | null>(null);
   const [libraries, setLibraries] = useState<LibrariesResponse["data"]>([]);
-  const [accountForm, setAccountForm] = useState({ fullName: "", email: "", phone: "" });
+  const [accountForm, setAccountForm] = useState({ fullName: "", email: "", phone: "", dateOfBirth: "", gender: "" });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", nextPassword: "" });
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -74,6 +76,8 @@ export function StudentSettingsManager({ initialTab = "account" }: { initialTab?
         fullName: nextSession.user.fullName ?? "",
         email: nextSession.user.email ?? "",
         phone: nextSession.user.phone ?? "",
+        dateOfBirth: nextSession.user.dateOfBirth ?? "",
+        gender: nextSession.user.gender ?? "",
       });
       setLibraries(librariesResponse.data);
       setError(null);
@@ -215,6 +219,24 @@ export function StudentSettingsManager({ initialTab = "account" }: { initialTab?
                 className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none"
                 placeholder="Phone"
               />
+              <input
+                type="date"
+                value={accountForm.dateOfBirth}
+                onChange={(event) => setAccountForm((current) => ({ ...current, dateOfBirth: event.target.value }))}
+                className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none"
+                aria-label="Date of birth"
+              />
+              <select
+                value={accountForm.gender}
+                onChange={(event) => setAccountForm((current) => ({ ...current, gender: event.target.value }))}
+                className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none"
+              >
+                <option value="">Gender optional</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+                <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+              </select>
               <button disabled={accountSaving} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                 {accountSaving ? "Saving..." : "Save profile"}
               </button>
@@ -250,6 +272,8 @@ export function StudentSettingsManager({ initialTab = "account" }: { initialTab?
                 <p>Student ID: <span className="font-semibold text-[var(--lp-text)]">{account.studentCode ?? "-"}</span></p>
                 <p>Email: <span className="font-semibold text-[var(--lp-text)]">{account.email ?? "-"}</span></p>
                 <p>Phone: <span className="font-semibold text-[var(--lp-text)]">{account.phone ?? "-"}</span></p>
+                <p>Date of birth: <span className="font-semibold text-[var(--lp-text)]">{account.dateOfBirth ?? "-"}</span></p>
+                <p>Gender: <span className="font-semibold text-[var(--lp-text)]">{account.gender ? account.gender.replaceAll("_", " ") : "-"}</span></p>
                 <button
                   type="button"
                   onClick={async () => {

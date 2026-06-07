@@ -9,6 +9,8 @@ import { GoogleOAuthButton } from "./owner-login-form";
 export function StudentRegisterManager() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +44,7 @@ export function StudentRegisterManager() {
         "/auth/student/register",
         {
           method: "POST",
-          body: JSON.stringify({ fullName, email, phone, password, referralCode }),
+          body: JSON.stringify({ fullName, dateOfBirth, gender, email, phone, password, referralCode }),
         },
         false,
       );
@@ -64,6 +66,16 @@ export function StudentRegisterManager() {
       </div>
       <form onSubmit={onSubmit} className="grid gap-4">
       <input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Full name" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <input type="date" value={dateOfBirth} onChange={(event) => setDateOfBirth(event.target.value)} aria-label="Date of birth" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
+        <select value={gender} onChange={(event) => setGender(event.target.value)} className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3">
+          <option value="">Gender optional</option>
+          <option value="MALE">Male</option>
+          <option value="FEMALE">Female</option>
+          <option value="OTHER">Other</option>
+          <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+        </select>
+      </div>
       <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Phone" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />
       <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="Password" className="rounded-2xl border border-[var(--lp-border)] bg-white px-4 py-3" />

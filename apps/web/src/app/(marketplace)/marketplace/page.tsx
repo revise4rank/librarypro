@@ -21,7 +21,7 @@ export default async function MarketplacePage() {
       <PublicSiteHeader activeLabel="Features" />
 
       <section className="overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#f4fbf8_48%,#eefbf5_100%)]">
-        <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-14 md:py-20 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+        <div className="mx-auto grid max-w-[1200px] gap-8 px-4 py-8 md:py-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div>
             <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm">
               <Compass className="h-4 w-4 text-emerald-600" />
@@ -60,7 +60,7 @@ export default async function MarketplacePage() {
             </div>
           </div>
 
-          <div className="lp-marketplace-banner relative min-h-[280px] overflow-hidden rounded-lg border border-slate-200 bg-slate-950 shadow-xl">
+          <div className="lp-marketplace-banner relative min-h-[180px] overflow-hidden rounded-lg border border-slate-200 bg-slate-950 shadow-xl">
             {bannerSlides.map((slide, index) => (
               <article
                 key={slide.title}
@@ -80,7 +80,7 @@ export default async function MarketplacePage() {
         </div>
       </section>
 
-      <section id="marketplace-search" className="mx-auto w-full max-w-[1200px] px-4 py-10 pb-20">
+      <section id="marketplace-search" className="mx-auto w-full max-w-[1200px] px-4 py-6 pb-10">
         <Suspense fallback={<div className="rounded-lg border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-500 shadow-sm">Loading marketplace search...</div>}>
           <MarketplaceSearch />
         </Suspense>

@@ -8,6 +8,21 @@ import { FormDrawer } from "./form-drawer";
 type ProductivityDetailResponse = {
   success: boolean;
   data: {
+    profile: {
+      studentUserId: string;
+      assignmentId: string;
+      studentName: string;
+      email: string | null;
+      phone: string | null;
+      dateOfBirth: string | null;
+      gender: string | null;
+      fatherName: string | null;
+      className: string | null;
+      preparingFor: string | null;
+      emergencyContact: string | null;
+      planName: string | null;
+      seatNumber: string | null;
+    };
     summary: {
       totalStudyHours: number;
       weeklyStudyHours: number;
@@ -169,10 +184,29 @@ export function OwnerStudentProductivityManager({
     { label: "Syllabus", value: `${data.summary.completedTopics}/${data.summary.totalTopics}`, note: `${data.summary.dailyCompletedTopics} topics today` },
   ];
   const maxTrendFocus = Math.max(...data.trends.map((point) => point.focusMinutes), 1);
+  const genderLabel = data.profile.gender ? data.profile.gender.replaceAll("_", " ") : "-";
 
   return (
     <div className="grid gap-6">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
+
+      <DashboardCard title="Student profile" subtitle="Identity and library admission details">
+        <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {[
+            ["Name", data.profile.studentName || studentName || "-"],
+            ["DOB", data.profile.dateOfBirth ?? "-"],
+            ["Gender", genderLabel],
+            ["Contact", data.profile.phone ?? data.profile.email ?? "-"],
+            ["Seat", data.profile.seatNumber ?? "Unallotted"],
+            ["Plan", data.profile.planName ?? "-"],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <p className="text-[10px] font-black uppercase text-slate-400">{label}</p>
+              <p className="mt-1 truncate text-sm font-semibold text-slate-950">{value}</p>
+            </div>
+          ))}
+        </div>
+      </DashboardCard>
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {summaryCards.map((card) => (

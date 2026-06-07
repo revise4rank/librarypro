@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch, displayApiError } from "../lib/api";
 import { DashboardCard } from "./dashboard-shell";
 import { FormDrawer } from "./form-drawer";
@@ -61,6 +62,9 @@ export function OwnerOffersManager() {
     <>
       <DashboardCard title="Offer workspace" subtitle="Optional promotions, discounts, and library-specific opportunities">
         <div className="grid gap-4">
+          <Link href="/owner/marketing" className="w-fit rounded-full border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-black text-[var(--lp-accent)]">
+            Back to Marketing
+          </Link>
           <div className="rounded-2xl border border-[var(--lp-accent-soft)] bg-[linear-gradient(135deg,rgba(227,248,240,0.96),rgba(255,249,240,0.96))] p-5">
             <p className="text-xs font-black uppercase tracking-[0.28em] text-[var(--lp-accent-strong)]">Optional growth layer</p>
             <h3 className="mt-2 text-xl font-black text-[var(--lp-text)]">Keep promotions useful, limited, and easy to review.</h3>

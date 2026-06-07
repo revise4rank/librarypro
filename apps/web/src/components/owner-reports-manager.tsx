@@ -175,14 +175,11 @@ export function OwnerReportsManager() {
     <div className="grid gap-5">
       {error ? isPlanAccessMessage(error) ? <PlanAccessNotice message={error} /> : <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
 
-      <section className="rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-sm">
+      <section className="rounded-lg border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] px-3 py-2.5 text-white shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Report center</p>
-            <h3 className="mt-1 text-xl font-black tracking-tight">Business snapshots and export files</h3>
-            <p className="mt-1 text-sm leading-6 text-white/85">
-              Compare revenue, expenses, attendance, and operational records without digging through dense tables.
-            </p>
+            <h3 className="mt-1 text-base font-black tracking-tight">Business snapshots and export files</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             <div className="rounded-lg bg-white/12 px-4 py-2.5 text-sm font-black">
@@ -196,8 +193,8 @@ export function OwnerReportsManager() {
       </section>
 
       <DashboardCard title="Report actions" subtitle="Filters, exports, and detailed rows open in right drawers so the main report stays compact.">
-        <div className="grid gap-4">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="grid gap-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
             <p className="text-sm font-black text-slate-950">Active window</p>
             <p className="mt-1 text-sm text-slate-500">{fromDate} to {toDate}</p>
           </div>
@@ -205,21 +202,21 @@ export function OwnerReportsManager() {
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-800"
             >
               Change date window
             </button>
             <button
               type="button"
               onClick={() => setExportsOpen(true)}
-              className="rounded-xl bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-black text-[var(--lp-accent)]"
+              className="rounded-xl bg-[var(--lp-accent-soft)] px-3 py-2 text-sm font-black text-[var(--lp-accent)]"
             >
               Download reports
             </button>
             <button
               type="button"
               onClick={() => setPreviewsOpen(true)}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-800"
             >
               Review detailed rows
             </button>
@@ -235,9 +232,9 @@ export function OwnerReportsManager() {
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <DashboardCard title="Monthly comparison" subtitle="Revenue, expense, and profit trend over the last six months">
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             {reports.monthlyComparison.map((point) => (
-              <div key={point.month} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div key={point.month} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="font-black text-slate-950">{point.month}</p>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
@@ -250,8 +247,8 @@ export function OwnerReportsManager() {
                       <span>Revenue</span>
                       <span>{toCurrency(point.revenue)}</span>
                     </div>
-                    <div className="h-3 rounded-full bg-slate-100">
-                      <div className="h-3 rounded-full bg-emerald-500" style={{ width: `${Math.max(6, Math.round((point.revenue / chartScale) * 100))}%` }} />
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${Math.max(6, Math.round((point.revenue / chartScale) * 100))}%` }} />
                     </div>
                   </div>
                   <div>
@@ -259,8 +256,8 @@ export function OwnerReportsManager() {
                       <span>Expenses</span>
                       <span>{toCurrency(point.expenses)}</span>
                     </div>
-                    <div className="h-3 rounded-full bg-slate-100">
-                      <div className="h-3 rounded-full bg-rose-500" style={{ width: `${Math.max(6, Math.round((point.expenses / chartScale) * 100))}%` }} />
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-rose-500" style={{ width: `${Math.max(6, Math.round((point.expenses / chartScale) * 100))}%` }} />
                     </div>
                   </div>
                 </div>
@@ -271,7 +268,7 @@ export function OwnerReportsManager() {
 
         <DashboardCard title="Category split" subtitle="Where money is leaking and where collections stand">
           <div className="grid gap-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Payment mix</p>
               <div className="mt-4 grid gap-3">
                 <div className="flex items-center justify-between text-sm">
@@ -289,7 +286,7 @@ export function OwnerReportsManager() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Expense categories</p>
               <div className="mt-4 grid gap-3">
                 {reports.expenseCategorySplit.map((item) => (
@@ -298,8 +295,8 @@ export function OwnerReportsManager() {
                       <span>{item.category}</span>
                       <span>{toCurrency(item.amount)}</span>
                     </div>
-                    <div className="h-3 rounded-full bg-slate-100">
-                      <div className="h-3 rounded-full bg-[var(--lp-primary)]" style={{ width: `${Math.max(8, Math.round((item.amount / categoryTotal) * 100))}%` }} />
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-[var(--lp-primary)]" style={{ width: `${Math.max(8, Math.round((item.amount / categoryTotal) * 100))}%` }} />
                     </div>
                   </div>
                 ))}
@@ -357,7 +354,7 @@ export function OwnerReportsManager() {
         description={`Range: ${fromDate || "start"} to ${toDate || "today"}. Export owner records as XLSX or PDF.`}
         widthClassName="sm:w-[min(94vw,48rem)] max-w-3xl"
       >
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
           {[
             ["summary", "Business summary"],
             ["students", "Student list"],
@@ -367,9 +364,9 @@ export function OwnerReportsManager() {
             ["expenses", "Expenses"],
             ["attendance", "Attendance"],
           ].map(([reportType, label]) => (
-            <div key={reportType} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div key={reportType} className="flex flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
               <p className="font-black text-slate-950">{label}</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => void exportReport(reportType as ReportType, "xlsx")}

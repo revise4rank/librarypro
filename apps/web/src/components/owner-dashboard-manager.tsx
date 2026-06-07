@@ -111,6 +111,7 @@ export function OwnerDashboardManager() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [playbookOpen, setPlaybookOpen] = useState(false);
   const [trendsOpen, setTrendsOpen] = useState(false);
+  const [dashTab, setDashTab] = useState<"today" | "pipeline" | "insights">("today");
 
   useEffect(() => {
     async function loadDashboard() {
@@ -239,31 +240,46 @@ export function OwnerDashboardManager() {
   return (
     <div className="grid gap-4 md:gap-5">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
-      <section className="rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#18b56f_0%,#87e6ca_100%)] p-4 text-white shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <section className="rounded-lg border border-[var(--lp-border)] bg-[linear-gradient(135deg,#18b56f_0%,#87e6ca_100%)] px-3 py-2.5 text-white shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Owner workflow live</p>
-            <h3 className="mt-1 text-2xl font-black tracking-tight">Run the day in the same order your team actually works</h3>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-white/85">
-              Admit students first, move them into the active roster, and only then open seat assignment when placement is ready.
-            </p>
+            <h3 className="mt-1 text-base font-black tracking-tight">Admissions first. Roster next. Seats only when ready.</h3>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+          <div className="flex w-full gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               href="/owner/admissions"
-              className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-lg border border-[#0F172A] bg-[#0F172A] px-5 py-2.5 text-sm font-black !text-white shadow-sm transition hover:bg-slate-800"
+              className="inline-flex h-8 min-w-0 flex-1 items-center justify-center rounded-lg border border-[#0F172A] bg-[#0F172A] px-3 text-xs font-black !text-white shadow-sm transition hover:bg-slate-800 sm:flex-none"
             >
               Open admissions
             </Link>
             <Link
               href="/owner/admissions?mode=requests"
-              className="inline-flex min-h-11 min-w-[156px] items-center justify-center rounded-lg border border-white/70 bg-white px-5 py-2.5 text-sm font-black !text-[#0F172A] shadow-sm transition hover:bg-emerald-50"
+              className="inline-flex h-8 min-w-0 flex-1 items-center justify-center rounded-lg border border-white/70 bg-white px-3 text-xs font-black !text-[#0F172A] shadow-sm transition hover:bg-emerald-50 sm:flex-none"
             >
               Review join requests
             </Link>
           </div>
         </div>
       </section>
+
+      <div className="grid grid-cols-3 gap-1 rounded-lg border border-[var(--lp-border)] bg-white p-1">
+        {(["today", "pipeline", "insights"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setDashTab(tab)}
+            className={`rounded-md px-3 py-2 text-sm font-black capitalize transition ${
+              dashTab === tab ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {dashTab === "today" ? (
+      <>
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((item) => (
           <StatCard
@@ -280,9 +296,8 @@ export function OwnerDashboardManager() {
         <DashboardCard title="Priority center" subtitle="What needs action before you move into the day">
           <div className="grid gap-3 md:grid-cols-2">
             {alerts.map((alert) => (
-              <article key={alert.title} className={`rounded-xl border p-4 ${alert.tone}`}>
+              <article key={alert.title} className={`rounded-lg border px-3 py-2 ${alert.tone}`}>
                 <h4 className="text-sm font-black">{alert.title}</h4>
-                <p className="mt-1 text-sm leading-6">{alert.detail}</p>
               </article>
             ))}
           </div>
@@ -320,7 +335,11 @@ export function OwnerDashboardManager() {
           </div>
         </DashboardCard>
       </section>
+      </>
+      ) : null}
 
+      {dashTab === "pipeline" ? (
+      <>
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <DashboardCard title="Follow-up queue" subtitle="Productivity interventions that still need action">
           <div className="grid gap-3">
@@ -442,7 +461,30 @@ export function OwnerDashboardManager() {
             {data.dueStudents.length === 0 ? <div className="bg-white px-4 py-6 text-sm text-slate-500">No urgent students right now.</div> : null}
           </div>
         </DashboardCard>
+        <DashboardCard title="Recent finance log" subtitle="Latest collection activity">
+          <div className="space-y-3">
+            {data.recentPayments.map((payment) => (
+              <div key={payment.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-4">
+                <div>
+                  <p className="font-bold text-slate-950">{payment.student_name}</p>
+                  <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.created_at).slice(0, 10)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-black text-slate-950">Rs. {Number(payment.amount).toLocaleString()}</p>
+                  <p className={`text-xs font-black ${payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{payment.status}</p>
+                </div>
+              </div>
+            ))}
+            {data.recentPayments.length === 0 ? <p className="text-sm text-slate-500">No payment records yet.</p> : null}
+          </div>
+        </DashboardCard>
+      </section>
+      </>
+      ) : null}
 
+      {dashTab === "insights" ? (
+      <>
+      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <DashboardCard title="Library controls" subtitle="Live settings and platform state">
           <div className="grid gap-4">
             <div className="rounded-xl bg-[linear-gradient(135deg,#1c978f_0%,#9ce6d5_100%)] p-4 text-white">
@@ -560,25 +602,9 @@ export function OwnerDashboardManager() {
             <StatCard label="Active students" value={data.metrics.active_students} note="Current seat holders" />
           </div>
         </DashboardCard>
-
-        <DashboardCard title="Recent finance log" subtitle="Latest collection activity">
-          <div className="space-y-3">
-            {data.recentPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-4">
-                <div>
-                  <p className="font-bold text-slate-950">{payment.student_name}</p>
-                  <p className="text-sm text-slate-500">{payment.method} | {(payment.paid_at ?? payment.created_at).slice(0, 10)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-black text-slate-950">Rs. {Number(payment.amount).toLocaleString()}</p>
-                  <p className={`text-xs font-black ${payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}`}>{payment.status}</p>
-                </div>
-              </div>
-            ))}
-            {data.recentPayments.length === 0 ? <p className="text-sm text-slate-500">No payment records yet.</p> : null}
-          </div>
-        </DashboardCard>
       </section>
+      </>
+      ) : null}
     </div>
   );
 }

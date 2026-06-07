@@ -15,6 +15,8 @@ export const resetPasswordBodySchema = z.object({
 });
 
 export const googleOAuthRoleSchema = z.enum(["LIBRARY_OWNER", "STUDENT"]);
+const studentGenderSchema = z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]);
+const optionalDateOfBirthSchema = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal(""));
 
 export const googleOAuthStatusQuerySchema = z.object({});
 
@@ -44,6 +46,8 @@ export const googleOAuthCompleteBodySchema = z.object({
 
 export const studentRegisterBodySchema = z.object({
   fullName: z.string().trim().min(2).max(150),
+  dateOfBirth: optionalDateOfBirthSchema,
+  gender: studentGenderSchema.optional().or(z.literal("")),
   email: z.string().trim().email().optional().or(z.literal("")),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
   password: z.string().min(6).max(120),
@@ -67,6 +71,8 @@ export const ownerRegisterBodySchema = z
 
 export const updateMeBodySchema = z.object({
   fullName: z.string().trim().min(2).max(150),
+  dateOfBirth: optionalDateOfBirthSchema,
+  gender: studentGenderSchema.optional().or(z.literal("")),
   email: z.string().trim().email().optional().or(z.literal("")),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
 });

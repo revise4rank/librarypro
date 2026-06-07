@@ -6,6 +6,8 @@ export type UserRow = {
   full_name: string;
   email: string | null;
   phone: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
   student_code: string | null;
   password_hash: string;
   global_role: user_role;
@@ -24,7 +26,7 @@ export class AuthRepository {
   async findUserByLogin(login: string) {
     const result = await this.pool.query<UserRow>(
       `
-      SELECT id, full_name, email, phone, student_code, password_hash, global_role, session_version
+      SELECT id, full_name, email, phone, date_of_birth::date::text AS date_of_birth, gender, student_code, password_hash, global_role, session_version
       FROM users
       WHERE email = $1 OR phone = $1 OR student_code = $1
       LIMIT 1
@@ -72,7 +74,7 @@ export class AuthRepository {
   async findUserById(userId: string) {
     const result = await this.pool.query<UserRow>(
       `
-      SELECT id, full_name, email, phone, student_code, password_hash, global_role, session_version
+      SELECT id, full_name, email, phone, date_of_birth::date::text AS date_of_birth, gender, student_code, password_hash, global_role, session_version
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -86,7 +88,7 @@ export class AuthRepository {
   async findUserByEmail(email: string) {
     const result = await this.pool.query<UserRow>(
       `
-      SELECT id, full_name, email, phone, student_code, password_hash, global_role, session_version
+      SELECT id, full_name, email, phone, date_of_birth::date::text AS date_of_birth, gender, student_code, password_hash, global_role, session_version
       FROM users
       WHERE LOWER(email) = LOWER($1)
       LIMIT 1
@@ -97,17 +99,19 @@ export class AuthRepository {
     return result.rows[0] ?? null;
   }
 
-  async updateUserProfile(input: { userId: string; fullName: string; email?: string | null; phone?: string | null }) {
+  async updateUserProfile(input: { userId: string; fullName: string; email?: string | null; phone?: string | null; dateOfBirth?: string | null; gender?: string | null }) {
     const result = await this.pool.query<UserRow>(
       `
       UPDATE users
       SET full_name = $2,
           email = $3,
-          phone = $4
+          phone = $4,
+          date_of_birth = $5,
+          gender = $6
       WHERE id = $1
-      RETURNING id, full_name, email, phone, student_code, password_hash, global_role, session_version
+      RETURNING id, full_name, email, phone, date_of_birth::date::text AS date_of_birth, gender, student_code, password_hash, global_role, session_version
       `,
-      [input.userId, input.fullName, input.email ?? null, input.phone ?? null],
+      [input.userId, input.fullName, input.email ?? null, input.phone ?? null, input.dateOfBirth ?? null, input.gender ?? null],
     );
 
     return result.rows[0] ?? null;
@@ -120,7 +124,7 @@ export class AuthRepository {
       SET password_hash = $2,
           session_version = session_version + 1
       WHERE id = $1
-      RETURNING id, full_name, email, phone, student_code, password_hash, global_role, session_version
+      RETURNING id, full_name, email, phone, date_of_birth::date::text AS date_of_birth, gender, student_code, password_hash, global_role, session_version
       `,
       [input.userId, input.passwordHash],
     );

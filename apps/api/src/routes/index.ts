@@ -120,6 +120,23 @@ import {
   createStudentPlannerEntryController,
   updateStudentPlannerEntryController,
   deleteStudentPlannerEntryController,
+  carryForwardStudentPlannerEntryController,
+  markStudentPlannerRevisionController,
+  listStudentPlannerGoalsController,
+  createStudentPlannerGoalController,
+  updateStudentPlannerGoalController,
+  deleteStudentPlannerGoalController,
+  listStudentPlannerNotesController,
+  createStudentPlannerNoteController,
+  updateStudentPlannerNoteController,
+  deleteStudentPlannerNoteController,
+  listStudentPlannerExamsController,
+  createStudentPlannerExamController,
+  updateStudentPlannerExamController,
+  deleteStudentPlannerExamController,
+  listStudentPlannerHabitsController,
+  updateStudentPlannerHabitController,
+  getStudentPlannerAnalyticsController,
 } from "../controllers/productivity.controller";
 import {
   assignOwnerSeatController,
@@ -128,6 +145,7 @@ import {
   createOwnerAdmissionController,
   createOwnerFloorController,
   createOwnerNotificationController,
+  createOwnerRoomController,
   createOwnerExpenseController,
   createOwnerAdminController,
   createOwnerCouponController,
@@ -154,6 +172,7 @@ import {
   getOwnerCheckinsController,
   getOwnerPaymentReceiptController,
   listOwnerFloorsController,
+  listOwnerRoomsController,
   exportOwnerPaymentReceiptController,
   getOwnerReportsSummaryController,
   getOwnerSettingsController,
@@ -195,6 +214,7 @@ import {
   updateOwnerPaymentController,
   updateOwnerCouponController,
   updateOwnerFloorController,
+  updateOwnerRoomController,
   updateOwnerSeatController,
   updateOwnerStudentController,
   updateOwnerStudentPlanController,
@@ -210,6 +230,15 @@ import {
   updateAdminPlanConfigController,
   updatePlatformAdminController,
 } from "../controllers/owner-operations.controller";
+import {
+  commitOwnerMigrationController,
+  downloadOwnerMigrationCredentialsController,
+  downloadOwnerMigrationTemplateController,
+  getOwnerMigrationJobController,
+  getOwnerMigrationLoginStatusController,
+  listOwnerMigrationJobsController,
+  previewOwnerMigrationController,
+} from "../controllers/owner-migration.controller";
 import { uploadAdmissionDocumentController, uploadPublicProfileAssetController } from "../controllers/upload.controller";
 import { asyncHandler } from "../lib/async-handler";
 import { admissionDocumentUpload, bookRequestTocUpload, publicProfileUpload, syllabusTemplateUpload } from "../lib/upload";
@@ -272,6 +301,13 @@ router.get("/owner/join-requests", requireRole(["LIBRARY_OWNER"]), requireOwnerP
 router.post("/owner/join-requests/:requestId/approve", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(approveOwnerJoinRequestController));
 router.post("/owner/join-requests/:requestId/reject", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(rejectOwnerJoinRequestController));
 router.post("/owner/admissions", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(createOwnerAdmissionController));
+router.get("/owner/migration/template.xlsx", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(downloadOwnerMigrationTemplateController));
+router.post("/owner/migration/preview", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), syllabusTemplateUpload.single("file"), asyncHandler(previewOwnerMigrationController));
+router.post("/owner/migration/:jobId/commit", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(commitOwnerMigrationController));
+router.get("/owner/migration/jobs", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(listOwnerMigrationJobsController));
+router.get("/owner/migration/login-status", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(getOwnerMigrationLoginStatusController));
+router.get("/owner/migration/:jobId/credentials.pdf", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(downloadOwnerMigrationCredentialsController));
+router.get("/owner/migration/:jobId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("admissions"), asyncHandler(getOwnerMigrationJobController));
 router.get("/owner/student-plans", requireRole(["LIBRARY_OWNER"]), asyncHandler(listOwnerStudentPlansController));
 router.post("/owner/student-plans", requireRole(["LIBRARY_OWNER"]), asyncHandler(createOwnerStudentPlanController));
 router.patch("/owner/student-plans/:planId", requireRole(["LIBRARY_OWNER"]), asyncHandler(updateOwnerStudentPlanController));
@@ -297,11 +333,14 @@ router.post("/owner/students/:assignmentId/seat-allot", requireRole(["LIBRARY_OW
 router.delete("/owner/students/:assignmentId/seat-allot", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("students"), asyncHandler(unassignOwnerStudentSeatController));
 router.get("/owner/seats", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(listOwnerSeatsController));
 router.get("/owner/floors", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(listOwnerFloorsController));
+router.get("/owner/rooms", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(listOwnerRoomsController));
 router.get("/owner/checkins", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("checkins"), asyncHandler(getOwnerCheckinsController));
 router.get("/owner/checkins/manual/students", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("checkins"), asyncHandler(listOwnerManualAttendanceStudentsController));
 router.post("/owner/checkins/manual", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("checkins"), asyncHandler(createOwnerManualAttendanceController));
 router.post("/owner/floors", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(createOwnerFloorController));
 router.patch("/owner/floors/:floorId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(updateOwnerFloorController));
+router.post("/owner/rooms", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(createOwnerRoomController));
+router.patch("/owner/rooms/:roomId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(updateOwnerRoomController));
 router.post("/owner/seats", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(createOwnerSeatsController));
 router.patch("/owner/seats/:seatId", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(updateOwnerSeatController));
 router.post("/owner/seats/assign", requireRole(["LIBRARY_OWNER"]), requireOwnerPermission("seat_control"), asyncHandler(assignOwnerSeatController));
@@ -331,6 +370,23 @@ router.post("/student/feed/posts/:postId/like", requireRole(["STUDENT"]), asyncH
 router.patch("/student/feed/visibility", requireRole(["STUDENT"]), asyncHandler(updateStudentFeedVisibilityController));
 router.get("/student/planner/week", requireRole(["STUDENT"]), asyncHandler(listStudentPlannerWeekController));
 router.get("/student/planner/month", requireRole(["STUDENT"]), asyncHandler(listStudentPlannerMonthController));
+router.get("/student/planner/analytics", requireRole(["STUDENT"]), asyncHandler(getStudentPlannerAnalyticsController));
+router.get("/student/planner/goals", requireRole(["STUDENT"]), asyncHandler(listStudentPlannerGoalsController));
+router.post("/student/planner/goals", requireRole(["STUDENT"]), asyncHandler(createStudentPlannerGoalController));
+router.patch("/student/planner/goals/:goalId", requireRole(["STUDENT"]), asyncHandler(updateStudentPlannerGoalController));
+router.delete("/student/planner/goals/:goalId", requireRole(["STUDENT"]), asyncHandler(deleteStudentPlannerGoalController));
+router.get("/student/planner/notes", requireRole(["STUDENT"]), asyncHandler(listStudentPlannerNotesController));
+router.post("/student/planner/notes", requireRole(["STUDENT"]), asyncHandler(createStudentPlannerNoteController));
+router.patch("/student/planner/notes/:noteId", requireRole(["STUDENT"]), asyncHandler(updateStudentPlannerNoteController));
+router.delete("/student/planner/notes/:noteId", requireRole(["STUDENT"]), asyncHandler(deleteStudentPlannerNoteController));
+router.get("/student/planner/exams", requireRole(["STUDENT"]), asyncHandler(listStudentPlannerExamsController));
+router.post("/student/planner/exams", requireRole(["STUDENT"]), asyncHandler(createStudentPlannerExamController));
+router.patch("/student/planner/exams/:examId", requireRole(["STUDENT"]), asyncHandler(updateStudentPlannerExamController));
+router.delete("/student/planner/exams/:examId", requireRole(["STUDENT"]), asyncHandler(deleteStudentPlannerExamController));
+router.get("/student/planner/habits", requireRole(["STUDENT"]), asyncHandler(listStudentPlannerHabitsController));
+router.patch("/student/planner/habits", requireRole(["STUDENT"]), asyncHandler(updateStudentPlannerHabitController));
+router.post("/student/planner/entries/:entryId/carry-forward", requireRole(["STUDENT"]), asyncHandler(carryForwardStudentPlannerEntryController));
+router.post("/student/planner/entries/:entryId/revision", requireRole(["STUDENT"]), asyncHandler(markStudentPlannerRevisionController));
 router.post("/student/planner", requireRole(["STUDENT"]), asyncHandler(createStudentPlannerEntryController));
 router.patch("/student/planner/:entryId", requireRole(["STUDENT"]), asyncHandler(updateStudentPlannerEntryController));
 router.delete("/student/planner/:entryId", requireRole(["STUDENT"]), asyncHandler(deleteStudentPlannerEntryController));

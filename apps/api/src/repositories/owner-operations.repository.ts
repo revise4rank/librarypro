@@ -5,6 +5,8 @@ export type OwnerStudentRow = {
   student_user_id: string;
   student_code: string | null;
   student_name: string;
+  date_of_birth: string | null;
+  gender: string | null;
   father_name: string | null;
   address: string | null;
   class_name: string | null;
@@ -39,7 +41,13 @@ export type OwnerStudentPlanRow = {
   name: string;
   target_audience: string | null;
   description: string | null;
+  plan_type?: "MONTHLY" | "DAY_WISE" | "SHIFT_HOURS";
   duration_months: number;
+  duration_days?: number | null;
+  shift_start_time?: string | null;
+  shift_end_time?: string | null;
+  allowed_hours?: string | null;
+  allowed_days?: string[] | null;
   base_amount: string;
   default_discount_type: string | null;
   default_discount_value: string | null;
@@ -155,6 +163,8 @@ export type OwnerSeatRow = {
   id: string;
   floor_name: string | null;
   floor_id?: string | null;
+  room_id?: string | null;
+  room_name?: string | null;
   section_name?: string | null;
   seat_number: string;
   row_no: number;
@@ -166,6 +176,7 @@ export type OwnerSeatRow = {
   assignment_id: string | null;
   student_name: string | null;
   student_user_id: string | null;
+  student_code?: string | null;
   plan_name?: string | null;
   payment_status?: string | null;
   ends_at?: string | null;
@@ -209,6 +220,25 @@ export type OwnerFloorRow = {
     sectionColors?: Record<string, string>;
     rooms?: FloorRoomConfig[];
   } | null;
+};
+
+export type OwnerRoomRow = {
+  id: string;
+  library_id?: string;
+  floor_id: string;
+  floor_name?: string | null;
+  name: string;
+  sort_order: number;
+  status: "ACTIVE" | "INACTIVE";
+  seat_count?: number;
+  available_seats?: number;
+};
+
+export type OwnerSeatFilters = {
+  floorId?: string | null;
+  roomId?: string | null;
+  status?: string | null;
+  availableOnly?: boolean;
 };
 
 type FloorRoomConfig = {
@@ -299,6 +329,8 @@ export type JoinRequestRow = {
   student_code: string | null;
   student_email: string | null;
   student_phone: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
   seat_preference: string | null;
   message: string | null;
   requested_via: string;
@@ -334,6 +366,8 @@ export class OwnerOperationsRepository {
         u.id AS student_user_id,
         u.student_code,
         u.full_name AS student_name,
+        u.date_of_birth::date::text AS date_of_birth,
+        u.gender,
         sa.father_name,
         sa.address,
         sa.class_name,
@@ -390,6 +424,8 @@ export class OwnerOperationsRepository {
           u.id AS student_user_id,
           u.student_code,
           u.full_name AS student_name,
+          u.date_of_birth::date::text AS date_of_birth,
+          u.gender,
           sa.father_name,
           sa.address,
           sa.class_name,
@@ -453,9 +489,9 @@ export class OwnerOperationsRepository {
   }
 
   async findStudentByEmailOrPhone(client: PoolClient, email?: string, phone?: string) {
-    const result = await client.query<{ id: string; full_name: string; email: string | null; phone: string | null; student_code: string | null }>(
+    const result = await client.query<{ id: string; full_name: string; email: string | null; phone: string | null; student_code: string | null; date_of_birth: string | null; gender: string | null }>(
       `
-      SELECT id, full_name, email, phone, student_code
+      SELECT id, full_name, email, phone, student_code, date_of_birth::date::text AS date_of_birth, gender
       FROM users
       WHERE ($1::text IS NOT NULL AND email = $1)
          OR ($2::text IS NOT NULL AND phone = $2)
@@ -471,16 +507,19 @@ export class OwnerOperationsRepository {
     fullName: string;
     email?: string;
     phone?: string;
+    dateOfBirth?: string | null;
+    gender?: string | null;
     studentCode: string;
+    referralCode?: string;
     passwordHash: string;
   }) {
     const result = await client.query<{ id: string }>(
       `
-      INSERT INTO users (full_name, email, phone, student_code, password_hash, global_role)
-      VALUES ($1, $2, $3, $4, $5, 'STUDENT')
+      INSERT INTO users (full_name, email, phone, date_of_birth, gender, student_code, referral_code, password_hash, global_role)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'STUDENT')
       RETURNING id
       `,
-      [input.fullName, input.email ?? null, input.phone ?? null, input.studentCode, input.passwordHash],
+      [input.fullName, input.email ?? null, input.phone ?? null, input.dateOfBirth ?? null, input.gender ?? null, input.studentCode, input.referralCode ?? null, input.passwordHash],
     );
 
     return result.rows[0];
@@ -502,6 +541,8 @@ export class OwnerOperationsRepository {
     fullName: string;
     email?: string | null;
     phone?: string | null;
+    dateOfBirth?: string | null;
+    gender?: string | null;
   }) {
     await client.query(
       `
@@ -510,10 +551,12 @@ export class OwnerOperationsRepository {
         full_name = $2,
         email = $3,
         phone = $4,
+        date_of_birth = $5,
+        gender = $6,
         updated_at = NOW()
       WHERE id = $1
       `,
-      [input.userId, input.fullName, input.email ?? null, input.phone ?? null],
+      [input.userId, input.fullName, input.email ?? null, input.phone ?? null, input.dateOfBirth ?? null, input.gender ?? null],
     );
   }
 
@@ -525,7 +568,13 @@ export class OwnerOperationsRepository {
         name,
         target_audience,
         description,
+        plan_type,
         duration_months,
+        duration_days,
+        shift_start_time::text,
+        shift_end_time::text,
+        allowed_hours::text,
+        allowed_days,
         base_amount::text,
         default_discount_type::text,
         default_discount_value::text,
@@ -546,7 +595,13 @@ export class OwnerOperationsRepository {
     name: string;
     targetAudience?: string | null;
     description?: string | null;
+    planType?: "MONTHLY" | "DAY_WISE" | "SHIFT_HOURS";
     durationMonths: number;
+    durationDays?: number | null;
+    shiftStartTime?: string | null;
+    shiftEndTime?: string | null;
+    allowedHours?: number | null;
+    allowedDays?: string[] | null;
     baseAmount: number;
     defaultDiscountType?: "PERCENTAGE" | "FLAT" | null;
     defaultDiscountValue?: number | null;
@@ -555,10 +610,11 @@ export class OwnerOperationsRepository {
     const result = await client.query<{ id: string }>(
       `
       INSERT INTO library_student_plans (
-        library_id, name, target_audience, description, duration_months, base_amount,
+        library_id, name, target_audience, description, plan_type, duration_months, duration_days,
+        shift_start_time, shift_end_time, allowed_hours, allowed_days, base_amount,
         default_discount_type, default_discount_value, is_active
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::time, $9::time, $10, $11, $12, $13, $14, $15)
       RETURNING id
       `,
       [
@@ -566,7 +622,13 @@ export class OwnerOperationsRepository {
         input.name,
         input.targetAudience ?? null,
         input.description ?? null,
+        input.planType ?? "MONTHLY",
         input.durationMonths,
+        input.durationDays ?? null,
+        input.shiftStartTime ?? null,
+        input.shiftEndTime ?? null,
+        input.allowedHours ?? null,
+        input.allowedDays ?? null,
         input.baseAmount,
         input.defaultDiscountType ?? null,
         input.defaultDiscountValue ?? null,
@@ -583,7 +645,13 @@ export class OwnerOperationsRepository {
     name: string;
     targetAudience?: string | null;
     description?: string | null;
+    planType?: "MONTHLY" | "DAY_WISE" | "SHIFT_HOURS";
     durationMonths: number;
+    durationDays?: number | null;
+    shiftStartTime?: string | null;
+    shiftEndTime?: string | null;
+    allowedHours?: number | null;
+    allowedDays?: string[] | null;
     baseAmount: number;
     defaultDiscountType?: "PERCENTAGE" | "FLAT" | null;
     defaultDiscountValue?: number | null;
@@ -596,11 +664,17 @@ export class OwnerOperationsRepository {
         name = $3,
         target_audience = $4,
         description = $5,
-        duration_months = $6,
-        base_amount = $7,
-        default_discount_type = $8,
-        default_discount_value = $9,
-        is_active = $10,
+        plan_type = $6,
+        duration_months = $7,
+        duration_days = $8,
+        shift_start_time = $9::time,
+        shift_end_time = $10::time,
+        allowed_hours = $11,
+        allowed_days = $12,
+        base_amount = $13,
+        default_discount_type = $14,
+        default_discount_value = $15,
+        is_active = $16,
         updated_at = NOW()
       WHERE library_id = $1 AND id = $2
       RETURNING id
@@ -611,7 +685,13 @@ export class OwnerOperationsRepository {
         input.name,
         input.targetAudience ?? null,
         input.description ?? null,
+        input.planType ?? "MONTHLY",
         input.durationMonths,
+        input.durationDays ?? null,
+        input.shiftStartTime ?? null,
+        input.shiftEndTime ?? null,
+        input.allowedHours ?? null,
+        input.allowedDays ?? null,
         input.baseAmount,
         input.defaultDiscountType ?? null,
         input.defaultDiscountValue ?? null,
@@ -630,7 +710,13 @@ export class OwnerOperationsRepository {
         name,
         target_audience,
         description,
+        plan_type,
         duration_months,
+        duration_days,
+        shift_start_time::text,
+        shift_end_time::text,
+        allowed_hours::text,
+        allowed_days,
         base_amount::text,
         default_discount_type::text,
         default_discount_value::text,
@@ -881,9 +967,10 @@ export class OwnerOperationsRepository {
       student_user_id: string;
       seat_id: string | null;
       status: string;
+      payment_status: string;
     }>(
       `
-      SELECT id, library_id, student_user_id, seat_id, status::text
+      SELECT id, library_id, student_user_id, seat_id, status::text, payment_status::text
       FROM student_assignments
       WHERE id = $1 AND library_id = $2
       LIMIT 1
@@ -1945,14 +2032,16 @@ export class OwnerOperationsRepository {
     }
   }
 
-  async listSeats(libraryId: string) {
+  async listSeats(libraryId: string, filters: OwnerSeatFilters = {}) {
     const result = await this.pool.query<OwnerSeatRow>(
       `
       SELECT
         s.id,
         s.floor_id,
         lf.name AS floor_name,
-        s.label AS section_name,
+        s.room_id,
+        lr.name AS room_name,
+        COALESCE(lr.name, s.label) AS section_name,
         s.seat_number,
         s.row_no,
         s.col_no,
@@ -1963,6 +2052,7 @@ export class OwnerOperationsRepository {
         sa.id AS assignment_id,
         u.full_name AS student_name,
         u.id AS student_user_id,
+        u.student_code,
         sa.plan_name,
         sa.payment_status::text,
         sa.ends_at::date::text,
@@ -1976,15 +2066,26 @@ export class OwnerOperationsRepository {
         ) AS last_check_in_at
       FROM seats s
       LEFT JOIN library_floors lf ON lf.id = s.floor_id
+      LEFT JOIN library_rooms lr ON lr.id = s.room_id
       LEFT JOIN student_assignments sa
         ON sa.seat_id = s.id
        AND sa.library_id = s.library_id
        AND sa.status = 'ACTIVE'
       LEFT JOIN users u ON u.id = sa.student_user_id
       WHERE s.library_id = $1
-      ORDER BY COALESCE(lf.floor_number, 0), s.pos_y, s.pos_x, s.row_no, s.col_no, s.seat_number
+        AND ($2::uuid IS NULL OR s.floor_id = $2::uuid)
+        AND ($3::uuid IS NULL OR s.room_id = $3::uuid)
+        AND ($4::text IS NULL OR s.status::text = $4)
+        AND ($5::boolean IS FALSE OR (s.status = 'AVAILABLE' AND sa.id IS NULL))
+      ORDER BY COALESCE(lf.floor_number, 0), COALESCE(lr.sort_order, 0), s.pos_y, s.pos_x, s.row_no, s.col_no, s.seat_number
       `,
-      [libraryId],
+      [
+        libraryId,
+        filters.floorId || null,
+        filters.roomId || null,
+        filters.status || null,
+        filters.availableOnly ?? false,
+      ],
     );
 
     return result.rows;
@@ -2074,6 +2175,7 @@ export class OwnerOperationsRepository {
   async createSeat(client: PoolClient, input: {
     libraryId: string;
     floorId: string | null;
+    roomId?: string | null;
     seatNumber: string;
     sectionName: string | null;
     rowNo: number;
@@ -2081,11 +2183,11 @@ export class OwnerOperationsRepository {
   }) {
     const result = await client.query<{ id: string; seat_number: string }>(
       `
-      INSERT INTO seats (library_id, floor_id, seat_number, label, row_no, col_no, pos_x, pos_y, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $6, $5, 'AVAILABLE')
+      INSERT INTO seats (library_id, floor_id, room_id, seat_number, label, row_no, col_no, pos_x, pos_y, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $6, 'AVAILABLE')
       RETURNING id, seat_number
       `,
-      [input.libraryId, input.floorId, input.seatNumber, input.sectionName, input.rowNo, input.colNo],
+      [input.libraryId, input.floorId, input.roomId ?? null, input.seatNumber, input.sectionName, input.rowNo, input.colNo],
     );
 
     return result.rows[0];
@@ -2141,13 +2243,15 @@ export class OwnerOperationsRepository {
       id: string;
       seat_number: string;
       status: string;
+      floor_id: string | null;
+      room_id: string | null;
       label: string | null;
       reserved_until: string | null;
       pos_x: number;
       pos_y: number;
     }>(
       `
-      SELECT id, seat_number, status::text, label, reserved_until::text, pos_x, pos_y
+      SELECT id, seat_number, status::text, floor_id, room_id, label, reserved_until::text, pos_x, pos_y
       FROM seats
       WHERE library_id = $1 AND id = $2
       LIMIT 1
@@ -2263,6 +2367,119 @@ export class OwnerOperationsRepository {
     );
 
     return result.rows;
+  }
+
+  async listRooms(libraryId: string, floorId?: string | null) {
+    const result = await this.pool.query<OwnerRoomRow>(
+      `
+      SELECT
+        lr.id,
+        lr.library_id,
+        lr.floor_id,
+        lf.name AS floor_name,
+        lr.name,
+        lr.sort_order,
+        lr.status AS status,
+        COUNT(s.id)::int AS seat_count,
+        COUNT(s.id) FILTER (WHERE s.status = 'AVAILABLE')::int AS available_seats
+      FROM library_rooms lr
+      INNER JOIN library_floors lf ON lf.id = lr.floor_id
+      LEFT JOIN seats s ON s.room_id = lr.id
+      WHERE lr.library_id = $1
+        AND ($2::uuid IS NULL OR lr.floor_id = $2::uuid)
+      GROUP BY lr.id, lf.name, lf.floor_number
+      HAVING NOT (lr.name ~* '^[A-Z]{1,3}[0-9]{1,4}$' AND COUNT(s.id) <= 1)
+      ORDER BY lf.floor_number, lr.sort_order, lr.name
+      `,
+      [libraryId, floorId || null],
+    );
+
+    return result.rows;
+  }
+
+  async createRoom(client: PoolClient, input: {
+    libraryId: string;
+    floorId: string;
+    name: string;
+    sortOrder?: number | null;
+    status?: "ACTIVE" | "INACTIVE";
+  }) {
+    const existing = await client.query<OwnerRoomRow>(
+      `
+      SELECT id, library_id, floor_id, name, sort_order, status
+      FROM library_rooms
+      WHERE library_id = $1
+        AND floor_id = $2
+        AND lower(name) = lower($3)
+      LIMIT 1
+      `,
+      [input.libraryId, input.floorId, input.name],
+    );
+
+    if (existing.rows[0]) {
+      const updated = await client.query<OwnerRoomRow>(
+        `
+        UPDATE library_rooms
+        SET sort_order = COALESCE($4, sort_order),
+            status = COALESCE($5, status),
+            updated_at = NOW()
+        WHERE library_id = $1 AND floor_id = $2 AND id = $3
+        RETURNING id, library_id, floor_id, name, sort_order, status
+        `,
+        [input.libraryId, input.floorId, existing.rows[0].id, input.sortOrder ?? null, input.status ?? "ACTIVE"],
+      );
+
+      return updated.rows[0];
+    }
+
+    const result = await client.query<OwnerRoomRow>(
+      `
+      INSERT INTO library_rooms (library_id, floor_id, name, sort_order, status)
+      VALUES ($1, $2, $3, COALESCE($4, 0), COALESCE($5, 'ACTIVE'))
+      RETURNING id, library_id, floor_id, name, sort_order, status
+      `,
+      [input.libraryId, input.floorId, input.name, input.sortOrder ?? null, input.status ?? "ACTIVE"],
+    );
+
+    return result.rows[0];
+  }
+
+  async updateRoom(client: PoolClient, input: {
+    libraryId: string;
+    roomId: string;
+    name?: string | null;
+    sortOrder?: number | null;
+    status?: "ACTIVE" | "INACTIVE" | null;
+  }) {
+    const result = await client.query<OwnerRoomRow>(
+      `
+      UPDATE library_rooms
+      SET
+        name = COALESCE($3, name),
+        sort_order = COALESCE($4, sort_order),
+        status = COALESCE($5, status),
+        updated_at = NOW()
+      WHERE library_id = $1 AND id = $2
+      RETURNING id, library_id, floor_id, name, sort_order, status
+      `,
+      [input.libraryId, input.roomId, input.name ?? null, input.sortOrder ?? null, input.status ?? null],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async findRoomById(client: PoolClient, libraryId: string, roomId: string) {
+    const result = await client.query<OwnerRoomRow>(
+      `
+      SELECT id, library_id, floor_id, name, sort_order, status
+      FROM library_rooms
+      WHERE library_id = $1 AND id = $2
+      LIMIT 1
+      `,
+      [libraryId, roomId],
+    );
+
+    return result.rows[0] ?? null;
   }
 
   async updateAdminLibrary(client: PoolClient, input: {
@@ -3506,6 +3723,8 @@ export class OwnerOperationsRepository {
         u.student_code,
         u.email AS student_email,
         u.phone AS student_phone,
+        u.date_of_birth::date::text AS date_of_birth,
+        u.gender,
         ljr.seat_preference,
         ljr.message,
         ljr.requested_via,
@@ -3517,6 +3736,7 @@ export class OwnerOperationsRepository {
       FROM library_join_requests ljr
       INNER JOIN users u ON u.id = ljr.student_user_id
       WHERE ljr.library_id = $1
+        AND ljr.status = 'PENDING'
       ORDER BY CASE ljr.status WHEN 'PENDING' THEN 0 ELSE 1 END, ljr.created_at DESC
       `,
       [libraryId],
@@ -3532,6 +3752,8 @@ export class OwnerOperationsRepository {
       student_name: string;
       student_email: string | null;
       student_phone: string | null;
+      date_of_birth: string | null;
+      gender: string | null;
       status: string;
     }>(
       `
@@ -3541,6 +3763,8 @@ export class OwnerOperationsRepository {
         u.full_name AS student_name,
         u.email AS student_email,
         u.phone AS student_phone,
+        u.date_of_birth::date::text AS date_of_birth,
+        u.gender,
         ljr.status
       FROM library_join_requests ljr
       INNER JOIN users u ON u.id = ljr.student_user_id
@@ -3564,6 +3788,8 @@ export class OwnerOperationsRepository {
         u.student_code,
         u.email AS student_email,
         u.phone AS student_phone,
+        u.date_of_birth::date::text AS date_of_birth,
+        u.gender,
         ljr.seat_preference,
         ljr.message,
         ljr.requested_via,
@@ -3601,7 +3827,7 @@ export class OwnerOperationsRepository {
         reviewed_by = $4,
         reviewed_at = NOW(),
         linked_assignment_id = COALESCE($5, linked_assignment_id),
-        metadata = metadata || jsonb_build_object('reason', $6),
+        metadata = metadata || jsonb_build_object('reason', $6::text),
         updated_at = NOW()
       WHERE library_id = $1
         AND id = $2

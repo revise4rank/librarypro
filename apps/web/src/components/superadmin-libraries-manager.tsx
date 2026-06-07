@@ -317,7 +317,7 @@ export function SuperadminLibrariesManager() {
               ) : null}
 
               {tab === "Users" ? renderRows(overview.users, [["full_name", "Name"], ["library_role", "Role"], ["email", "Email"], ["phone", "Phone"], ["is_active", "Active"], ["last_login_at", "Last login"]]) : null}
-              {tab === "Students" ? renderRows(overview.students, [["full_name", "Student"], ["seat_number", "Seat"], ["status", "Status"], ["payment_status", "Payment"], ["plan_name", "Plan"], ["ends_at", "Ends"]]) : null}
+              {tab === "Students" ? renderRows(overview.students, [["full_name", "Student"], ["phone", "Phone"], ["date_of_birth", "DOB"], ["gender", "Gender"], ["seat_number", "Seat"], ["status", "Status"], ["payment_status", "Payment"], ["plan_name", "Plan"], ["ends_at", "Ends"]]) : null}
               {tab === "Payments" ? renderRows(overview.payments, [["student_name", "Student"], ["amount", "Amount"], ["status", "Status"], ["method", "Method"], ["due_date", "Due"], ["paid_at", "Paid"]]) : null}
               {tab === "Seats" ? (
                 <div className="grid gap-3 sm:grid-cols-5">

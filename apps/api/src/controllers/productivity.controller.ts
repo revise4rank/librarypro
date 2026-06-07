@@ -43,6 +43,23 @@ import {
   createStudentPlannerEntry,
   updateStudentPlannerEntry,
   deleteStudentPlannerEntry,
+  carryForwardStudentPlannerEntry,
+  markStudentPlannerRevision,
+  listStudentPlannerGoals,
+  createStudentPlannerGoal,
+  updateStudentPlannerGoal,
+  deleteStudentPlannerGoal,
+  listStudentPlannerNotes,
+  createStudentPlannerNote,
+  updateStudentPlannerNote,
+  deleteStudentPlannerNote,
+  listStudentPlannerExams,
+  createStudentPlannerExam,
+  updateStudentPlannerExam,
+  deleteStudentPlannerExam,
+  listStudentPlannerHabits,
+  updateStudentPlannerHabit,
+  getStudentPlannerAnalytics,
 } from "../services/productivity.service";
 import {
   completeRevisionBodySchema,
@@ -768,19 +785,43 @@ export async function listStudentPlannerMonthController(req: Request, res: Respo
 
 export async function createStudentPlannerEntryController(req: Request, res: Response) {
   const { studentUserId } = requireStudentContext(req);
-  const { planDate, subject, targetMinutes, notes } = req.body as {
+  const { planDate, title, subject, chapterTopic, targetMinutes, actualMinutes, notes, priority, status, deadlineAt, startTime, endTime, taskType, sourceType, carryForwardFromId, revisionStage } = req.body as {
     planDate: string;
+    title?: string;
     subject?: string;
+    chapterTopic?: string;
     targetMinutes?: number;
+    actualMinutes?: number;
     notes?: string;
+    priority?: string;
+    status?: string;
+    deadlineAt?: string;
+    startTime?: string;
+    endTime?: string;
+    taskType?: string;
+    sourceType?: string;
+    carryForwardFromId?: string;
+    revisionStage?: number;
   };
   if (!planDate) throw new AppError(400, "planDate is required", "PLAN_DATE_REQUIRED");
   const data = await createStudentPlannerEntry({
     studentUserId,
     planDate,
+    title: title ?? null,
     subject: subject ?? null,
+    chapterTopic: chapterTopic ?? null,
     targetMinutes: targetMinutes ?? 60,
+    actualMinutes,
     notes: notes ?? null,
+    priority,
+    status,
+    deadlineAt: deadlineAt ?? null,
+    startTime: startTime ?? null,
+    endTime: endTime ?? null,
+    taskType,
+    sourceType,
+    carryForwardFromId: carryForwardFromId ?? null,
+    revisionStage,
   });
   res.status(201).json({ success: true, data });
 }
@@ -788,21 +829,43 @@ export async function createStudentPlannerEntryController(req: Request, res: Res
 export async function updateStudentPlannerEntryController(req: Request, res: Response) {
   const { studentUserId } = requireStudentContext(req);
   const entryId = paramValue(req.params.entryId, "ENTRY_ID_REQUIRED");
-  const { actualMinutes, completed, notes, subject, targetMinutes } = req.body as {
+  const { planDate, title, actualMinutes, completed, notes, subject, chapterTopic, targetMinutes, priority, status, deadlineAt, startTime, endTime, taskType, revisionStage, lastRevisedAt } = req.body as {
+    planDate?: string;
+    title?: string;
     actualMinutes?: number;
     completed?: boolean;
     notes?: string;
     subject?: string;
+    chapterTopic?: string;
     targetMinutes?: number;
+    priority?: string;
+    status?: string;
+    deadlineAt?: string;
+    startTime?: string;
+    endTime?: string;
+    taskType?: string;
+    revisionStage?: number;
+    lastRevisedAt?: string;
   };
   const data = await updateStudentPlannerEntry({
     entryId,
     studentUserId,
+    planDate,
+    title,
     actualMinutes,
     completed,
     notes,
     subject,
+    chapterTopic,
     targetMinutes,
+    priority,
+    status,
+    deadlineAt,
+    startTime,
+    endTime,
+    taskType,
+    revisionStage,
+    lastRevisedAt,
   });
   res.json({ success: true, data });
 }
@@ -811,5 +874,184 @@ export async function deleteStudentPlannerEntryController(req: Request, res: Res
   const { studentUserId } = requireStudentContext(req);
   const entryId = paramValue(req.params.entryId, "ENTRY_ID_REQUIRED");
   const data = await deleteStudentPlannerEntry(entryId, studentUserId);
+  res.json({ success: true, data });
+}
+
+export async function carryForwardStudentPlannerEntryController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const entryId = paramValue(req.params.entryId, "ENTRY_ID_REQUIRED");
+  const { nextDate } = req.body as { nextDate?: string };
+  if (!nextDate) throw new AppError(400, "nextDate is required", "NEXT_DATE_REQUIRED");
+  const data = await carryForwardStudentPlannerEntry({ entryId, studentUserId, nextDate });
+  res.status(201).json({ success: true, data });
+}
+
+export async function markStudentPlannerRevisionController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const entryId = paramValue(req.params.entryId, "ENTRY_ID_REQUIRED");
+  const { revisionStage } = req.body as { revisionStage?: number };
+  const data = await markStudentPlannerRevision({ entryId, studentUserId, revisionStage: revisionStage ?? 1 });
+  res.json({ success: true, data });
+}
+
+export async function listStudentPlannerGoalsController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const goalType = String(req.query.goalType ?? "WEEKLY").toUpperCase() === "MONTHLY" ? "MONTHLY" : "WEEKLY";
+  const periodStart = String(req.query.periodStart ?? new Date().toISOString().slice(0, 10));
+  const data = await listStudentPlannerGoals(studentUserId, goalType, periodStart);
+  res.json({ success: true, data });
+}
+
+export async function createStudentPlannerGoalController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const { goalType, periodStart, title, subject, targetMinutes, targetTasks, notes } = req.body as {
+    goalType?: "WEEKLY" | "MONTHLY";
+    periodStart?: string;
+    title?: string;
+    subject?: string;
+    targetMinutes?: number;
+    targetTasks?: number;
+    notes?: string;
+  };
+  if (!title) throw new AppError(400, "title is required", "GOAL_TITLE_REQUIRED");
+  if (!periodStart) throw new AppError(400, "periodStart is required", "GOAL_PERIOD_REQUIRED");
+  const data = await createStudentPlannerGoal({
+    studentUserId,
+    goalType: goalType === "MONTHLY" ? "MONTHLY" : "WEEKLY",
+    periodStart,
+    title,
+    subject: subject ?? null,
+    targetMinutes,
+    targetTasks,
+    notes: notes ?? null,
+  });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateStudentPlannerGoalController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const goalId = paramValue(req.params.goalId, "GOAL_ID_REQUIRED");
+  const { title, subject, targetMinutes, targetTasks, completedTasks, status, notes } = req.body as {
+    title?: string;
+    subject?: string | null;
+    targetMinutes?: number;
+    targetTasks?: number;
+    completedTasks?: number;
+    status?: string;
+    notes?: string | null;
+  };
+  const data = await updateStudentPlannerGoal({ goalId, studentUserId, title, subject, targetMinutes, targetTasks, completedTasks, status, notes });
+  res.json({ success: true, data });
+}
+
+export async function deleteStudentPlannerGoalController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const goalId = paramValue(req.params.goalId, "GOAL_ID_REQUIRED");
+  const data = await deleteStudentPlannerGoal(goalId, studentUserId);
+  res.json({ success: true, data });
+}
+
+export async function listStudentPlannerNotesController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const data = await listStudentPlannerNotes(studentUserId);
+  res.json({ success: true, data });
+}
+
+export async function createStudentPlannerNoteController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const { noteText, color, pinned } = req.body as { noteText?: string; color?: string; pinned?: boolean };
+  if (!noteText) throw new AppError(400, "noteText is required", "NOTE_TEXT_REQUIRED");
+  const data = await createStudentPlannerNote({ studentUserId, noteText, color, pinned });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateStudentPlannerNoteController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const noteId = paramValue(req.params.noteId, "NOTE_ID_REQUIRED");
+  const { noteText, color, pinned, posX, posY, width, height } = req.body as {
+    noteText?: string;
+    color?: string;
+    pinned?: boolean;
+    posX?: number;
+    posY?: number;
+    width?: number;
+    height?: number;
+  };
+  const data = await updateStudentPlannerNote({ noteId, studentUserId, noteText, color, pinned, posX, posY, width, height });
+  res.json({ success: true, data });
+}
+
+export async function deleteStudentPlannerNoteController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const noteId = paramValue(req.params.noteId, "NOTE_ID_REQUIRED");
+  const data = await deleteStudentPlannerNote(noteId, studentUserId);
+  res.json({ success: true, data });
+}
+
+export async function listStudentPlannerExamsController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const data = await listStudentPlannerExams(studentUserId);
+  res.json({ success: true, data });
+}
+
+export async function createStudentPlannerExamController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const { title, examAt, subject, priority, notes } = req.body as { title?: string; examAt?: string; subject?: string; priority?: string; notes?: string };
+  if (!title) throw new AppError(400, "title is required", "EXAM_TITLE_REQUIRED");
+  if (!examAt) throw new AppError(400, "examAt is required", "EXAM_DATE_REQUIRED");
+  const data = await createStudentPlannerExam({ studentUserId, title, examAt, subject: subject ?? null, priority, notes: notes ?? null });
+  res.status(201).json({ success: true, data });
+}
+
+export async function updateStudentPlannerExamController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const examId = paramValue(req.params.examId, "EXAM_ID_REQUIRED");
+  const { title, examAt, subject, priority, notes } = req.body as {
+    title?: string;
+    examAt?: string;
+    subject?: string | null;
+    priority?: string;
+    notes?: string | null;
+  };
+  const data = await updateStudentPlannerExam({ examId, studentUserId, title, examAt, subject, priority, notes });
+  res.json({ success: true, data });
+}
+
+export async function deleteStudentPlannerExamController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const examId = paramValue(req.params.examId, "EXAM_ID_REQUIRED");
+  const data = await deleteStudentPlannerExam(examId, studentUserId);
+  res.json({ success: true, data });
+}
+
+export async function listStudentPlannerHabitsController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const toDate = String(req.query.toDate ?? new Date().toISOString().slice(0, 10));
+  const fromDate = String(req.query.fromDate ?? (() => {
+    const date = new Date(toDate);
+    date.setDate(date.getDate() - 29);
+    return date.toISOString().slice(0, 10);
+  })());
+  const data = await listStudentPlannerHabits(studentUserId, fromDate, toDate);
+  res.json({ success: true, data });
+}
+
+export async function updateStudentPlannerHabitController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const { habitDate, studied, water, sleep, exercise, notes } = req.body as { habitDate?: string; studied?: boolean; water?: boolean; sleep?: boolean; exercise?: boolean; notes?: string };
+  if (!habitDate) throw new AppError(400, "habitDate is required", "HABIT_DATE_REQUIRED");
+  const data = await updateStudentPlannerHabit({ studentUserId, habitDate, studied, water, sleep, exercise, notes: notes ?? null });
+  res.json({ success: true, data });
+}
+
+export async function getStudentPlannerAnalyticsController(req: Request, res: Response) {
+  const { studentUserId } = requireStudentContext(req);
+  const toDate = String(req.query.toDate ?? new Date().toISOString().slice(0, 10));
+  const fromDate = String(req.query.fromDate ?? (() => {
+    const date = new Date(toDate);
+    date.setDate(date.getDate() - 34);
+    return date.toISOString().slice(0, 10);
+  })());
+  const data = await getStudentPlannerAnalytics(studentUserId, fromDate, toDate);
   res.json({ success: true, data });
 }

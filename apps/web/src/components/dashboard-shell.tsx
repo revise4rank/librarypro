@@ -63,6 +63,16 @@ function initialsFromName(value?: string | null) {
     .join("") || "U";
 }
 
+const ownerMarketingChildPaths = ["/owner/leads", "/owner/campaigns", "/owner/offers"];
+
+function isNavItemActive(pathname: string, item: DashboardNavItem) {
+  if (pathname === item.href || pathname.startsWith(`${item.href}/`)) return true;
+  if (item.href === "/owner/marketing") {
+    return ownerMarketingChildPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  }
+  return false;
+}
+
 export function DashboardShell({
   productLabel,
   panelLabel,
@@ -244,7 +254,7 @@ export function DashboardShell({
               <div key={group.label} className={sidebarExpanded ? "grid gap-1" : "grid gap-0.5"}>
                 {sidebarExpanded ? <p className="px-2 text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">{group.label}</p> : null}
                 {group.items.map((item) => {
-                  const active = pathname === item.href;
+                  const active = isNavItemActive(pathname, item);
                   const Icon = navIconFor(item);
                   return (
                     <Link
@@ -463,9 +473,8 @@ export function DashboardShell({
             </div>
           </header>
 
-          <section className="lp-shell-container px-1.5 py-2 pb-[calc(10rem+env(safe-area-inset-bottom))] sm:px-3 sm:py-2.5 lg:py-3 lg:pb-5">
+          <section className="lp-shell-container px-1.5 py-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-3 sm:py-2.5 lg:py-3 lg:pb-5">
             {children}
-            <div className="h-[calc(4rem+env(safe-area-inset-bottom))] lg:hidden" aria-hidden="true" />
           </section>
         </div>
       </div>
@@ -490,7 +499,7 @@ export function DashboardShell({
               <div key={group.label} className="mb-3 grid gap-2">
                 <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{group.label}</p>
                 {group.items.map((item) => {
-                  const active = pathname === item.href;
+                  const active = isNavItemActive(pathname, item);
                   const Icon = navIconFor(item);
                   return (
                     <Link
@@ -515,7 +524,7 @@ export function DashboardShell({
         <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--lp-border)] bg-[rgba(255,255,255,0.98)] px-1.5 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-1.5 backdrop-blur sm:px-3 sm:pt-2">
           <div className="grid grid-cols-5 gap-1 sm:gap-2">
             {primaryMobileNav.map((item) => {
-              const active = pathname === item.href;
+              const active = isNavItemActive(pathname, item);
               const Icon = navIconFor(item);
               return (
                 <Link

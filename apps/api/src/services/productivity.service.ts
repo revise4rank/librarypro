@@ -13,6 +13,20 @@ function repository() {
   return new ProductivityRepository(requireDb());
 }
 
+async function resolveOwnerStudentUserId(libraryId: string, studentOrAssignmentId: string) {
+  const result = await requireDb().query<{ student_user_id: string }>(
+    `
+    SELECT student_user_id::text
+    FROM student_assignments
+    WHERE library_id = $1
+      AND id = $2
+    LIMIT 1
+    `,
+    [libraryId, studentOrAssignmentId],
+  );
+  return result.rows[0]?.student_user_id ?? studentOrAssignmentId;
+}
+
 async function syncStudentBadges(studentUserId: string, analytics: {
   attendanceDays: number;
   longestStreak: number;
@@ -861,21 +875,23 @@ export async function getStudentFocusLeaderboard(libraryId: string, window: "7d"
 
 export async function getOwnerStudentProductivity(input: { libraryId: string; studentUserId: string }) {
   const repo = repository();
-  const [isMapped, analytics, syllabus, focusSubjects, recentSessions, notes, trends] = await Promise.all([
-    repo.isStudentMappedToLibrary(input.libraryId, input.studentUserId),
-    repo.getStudentAnalytics(input.studentUserId, input.libraryId),
-    repo.getSyllabusAnalytics(input.studentUserId),
-    repo.listFocusSubjectTotals(input.studentUserId),
-    repo.listRecentFocusSessions(input.studentUserId),
-    repo.listStudentInterventionNotes(input.libraryId, input.studentUserId),
-    repo.getStudentProductivityTrends(input.studentUserId, input.libraryId, TREND_DAYS),
+  const studentUserId = await resolveOwnerStudentUserId(input.libraryId, input.studentUserId);
+  const [isMapped, profile, analytics, syllabus, focusSubjects, recentSessions, notes, trends] = await Promise.all([
+    repo.isStudentMappedToLibrary(input.libraryId, studentUserId),
+    repo.getOwnerStudentProfile(input.libraryId, studentUserId),
+    repo.getStudentAnalytics(studentUserId, input.libraryId),
+    repo.getSyllabusAnalytics(studentUserId),
+    repo.listFocusSubjectTotals(studentUserId),
+    repo.listRecentFocusSessions(studentUserId),
+    repo.listStudentInterventionNotes(input.libraryId, studentUserId),
+    repo.getStudentProductivityTrends(studentUserId, input.libraryId, TREND_DAYS),
   ]);
 
-  if (!isMapped) {
+  if (!isMapped || !profile) {
     throw new AppError(404, "Student not mapped to this library", "OWNER_STUDENT_NOT_FOUND");
   }
 
-  const badges = await syncStudentBadges(input.studentUserId, {
+  const badges = await syncStudentBadges(studentUserId, {
     attendanceDays: Number(analytics.attendance_days),
     longestStreak: Number(analytics.longest_streak),
     totalStudyHours: Math.round(Number(analytics.total_focus_minutes) / 60),
@@ -883,6 +899,21 @@ export async function getOwnerStudentProductivity(input: { libraryId: string; st
   });
 
   return {
+    profile: {
+      studentUserId: profile.student_user_id,
+      assignmentId: profile.assignment_id,
+      studentName: profile.student_name,
+      email: profile.email,
+      phone: profile.phone,
+      dateOfBirth: profile.date_of_birth,
+      gender: profile.gender,
+      fatherName: profile.father_name,
+      className: profile.class_name,
+      preparingFor: profile.preparing_for,
+      emergencyContact: profile.emergency_contact,
+      planName: profile.plan_name,
+      seatNumber: profile.seat_number,
+    },
     summary: {
       totalStudyHours: Math.round(Number(analytics.total_focus_minutes) / 60),
       weeklyStudyHours: Math.round(Number(analytics.weekly_focus_minutes) / 60),
@@ -943,11 +974,12 @@ export async function createOwnerStudentInterventionNote(input: {
   const client = await db.connect();
   try {
     await client.query("BEGIN");
-    const isMapped = await repo.isStudentMappedToLibrary(input.libraryId, input.studentUserId);
+    const studentUserId = await resolveOwnerStudentUserId(input.libraryId, input.studentUserId);
+    const isMapped = await repo.isStudentMappedToLibrary(input.libraryId, studentUserId);
     if (!isMapped) {
       throw new AppError(404, "Student not mapped to this library", "OWNER_STUDENT_NOT_FOUND");
     }
-    const row = await repo.createStudentInterventionNote(client, input);
+    const row = await repo.createStudentInterventionNote(client, { ...input, studentUserId });
     await client.query("COMMIT");
     return row;
   } catch (error) {
@@ -1124,9 +1156,21 @@ export async function listStudentPlannerMonth(studentUserId: string, monthStart:
 export async function createStudentPlannerEntry(input: {
   studentUserId: string;
   planDate: string;
+  title?: string | null;
   subject?: string | null;
+  chapterTopic?: string | null;
   targetMinutes: number;
+  actualMinutes?: number;
   notes?: string | null;
+  priority?: string;
+  status?: string;
+  deadlineAt?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  taskType?: string;
+  sourceType?: string;
+  carryForwardFromId?: string | null;
+  revisionStage?: number;
 }) {
   return repository().createPlannerEntry(input);
 }
@@ -1134,11 +1178,22 @@ export async function createStudentPlannerEntry(input: {
 export async function updateStudentPlannerEntry(input: {
   entryId: string;
   studentUserId: string;
+  planDate?: string;
+  title?: string | null;
   actualMinutes?: number;
   completed?: boolean;
   notes?: string | null;
   subject?: string | null;
+  chapterTopic?: string | null;
   targetMinutes?: number;
+  priority?: string;
+  status?: string;
+  deadlineAt?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  taskType?: string;
+  revisionStage?: number;
+  lastRevisedAt?: string | null;
 }) {
   const row = await repository().updatePlannerEntry(input);
   if (!row) throw new AppError(404, "Planner entry not found", "ENTRY_NOT_FOUND");
@@ -1149,6 +1204,123 @@ export async function deleteStudentPlannerEntry(entryId: string, studentUserId: 
   const row = await repository().deletePlannerEntry(entryId, studentUserId);
   if (!row) throw new AppError(404, "Planner entry not found", "ENTRY_NOT_FOUND");
   return row;
+}
+
+export async function carryForwardStudentPlannerEntry(input: { entryId: string; studentUserId: string; nextDate: string }) {
+  const row = await repository().carryForwardPlannerEntry(input.entryId, input.studentUserId, input.nextDate);
+  if (!row) throw new AppError(404, "Planner entry not found", "ENTRY_NOT_FOUND");
+  return row;
+}
+
+export async function markStudentPlannerRevision(input: { entryId: string; studentUserId: string; revisionStage: number }) {
+  const row = await repository().markPlannerRevision(input.entryId, input.studentUserId, input.revisionStage);
+  if (!row) throw new AppError(404, "Planner entry not found", "ENTRY_NOT_FOUND");
+  return row;
+}
+
+export async function listStudentPlannerGoals(studentUserId: string, goalType: "WEEKLY" | "MONTHLY", periodStart: string) {
+  return repository().listPlannerGoals(studentUserId, goalType, periodStart);
+}
+
+export async function createStudentPlannerGoal(input: {
+  studentUserId: string;
+  goalType: "WEEKLY" | "MONTHLY";
+  periodStart: string;
+  title: string;
+  subject?: string | null;
+  targetMinutes?: number;
+  targetTasks?: number;
+  notes?: string | null;
+}) {
+  return repository().createPlannerGoal(input);
+}
+
+export async function updateStudentPlannerGoal(input: {
+  goalId: string;
+  studentUserId: string;
+  title?: string;
+  subject?: string | null;
+  targetMinutes?: number;
+  targetTasks?: number;
+  completedTasks?: number;
+  status?: string;
+  notes?: string | null;
+}) {
+  const row = await repository().updatePlannerGoal(input);
+  if (!row) throw new AppError(404, "Planner goal not found", "GOAL_NOT_FOUND");
+  return row;
+}
+
+export async function deleteStudentPlannerGoal(goalId: string, studentUserId: string) {
+  const row = await repository().deletePlannerGoal(goalId, studentUserId);
+  if (!row) throw new AppError(404, "Planner goal not found", "GOAL_NOT_FOUND");
+  return row;
+}
+
+export async function listStudentPlannerNotes(studentUserId: string) {
+  return repository().listPlannerNotes(studentUserId);
+}
+
+export async function createStudentPlannerNote(input: { studentUserId: string; noteText: string; color?: string; pinned?: boolean }) {
+  return repository().createPlannerNote(input);
+}
+
+export async function updateStudentPlannerNote(input: { noteId: string; studentUserId: string; noteText?: string; color?: string; pinned?: boolean; posX?: number; posY?: number; width?: number; height?: number }) {
+  const row = await repository().updatePlannerNote(input);
+  if (!row) throw new AppError(404, "Planner note not found", "NOTE_NOT_FOUND");
+  return row;
+}
+
+export async function deleteStudentPlannerNote(noteId: string, studentUserId: string) {
+  const row = await repository().deletePlannerNote(noteId, studentUserId);
+  if (!row) throw new AppError(404, "Planner note not found", "NOTE_NOT_FOUND");
+  return row;
+}
+
+export async function listStudentPlannerExams(studentUserId: string) {
+  return repository().listPlannerExams(studentUserId);
+}
+
+export async function createStudentPlannerExam(input: { studentUserId: string; title: string; examAt: string; subject?: string | null; priority?: string; notes?: string | null }) {
+  return repository().createPlannerExam(input);
+}
+
+export async function updateStudentPlannerExam(input: { examId: string; studentUserId: string; title?: string; examAt?: string; subject?: string | null; priority?: string; notes?: string | null }) {
+  const row = await repository().updatePlannerExam(input);
+  if (!row) throw new AppError(404, "Planner exam not found", "EXAM_NOT_FOUND");
+  return row;
+}
+
+export async function deleteStudentPlannerExam(examId: string, studentUserId: string) {
+  const row = await repository().deletePlannerExam(examId, studentUserId);
+  if (!row) throw new AppError(404, "Planner exam not found", "EXAM_NOT_FOUND");
+  return row;
+}
+
+export async function listStudentPlannerHabits(studentUserId: string, fromDate: string, toDate: string) {
+  return repository().getPlannerHabits(studentUserId, fromDate, toDate);
+}
+
+export async function updateStudentPlannerHabit(input: { studentUserId: string; habitDate: string; studied?: boolean; water?: boolean; sleep?: boolean; exercise?: boolean; notes?: string | null }) {
+  return repository().updatePlannerHabit(input);
+}
+
+export async function getStudentPlannerAnalytics(studentUserId: string, fromDate: string, toDate: string) {
+  const rows = await repository().getPlannerAnalytics(studentUserId, fromDate, toDate);
+  const productiveDays = rows.filter((row: { completed_tasks: number; actual_minutes: number }) => row.completed_tasks > 0 || row.actual_minutes > 0).length;
+  const totalActualMinutes = rows.reduce((sum: number, row: { actual_minutes: number }) => sum + Number(row.actual_minutes ?? 0), 0);
+  const completedTasks = rows.reduce((sum: number, row: { completed_tasks: number }) => sum + Number(row.completed_tasks ?? 0), 0);
+  const totalTasks = rows.reduce((sum: number, row: { total_tasks: number }) => sum + Number(row.total_tasks ?? 0), 0);
+  return {
+    heatmap: rows,
+    summary: {
+      productiveDays,
+      totalActualMinutes,
+      completedTasks,
+      totalTasks,
+      completionPercent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+    },
+  };
 }
 
 const leaderboardRows: Array<{

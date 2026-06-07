@@ -3,145 +3,191 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BookLib Feature Testing Guide</title>
+  <title>BookLib Manual QA Checklist</title>
   <style>
     :root {
       --ink: #172033;
-      --muted: #64748b;
-      --line: #dbe3ef;
-      --soft: #f5f8fb;
+      --muted: #607089;
+      --line: #dce5ef;
+      --soft: #f6f9fc;
+      --soft2: #edf7f3;
       --brand: #087f5b;
-      --brand-soft: #e7f7f1;
+      --brand2: #2f837b;
       --warn: #fff7ed;
       --danger: #fff1f2;
+      --shadow: 0 12px 34px rgba(15, 23, 42, 0.07);
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
-      background: #ffffff;
-      line-height: 1.55;
+      background: linear-gradient(180deg, #fbfefd 0, #ffffff 340px);
+      line-height: 1.5;
     }
     header {
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 20;
       border-bottom: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
     }
-    .wrap { max-width: 1180px; margin: 0 auto; padding: 24px; }
-    .hero {
-      display: grid;
-      gap: 14px;
-      padding: 42px 24px 26px;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(135deg, #f7fffb 0%, #eef7ff 100%);
-    }
-    h1 { margin: 0; font-size: clamp(30px, 4vw, 54px); line-height: 1.04; letter-spacing: 0; }
-    h2 { margin: 0 0 12px; font-size: 24px; }
-    h3 { margin: 20px 0 8px; font-size: 18px; }
-    p { margin: 0; color: var(--muted); }
-    a { color: var(--brand); font-weight: 800; text-decoration: none; }
+    .wrap { max-width: 1220px; margin: 0 auto; padding: 20px; }
     .nav {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
     }
-    .nav strong { font-size: 18px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip {
+    .brand { display: grid; gap: 2px; }
+    .brand strong { font-size: 18px; }
+    .brand span { color: var(--muted); font-size: 12px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .chip, .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
       border: 1px solid var(--line);
       border-radius: 999px;
-      padding: 8px 12px;
-      background: white;
+      padding: 7px 12px;
+      background: #fff;
+      color: var(--ink);
       font-size: 13px;
-      color: var(--ink);
-    }
-    .grid { display: grid; gap: 18px; }
-    .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    section {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 20px;
-      background: white;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-    }
-    .note {
-      border: 1px solid #fed7aa;
-      background: var(--warn);
-      border-radius: 12px;
-      padding: 14px;
-      color: #9a3412;
-      font-weight: 700;
-    }
-    .pass {
-      border: 1px solid #b7efd8;
-      background: var(--brand-soft);
-      border-radius: 12px;
-      padding: 14px;
-      color: var(--brand);
       font-weight: 800;
+      text-decoration: none;
     }
-    ol { margin: 10px 0 0; padding-left: 22px; }
-    li { margin: 9px 0; }
-    label {
-      display: grid;
-      grid-template-columns: 22px 1fr;
-      gap: 10px;
-      align-items: start;
-      margin: 8px 0;
-      color: var(--ink);
+    .btn { border-color: var(--brand); background: var(--brand); color: #fff; cursor: pointer; }
+    .btn.secondary { background: #fff; color: var(--brand); }
+    .hero {
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at top left, rgba(8, 127, 91, 0.12), transparent 340px),
+        linear-gradient(135deg, #f7fffb 0%, #eef7ff 100%);
     }
-    input[type="checkbox"] { width: 17px; height: 17px; margin-top: 4px; accent-color: var(--brand); }
+    .hero .wrap { padding-top: 38px; padding-bottom: 30px; }
+    h1 { margin: 0; font-size: clamp(30px, 4vw, 54px); line-height: 1.04; letter-spacing: 0; }
+    h2 { margin: 0 0 10px; font-size: 23px; letter-spacing: 0; }
+    h3 { margin: 18px 0 8px; font-size: 16px; }
+    p { margin: 0; color: var(--muted); }
+    a { color: var(--brand); font-weight: 900; text-decoration: none; }
     code {
-      border-radius: 6px;
+      border-radius: 7px;
       background: var(--soft);
       padding: 2px 6px;
       color: #334155;
       font-size: 0.92em;
     }
+    .grid { display: grid; gap: 16px; }
+    .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    section {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
     .role {
-      display: inline-block;
-      margin-bottom: 10px;
+      display: inline-flex;
+      margin-bottom: 9px;
       border-radius: 999px;
-      background: var(--brand-soft);
-      padding: 6px 10px;
+      background: var(--soft2);
+      padding: 5px 9px;
       color: var(--brand);
-      font-size: 12px;
-      font-weight: 900;
+      font-size: 11px;
+      font-weight: 950;
       text-transform: uppercase;
     }
-    .mini { font-size: 13px; color: var(--muted); }
-    .danger { background: var(--danger); border-color: #fecdd3; color: #be123c; }
+    .note, .pass, .danger {
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 750;
+    }
+    .note { border: 1px solid #fed7aa; background: var(--warn); color: #9a3412; }
+    .pass { border: 1px solid #b7efd8; background: var(--soft2); color: var(--brand); }
+    .danger { border: 1px solid #fecdd3; background: var(--danger); color: #be123c; }
+    ol { margin: 8px 0 0; padding-left: 22px; }
+    li { margin: 7px 0; }
+    label.check {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 9px;
+      align-items: start;
+      margin: 7px 0;
+      color: var(--ink);
+      font-weight: 650;
+    }
+    input[type="checkbox"] { width: 17px; height: 17px; margin-top: 4px; accent-color: var(--brand); }
+    .mini { color: var(--muted); font-size: 13px; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #e8eef5;
+      overflow: hidden;
+    }
+    .progress span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--brand), #16a085); }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-    th, td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; }
+    th, td { border-bottom: 1px solid var(--line); padding: 9px; text-align: left; vertical-align: top; }
     th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
-    @media (max-width: 820px) {
+    details {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+    details + details { margin-top: 10px; }
+    summary { cursor: pointer; font-weight: 950; }
+    .route-list { display: grid; gap: 8px; }
+    .route-list a {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 10px;
+      background: #fff;
+      color: var(--ink);
+    }
+    @media (max-width: 860px) {
       .two, .three { grid-template-columns: 1fr; }
-      .wrap { padding: 16px; }
-      section { padding: 16px; }
+      .wrap { padding: 14px; }
+      .hero .wrap { padding-top: 26px; padding-bottom: 22px; }
+      section { padding: 14px; }
+      .nav { align-items: flex-start; flex-direction: column; }
+      .chip { font-size: 12px; min-height: 31px; padding: 6px 10px; }
     }
     @media print {
       header { position: static; }
       section { break-inside: avoid; box-shadow: none; }
-      .chip { border-color: #aaa; }
+      .toolbar, .btn { display: none; }
     }
   </style>
 </head>
 <body>
   <header>
     <div class="wrap nav">
-      <strong>BookLib QA Guide</strong>
+      <div class="brand">
+        <strong>BookLib Manual QA Checklist</strong>
+        <span>Routing, wiring, UI density, and end-to-end feature checks</span>
+      </div>
       <div class="chips">
         <a class="chip" href="#smoke">Smoke</a>
-        <a class="chip" href="#superadmin">Superadmin</a>
         <a class="chip" href="#owner">Owner</a>
+        <a class="chip" href="#seats">Seats</a>
         <a class="chip" href="#student">Student</a>
+        <a class="chip" href="#planner">Planner</a>
         <a class="chip" href="#public">Public</a>
         <a class="chip" href="#mobile">Mobile</a>
       </div>
@@ -151,358 +197,515 @@
   <main>
     <div class="hero">
       <div class="wrap">
-        <h1>BookLib End-to-End Feature Testing Guide</h1>
-        <p>Step-wise checklist for testing the platform after changes. Use this before deployment and again on production after migration/restart.</p>
-        <div class="chips" style="margin-top: 18px;">
+        <h1>BookLib Full Manual Testing Guide</h1>
+        <p>Use this after every build/deploy to verify login, owner operations, rooms/seats, scanner, website builder, planner, marketplace, blog, and mobile density. Tick boxes are saved in this browser.</p>
+        <div class="chips" style="margin-top: 16px;">
           <span class="chip">Web: <code>https://booklib.in</code></span>
           <span class="chip">API: <code>https://api.booklib.in/v1</code></span>
-          <span class="chip">Last updated: 2026-05-23</span>
+          <span class="chip">Updated: 2026-05-27</span>
         </div>
       </div>
     </div>
 
-    <div class="wrap grid">
-      <section id="smoke">
-        <span class="role">Pre-flight</span>
-        <h2>Build, Migration, And Basic Smoke</h2>
-        <div class="note">Run these checks before testing user flows. If migration is skipped, the new book syllabus tables will not work.</div>
-        <ol>
-          <li>Run <code>npm.cmd run build</code> and confirm it passes.</li>
-          <li>Run <code>npm.cmd test</code> and confirm all tests pass.</li>
-          <li>Run API migrations on the target server: <code>npm run migrate -w @booklib/api</code>.</li>
-          <li>Restart API and web processes.</li>
-          <li>Open <code>/health</code> and confirm API responds.</li>
-          <li>Open landing page, owner login, student login, and superadmin login once.</li>
-        </ol>
-        <label><input type="checkbox" /> Build passed</label>
-        <label><input type="checkbox" /> Tests passed</label>
-        <label><input type="checkbox" /> Migration applied</label>
-        <label><input type="checkbox" /> API/web restarted</label>
-      </section>
+    <div class="wrap">
+      <div class="toolbar">
+        <div style="min-width: min(520px, 100%); flex: 1;">
+          <p class="mini"><strong id="progressText">0%</strong> checklist completed</p>
+          <div class="progress"><span id="progressBar"></span></div>
+        </div>
+        <div class="chips">
+          <button class="btn secondary" type="button" id="clearChecks">Clear checks</button>
+          <button class="btn" type="button" onclick="window.print()">Print / Save PDF</button>
+        </div>
+      </div>
 
-      <div class="grid two">
+      <div class="grid">
+        <section id="smoke">
+          <span class="role">Pre-flight</span>
+          <h2>Build, Deploy, And Health</h2>
+          <div class="note">First run these checks. If these fail, do not continue with feature testing.</div>
+          <ol>
+            <li>Run <code>npm.cmd run build</code> locally.</li>
+            <li>Run <code>npm.cmd test</code> locally.</li>
+            <li>Deploy to Hostinger and run migrations if API/data changed.</li>
+            <li>Verify <code>https://api.booklib.in/health</code> returns <code>{"ok":true}</code>.</li>
+            <li>Open <code>https://booklib.in</code>, <code>/owner/login</code>, <code>/student/login</code>, <code>/superadmin/login</code>.</li>
+          </ol>
+          <label class="check"><input type="checkbox" /> Build passed</label>
+          <label class="check"><input type="checkbox" /> Tests passed</label>
+          <label class="check"><input type="checkbox" /> API health OK</label>
+          <label class="check"><input type="checkbox" /> Public and login pages open</label>
+        </section>
+
+        <section id="routes">
+          <span class="role">Routing</span>
+          <h2>Critical Route Matrix</h2>
+          <div class="grid three">
+            <div class="route-list">
+              <h3>Owner</h3>
+              <a href="https://booklib.in/owner/dashboard" target="_blank">Dashboard <span>open</span></a>
+              <a href="https://booklib.in/owner/admissions" target="_blank">Admissions <span>open</span></a>
+              <a href="https://booklib.in/owner/students" target="_blank">Roster <span>open</span></a>
+              <a href="https://booklib.in/owner/seats" target="_blank">Seats <span>open</span></a>
+              <a href="https://booklib.in/owner/checkins" target="_blank">Attendance <span>open</span></a>
+              <a href="https://booklib.in/owner/website" target="_blank">Website Builder <span>open</span></a>
+            </div>
+            <div class="route-list">
+              <h3>Student</h3>
+              <a href="https://booklib.in/student/dashboard" target="_blank">Dashboard <span>open</span></a>
+              <a href="https://booklib.in/student/scanner" target="_blank">Scanner <span>open</span></a>
+              <a href="https://booklib.in/student/planner" target="_blank">Planner <span>open</span></a>
+              <a href="https://booklib.in/student/syllabus" target="_blank">My Books <span>open</span></a>
+              <a href="https://booklib.in/student/revisions" target="_blank">Revisions <span>open</span></a>
+              <a href="https://booklib.in/student/settings" target="_blank">Settings <span>open</span></a>
+            </div>
+            <div class="route-list">
+              <h3>Public/Admin</h3>
+              <a href="https://booklib.in/marketplace" target="_blank">Marketplace <span>open</span></a>
+              <a href="https://booklib.in/blog" target="_blank">Blog <span>open</span></a>
+              <a href="https://booklib.in/superadmin/libraries" target="_blank">Superadmin Libraries <span>open</span></a>
+              <a href="https://booklib.in/superadmin/syllabus" target="_blank">Book Library <span>open</span></a>
+              <a href="https://focuslibrary.booklib.in" target="_blank">Sample Subdomain <span>open</span></a>
+              <a href="https://focuslibrary.booklib.in/pricing" target="_blank">Subdomain Pricing <span>open</span></a>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" /> All owner routes load</label>
+          <label class="check"><input type="checkbox" /> All student routes load</label>
+          <label class="check"><input type="checkbox" /> Public routes load</label>
+        </section>
+
         <section id="auth">
           <span class="role">Auth</span>
-          <h2>Login, Session, Google, Password</h2>
-          <ol>
-            <li>Login as Superadmin and verify dashboard opens.</li>
-            <li>Login as Owner and verify owner dashboard opens, not student/superadmin.</li>
-            <li>Login as Student and verify student dashboard opens, not owner.</li>
-            <li>Refresh browser and confirm session stays active.</li>
-            <li>Close and reopen browser, confirm session remains active until logout.</li>
-            <li>Check password eye button on every password field.</li>
-            <li>Check forgot-password link on all login screens.</li>
-            <li>Google login: owner/student should land on the correct role dashboard.</li>
-          </ol>
-          <label><input type="checkbox" /> Role redirects correct</label>
-          <label><input type="checkbox" /> 10-day session behavior works</label>
-          <label><input type="checkbox" /> Forgot password visible and works</label>
+          <h2>Login, Session, Password, Google</h2>
+          <div class="grid two">
+            <div>
+              <h3>Role Login</h3>
+              <ol>
+                <li>Owner login lands on owner dashboard.</li>
+                <li>Student login lands on student dashboard.</li>
+                <li>Superadmin login lands on superadmin dashboard.</li>
+                <li>Refresh page and confirm login persists.</li>
+                <li>Close browser and reopen; session should remain until logout.</li>
+              </ol>
+            </div>
+            <div>
+              <h3>Password/Google</h3>
+              <ol>
+                <li>Password eye button works on every password input.</li>
+                <li>Forgot password link is visible on all login pages.</li>
+                <li>Google owner login does not land on student pages.</li>
+                <li>Google student login does not land on owner pages.</li>
+                <li>Disabled Google client error should not appear after config is enabled.</li>
+              </ol>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" /> Role redirects correct</label>
+          <label class="check"><input type="checkbox" /> Session persistence OK</label>
+          <label class="check"><input type="checkbox" /> Forgot password/eye buttons OK</label>
         </section>
 
-        <section id="navigation">
-          <span class="role">Navigation</span>
-          <h2>Shell, Sidebar, Header, Drawers</h2>
+        <section id="owner">
+          <span class="role">Owner</span>
+          <h2>Owner Dashboard, Admissions, Roster</h2>
+          <div class="grid two">
+            <details open>
+              <summary>Dashboard Density</summary>
+              <ol>
+                <li>Open owner dashboard on desktop and mobile.</li>
+                <li>Check top actions are visible without long scroll.</li>
+                <li>Switch dashboard tabs: Today, Pipeline, Insights.</li>
+                <li>Cards should be compact; no huge empty tiles.</li>
+                <li>Sidebar remains fixed and does not jump upward.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Admissions</summary>
+              <ol>
+                <li>Create desk admission with no seat.</li>
+                <li>Create desk admission with Floor -> Room -> Seat.</li>
+                <li>Verify student appears in Active roster.</li>
+                <li>Verify ledger entry is created.</li>
+                <li>Verify auto referral code starts with <code>BL</code>.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Join Requests</summary>
+              <ol>
+                <li>Student scanner creates join request for unjoined student.</li>
+                <li>Owner opens Review join requests.</li>
+                <li>Reject request button works from card and selected panel.</li>
+                <li>Approve request with plan only.</li>
+                <li>Approve request with Floor -> Room -> Seat.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Active Roster</summary>
+              <ol>
+                <li>Open <code>/owner/students</code>.</li>
+                <li>Roster student list should be compact rows, not tall cards.</li>
+                <li>Long roster should scroll inside the roster box, not stretch whole page.</li>
+                <li>Select student; right summary updates.</li>
+                <li>Edit profile drawer, plan drawer, and manage seat drawer work.</li>
+                <li>Open detailed student profile opens correct mapped student.</li>
+              </ol>
+            </details>
+          </div>
+          <label class="check"><input type="checkbox" /> Dashboard compact and usable</label>
+          <label class="check"><input type="checkbox" /> Desk admission works</label>
+          <label class="check"><input type="checkbox" /> Join approve/reject works</label>
+          <label class="check"><input type="checkbox" /> Active roster compact and wired</label>
+        </section>
+
+        <section id="seats">
+          <span class="role">Owner Seats</span>
+          <h2>Floor, Room, Seat Map, Seat Allotment</h2>
+          <div class="pass">Correct flow: Create Floor -> Create Room with seat count -> Seats auto-create inside room -> Filter by floor/room/status -> Allot student.</div>
+          <div class="grid two">
+            <div>
+              <h3>Layout Flow</h3>
+              <ol>
+                <li>Open <code>/owner/seats</code>.</li>
+                <li>Click Manage layout.</li>
+                <li>Verify button sequence: Floors, Rooms, Seats, Templates, Move/Paint.</li>
+                <li>Create a floor.</li>
+                <li>Create multiple rooms on same floor with different seat counts.</li>
+                <li>Confirm room list shows only actual rooms, not seat labels like A1/A2.</li>
+                <li>Seats created with room should appear in map and room filter.</li>
+              </ol>
+            </div>
+            <div>
+              <h3>Daily Seat Allotment</h3>
+              <ol>
+                <li>Use floor filter; room dropdown should update by floor.</li>
+                <li>Use room filter; map should show only selected room seats.</li>
+                <li>Use status filter: All, Available, Occupied, Reserved, Blocked.</li>
+                <li>Select unallotted student and free seat.</li>
+                <li>Click Allot seat and verify roster/student profile updates.</li>
+                <li>Occupied seat shows occupant detail, not allot action.</li>
+              </ol>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" /> Multiple rooms per floor work</label>
+          <label class="check"><input type="checkbox" /> Room filter shows real rooms only</label>
+          <label class="check"><input type="checkbox" /> Seat allotment flow works</label>
+        </section>
+
+        <section id="attendance">
+          <span class="role">Owner + Student</span>
+          <h2>QR Scanner, Attendance, Manual Attendance</h2>
+          <div class="grid two">
+            <div>
+              <h3>Owner QR</h3>
+              <ol>
+                <li>Owner header QR icon opens compact QR popup.</li>
+                <li>Download QR downloads a PNG.</li>
+                <li>Attendance page QR card still works.</li>
+                <li>Print QR poster opens printable poster.</li>
+              </ol>
+            </div>
+            <div>
+              <h3>Student Scan</h3>
+              <ol>
+                <li>Student header QR scanner opens scanner directly.</li>
+                <li>Unjoined scan creates join request.</li>
+                <li>Joined outside scan creates check-in.</li>
+                <li>Joined inside scan creates checkout.</li>
+                <li>Manual fallback works if camera unavailable.</li>
+                <li>Owner/team manual attendance works for students without phone.</li>
+              </ol>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" /> Owner QR download OK</label>
+          <label class="check"><input type="checkbox" /> Student scanner OK</label>
+          <label class="check"><input type="checkbox" /> Manual attendance OK</label>
+        </section>
+
+        <section id="payments">
+          <span class="role">Owner Money</span>
+          <h2>Plans, Payments, Coupons, Expenses, Referrals</h2>
+          <div class="grid two">
+            <details open>
+              <summary>Plans And Billing</summary>
+              <ol>
+                <li>Create monthly plan.</li>
+                <li>Create day-wise plan.</li>
+                <li>Create shift-hour plan.</li>
+                <li>Use plan in desk admission and renewal.</li>
+                <li>Verify expiry and ledger amounts are correct.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Expenses And Reports</summary>
+              <ol>
+                <li>Open expenses page.</li>
+                <li>Expense ledger should be compact horizontal rows/cards.</li>
+                <li>Amount/date/category alignment should look clean.</li>
+                <li>Open reports and analytics; they should not show duplicate same page unless intentional.</li>
+                <li>Export reports and verify file downloads.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Coupons/Offers</summary>
+              <ol>
+                <li>Create coupon and apply during admission.</li>
+                <li>Create active public offer.</li>
+                <li>Offer appears in listing, marketplace detail, and subdomain.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Referrals</summary>
+              <ol>
+                <li>Owner profile/dashboard shows <code>BLxxxxxx</code> referral code.</li>
+                <li>New student gets <code>BLxxxxxx</code> referral code.</li>
+                <li>Referral dashboard shows code and bonus summary.</li>
+              </ol>
+            </details>
+          </div>
+          <label class="check"><input type="checkbox" /> Plans and billing OK</label>
+          <label class="check"><input type="checkbox" /> Expense/report UI OK</label>
+          <label class="check"><input type="checkbox" /> Referral codes OK</label>
+        </section>
+
+        <section id="website-listing">
+          <span class="role">Owner Growth</span>
+          <h2>Listing, Website Builder, Marketing</h2>
+          <div class="grid two">
+            <div>
+              <h3>Marketplace Listing</h3>
+              <ol>
+                <li>Open <code>/owner/listing</code>.</li>
+                <li>Upload logo, cover, and gallery images.</li>
+                <li>Cover photo is visible in preview, not only gallery slider.</li>
+                <li>Publish listing after confirmation.</li>
+                <li>Open marketplace detail and verify plans, offer, contact, gallery.</li>
+                <li>College/library image slider controls work.</li>
+              </ol>
+            </div>
+            <div>
+              <h3>Website Builder</h3>
+              <ol>
+                <li>Open <code>/owner/website</code>.</li>
+                <li>Brand, Hero, Pages, Theme, Contact, SEO, Sections tabs open correct editors.</li>
+                <li>Save draft and Publish show clear loading/success.</li>
+                <li>Subdomain Home/Features/Gallery/Pricing/About/Contact routes show different page content.</li>
+                <li>Disabled pages hide from nav and direct URL shows unavailable state.</li>
+                <li>Owner WhatsApp/contact number syncs with subdomain button.</li>
+              </ol>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" /> Listing upload/publish OK</label>
+          <label class="check"><input type="checkbox" /> Website builder tabs OK</label>
+          <label class="check"><input type="checkbox" /> Subdomain routes OK</label>
+        </section>
+
+        <section id="student">
+          <span class="role">Student</span>
+          <h2>Student Dashboard, Books, Revisions, Scanner</h2>
+          <div class="grid two">
+            <details open>
+              <summary>Dashboard And Navigation</summary>
+              <ol>
+                <li>Student dashboard summary cards are compact.</li>
+                <li>Planner is a separate page, not inside Study Zone tabs.</li>
+                <li>My Library, Study Zone, Study Tools, Planner routes are clear.</li>
+                <li>Bottom mobile nav does not hide content.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>My Books / Syllabus Tracker</summary>
+              <ol>
+                <li>Search published global books.</li>
+                <li>Add book to My Books.</li>
+                <li>Open chapters/topics checklist.</li>
+                <li>Mark topic completed and verify progress/streak.</li>
+                <li>Mark revision once/twice/strong/needs revision.</li>
+                <li>Request missing book with TOC PDF/image; request goes only to superadmin.</li>
+              </ol>
+            </details>
+          </div>
+          <label class="check"><input type="checkbox" /> Student dashboard/nav OK</label>
+          <label class="check"><input type="checkbox" /> My Books tracker OK</label>
+          <label class="check"><input type="checkbox" /> Book request goes to superadmin only</label>
+        </section>
+
+        <section id="planner">
+          <span class="role">Student Planner</span>
+          <h2>Daily, Weekly, Monthly Planner</h2>
+          <div class="grid three">
+            <details open>
+              <summary>Daily</summary>
+              <ol>
+                <li>Add task with subject, topic, duration, priority, deadline.</li>
+                <li>Complete task and verify today progress updates.</li>
+                <li>Reschedule/carry forward incomplete task.</li>
+                <li>Start timer/focus session and log minutes.</li>
+                <li>Priority badges/colors visible.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Weekly</summary>
+              <ol>
+                <li>Add weekly goal.</li>
+                <li>Click Generate daily tasks and verify tasks appear on weekly board.</li>
+                <li>No SQL/CSRF errors appear.</li>
+                <li>Move task between days.</li>
+                <li>Subject volume updates.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Monthly</summary>
+              <ol>
+                <li>Add monthly goal.</li>
+                <li>Click Split into weekly goals and verify 4 weekly goals are created.</li>
+                <li>Calendar markers and heatmap update.</li>
+                <li>Add exam countdown.</li>
+                <li>Monthly summary values make sense.</li>
+              </ol>
+            </details>
+          </div>
+          <h3>Widgets</h3>
           <ol>
-            <li>Open key owner pages: dashboard, admissions, roster, seats, attendance, payments, plans, coupons, listing, website, settings.</li>
-            <li>Confirm sidebar does not move upward or overlay page content.</li>
-            <li>Confirm global header has no duplicate page title/action clutter.</li>
-            <li>Open forms and verify drawers open from right on desktop.</li>
-            <li>On mobile, drawers open as usable full-screen/bottom-safe sheets.</li>
-            <li>Confirm bottom nav never hides submit buttons or page bottom content.</li>
+            <li>Sticky note colors are clickable and persist.</li>
+            <li>Sticky note delete button works.</li>
+            <li>Exam countdown add/edit/delete works.</li>
+            <li>Habit tracker saves changes.</li>
+            <li>Reminders toggle does not break page.</li>
           </ol>
-          <label><input type="checkbox" /> Desktop shell stable</label>
-          <label><input type="checkbox" /> Mobile shell stable</label>
-          <label><input type="checkbox" /> Right drawers usable</label>
+          <label class="check"><input type="checkbox" /> Daily planner OK</label>
+          <label class="check"><input type="checkbox" /> Weekly planner OK</label>
+          <label class="check"><input type="checkbox" /> Monthly planner OK</label>
+          <label class="check"><input type="checkbox" /> Sticky/exam/habit widgets OK</label>
+        </section>
+
+        <section id="superadmin">
+          <span class="role">Superadmin</span>
+          <h2>Superadmin Content, Settings, Blog</h2>
+          <div class="grid two">
+            <div>
+              <h3>Book Catalog</h3>
+              <ol>
+                <li>Download book syllabus Excel template.</li>
+                <li>Upload valid TOC file.</li>
+                <li>Re-upload same book with new topics; no duplicates.</li>
+                <li>Edit book manually and add chapter/topic later.</li>
+                <li>Publish/unpublish affects student search.</li>
+              </ol>
+            </div>
+            <div>
+              <h3>Blog And WhatsApp</h3>
+              <ol>
+                <li>Create draft blog.</li>
+                <li>Publish blog and verify <code>/blog</code> listing.</li>
+                <li>Set support WhatsApp and demo WhatsApp numbers.</li>
+                <li>Landing floating WhatsApp opens support number.</li>
+                <li>Book Demo opens demo number or support fallback.</li>
+              </ol>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" /> Superadmin book import/edit OK</label>
+          <label class="check"><input type="checkbox" /> Blog create/publish OK</label>
+          <label class="check"><input type="checkbox" /> Dynamic WhatsApp settings OK</label>
+        </section>
+
+        <section id="public">
+          <span class="role">Public</span>
+          <h2>Landing, Marketplace, Blog, Subdomain</h2>
+          <div class="grid two">
+            <details open>
+              <summary>Landing + Blog</summary>
+              <ol>
+                <li>Header links exist: Home, Features, About, Blog, Pricing, Contact, Book Demo.</li>
+                <li>Landing theme is clean/professional and mobile-friendly.</li>
+                <li>Floating WhatsApp button visible only when configured.</li>
+                <li>Blog list and detail pages match landing theme.</li>
+                <li>No hardcoded WhatsApp number is used.</li>
+              </ol>
+            </details>
+            <details open>
+              <summary>Marketplace + Subdomain</summary>
+              <ol>
+                <li>Marketplace search visible above fold on mobile.</li>
+                <li>Listing card shows image, offer, plans, amenities.</li>
+                <li>Subdomain nav pages route correctly: Home, Features, Gallery, Pricing, About, Contact.</li>
+                <li>Owner WhatsApp floating button appears only when owner configured number.</li>
+                <li>SEO metadata/title/description are sensible.</li>
+              </ol>
+            </details>
+          </div>
+          <label class="check"><input type="checkbox" /> Landing/blog OK</label>
+          <label class="check"><input type="checkbox" /> Marketplace OK</label>
+          <label class="check"><input type="checkbox" /> Subdomain OK</label>
+        </section>
+
+        <section id="mobile">
+          <span class="role">Mobile QA</span>
+          <h2>Mobile Density, Bottom Nav, Drawers</h2>
+          <div class="danger">Use Chrome DevTools 375px width or a real Android phone. Most BookLib problems show up on mobile first.</div>
+          <ol>
+            <li>Owner dashboard: top 2-3 actions visible without heavy scroll.</li>
+            <li>Owner roster: active roster list scrolls inside its tile.</li>
+            <li>Owner seats: floor/room filters and map are usable.</li>
+            <li>Owner checkins: latest logs do not push page endlessly; filters are compact.</li>
+            <li>Student planner: Daily/Weekly/Monthly tabs visible and usable.</li>
+            <li>Student scanner: camera popup does not show extra error story below.</li>
+            <li>All drawers/sheets have visible close and submit buttons.</li>
+            <li>Bottom nav never hides last card/action.</li>
+          </ol>
+          <label class="check"><input type="checkbox" /> 375px mobile owner pages OK</label>
+          <label class="check"><input type="checkbox" /> 375px mobile student pages OK</label>
+          <label class="check"><input type="checkbox" /> No bottom nav overlap</label>
+        </section>
+
+        <section id="final">
+          <span class="role">Final Sign-off</span>
+          <h2>Production Regression Checklist</h2>
+          <table>
+            <thead>
+              <tr><th>Area</th><th>Must Pass</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Auth</td><td>Role login + session persistence</td><td>No cross-role landing.</td></tr>
+              <tr><td>Admission</td><td>Desk admission, join approve/reject, seat optional</td><td>Floor -> Room -> Seat cascade.</td></tr>
+              <tr><td>Seats</td><td>Rooms real, filters work, allotment updates roster</td><td>No legacy A1/A2 room pollution.</td></tr>
+              <tr><td>Planner</td><td>Monthly split, weekly generate, sticky note actions</td><td>No CSRF/SQL errors.</td></tr>
+              <tr><td>Public</td><td>Landing, marketplace, blog, subdomain nav</td><td>WhatsApp dynamic.</td></tr>
+              <tr><td>Mobile</td><td>No bottom hiding, compact cards</td><td>375px + real phone.</td></tr>
+            </tbody>
+          </table>
+          <label class="check"><input type="checkbox" /> All critical production flows signed off</label>
         </section>
       </div>
-
-      <section id="superadmin">
-        <span class="role">Superadmin</span>
-        <h2>Superadmin Control And Content</h2>
-        <div class="grid two">
-          <div>
-            <h3>360 Control Center</h3>
-            <ol>
-              <li>Open <code>/superadmin/libraries</code>.</li>
-              <li>Search by library name, city, owner, status, and plan.</li>
-              <li>Select a tenant and check overview, users, students, payments, seats, website, activity, danger tabs.</li>
-              <li>Suspend tenant and verify owner access is blocked.</li>
-              <li>Reactivate tenant and verify owner access returns.</li>
-              <li>Archive tenant only after confirmation and verify data remains visible to superadmin.</li>
-            </ol>
-          </div>
-          <div>
-            <h3>Access Delegation</h3>
-            <ol>
-              <li>Open <code>/superadmin/access</code>.</li>
-              <li>Create SUPPORT/FINANCE/CONTENT/OPS platform admin.</li>
-              <li>Verify limited role sees only allowed pages.</li>
-              <li>Disable platform admin and verify login/session no longer works.</li>
-              <li>Check audit logs after permission changes.</li>
-            </ol>
-          </div>
-        </div>
-        <label><input type="checkbox" /> Tenant 360 works</label>
-        <label><input type="checkbox" /> Suspend/reactivate works</label>
-        <label><input type="checkbox" /> Platform admin permissions work</label>
-      </section>
-
-      <section id="book-syllabus">
-        <span class="role">Superadmin + Student</span>
-        <h2>Book-Based Syllabus Tracker</h2>
-        <div class="grid two">
-          <div>
-            <h3>Superadmin Book Library</h3>
-            <ol>
-              <li>Open <code>/superadmin/syllabus</code>.</li>
-              <li>Click <strong>Download book template</strong> and verify XLSX downloads.</li>
-              <li>Fill rows: bookTitle, author, className, subject, language, chapterTitle, chapterOrder, topicTitle, topicOrder, estimatedMinutes.</li>
-              <li>Upload the XLSX through <strong>Import books</strong>.</li>
-              <li>Verify book, chapter, topic counts update.</li>
-              <li>Open the imported book, edit metadata, then publish it.</li>
-              <li>Add a new chapter/topic later and confirm book update saves.</li>
-            </ol>
-          </div>
-          <div>
-            <h3>Student My Books</h3>
-            <ol>
-              <li>Login as student and open <code>/student/syllabus</code>.</li>
-              <li>Search the published book by title, author, subject, or class/exam.</li>
-              <li>Click <strong>Add to My Books</strong>.</li>
-              <li>Open the book and verify chapters/topics appear.</li>
-              <li>Mark one topic <strong>In progress</strong>, then <strong>Complete</strong>.</li>
-              <li>Open dashboard and verify book progress, topics today, and streak update.</li>
-              <li>Open revisions and verify revision schedule was created.</li>
-              <li>After superadmin adds a new topic, return to student tracker and verify <strong>Sync new topics</strong> appears.</li>
-            </ol>
-          </div>
-        </div>
-        <h3>Book Request Flow</h3>
-        <ol>
-          <li>Student opens Study Tools or request missing book action.</li>
-          <li>Submit book title, author/class/subject/message, and TOC image/PDF if available.</li>
-          <li>Superadmin opens <code>/superadmin/book-requests</code>.</li>
-          <li>Move request to <strong>IN_REVIEW</strong>.</li>
-          <li>Create/import the global book from TOC.</li>
-          <li>Paste global book id and click <strong>Link fulfilled book</strong>.</li>
-          <li>Verify owner dashboard has no book request management flow.</li>
-        </ol>
-        <label><input type="checkbox" /> Template import works</label>
-        <label><input type="checkbox" /> Student add/progress/streak works</label>
-        <label><input type="checkbox" /> New topic sync preserves old progress</label>
-        <label><input type="checkbox" /> Requests go only to superadmin</label>
-      </section>
-
-      <section id="owner">
-        <span class="role">Owner</span>
-        <h2>Owner Operations</h2>
-        <div class="grid three">
-          <div>
-            <h3>Admissions + Roster</h3>
-            <ol>
-              <li>Create admission manually.</li>
-              <li>Approve join request.</li>
-              <li>Verify student appears in roster.</li>
-              <li>Edit student details.</li>
-              <li>Export roster/report if available.</li>
-            </ol>
-          </div>
-          <div>
-            <h3>Seat Map</h3>
-            <ol>
-              <li>Open <code>/owner/seats</code>.</li>
-              <li>If empty, create floor and add seat bank.</li>
-              <li>Existing seats should show daily allotment first.</li>
-              <li>Select student, select free seat, allot seat.</li>
-              <li>Manage layout drawer: add rooms, templates, move/paint sections.</li>
-              <li>Occupied seat should show occupant detail, not duplicate allot actions.</li>
-            </ol>
-          </div>
-          <div>
-            <h3>Attendance</h3>
-            <ol>
-              <li>Open <code>/owner/checkins</code>.</li>
-              <li>Header QR icon opens compact QR popup.</li>
-              <li>Download QR creates PNG.</li>
-              <li>Print poster still works from attendance page.</li>
-              <li>Manual attendance works for owner/team users with access.</li>
-              <li>Logs show 5-6 items first; rest scroll inside log area with name/date filter.</li>
-            </ol>
-          </div>
-        </div>
-        <label><input type="checkbox" /> Admission/roster flow works</label>
-        <label><input type="checkbox" /> Seat map daily flow is clear</label>
-        <label><input type="checkbox" /> Attendance QR and manual attendance work</label>
-      </section>
-
-      <section id="money-growth">
-        <span class="role">Owner + Superadmin</span>
-        <h2>Plans, Payments, Coupons, Growth</h2>
-        <div class="grid two">
-          <div>
-            <h3>Plans And Restrictions</h3>
-            <ol>
-              <li>Superadmin opens plans/access settings.</li>
-              <li>Edit trial and paid plan feature access.</li>
-              <li>Verify owner plan page reflects live plan data.</li>
-              <li>Trial library should follow configurable access, not hardcoded limits.</li>
-              <li>Test 999/6-month and 449/2-month plans.</li>
-              <li>Test referral bonus for paid onboarding.</li>
-            </ol>
-          </div>
-          <div>
-            <h3>Payments And Razorpay</h3>
-            <ol>
-              <li>Verify Razorpay key and webhook settings are saved in superadmin integrations.</li>
-              <li>Start owner plan payment flow.</li>
-              <li>Complete test/live payment as configured.</li>
-              <li>Confirm webhook updates subscription/payment status.</li>
-              <li>Check failed/cancelled payment handling.</li>
-              <li>Export payment reports.</li>
-            </ol>
-          </div>
-        </div>
-        <label><input type="checkbox" /> Plan access editable by superadmin</label>
-        <label><input type="checkbox" /> Payment flow updates subscription</label>
-        <label><input type="checkbox" /> Coupons/offers/referrals work</label>
-      </section>
-
-      <section id="public">
-        <span class="role">Public</span>
-        <h2>Landing, Marketplace, Listing, Website Builder</h2>
-        <div class="grid two">
-          <div>
-            <h3>Landing + Blog</h3>
-            <ol>
-              <li>Open landing page and verify header links remain visible.</li>
-              <li>Verify Book Demo button appears when superadmin demo/support WhatsApp number exists.</li>
-              <li>Verify floating WhatsApp opens configured support number.</li>
-              <li>Open <code>/blog</code> and a blog detail page.</li>
-              <li>Superadmin creates/edits/publishes/unpublishes a blog.</li>
-              <li>Draft blog should not be publicly visible.</li>
-            </ol>
-          </div>
-          <div>
-            <h3>Marketplace + Subdomain</h3>
-            <ol>
-              <li>Owner uploads logo, cover, gallery from listing/website builder.</li>
-              <li>Verify marketplace card shows image, plans, offer, amenities.</li>
-              <li>Open listing detail and verify CTA/contact actions.</li>
-              <li>Open owner subdomain homepage.</li>
-              <li>Click Home, Features, Gallery, Pricing, About, Contact and verify page content changes.</li>
-              <li>Owner-specific WhatsApp floating button opens owner public WhatsApp number.</li>
-            </ol>
-          </div>
-        </div>
-        <label><input type="checkbox" /> Landing/blog CTAs wired</label>
-        <label><input type="checkbox" /> Marketplace listing polished</label>
-        <label><input type="checkbox" /> Subdomain pages route correctly</label>
-      </section>
-
-      <section id="student">
-        <span class="role">Student</span>
-        <h2>Student App</h2>
-        <div class="grid three">
-          <div>
-            <h3>Unified Scanner</h3>
-            <ol>
-              <li>Click QR icon in student header.</li>
-              <li>Scanner opens directly, not a long explanation page.</li>
-              <li>Scan unjoined library QR: join request created.</li>
-              <li>Scan joined library QR while outside: check-in.</li>
-              <li>Scan again while inside: checkout.</li>
-              <li>Invalid QR shows error inside scanner popup.</li>
-            </ol>
-          </div>
-          <div>
-            <h3>Study Zone</h3>
-            <ol>
-              <li>Open My Library, Study Zone, Study Tools tabs.</li>
-              <li>Focus mode starts/stops session.</li>
-              <li>Revision dashboard shows due/completed/weak topics.</li>
-              <li>Rewards/referrals pages load.</li>
-            </ol>
-          </div>
-          <div>
-            <h3>Payments + Library</h3>
-            <ol>
-              <li>Student sees active library and seat.</li>
-              <li>Payments page shows dues and recent payments.</li>
-              <li>Notifications page shows owner broadcasts.</li>
-              <li>Settings can update profile safely.</li>
-            </ol>
-          </div>
-        </div>
-        <label><input type="checkbox" /> Unified scanner behavior correct</label>
-        <label><input type="checkbox" /> Student study/revision tools work</label>
-        <label><input type="checkbox" /> Student payment/library data correct</label>
-      </section>
-
-      <section id="mobile">
-        <span class="role">Mobile QA</span>
-        <h2>Mobile View Checks</h2>
-        <ol>
-          <li>Test Chrome mobile viewport around 360 x 800.</li>
-          <li>Check owner dashboard, admissions, seats, attendance, settings, listing, website.</li>
-          <li>Check student dashboard, scanner, syllabus, revisions, payments.</li>
-          <li>Check superadmin syllabus and book requests.</li>
-          <li>No bottom content should be hidden behind mobile nav.</li>
-          <li>No horizontal scrollbar unless it is an intentional table/card strip.</li>
-          <li>Tiles/cards should be compact; no huge empty white areas.</li>
-          <li>Drawers/sheets should have visible close and submit buttons.</li>
-        </ol>
-        <label><input type="checkbox" /> Bottom-safe spacing works</label>
-        <label><input type="checkbox" /> No accidental horizontal overflow</label>
-        <label><input type="checkbox" /> Mobile scanner is usable</label>
-      </section>
-
-      <section id="regression">
-        <span class="role">Regression</span>
-        <h2>Final Regression Table</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Area</th>
-              <th>Must Pass</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Auth</td>
-              <td>Owner/student/superadmin login and logout</td>
-              <td>Google auth role landing must be correct.</td>
-            </tr>
-            <tr>
-              <td>Book tracker</td>
-              <td>Import, publish, search, add, complete, sync</td>
-              <td>Owner should not see request queue.</td>
-            </tr>
-            <tr>
-              <td>Seat map</td>
-              <td>Create floor/seats and allot student</td>
-              <td>Daily workflow should not be cluttered.</td>
-            </tr>
-            <tr>
-              <td>Attendance</td>
-              <td>QR scan, manual attendance, logs filter</td>
-              <td>Owner header QR quick popup should download PNG.</td>
-            </tr>
-            <tr>
-              <td>Public pages</td>
-              <td>Landing, blog, marketplace, subdomain routes</td>
-              <td>WhatsApp CTAs must use settings, no hardcoded number.</td>
-            </tr>
-            <tr>
-              <td>Mobile</td>
-              <td>Bottom-safe content and clean navigation</td>
-              <td>Test real phone once before final deployment.</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="pass" style="margin-top: 16px;">Ready to sign off only when all critical role flows pass on desktop and mobile.</div>
-      </section>
     </div>
   </main>
+
+  <script>
+    const storageKey = "booklib-manual-qa-checklist-v2";
+    const checks = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    checks.forEach((box, index) => {
+      box.dataset.key = String(index);
+      box.checked = Boolean(saved[index]);
+      box.addEventListener("change", () => {
+        saved[index] = box.checked;
+        localStorage.setItem(storageKey, JSON.stringify(saved));
+        updateProgress();
+      });
+    });
+    function updateProgress() {
+      const total = checks.length || 1;
+      const done = checks.filter((box) => box.checked).length;
+      const pct = Math.round((done / total) * 100);
+      document.getElementById("progressText").textContent = pct + "%";
+      document.getElementById("progressBar").style.width = pct + "%";
+    }
+    document.getElementById("clearChecks").addEventListener("click", () => {
+      if (!confirm("Clear all checklist ticks in this browser?")) return;
+      localStorage.removeItem(storageKey);
+      checks.forEach((box) => { box.checked = false; });
+      Object.keys(saved).forEach((key) => delete saved[key]);
+      updateProgress();
+    });
+    updateProgress();
+  </script>
 </body>
 </html>

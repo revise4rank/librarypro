@@ -2,6 +2,7 @@ import { comparePassword, hashPassword, signAccessToken } from "../lib/auth";
 import { env } from "../config/env";
 import { requireDb } from "../lib/db";
 import { AppError } from "../lib/errors";
+import { ensureLibraryReferralCode, ensureUserReferralCode, generateUniqueReferralCode } from "../lib/referral-code";
 import { AuthRepository, type UserRow } from "../repositories/auth.repository";
 import { OwnerOperationsRepository } from "../repositories/owner-operations.repository";
 import crypto from "node:crypto";
@@ -68,6 +69,8 @@ async function buildAuthenticatedSession(user: UserRow) {
       fullName: user.full_name,
       email: user.email,
       phone: user.phone,
+      dateOfBirth: user.date_of_birth,
+      gender: user.gender,
       studentCode: user.student_code,
       role: effectiveRole,
       libraryIds,
@@ -104,6 +107,8 @@ export async function getAuthenticatedUser(userId: string) {
     fullName: user.full_name,
     email: user.email,
     phone: user.phone,
+    dateOfBirth: user.date_of_birth,
+    gender: user.gender,
     studentCode: user.student_code,
     role: effectiveRole,
     libraryIds,
@@ -113,6 +118,8 @@ export async function getAuthenticatedUser(userId: string) {
 
 export async function registerStudentUser(input: {
   fullName: string;
+  dateOfBirth?: string;
+  gender?: string;
   email?: string;
   phone?: string;
   password: string;
@@ -129,20 +136,28 @@ export async function registerStudentUser(input: {
     }
 
     const passwordHash = await hashPassword(input.password);
+    const referralCode = await generateUniqueReferralCode(client);
     const created = await repo.createStudent(client, {
       fullName: input.fullName,
       email: input.email,
       phone: input.phone,
+      dateOfBirth: input.dateOfBirth,
+      gender: input.gender,
       studentCode: buildStudentCode(input.fullName),
+      referralCode,
       passwordHash,
     });
+    await ensureUserReferralCode(client, created.id);
 
     if (input.referralCode?.trim()) {
       const referrer = await client.query<{ id: string }>(
         `
         SELECT id::text
         FROM users
-        WHERE lower(COALESCE(student_code, '')) = lower($1)
+        WHERE (
+            lower(COALESCE(referral_code, '')) = lower($1)
+            OR lower(COALESCE(student_code, '')) = lower($1)
+          )
           AND id <> $2
           AND global_role = 'STUDENT'
         LIMIT 1
@@ -207,13 +222,18 @@ export async function registerOwnerUser(input: {
 
     await repo.ensureOwnerRole(client, owner.id, library.id);
     await repo.createStarterSubscription(client, library.id);
+    await ensureUserReferralCode(client, owner.id);
+    await ensureLibraryReferralCode(client, library.id);
 
     if (input.referralCode?.trim()) {
       const referrer = await client.query<{ id: string }>(
         `
         SELECT id::text
         FROM libraries
-        WHERE lower(slug) = lower($1)
+        WHERE (
+            lower(COALESCE(referral_code, '')) = lower($1)
+            OR lower(slug) = lower($1)
+          )
           AND id <> $2
         LIMIT 1
         `,
@@ -252,12 +272,16 @@ export async function updateAuthenticatedUserProfile(input: {
   fullName: string;
   email?: string;
   phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
 }) {
   const user = await repository().updateUserProfile({
     userId: input.userId,
     fullName: input.fullName,
     email: input.email || null,
     phone: input.phone || null,
+    dateOfBirth: input.dateOfBirth || null,
+    gender: input.gender || null,
   });
 
   if (!user) {
@@ -614,13 +638,16 @@ export async function completeGoogleOAuth(input: {
     await client.query("BEGIN");
 
     if (payload.role === "STUDENT") {
+      const referralCode = await generateUniqueReferralCode(client);
       const student = await repo.createStudent(client, {
         fullName,
         email: payload.email,
         phone: input.phone || undefined,
         studentCode: buildStudentCode(fullName),
+        referralCode,
         passwordHash,
       });
+      await ensureUserReferralCode(client, student.id);
       createdUserId = student.id;
     } else {
       const owner = await repo.createOwnerUser(client, {
@@ -638,6 +665,8 @@ export async function completeGoogleOAuth(input: {
       });
       await repo.ensureOwnerRole(client, owner.id, library.id);
       await repo.createStarterSubscription(client, library.id);
+      await ensureUserReferralCode(client, owner.id);
+      await ensureLibraryReferralCode(client, library.id);
       createdUserId = owner.id;
     }
 

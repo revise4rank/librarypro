@@ -12,6 +12,7 @@ import {
   createOwnerAdmission,
   createOwnerFloor,
   createOwnerNotification,
+  createOwnerRoom,
   createOwnerAdmin,
   createOwnerCoupon,
   createOwnerExpense,
@@ -60,6 +61,7 @@ import {
   listOwnerNotificationsPage,
   listOwnerPaymentsPage,
   listOwnerFloors,
+  listOwnerRooms,
   listOwnerSeats,
   listOwnerStudentPlans,
   listOwnerStudentsPage,
@@ -75,6 +77,7 @@ import {
   updateOwnerAdminPermissions,
   updateOwnerCoupon,
   updateOwnerFloor,
+  updateOwnerRoom,
   updateOwnerStudentPlan,
   updateStudentFocusGoals,
   updateOwnerSettings,
@@ -104,6 +107,7 @@ import {
   createOwnerExpenseBodySchema,
   createOwnerPaymentBodySchema,
   createOwnerSeatsBodySchema,
+  createOwnerRoomBodySchema,
   createOwnerStudentBodySchema,
   ownerStudentPlanBodySchema,
   ownerExpensesQuerySchema,
@@ -111,6 +115,8 @@ import {
   ownerNotificationsQuerySchema,
   ownerPaymentsQuerySchema,
   ownerStudentsQuerySchema,
+  ownerRoomsQuerySchema,
+  ownerSeatsQuerySchema,
   ownerReportExportQuerySchema,
   ownerReportsQuerySchema,
   createLibraryJoinRequestBodySchema,
@@ -133,6 +139,7 @@ import {
   updateStudentFocusGoalsBodySchema,
   updateOwnerSettingsBodySchema,
   updateOwnerSeatBodySchema,
+  updateOwnerRoomBodySchema,
   updateOwnerPaymentBodySchema,
   updateOwnerStudentBodySchema,
   updateAdminLibraryBodySchema,
@@ -198,7 +205,13 @@ export async function createOwnerStudentPlanController(req: Request, res: Respon
     name: parsed.name,
     targetAudience: parsed.targetAudience || undefined,
     description: parsed.description || undefined,
+    planType: parsed.planType,
     durationMonths: parsed.durationMonths,
+    durationDays: parsed.durationDays,
+    shiftStartTime: parsed.shiftStartTime || undefined,
+    shiftEndTime: parsed.shiftEndTime || undefined,
+    allowedHours: parsed.allowedHours,
+    allowedDays: parsed.allowedDays,
     baseAmount: parsed.baseAmount,
     defaultDiscountType: parsed.defaultDiscountType,
     defaultDiscountValue: parsed.defaultDiscountValue,
@@ -216,7 +229,13 @@ export async function updateOwnerStudentPlanController(req: Request, res: Respon
     name: parsed.name,
     targetAudience: parsed.targetAudience || undefined,
     description: parsed.description || undefined,
+    planType: parsed.planType,
     durationMonths: parsed.durationMonths,
+    durationDays: parsed.durationDays,
+    shiftStartTime: parsed.shiftStartTime || undefined,
+    shiftEndTime: parsed.shiftEndTime || undefined,
+    allowedHours: parsed.allowedHours,
+    allowedDays: parsed.allowedDays,
     baseAmount: parsed.baseAmount,
     defaultDiscountType: parsed.defaultDiscountType,
     defaultDiscountValue: parsed.defaultDiscountValue,
@@ -363,6 +382,8 @@ export async function approveOwnerJoinRequestController(req: Request, res: Respo
     actorUserId,
     requestId,
     fullName: parsed.fullName || undefined,
+    dateOfBirth: parsed.dateOfBirth || undefined,
+    gender: parsed.gender || undefined,
     fatherName: parsed.fatherName || undefined,
     address: parsed.address || undefined,
     className: parsed.className || undefined,
@@ -379,6 +400,7 @@ export async function approveOwnerJoinRequestController(req: Request, res: Respo
     aadhaarDocumentUrl: parsed.aadhaarDocumentUrl || undefined,
     schoolIdDocumentUrl: parsed.schoolIdDocumentUrl || undefined,
     notes: parsed.notes || undefined,
+    seatId: parsed.seatId || undefined,
   });
   await createAuditLog({
     actorUserId,
@@ -443,6 +465,8 @@ export async function createOwnerAdmissionController(req: Request, res: Response
     libraryId,
     actorUserId,
     fullName: parsed.fullName,
+    dateOfBirth: parsed.dateOfBirth || undefined,
+    gender: parsed.gender || undefined,
     fatherName: parsed.fatherName || undefined,
     address: parsed.address || undefined,
     className: parsed.className || undefined,
@@ -459,6 +483,7 @@ export async function createOwnerAdmissionController(req: Request, res: Response
     aadhaarDocumentUrl: parsed.aadhaarDocumentUrl || undefined,
     schoolIdDocumentUrl: parsed.schoolIdDocumentUrl || undefined,
     notes: parsed.notes || undefined,
+    seatId: parsed.seatId || undefined,
   });
 
   await createAuditLog({
@@ -467,7 +492,7 @@ export async function createOwnerAdmissionController(req: Request, res: Response
     action: "owner.admission.create",
     entityType: "student_assignment",
     entityId: result.assignmentId,
-    metadata: { fullName: parsed.fullName, studentPlanId: parsed.studentPlanId, couponCode: parsed.couponCode || null },
+    metadata: { fullName: parsed.fullName, studentPlanId: parsed.studentPlanId, couponCode: parsed.couponCode || null, seatId: parsed.seatId || null },
     ipAddress: req.ip,
     userAgent: req.header("user-agent") ?? null,
   });
@@ -497,6 +522,8 @@ export async function updateOwnerStudentController(req: Request, res: Response) 
     libraryId,
     assignmentId: paramValue(req.params.assignmentId),
     fullName: parsed.fullName,
+    dateOfBirth: parsed.dateOfBirth || undefined,
+    gender: parsed.gender || undefined,
     fatherName: parsed.fatherName || undefined,
     address: parsed.address || undefined,
     className: parsed.className || undefined,
@@ -838,13 +865,27 @@ export async function regenerateOwnerQrController(req: Request, res: Response) {
 
 export async function listOwnerSeatsController(req: Request, res: Response) {
   const { libraryId } = requireOwnerContext(req);
-  const rows = await listOwnerSeats(libraryId);
+  const parsed = ownerSeatsQuerySchema.parse(req.query);
+  const rows = await listOwnerSeats({
+    libraryId,
+    floorId: parsed.floorId || undefined,
+    roomId: parsed.roomId || undefined,
+    status: parsed.status,
+    availableOnly: parsed.availableOnly,
+  });
   res.json({ success: true, data: rows });
 }
 
 export async function listOwnerFloorsController(req: Request, res: Response) {
   const { libraryId } = requireOwnerContext(req);
   const rows = await listOwnerFloors(libraryId);
+  res.json({ success: true, data: rows });
+}
+
+export async function listOwnerRoomsController(req: Request, res: Response) {
+  const { libraryId } = requireOwnerContext(req);
+  const parsed = ownerRoomsQuerySchema.parse(req.query);
+  const rows = await listOwnerRooms({ libraryId, floorId: parsed.floorId || undefined });
   res.json({ success: true, data: rows });
 }
 
@@ -971,12 +1012,75 @@ export async function updateOwnerFloorController(req: Request, res: Response) {
   res.json({ success: true, data: result });
 }
 
+export async function createOwnerRoomController(req: Request, res: Response) {
+  const { libraryId, actorUserId } = requireOwnerContext(req);
+  const parsed = createOwnerRoomBodySchema.parse(req.body);
+  const result = await createOwnerRoom({
+    libraryId,
+    floorId: parsed.floorId,
+    name: parsed.name,
+    sortOrder: parsed.sortOrder,
+    seatCount: parsed.seatCount,
+    seatPrefix: parsed.seatPrefix || undefined,
+  });
+
+  await createAuditLog({
+    actorUserId,
+    libraryId,
+    action: "owner.room.create",
+    entityType: "library_room",
+    entityId: result.id,
+    metadata: { name: parsed.name, floorId: parsed.floorId, seatCount: parsed.seatCount },
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+
+  emitLibraryEvent(libraryId, "seat.updated", {
+    action: "room_created",
+    roomId: result.id,
+  });
+
+  res.status(201).json({ success: true, data: result });
+}
+
+export async function updateOwnerRoomController(req: Request, res: Response) {
+  const { libraryId, actorUserId } = requireOwnerContext(req);
+  const parsed = updateOwnerRoomBodySchema.parse(req.body);
+  const roomId = paramValue(req.params.roomId);
+  const result = await updateOwnerRoom({
+    libraryId,
+    roomId,
+    name: parsed.name,
+    sortOrder: parsed.sortOrder,
+    status: parsed.status,
+  });
+
+  await createAuditLog({
+    actorUserId,
+    libraryId,
+    action: "owner.room.update",
+    entityType: "library_room",
+    entityId: result.id,
+    metadata: parsed,
+    ipAddress: req.ip,
+    userAgent: req.header("user-agent") ?? null,
+  });
+
+  emitLibraryEvent(libraryId, "seat.updated", {
+    action: "room_updated",
+    roomId: result.id,
+  });
+
+  res.json({ success: true, data: result });
+}
+
 export async function createOwnerSeatsController(req: Request, res: Response) {
   const { libraryId, actorUserId } = requireOwnerContext(req);
   const parsed = createOwnerSeatsBodySchema.parse(req.body);
   const result = await createOwnerSeats({
     libraryId,
     floorId: parsed.floorId || null,
+    roomId: parsed.roomId || null,
     sectionName: parsed.sectionName,
     seatPrefix: parsed.seatPrefix,
     customSeatCode: parsed.customSeatCode || null,

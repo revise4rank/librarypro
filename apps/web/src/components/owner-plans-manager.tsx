@@ -12,7 +12,12 @@ type StudentPlanConfig = {
   name: string;
   target_audience: string | null;
   description: string | null;
+  plan_type?: "MONTHLY" | "DAY_WISE" | "SHIFT_HOURS";
   duration_months: number;
+  duration_days?: number | null;
+  shift_start_time?: string | null;
+  shift_end_time?: string | null;
+  allowed_hours?: string | null;
   base_amount: string;
   default_discount_type: DiscountType | null;
   default_discount_value: string | null;
@@ -32,7 +37,12 @@ const emptyPlanForm = {
   name: "",
   targetAudience: "",
   description: "",
+  planType: "MONTHLY" as "MONTHLY" | "DAY_WISE" | "SHIFT_HOURS",
   durationMonths: "1",
+  durationDays: "",
+  shiftStartTime: "",
+  shiftEndTime: "",
+  allowedHours: "",
   baseAmount: "999",
   defaultDiscountType: "" as DiscountType | "",
   defaultDiscountValue: "",
@@ -89,7 +99,12 @@ export function OwnerPlansManager() {
           name: planForm.name,
           targetAudience: planForm.targetAudience,
           description: planForm.description,
+          planType: planForm.planType,
           durationMonths: Number(planForm.durationMonths || "1"),
+          durationDays: planForm.durationDays ? Number(planForm.durationDays) : undefined,
+          shiftStartTime: planForm.shiftStartTime || undefined,
+          shiftEndTime: planForm.shiftEndTime || undefined,
+          allowedHours: planForm.allowedHours ? Number(planForm.allowedHours) : undefined,
           baseAmount: Number(planForm.baseAmount || "0"),
           defaultDiscountType: planForm.defaultDiscountType || undefined,
           defaultDiscountValue: planForm.defaultDiscountValue ? Number(planForm.defaultDiscountValue) : undefined,
@@ -114,7 +129,12 @@ export function OwnerPlansManager() {
       name: plan.name,
       targetAudience: plan.target_audience ?? "",
       description: plan.description ?? "",
+      planType: plan.plan_type ?? "MONTHLY",
       durationMonths: String(plan.duration_months),
+      durationDays: plan.duration_days ? String(plan.duration_days) : "",
+      shiftStartTime: plan.shift_start_time?.slice(0, 5) ?? "",
+      shiftEndTime: plan.shift_end_time?.slice(0, 5) ?? "",
+      allowedHours: plan.allowed_hours ? String(plan.allowed_hours) : "",
       baseAmount: String(plan.base_amount),
       defaultDiscountType: (plan.default_discount_type as DiscountType | null) ?? "",
       defaultDiscountValue: plan.default_discount_value ?? "",
@@ -175,9 +195,30 @@ export function OwnerPlansManager() {
               <input value={planForm.targetAudience} onChange={(event) => setPlanForm((current) => ({ ...current, targetAudience: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Target audience / label" />
             </div>
             <textarea value={planForm.description} onChange={(event) => setPlanForm((current) => ({ ...current, description: event.target.value }))} className="min-h-24 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Description" />
+            <div className="grid gap-2 rounded-lg border border-[var(--lp-border)] bg-white p-3">
+              <p className="text-xs font-black uppercase tracking-[0.08em] text-[var(--lp-text-soft)]">Plan type</p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {(["MONTHLY", "DAY_WISE", "SHIFT_HOURS"] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setPlanForm((current) => ({ ...current, planType: type }))}
+                    className={`rounded-lg border px-3 py-2 text-left text-xs font-black ${planForm.planType === type ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border-[var(--lp-border)] bg-white text-[var(--lp-text-soft)]"}`}
+                  >
+                    {type === "MONTHLY" ? "Monthly" : type === "DAY_WISE" ? "Day-wise" : "Shift hours"}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="grid gap-3 md:grid-cols-2">
               <input type="number" min="1" value={planForm.durationMonths} onChange={(event) => setPlanForm((current) => ({ ...current, durationMonths: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration months" />
               <input type="number" min="0" value={planForm.baseAmount} onChange={(event) => setPlanForm((current) => ({ ...current, baseAmount: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Base amount" />
+            </div>
+            <div className="grid gap-3 md:grid-cols-4">
+              <input type="number" min="1" value={planForm.durationDays} onChange={(event) => setPlanForm((current) => ({ ...current, durationDays: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration days" />
+              <input type="time" value={planForm.shiftStartTime} onChange={(event) => setPlanForm((current) => ({ ...current, shiftStartTime: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+              <input type="time" value={planForm.shiftEndTime} onChange={(event) => setPlanForm((current) => ({ ...current, shiftEndTime: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+              <input type="number" min="1" step="0.5" value={planForm.allowedHours} onChange={(event) => setPlanForm((current) => ({ ...current, allowedHours: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Hours/day" />
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <select value={planForm.defaultDiscountType} onChange={(event) => setPlanForm((current) => ({ ...current, defaultDiscountType: event.target.value as DiscountType | "" }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">

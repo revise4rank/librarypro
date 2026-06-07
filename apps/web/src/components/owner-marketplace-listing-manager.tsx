@@ -29,6 +29,8 @@ type ListingProfile = {
   offer_expires_at: string | null;
   allow_direct_contact: boolean;
   listing_published?: boolean;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
 };
 
 type ListingForm = {
@@ -52,6 +54,8 @@ type ListingForm = {
   offerExpiresAt: string;
   allowDirectContact: boolean;
   listingPublished: boolean;
+  latitude: string;
+  longitude: string;
 };
 
 type OwnerPublicProfileResponse = {
@@ -92,6 +96,8 @@ function buildDefaults(input: { libraryName?: string; address?: string; city?: s
     offerExpiresAt: "",
     allowDirectContact: true,
     listingPublished: true,
+    latitude: "",
+    longitude: "",
   };
 }
 
@@ -117,6 +123,8 @@ function mapProfile(profile: ListingProfile, fallback: ListingForm): ListingForm
     offerExpiresAt: profile.offer_expires_at?.slice(0, 10) ?? "",
     allowDirectContact: profile.allow_direct_contact ?? true,
     listingPublished: profile.listing_published ?? false,
+    latitude: profile.latitude == null ? "" : String(profile.latitude),
+    longitude: profile.longitude == null ? "" : String(profile.longitude),
   };
 }
 
@@ -158,19 +166,19 @@ export function OwnerMarketplaceListingManager({
     if (!lowest) return plan;
     return Number(plan.base_amount || "0") < Number(lowest.base_amount || "0") ? plan : lowest;
   }, null);
-  const qualityChecks = [
-    form.heroTitle,
-    form.heroTagline,
-    form.heroBannerUrl,
-    form.brandLogoUrl,
-    form.contactPhone || form.whatsappPhone,
-    form.addressText,
-    form.amenities.length >= 3,
-    form.galleryImages.length >= 2,
-    activePlans.length > 0,
-    form.highlightOffer,
+  const qualityItems = [
+    { label: "Listing title", done: Boolean(form.heroTitle) },
+    { label: "Short pitch", done: Boolean(form.heroTagline) },
+    { label: "Cover photo", done: Boolean(form.heroBannerUrl) },
+    { label: "Logo", done: Boolean(form.brandLogoUrl) },
+    { label: "Contact", done: Boolean(form.contactPhone || form.whatsappPhone) },
+    { label: "Address", done: Boolean(form.addressText) },
+    { label: "Amenities", done: form.amenities.length >= 3 },
+    { label: "Gallery", done: form.galleryImages.length >= 2 },
+    { label: "Public plans", done: activePlans.length > 0 },
+    { label: "Offer", done: Boolean(form.highlightOffer) },
   ];
-  const qualityScore = Math.round((qualityChecks.filter(Boolean).length / qualityChecks.length) * 100);
+  const qualityScore = Math.round((qualityItems.filter((item) => item.done).length / qualityItems.length) * 100);
 
   useEffect(() => {
     setForm(defaults);
@@ -204,7 +212,31 @@ export function OwnerMarketplaceListingManager({
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function saveListing(nextPublished = form.listingPublished) {
+  function detectLocation() {
+    setError(null);
+    setMessage(null);
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setError("Location detection is not available in this browser. Enter coordinates manually.");
+      return;
+    }
+
+    setMessage("Detecting library location...");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        update("latitude", position.coords.latitude.toFixed(6));
+        update("longitude", position.coords.longitude.toFixed(6));
+        setMessage("Location coordinates added. Save the listing to use nearest-library sorting.");
+      },
+      () => setError("Unable to detect location. Please allow location access or enter coordinates manually."),
+      { enableHighAccuracy: true, maximumAge: 300000, timeout: 10000 },
+    );
+  }
+
+  async function saveListing(nextPublished = form.listingPublished, closeAfterSave = false) {
+    if (nextPublished && !form.listingPublished && typeof window !== "undefined") {
+      const confirmed = window.confirm("Publish this marketplace listing publicly?");
+      if (!confirmed) return false;
+    }
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -214,14 +246,19 @@ export function OwnerMarketplaceListingManager({
         body: JSON.stringify({
           ...form,
           listingPublished: nextPublished,
-          latitude: null,
-          longitude: null,
+          latitude: form.latitude ? Number(form.latitude) : null,
+          longitude: form.longitude ? Number(form.longitude) : null,
         }),
       });
       update("listingPublished", nextPublished);
       setMessage(nextPublished ? "Marketplace listing is live." : "Marketplace listing saved as hidden.");
+      if (closeAfterSave) {
+        setDetailsOpen(false);
+      }
+      return true;
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save marketplace listing.");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -268,6 +305,20 @@ export function OwnerMarketplaceListingManager({
           <button type="button" onClick={() => setDetailsOpen(true)} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
             Edit listing details
           </button>
+          <div className="grid gap-2 rounded-lg border border-[var(--lp-border)] bg-white p-3 sm:grid-cols-2 lg:grid-cols-5">
+            {qualityItems.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => setDetailsOpen(true)}
+                className={`rounded-lg px-3 py-2 text-left text-xs font-black transition ${
+                  item.done ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                }`}
+              >
+                {item.done ? "OK" : "Missing"} · {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </DashboardCard>
 
@@ -329,6 +380,22 @@ export function OwnerMarketplaceListingManager({
               <input value={form.landmark} onChange={(event) => update("landmark", event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 outline-none" placeholder="Landmark" />
               <input value={form.businessHours} onChange={(event) => update("businessHours", event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 outline-none" placeholder="Business hours" />
             </div>
+            <div className="rounded-lg border border-[var(--lp-border)] bg-slate-50 p-3">
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+                <label className="grid gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Latitude</span>
+                  <input type="number" value={form.latitude} onChange={(event) => update("latitude", event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 outline-none" placeholder="26.4499" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Longitude</span>
+                  <input type="number" value={form.longitude} onChange={(event) => update("longitude", event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 outline-none" placeholder="80.3319" />
+                </label>
+                <button type="button" onClick={detectLocation} className="rounded-lg bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-black text-[var(--lp-accent)]">
+                  Detect location
+                </button>
+              </div>
+              <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">Coordinates power nearest-library sorting in marketplace search.</p>
+            </div>
             <div className="grid gap-3 md:grid-cols-2">
               <input value={form.highlightOffer} onChange={(event) => update("highlightOffer", event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 outline-none" placeholder="Listing offer text" />
               <input type="date" value={form.offerExpiresAt} onChange={(event) => update("offerExpiresAt", event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 outline-none" />
@@ -338,6 +405,17 @@ export function OwnerMarketplaceListingManager({
               Allow direct call/WhatsApp/contact leads from marketplace
             </label>
           </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--lp-border)] bg-white p-3">
+          <button type="button" onClick={() => void saveListing(form.listingPublished, true)} disabled={saving} className="rounded-lg bg-[var(--lp-primary)] px-4 py-2.5 text-sm font-black text-white disabled:opacity-60">
+            {saving ? "Saving..." : "Save changes"}
+          </button>
+          <button type="button" onClick={() => void saveListing(true, true)} disabled={saving} className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-700 disabled:opacity-60">
+            Publish listing
+          </button>
+          <button type="button" onClick={() => void saveListing(false, true)} disabled={saving} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-slate-700 disabled:opacity-60">
+            Save hidden
+          </button>
         </div>
       </FormDrawer>
 

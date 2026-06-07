@@ -1301,12 +1301,64 @@ export class ProductivityRepository {
         WHERE library_id = $1
           AND student_user_id = $2
           AND left_at IS NULL
+        UNION ALL
+        SELECT 1
+        FROM student_assignments
+        WHERE library_id = $1
+          AND student_user_id = $2
+          AND status = 'ACTIVE'
       ) AS exists_flag
       `,
       [libraryId, studentUserId],
     );
 
     return result.rows[0]?.exists_flag ?? false;
+  }
+
+  async getOwnerStudentProfile(libraryId: string, studentUserId: string) {
+    const result = await this.pool.query<{
+      student_user_id: string;
+      assignment_id: string;
+      student_name: string;
+      email: string | null;
+      phone: string | null;
+      date_of_birth: string | null;
+      gender: string | null;
+      father_name: string | null;
+      class_name: string | null;
+      preparing_for: string | null;
+      emergency_contact: string | null;
+      plan_name: string | null;
+      seat_number: string | null;
+    }>(
+      `
+      SELECT
+        u.id::text AS student_user_id,
+        sa.id::text AS assignment_id,
+        u.full_name AS student_name,
+        u.email,
+        u.phone,
+        u.date_of_birth::date::text AS date_of_birth,
+        u.gender,
+        sa.father_name,
+        sa.class_name,
+        sa.preparing_for,
+        sa.emergency_contact,
+        sa.plan_name,
+        s.seat_number
+      FROM student_assignments sa
+      INNER JOIN users u ON u.id = sa.student_user_id
+      LEFT JOIN seats s ON s.id = sa.seat_id
+      WHERE sa.library_id = $1
+        AND sa.student_user_id = $2
+        AND sa.status IN ('ACTIVE', 'PENDING', 'EXPIRED')
+      ORDER BY sa.created_at DESC
+      LIMIT 1
+      `,
+      [libraryId, studentUserId],
+    );
+
+    return result.rows[0] ?? null;
   }
 
   async listFocusSubjectTotals(studentUserId: string) {
@@ -1993,26 +2045,48 @@ export class ProductivityRepository {
     const result = await this.pool.query<{
       id: string;
       plan_date: string;
+      title: string | null;
       subject: string | null;
+      chapter_topic: string | null;
       target_minutes: number;
       actual_minutes: number;
       notes: string | null;
       completed: boolean;
+      priority: string;
+      status: string;
+      deadline_at: string | null;
+      start_time: string | null;
+      end_time: string | null;
+      task_type: string;
+      source_type: string;
+      revision_stage: number;
+      last_revised_at: string | null;
     }>(
       `
       SELECT
         id::text,
         plan_date::text,
+        COALESCE(title, subject, 'Study task') AS title,
         subject,
+        chapter_topic,
         target_minutes,
         actual_minutes,
         notes,
-        completed
+        completed,
+        priority,
+        CASE WHEN completed THEN 'COMPLETED' ELSE status END AS status,
+        deadline_at::text,
+        start_time::text,
+        end_time::text,
+        task_type,
+        source_type,
+        revision_stage,
+        last_revised_at::text
       FROM study_plan_entries
       WHERE student_user_id = $1
         AND plan_date >= $2::date
         AND plan_date < ($2::date + INTERVAL '7 days')
-      ORDER BY plan_date ASC, created_at ASC
+      ORDER BY plan_date ASC, start_time ASC NULLS LAST, created_at ASC
       `,
       [studentUserId, weekStart],
     );
@@ -2049,17 +2123,55 @@ export class ProductivityRepository {
   async createPlannerEntry(input: {
     studentUserId: string;
     planDate: string;
+    title?: string | null;
     subject?: string | null;
+    chapterTopic?: string | null;
     targetMinutes: number;
+    actualMinutes?: number;
     notes?: string | null;
+    priority?: string;
+    status?: string;
+    deadlineAt?: string | null;
+    startTime?: string | null;
+    endTime?: string | null;
+    taskType?: string;
+    sourceType?: string;
+    carryForwardFromId?: string | null;
+    revisionStage?: number;
   }) {
     const result = await this.pool.query<{ id: string }>(
       `
-      INSERT INTO study_plan_entries (student_user_id, plan_date, subject, target_minutes, notes)
-      VALUES ($1, $2::date, $3, $4, $5)
+      INSERT INTO study_plan_entries (
+        student_user_id, plan_date, title, subject, chapter_topic, target_minutes,
+        actual_minutes, notes, priority, status, deadline_at, start_time, end_time,
+        task_type, source_type, carry_forward_from_id, revision_stage, completed
+      )
+      VALUES (
+        $1, $2::date, $3, $4, $5, $6,
+        $7, $8, $9, $10::text, $11::timestamptz, $12::time, $13::time,
+        $14, $15, $16::uuid, $17, $10::text = 'COMPLETED'
+      )
       RETURNING id::text
       `,
-      [input.studentUserId, input.planDate, input.subject ?? null, input.targetMinutes, input.notes ?? null],
+      [
+        input.studentUserId,
+        input.planDate,
+        input.title ?? input.subject ?? "Study task",
+        input.subject ?? null,
+        input.chapterTopic ?? null,
+        input.targetMinutes,
+        input.actualMinutes ?? 0,
+        input.notes ?? null,
+        input.priority ?? "MEDIUM",
+        input.status ?? "PENDING",
+        input.deadlineAt ?? null,
+        input.startTime ?? null,
+        input.endTime ?? null,
+        input.taskType ?? "STUDY",
+        input.sourceType ?? "MANUAL",
+        input.carryForwardFromId ?? null,
+        input.revisionStage ?? 0,
+      ],
     );
     return result.rows[0];
   }
@@ -2067,21 +2179,43 @@ export class ProductivityRepository {
   async updatePlannerEntry(input: {
     entryId: string;
     studentUserId: string;
+    planDate?: string;
+    title?: string | null;
     actualMinutes?: number;
     completed?: boolean;
     notes?: string | null;
     subject?: string | null;
+    chapterTopic?: string | null;
     targetMinutes?: number;
+    priority?: string;
+    status?: string;
+    deadlineAt?: string | null;
+    startTime?: string | null;
+    endTime?: string | null;
+    taskType?: string;
+    revisionStage?: number;
+    lastRevisedAt?: string | null;
   }) {
     const result = await this.pool.query<{ id: string }>(
       `
       UPDATE study_plan_entries
       SET
-        actual_minutes = COALESCE($3, actual_minutes),
-        completed = COALESCE($4, completed),
-        notes = COALESCE($5, notes),
-        subject = COALESCE($6, subject),
-        target_minutes = COALESCE($7, target_minutes),
+        plan_date = COALESCE($3::date, plan_date),
+        title = COALESCE($4, title),
+        actual_minutes = COALESCE($5, actual_minutes),
+        completed = COALESCE($6::boolean, completed),
+        notes = COALESCE($7, notes),
+        subject = COALESCE($8, subject),
+        chapter_topic = COALESCE($9, chapter_topic),
+        target_minutes = COALESCE($10, target_minutes),
+        priority = COALESCE($11, priority),
+        status = COALESCE($12, CASE WHEN $6::boolean THEN 'COMPLETED' ELSE status END),
+        deadline_at = COALESCE($13::timestamptz, deadline_at),
+        start_time = COALESCE($14::time, start_time),
+        end_time = COALESCE($15::time, end_time),
+        task_type = COALESCE($16, task_type),
+        revision_stage = COALESCE($17, revision_stage),
+        last_revised_at = COALESCE($18::timestamptz, last_revised_at),
         updated_at = NOW()
       WHERE id = $1 AND student_user_id = $2
       RETURNING id::text
@@ -2089,11 +2223,22 @@ export class ProductivityRepository {
       [
         input.entryId,
         input.studentUserId,
+        input.planDate ?? null,
+        input.title ?? null,
         input.actualMinutes ?? null,
         input.completed ?? null,
         input.notes ?? null,
         input.subject ?? null,
+        input.chapterTopic ?? null,
         input.targetMinutes ?? null,
+        input.priority ?? null,
+        input.status ?? null,
+        input.deadlineAt ?? null,
+        input.startTime ?? null,
+        input.endTime ?? null,
+        input.taskType ?? null,
+        input.revisionStage ?? null,
+        input.lastRevisedAt ?? null,
       ],
     );
     return result.rows[0] ?? null;
@@ -2105,6 +2250,277 @@ export class ProductivityRepository {
       [entryId, studentUserId],
     );
     return result.rows[0] ?? null;
+  }
+
+  async carryForwardPlannerEntry(entryId: string, studentUserId: string, nextDate: string) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      INSERT INTO study_plan_entries (
+        student_user_id, plan_date, title, subject, chapter_topic, target_minutes, notes,
+        priority, status, start_time, end_time, task_type, source_type, carry_forward_from_id, revision_stage
+      )
+      SELECT
+        student_user_id, $3::date, title, subject, chapter_topic, target_minutes, notes,
+        'LOW', 'RESCHEDULED', NULL, NULL, task_type, 'CARRY_FORWARD', id, revision_stage
+      FROM study_plan_entries
+      WHERE id = $1 AND student_user_id = $2
+      RETURNING id::text
+      `,
+      [entryId, studentUserId, nextDate],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async markPlannerRevision(entryId: string, studentUserId: string, revisionStage: number) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      UPDATE study_plan_entries
+      SET
+        task_type = 'REVISION',
+        priority = 'REVISION',
+        revision_stage = $3,
+        last_revised_at = NOW(),
+        status = CASE WHEN $3 >= 3 THEN 'COMPLETED' ELSE 'IN_PROGRESS' END,
+        completed = CASE WHEN $3 >= 3 THEN true ELSE completed END,
+        updated_at = NOW()
+      WHERE id = $1 AND student_user_id = $2
+      RETURNING id::text
+      `,
+      [entryId, studentUserId, revisionStage],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async listPlannerGoals(studentUserId: string, goalType: "WEEKLY" | "MONTHLY", periodStart: string) {
+    const result = await this.pool.query(
+      `
+      SELECT id::text, goal_type, period_start::text, title, subject, target_minutes,
+        target_tasks, completed_tasks, status, notes, created_at::text, updated_at::text
+      FROM study_planner_goals
+      WHERE student_user_id = $1 AND goal_type = $2 AND period_start = $3::date
+      ORDER BY created_at DESC
+      `,
+      [studentUserId, goalType, periodStart],
+    );
+    return result.rows;
+  }
+
+  async createPlannerGoal(input: {
+    studentUserId: string;
+    goalType: "WEEKLY" | "MONTHLY";
+    periodStart: string;
+    title: string;
+    subject?: string | null;
+    targetMinutes?: number;
+    targetTasks?: number;
+    notes?: string | null;
+  }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      INSERT INTO study_planner_goals (student_user_id, goal_type, period_start, title, subject, target_minutes, target_tasks, notes)
+      VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8)
+      RETURNING id::text
+      `,
+      [input.studentUserId, input.goalType, input.periodStart, input.title, input.subject ?? null, input.targetMinutes ?? 0, input.targetTasks ?? 0, input.notes ?? null],
+    );
+    return result.rows[0];
+  }
+
+  async updatePlannerGoal(input: {
+    goalId: string;
+    studentUserId: string;
+    title?: string;
+    subject?: string | null;
+    targetMinutes?: number;
+    targetTasks?: number;
+    completedTasks?: number;
+    status?: string;
+    notes?: string | null;
+  }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      UPDATE study_planner_goals
+      SET title = COALESCE($3, title),
+        subject = COALESCE($4, subject),
+        target_minutes = COALESCE($5, target_minutes),
+        target_tasks = COALESCE($6, target_tasks),
+        completed_tasks = COALESCE($7, completed_tasks),
+        status = COALESCE($8, status),
+        notes = COALESCE($9, notes),
+        updated_at = NOW()
+      WHERE id = $1 AND student_user_id = $2
+      RETURNING id::text
+      `,
+      [input.goalId, input.studentUserId, input.title ?? null, input.subject ?? null, input.targetMinutes ?? null, input.targetTasks ?? null, input.completedTasks ?? null, input.status ?? null, input.notes ?? null],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async deletePlannerGoal(goalId: string, studentUserId: string) {
+    const result = await this.pool.query<{ id: string }>(
+      `DELETE FROM study_planner_goals WHERE id = $1 AND student_user_id = $2 RETURNING id::text`,
+      [goalId, studentUserId],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async listPlannerNotes(studentUserId: string) {
+    const result = await this.pool.query(
+      `
+      SELECT id::text, note_text, color, pinned, pos_x, pos_y, width, height, updated_at::text
+      FROM study_planner_notes
+      WHERE student_user_id = $1
+      ORDER BY pinned DESC, updated_at DESC
+      LIMIT 20
+      `,
+      [studentUserId],
+    );
+    return result.rows;
+  }
+
+  async createPlannerNote(input: { studentUserId: string; noteText: string; color?: string; pinned?: boolean }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      INSERT INTO study_planner_notes (student_user_id, note_text, color, pinned)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id::text
+      `,
+      [input.studentUserId, input.noteText, input.color ?? "YELLOW", input.pinned ?? false],
+    );
+    return result.rows[0];
+  }
+
+  async updatePlannerNote(input: { noteId: string; studentUserId: string; noteText?: string; color?: string; pinned?: boolean; posX?: number; posY?: number; width?: number; height?: number }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      UPDATE study_planner_notes
+      SET note_text = COALESCE($3, note_text), color = COALESCE($4, color), pinned = COALESCE($5, pinned),
+        pos_x = COALESCE($6, pos_x), pos_y = COALESCE($7, pos_y), width = COALESCE($8, width), height = COALESCE($9, height),
+        updated_at = NOW()
+      WHERE id = $1 AND student_user_id = $2
+      RETURNING id::text
+      `,
+      [input.noteId, input.studentUserId, input.noteText ?? null, input.color ?? null, input.pinned ?? null, input.posX ?? null, input.posY ?? null, input.width ?? null, input.height ?? null],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async deletePlannerNote(noteId: string, studentUserId: string) {
+    const result = await this.pool.query<{ id: string }>(
+      `DELETE FROM study_planner_notes WHERE id = $1 AND student_user_id = $2 RETURNING id::text`,
+      [noteId, studentUserId],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async listPlannerExams(studentUserId: string) {
+    const result = await this.pool.query(
+      `
+      SELECT id::text, title, exam_at::text, subject, priority, notes
+      FROM study_planner_exams
+      WHERE student_user_id = $1 AND exam_at >= NOW() - INTERVAL '1 day'
+      ORDER BY exam_at ASC
+      LIMIT 12
+      `,
+      [studentUserId],
+    );
+    return result.rows;
+  }
+
+  async createPlannerExam(input: { studentUserId: string; title: string; examAt: string; subject?: string | null; priority?: string; notes?: string | null }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      INSERT INTO study_planner_exams (student_user_id, title, exam_at, subject, priority, notes)
+      VALUES ($1, $2, $3::timestamptz, $4, $5, $6)
+      RETURNING id::text
+      `,
+      [input.studentUserId, input.title, input.examAt, input.subject ?? null, input.priority ?? "HIGH", input.notes ?? null],
+    );
+    return result.rows[0];
+  }
+
+  async updatePlannerExam(input: { examId: string; studentUserId: string; title?: string; examAt?: string; subject?: string | null; priority?: string; notes?: string | null }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      UPDATE study_planner_exams
+      SET title = COALESCE($3, title), exam_at = COALESCE($4::timestamptz, exam_at),
+        subject = COALESCE($5, subject), priority = COALESCE($6, priority), notes = COALESCE($7, notes), updated_at = NOW()
+      WHERE id = $1 AND student_user_id = $2
+      RETURNING id::text
+      `,
+      [input.examId, input.studentUserId, input.title ?? null, input.examAt ?? null, input.subject ?? null, input.priority ?? null, input.notes ?? null],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async deletePlannerExam(examId: string, studentUserId: string) {
+    const result = await this.pool.query<{ id: string }>(
+      `DELETE FROM study_planner_exams WHERE id = $1 AND student_user_id = $2 RETURNING id::text`,
+      [examId, studentUserId],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async getPlannerHabits(studentUserId: string, fromDate: string, toDate: string) {
+    const result = await this.pool.query(
+      `
+      SELECT id::text, habit_date::text, studied, water, sleep, exercise, notes
+      FROM study_planner_habits
+      WHERE student_user_id = $1 AND habit_date >= $2::date AND habit_date <= $3::date
+      ORDER BY habit_date DESC
+      `,
+      [studentUserId, fromDate, toDate],
+    );
+    return result.rows;
+  }
+
+  async updatePlannerHabit(input: { studentUserId: string; habitDate: string; studied?: boolean; water?: boolean; sleep?: boolean; exercise?: boolean; notes?: string | null }) {
+    const result = await this.pool.query<{ id: string }>(
+      `
+      INSERT INTO study_planner_habits (student_user_id, habit_date, studied, water, sleep, exercise, notes)
+      VALUES ($1, $2::date, COALESCE($3, false), COALESCE($4, false), COALESCE($5, false), COALESCE($6, false), $7)
+      ON CONFLICT (student_user_id, habit_date)
+      DO UPDATE SET
+        studied = COALESCE($3, study_planner_habits.studied),
+        water = COALESCE($4, study_planner_habits.water),
+        sleep = COALESCE($5, study_planner_habits.sleep),
+        exercise = COALESCE($6, study_planner_habits.exercise),
+        notes = COALESCE($7, study_planner_habits.notes),
+        updated_at = NOW()
+      RETURNING id::text
+      `,
+      [input.studentUserId, input.habitDate, input.studied ?? null, input.water ?? null, input.sleep ?? null, input.exercise ?? null, input.notes ?? null],
+    );
+    return result.rows[0];
+  }
+
+  async getPlannerAnalytics(studentUserId: string, fromDate: string, toDate: string) {
+    const result = await this.pool.query(
+      `
+      WITH days AS (
+        SELECT generate_series($2::date, $3::date, INTERVAL '1 day')::date AS day
+      ),
+      daily AS (
+        SELECT plan_date, COUNT(*)::int AS total_tasks,
+          SUM(CASE WHEN completed OR status = 'COMPLETED' THEN 1 ELSE 0 END)::int AS completed_tasks,
+          COALESCE(SUM(target_minutes), 0)::int AS planned_minutes,
+          COALESCE(SUM(actual_minutes), 0)::int AS actual_minutes
+        FROM study_plan_entries
+        WHERE student_user_id = $1 AND plan_date >= $2::date AND plan_date <= $3::date
+        GROUP BY plan_date
+      )
+      SELECT d.day::text AS plan_date,
+        COALESCE(total_tasks, 0)::int AS total_tasks,
+        COALESCE(completed_tasks, 0)::int AS completed_tasks,
+        COALESCE(planned_minutes, 0)::int AS planned_minutes,
+        COALESCE(actual_minutes, 0)::int AS actual_minutes
+      FROM days d
+      LEFT JOIN daily ON daily.plan_date = d.day
+      ORDER BY d.day ASC
+      `,
+      [studentUserId, fromDate, toDate],
+    );
+    return result.rows;
   }
 
   async listOwnerRecipientIds(libraryId: string) {

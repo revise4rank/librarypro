@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { OwnerAnalyticsManager } from "../../../../components/owner-analytics-manager";
 
 export default function OwnerAnalyticsPage() {
-  redirect("/owner/reports");
+  return <OwnerAnalyticsManager />;
 }

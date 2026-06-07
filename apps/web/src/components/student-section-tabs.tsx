@@ -30,12 +30,12 @@ const studentSections: Array<{
 
 export function StudentSectionTabs({ active }: { active: StudentSectionKey }) {
   return (
-    <nav className="grid gap-2 rounded-xl border border-[var(--lp-border)] bg-white p-2 shadow-sm md:grid-cols-3" aria-label="Student workspace sections">
+    <nav className="grid gap-2 rounded-xl border border-[var(--lp-border)] bg-white p-1.5 shadow-sm md:grid-cols-3" aria-label="Student workspace sections">
       {studentSections.map((section) => (
         <Link
           key={section.key}
           href={section.href}
-          className={`rounded-lg px-4 py-3 transition ${
+          className={`rounded-lg px-3 py-2 transition ${
             active === section.key
               ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]"
               : "text-[var(--lp-text)] hover:bg-slate-50"

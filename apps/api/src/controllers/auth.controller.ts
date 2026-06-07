@@ -190,6 +190,8 @@ export async function studentRegisterController(req: Request, res: Response) {
   const parsed = studentRegisterBodySchema.parse(req.body);
   const user = await registerStudentUser({
     fullName: parsed.fullName,
+    dateOfBirth: parsed.dateOfBirth || undefined,
+    gender: parsed.gender || undefined,
     email: parsed.email || undefined,
     phone: parsed.phone || undefined,
     password: parsed.password,
@@ -340,6 +342,8 @@ export async function updateMeController(req: Request, res: Response) {
     fullName: parsed.fullName,
     email: parsed.email || undefined,
     phone: parsed.phone || undefined,
+    dateOfBirth: parsed.dateOfBirth || undefined,
+    gender: parsed.gender || undefined,
   });
   const csrfToken = ensureCsrfToken(req, res);
   res.json({ success: true, data: { ...user, csrfToken } });

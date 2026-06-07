@@ -276,14 +276,11 @@ export function OwnerCheckinsManager() {
   return (
     <div className="grid gap-5">
       {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
-      <section className="rounded-xl border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] p-4 text-white shadow-sm">
+      <section className="rounded-lg border border-[var(--lp-border)] bg-[linear-gradient(135deg,#16b871_0%,#9debd5_100%)] px-3 py-2.5 text-white shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/75">Attendance live</p>
-            <h3 className="mt-1 text-xl font-black tracking-tight">QR register and occupancy watch</h3>
-            <p className="mt-1 text-sm leading-6 text-white/85">
-              Search the register, scan today&apos;s activity, and catch long-stay cases faster.
-            </p>
+            <h3 className="mt-1 text-base font-black tracking-tight">QR register and occupancy watch</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             <div className="rounded-lg bg-white/12 px-4 py-2.5 text-sm font-black">
@@ -309,13 +306,13 @@ export function OwnerCheckinsManager() {
       </section>
 
       <DashboardCard title="Manual attendance" subtitle="For students without phone. Owner and attendance-enabled admins can mark entry from here.">
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
           <div className="rounded-2xl border border-[var(--lp-border)] bg-slate-50 p-3">
             <input
               value={manualSearch}
               onChange={(event) => setManualSearch(event.target.value)}
               placeholder="Search student name or seat"
-              className="w-full rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
+              className="w-full rounded-xl border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-slate-800 outline-none"
             />
             <div className="mt-3 max-h-72 overflow-y-auto pr-1">
               <div className="grid gap-2">
@@ -324,7 +321,7 @@ export function OwnerCheckinsManager() {
                     key={student.student_user_id}
                     type="button"
                     onClick={() => setManualSelectedStudentId(student.student_user_id)}
-                    className={`rounded-xl border px-4 py-3 text-left transition ${
+                    className={`rounded-xl border px-3 py-2 text-left transition ${
                       manualSelectedStudentId === student.student_user_id
                         ? "border-emerald-300 bg-emerald-50"
                         : "border-[var(--lp-border)] bg-white hover:border-emerald-200"
@@ -346,7 +343,7 @@ export function OwnerCheckinsManager() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[var(--lp-border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--lp-border)] bg-white px-3 py-2.5">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Selected student</p>
             <p className="mt-2 text-xl font-black text-slate-950">{selectedManualStudent?.student_name ?? "Select student"}</p>
             <p className="mt-1 text-sm font-semibold text-slate-500">Seat {selectedManualStudent?.seat_number ?? "-"}</p>
@@ -360,7 +357,7 @@ export function OwnerCheckinsManager() {
                   key={value}
                   type="button"
                   onClick={() => setManualAction(value as typeof manualAction)}
-                  className={`rounded-xl px-4 py-3 text-sm font-black ${
+                  className={`rounded-xl px-3 py-2 text-sm font-black ${
                     manualAction === value ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] text-slate-700"
                   }`}
                 >
@@ -384,22 +381,22 @@ export function OwnerCheckinsManager() {
                       ? "Manual checkout"
                       : "Manual check-in"}
             </button>
-            {manualStatus ? <p className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">{manualStatus}</p> : null}
+            {manualStatus ? <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">{manualStatus}</p> : null}
           </div>
         </div>
       </DashboardCard>
 
       <DashboardCard title="Library QR scanner board" subtitle="Download or print the reception QR that students scan from their app.">
-        <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="grid gap-4 lg:grid-cols-[150px_1fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3">
             {qrSettings?.qr_payload ? (
               <img
                 src={buildQrImageUrl(qrSettings.qr_payload, 420)}
                 alt={`${qrSettings.library_name} library QR`}
-                className="h-48 w-48 rounded-xl bg-white object-cover"
+                className="h-28 w-28 rounded-xl bg-white object-cover"
               />
             ) : (
-              <div className="grid h-48 w-48 place-items-center rounded-xl bg-slate-100 text-sm text-slate-500">Loading QR...</div>
+              <div className="grid h-28 w-28 place-items-center rounded-xl bg-slate-100 text-xs text-slate-500">Loading QR...</div>
             )}
           </div>
           <div className="grid content-start gap-3">
@@ -410,8 +407,8 @@ export function OwnerCheckinsManager() {
               </p>
             </div>
             <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-              <p className="rounded-xl bg-slate-50 px-4 py-3">QR key: <span className="font-black text-slate-950">{qrSettings?.qr_key_id ?? "-"}</span></p>
-              <p className="rounded-xl bg-slate-50 px-4 py-3">Offline sync: <span className="font-black text-slate-950">{qrSettings?.allow_offline_checkin ? "Allowed" : "Disabled"}</span></p>
+              <p className="rounded-xl bg-slate-50 px-3 py-2">QR key: <span className="font-black text-slate-950">{qrSettings?.qr_key_id ?? "-"}</span></p>
+              <p className="rounded-xl bg-slate-50 px-3 py-2">Offline sync: <span className="font-black text-slate-950">{qrSettings?.allow_offline_checkin ? "Allowed" : "Disabled"}</span></p>
             </div>
             <div className="flex flex-wrap gap-3">
               <button
@@ -445,30 +442,30 @@ export function OwnerCheckinsManager() {
       </DashboardCard>
 
       <DashboardCard title="Register filters" subtitle="Search student, seat, date range, or long stays">
-        <div className="grid gap-4">
-          <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr_0.9fr_auto]">
+        <div className="grid gap-3">
+          <div className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr_0.9fr_auto]">
             <input
               value={filters.search}
               onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
               placeholder="Search by student or seat"
-              className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
+              className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-slate-800 outline-none"
             />
             <input
               type="date"
               value={filters.fromDate}
               onChange={(event) => setFilters((current) => ({ ...current, fromDate: event.target.value }))}
-              className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
+              className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-slate-800 outline-none"
             />
             <input
               type="date"
               value={filters.toDate}
               onChange={(event) => setFilters((current) => ({ ...current, toDate: event.target.value }))}
-              className="rounded-xl border border-[var(--lp-border)] bg-white px-4 py-3 text-sm text-slate-800 outline-none"
+              className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-2 text-sm text-slate-800 outline-none"
             />
             <button
               type="button"
               onClick={() => void loadCheckins(filters)}
-              className="rounded-xl bg-[var(--lp-accent-soft)] px-5 py-3 text-sm font-bold text-[var(--lp-accent)]"
+              className="rounded-xl bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-bold text-[var(--lp-accent)]"
             >
               {loading ? "Loading..." : "Apply filters"}
             </button>
@@ -513,7 +510,7 @@ export function OwnerCheckinsManager() {
           <>
             <div className="grid gap-3 md:hidden">
               {rows.map((entry) => (
-                <article key={entry.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <article key={entry.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-black text-slate-950">{entry.student_name}</p>
@@ -554,12 +551,12 @@ export function OwnerCheckinsManager() {
               <tbody>
                 {rows.map((entry) => (
                   <tr key={entry.id} className="border-b border-slate-100 bg-white text-sm text-slate-700">
-                    <td className="px-4 py-4 font-black text-slate-950">{entry.student_name}</td>
-                    <td className="px-4 py-4">{entry.seat_number ?? "-"}</td>
-                    <td className="px-4 py-4">{new Date(entry.checked_in_at).toLocaleString()}</td>
-                    <td className="px-4 py-4">{entry.checked_out_at ? new Date(entry.checked_out_at).toLocaleString() : "-"}</td>
-                    <td className="px-4 py-4">{formatMinutes(entry.duration_minutes)}</td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-2.5 font-black text-slate-950">{entry.student_name}</td>
+                    <td className="px-3 py-2.5">{entry.seat_number ?? "-"}</td>
+                    <td className="px-3 py-2.5">{new Date(entry.checked_in_at).toLocaleString()}</td>
+                    <td className="px-3 py-2.5">{entry.checked_out_at ? new Date(entry.checked_out_at).toLocaleString() : "-"}</td>
+                    <td className="px-3 py-2.5">{formatMinutes(entry.duration_minutes)}</td>
+                    <td className="px-3 py-2.5">
                       <span
                         className={`rounded-full px-3 py-2 text-xs font-black ${
                           entry.status === "INSIDE"

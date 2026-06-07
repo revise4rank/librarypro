@@ -12,6 +12,8 @@ type JoinRequest = {
   student_code: string | null;
   student_email: string | null;
   student_phone: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
   seat_preference: string | null;
   message: string | null;
   requested_via: string;
@@ -52,8 +54,35 @@ type AdmissionResult = {
   finalAmount: number;
 };
 
+type FloorOption = {
+  id: string;
+  name: string;
+};
+
+type RoomOption = {
+  id: string;
+  floor_id: string;
+  name: string;
+  status: string;
+  seat_count?: number;
+};
+
+type SeatOption = {
+  id: string;
+  floor_id: string | null;
+  room_id?: string | null;
+  floor_name: string | null;
+  room_name?: string | null;
+  section_name?: string | null;
+  seat_number: string;
+  status: string;
+  assignment_id: string | null;
+};
+
 type AdmissionFormState = {
   fullName: string;
+  dateOfBirth: string;
+  gender: string;
   fatherName: string;
   address: string;
   className: string;
@@ -67,6 +96,9 @@ type AdmissionFormState = {
   durationMonthsOverride: string;
   couponCode: string;
   paymentStatus: "PAID" | "UNPAID" | "DUE";
+  floorId: string;
+  roomId: string;
+  seatId: string;
   aadhaarDocumentUrl: string;
   schoolIdDocumentUrl: string;
   notes: string;
@@ -75,6 +107,8 @@ type AdmissionFormState = {
 function createEmptyForm(): AdmissionFormState {
   return {
     fullName: "",
+    dateOfBirth: "",
+    gender: "",
     fatherName: "",
     address: "",
     className: "",
@@ -88,10 +122,17 @@ function createEmptyForm(): AdmissionFormState {
     durationMonthsOverride: "",
     couponCode: "",
     paymentStatus: "UNPAID",
+    floorId: "",
+    roomId: "",
+    seatId: "",
     aadhaarDocumentUrl: "",
     schoolIdDocumentUrl: "",
     notes: "",
   };
+}
+
+function isLikelyLegacySeatRoom(room: RoomOption) {
+  return /^[A-Z]{1,3}\d{1,4}$/i.test(room.name.trim()) && (room.seat_count ?? 0) <= 1;
 }
 
 function computePreviewAmount(plan: StudentPlanConfig | undefined, coupon: CouponConfig | undefined, overrideAmount: string) {
@@ -176,9 +217,13 @@ export function OwnerAdmissionsManager() {
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [plans, setPlans] = useState<StudentPlanConfig[]>([]);
   const [coupons, setCoupons] = useState<CouponConfig[]>([]);
+  const [floors, setFloors] = useState<FloorOption[]>([]);
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
+  const [seats, setSeats] = useState<SeatOption[]>([]);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [form, setForm] = useState<AdmissionFormState>(createEmptyForm());
   const [saving, setSaving] = useState(false);
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState<"aadhaar" | "school" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -188,14 +233,20 @@ export function OwnerAdmissionsManager() {
 
   async function load() {
     try {
-      const [requestsResponse, plansResponse, couponsResponse] = await Promise.all([
+      const [requestsResponse, plansResponse, couponsResponse, floorsResponse, roomsResponse, seatsResponse] = await Promise.all([
         apiFetch<{ success: boolean; data: JoinRequest[] }>("/owner/join-requests"),
         apiFetch<{ success: boolean; data: StudentPlanConfig[] }>("/owner/student-plans"),
         apiFetch<{ success: boolean; data: CouponConfig[] }>("/owner/coupons"),
+        apiFetch<{ success: boolean; data: FloorOption[] }>("/owner/floors"),
+        apiFetch<{ success: boolean; data: RoomOption[] }>("/owner/rooms"),
+        apiFetch<{ success: boolean; data: SeatOption[] }>("/owner/seats?availableOnly=true"),
       ]);
       setRequests(requestsResponse.data);
       setPlans(plansResponse.data.filter((plan) => plan.is_active));
       setCoupons(couponsResponse.data.filter((coupon) => coupon.is_active));
+      setFloors(floorsResponse.data);
+      setRooms(roomsResponse.data.filter((room) => room.status !== "INACTIVE" && !isLikelyLegacySeatRoom(room)));
+      setSeats(seatsResponse.data);
       setSelectedRequestId((current) => current ?? requestsResponse.data[0]?.id ?? null);
       if (!form.studentPlanId && plansResponse.data[0]?.id) {
         setForm((current) => ({ ...current, studentPlanId: plansResponse.data[0]?.id ?? "" }));
@@ -213,6 +264,17 @@ export function OwnerAdmissionsManager() {
   const selectedPlan = plans.find((plan) => plan.id === form.studentPlanId);
   const selectedCoupon = coupons.find((coupon) => coupon.code === form.couponCode.trim().toUpperCase()) ?? undefined;
   const previewAmount = useMemo(() => computePreviewAmount(selectedPlan, selectedCoupon, form.planAmountOverride), [selectedPlan, selectedCoupon, form.planAmountOverride]);
+  const floorRooms = useMemo(() => rooms.filter((room) => !form.floorId || room.floor_id === form.floorId), [rooms, form.floorId]);
+  const roomSeats = useMemo(
+    () =>
+      seats.filter((seat) => {
+        if (form.floorId && seat.floor_id !== form.floorId) return false;
+        if (form.roomId && seat.room_id !== form.roomId) return false;
+        if (!["AVAILABLE", "RESERVED"].includes(seat.status)) return false;
+        return !seat.assignment_id;
+      }),
+    [seats, form.floorId, form.roomId],
+  );
   const pendingRequestsCount = requests.length;
   const planStartingAmount = plans.reduce((min, plan) => {
     const amount = Number(plan.base_amount || "0");
@@ -228,8 +290,10 @@ export function OwnerAdmissionsManager() {
     if (!selectedRequest || mode !== "requests") return;
     setForm((current) => ({
       ...current,
-      fullName: current.fullName || selectedRequest.student_name,
-      email: current.email || selectedRequest.student_email || "",
+        fullName: current.fullName || selectedRequest.student_name,
+        dateOfBirth: current.dateOfBirth || selectedRequest.date_of_birth || "",
+        gender: current.gender || selectedRequest.gender || "",
+        email: current.email || selectedRequest.student_email || "",
       phone: current.phone || selectedRequest.student_phone || "",
       notes: current.notes || selectedRequest.message || "",
     }));
@@ -261,8 +325,13 @@ export function OwnerAdmissionsManager() {
     setResult(null);
 
     try {
+      if (form.seatId && form.paymentStatus !== "PAID") {
+        throw new Error("Seat allotment ke liye admission payment status PAID hona chahiye.");
+      }
       const payload = {
         fullName: form.fullName,
+        dateOfBirth: form.dateOfBirth || undefined,
+        gender: form.gender || undefined,
         fatherName: form.fatherName,
         address: form.address,
         className: form.className,
@@ -276,6 +345,7 @@ export function OwnerAdmissionsManager() {
         durationMonthsOverride: form.durationMonthsOverride ? Number(form.durationMonthsOverride) : undefined,
         couponCode: form.couponCode || undefined,
         paymentStatus: form.paymentStatus,
+        seatId: form.seatId || undefined,
         aadhaarDocumentUrl: form.aadhaarDocumentUrl || undefined,
         schoolIdDocumentUrl: form.schoolIdDocumentUrl || undefined,
         notes: form.notes || undefined,
@@ -301,18 +371,22 @@ export function OwnerAdmissionsManager() {
   async function rejectRequest(requestId: string) {
     setError(null);
     setMessage(null);
+    setRejectingRequestId(requestId);
     try {
       await apiFetch(`/owner/join-requests/${requestId}/reject`, {
         method: "POST",
         body: JSON.stringify({ reason: "Rejected from admissions desk" }),
       });
       setMessage("Join request rejected.");
+      setRequests((current) => current.filter((request) => request.id !== requestId));
       if (selectedRequestId === requestId) {
         setSelectedRequestId(null);
       }
       await load();
     } catch (rejectError) {
       setError(rejectError instanceof Error ? rejectError.message : "Unable to reject request.");
+    } finally {
+      setRejectingRequestId(null);
     }
   }
 
@@ -388,8 +462,17 @@ export function OwnerAdmissionsManager() {
                   <p className="mt-2 text-sm text-[var(--lp-text-soft)]">{request.message ?? "No message shared."}</p>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--lp-text-soft)]">
                     <span>{request.requested_via} • {new Date(request.created_at).toLocaleString()}</span>
-                    <button type="button" onClick={() => void rejectRequest(request.id)} className="text-rose-600">
-                      Reject join request
+                    <button
+                      type="button"
+                      disabled={rejectingRequestId === request.id}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        void rejectRequest(request.id);
+                      }}
+                      className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-1.5 font-black text-rose-600 transition hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {rejectingRequestId === request.id ? "Rejecting..." : "Reject request"}
                     </button>
                   </div>
                 </div>
@@ -499,6 +582,16 @@ export function OwnerAdmissionsManager() {
             <input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Full name" />
             <input value={form.fatherName} onChange={(event) => setForm((current) => ({ ...current, fatherName: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Guardian / father name" />
           </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <input type="date" value={form.dateOfBirth} onChange={(event) => setForm((current) => ({ ...current, dateOfBirth: event.target.value }))} aria-label="Date of birth" className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" />
+            <select value={form.gender} onChange={(event) => setForm((current) => ({ ...current, gender: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
+              <option value="">Gender optional</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+              <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+            </select>
+          </div>
           <textarea value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} className="min-h-20 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Address" />
           <div className="grid gap-3 md:grid-cols-2">
             <input value={form.className} onChange={(event) => setForm((current) => ({ ...current, className: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Class" />
@@ -538,8 +631,64 @@ export function OwnerAdmissionsManager() {
             <input type="number" min="1" value={form.durationMonthsOverride} onChange={(event) => setForm((current) => ({ ...current, durationMonthsOverride: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Duration override (months)" />
           </div>
 
+          <div className="grid gap-3 rounded-lg border border-emerald-100 bg-white p-3">
+            <div>
+              <p className="text-sm font-black text-[var(--lp-text)]">Optional seat allotment</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--lp-text-soft)]">Floor choose karo, uske rooms aayenge, phir selected room ki available seats.</p>
+            </div>
+            <div className="grid gap-2 md:grid-cols-3">
+              <select
+                value={form.floorId}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    floorId: event.target.value,
+                    roomId: "",
+                    seatId: "",
+                  }))
+                }
+                className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none"
+              >
+                <option value="">Floor optional</option>
+                {floors.map((floor) => (
+                  <option key={floor.id} value={floor.id}>{floor.name}</option>
+                ))}
+              </select>
+              <select
+                value={form.roomId}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    roomId: event.target.value,
+                    seatId: "",
+                  }))
+                }
+                disabled={!form.floorId}
+                className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">{form.floorId ? "Room optional" : "Choose floor first"}</option>
+                {floorRooms.map((room) => (
+                  <option key={room.id} value={room.id}>{room.name}</option>
+                ))}
+              </select>
+              <select
+                value={form.seatId}
+                onChange={(event) => setForm((current) => ({ ...current, seatId: event.target.value }))}
+                disabled={!form.floorId || !form.roomId || form.paymentStatus !== "PAID"}
+                className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">{form.paymentStatus !== "PAID" ? "Mark paid to allot seat" : form.roomId ? "No seat now" : "Choose room first"}</option>
+                {roomSeats.map((seat) => (
+                  <option key={seat.id} value={seat.id}>{seat.seat_number}</option>
+                ))}
+              </select>
+            </div>
+            {form.paymentStatus !== "PAID" ? <p className="text-xs font-semibold text-rose-700">Seat allotment sirf PAID admission ke saath allowed hai.</p> : null}
+            {form.roomId && roomSeats.length === 0 ? <p className="text-xs font-semibold text-amber-700">Selected room me available seats nahi hain.</p> : null}
+          </div>
+
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-            <select value={form.paymentStatus} onChange={(event) => setForm((current) => ({ ...current, paymentStatus: event.target.value as AdmissionFormState["paymentStatus"] }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
+            <select value={form.paymentStatus} onChange={(event) => setForm((current) => ({ ...current, paymentStatus: event.target.value as AdmissionFormState["paymentStatus"], seatId: event.target.value === "PAID" ? current.seatId : "" }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
               <option value="UNPAID">Unpaid</option>
               <option value="DUE">Due</option>
               <option value="PAID">Paid</option>

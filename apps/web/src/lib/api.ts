@@ -58,6 +58,8 @@ export type SessionUser = {
   studentCode?: string | null;
   email?: string | null;
   phone?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
   role: string;
   libraryIds: string[];
 };
@@ -130,13 +132,20 @@ export function getAuthHeaders(method = "GET", initHeaders?: HeadersInit) {
   const headers = new Headers(initHeaders ?? {});
   const normalizedMethod = method.toUpperCase();
   const session = readSession();
-  const csrfToken = session?.csrfToken ?? readCookie("lp_csrf");
+  const csrfToken = readCookie("lp_csrf") ?? session?.csrfToken;
 
   if (!["GET", "HEAD", "OPTIONS"].includes(normalizedMethod) && csrfToken) {
     headers.set("X-CSRF-Token", csrfToken);
   }
 
   return headers;
+}
+
+function updateStoredCsrfToken(csrfToken?: string | null) {
+  if (!csrfToken) return;
+  const session = readSession();
+  if (!session?.user || session.csrfToken === csrfToken) return;
+  saveSession({ user: session.user, csrfToken });
 }
 
 export function saveSession(session: SessionState) {
@@ -169,6 +178,7 @@ export async function logoutSession() {
   try {
     await fetch(CLIENT_AUTH_LOGOUT_PATH, {
       method: "POST",
+      headers: getAuthHeaders("POST"),
       credentials: "include",
     });
   } catch {
@@ -193,6 +203,40 @@ export function readSession(): SessionState | null {
   } catch {
     return null;
   }
+}
+
+async function refreshCsrfTokenFromServer() {
+  const response = await fetch(`${API_URL}/auth/me`, {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return false;
+  }
+
+  const json = await response.json().catch(() => null);
+  const data = json?.data;
+  const csrfToken = data?.csrfToken ?? readCookie("lp_csrf") ?? undefined;
+  if (!data?.id || !csrfToken) {
+    updateStoredCsrfToken(csrfToken);
+    return Boolean(csrfToken);
+  }
+
+  saveSession({
+    user: {
+      id: data.id,
+      fullName: data.fullName,
+      studentCode: "studentCode" in data ? data.studentCode : undefined,
+      email: data.email,
+      phone: data.phone,
+      role: data.role,
+      libraryIds: data.libraryIds,
+    },
+    csrfToken,
+  });
+  return true;
 }
 
 export async function hydrateSessionFromServer() {
@@ -227,9 +271,9 @@ export async function hydrateSessionFromServer() {
   }
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit, auth = true): Promise<T> {
+export async function apiFetch<T>(path: string, init?: RequestInit, auth = true, retryOnCsrf = true): Promise<T> {
   const method = (init?.method ?? "GET").toUpperCase();
-  const headers = auth ? getAuthHeaders(method, init?.headers) : new Headers(init?.headers ?? {});
+  const headers = getAuthHeaders(method, init?.headers);
   if (!(init?.body instanceof FormData)) {
     headers.set("Content-Type", headers.get("Content-Type") ?? "application/json");
   }
@@ -260,6 +304,14 @@ export async function apiFetch<T>(path: string, init?: RequestInit, auth = true)
   if (!response.ok) {
     const code = typeof json?.error?.code === "string" ? json.error.code : undefined;
     const message = json?.error?.message ?? "Request failed";
+
+    if (auth && response.status === 403 && code === "CSRF_INVALID" && retryOnCsrf) {
+      const refreshed = await refreshCsrfTokenFromServer().catch(() => false);
+      if (refreshed) {
+        return apiFetch<T>(path, init, auth, false);
+      }
+    }
+
     if (auth) {
       if (response.status === 402 && typeof window !== "undefined") {
         const next = `${window.location.pathname}${window.location.search}`;
@@ -268,11 +320,15 @@ export async function apiFetch<T>(path: string, init?: RequestInit, auth = true)
         }
       }
 
-      if (response.status === 401 || (response.status === 403 && code !== "PLAN_FEATURE_REQUIRED")) {
+      if (response.status === 401 || (response.status === 403 && code !== "PLAN_FEATURE_REQUIRED" && code !== "CSRF_INVALID")) {
         clearSession();
       }
     }
     throw new ApiError(message, response.status, code);
+  }
+
+  if (auth) {
+    updateStoredCsrfToken(json?.data?.csrfToken ?? readCookie("lp_csrf"));
   }
 
   return json as T;

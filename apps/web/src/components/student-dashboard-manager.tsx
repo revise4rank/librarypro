@@ -234,7 +234,7 @@ export function StudentDashboardManager() {
     <div className="grid gap-4">
       {error ? <p className="text-sm font-semibold text-amber-700">{error}</p> : null}
       <StudentSectionTabs active="library" />
-      <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3">
         {summaryCards.map((card) => (
           <StatCard
             key={card.label}
@@ -249,44 +249,44 @@ export function StudentDashboardManager() {
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <DashboardCard title="Access center" subtitle="Entry readiness, billing, and seat context">
           <div className="grid gap-3">
-            <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-4">
+            <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2.5">
               <p className="text-sm font-semibold leading-5 text-slate-800">
                 Latest payment {data.latestPaymentDate?.slice(0, 10) ?? "-"} | Upcoming due {data.upcomingDueDate ?? "-"} | Current due Rs. {data.dueTotal}
               </p>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                 <p className="lp-stat-label">Seat</p>
-                <p className="mt-2 text-xl font-black text-slate-950">{data.assignment?.seat_number ?? "-"}</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{data.assignment?.seat_number ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">{data.assignment?.plan_name ?? "No active plan"}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                 <p className="lp-stat-label">WiFi</p>
-                <p className="mt-2 text-base font-black text-slate-950">{data.library?.wifi_name ?? "-"}</p>
+                <p className="mt-1 text-base font-black text-slate-950">{data.library?.wifi_name ?? "-"}</p>
                 <p className="mt-2 text-sm text-slate-500">{data.library?.wifi_password ?? "-"}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                 <p className="lp-stat-label">Live status</p>
-                <p className="mt-2 text-xl font-black text-slate-950">{liveStatus}</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{liveStatus}</p>
                 <p className="mt-2 text-sm text-slate-500">{activeLibrary?.library_name ?? data.library?.library_name ?? "Student workspace"}</p>
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-4">
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
                 <p className="lp-stat-label">Streak</p>
-                <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.streakDays} days</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{data.focusProgress.streakDays} days</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
                 <p className="lp-stat-label">Inside</p>
-                <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.currentlyInside ? "Yes" : "No"}</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{data.focusProgress.currentlyInside ? "Yes" : "No"}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
                 <p className="lp-stat-label">Attendance</p>
-                <p className="mt-2 text-xl font-black text-slate-950">{data.focusProgress.attendanceScore}%</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{data.focusProgress.attendanceScore}%</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
                 <p className="lp-stat-label">Next due</p>
-                <p className="mt-2 text-xl font-black text-slate-950">{data.upcomingDueDate ?? "-"}</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{data.upcomingDueDate ?? "-"}</p>
               </div>
             </div>
           </div>

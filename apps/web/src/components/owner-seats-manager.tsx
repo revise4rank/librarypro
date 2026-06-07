@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { getRealtimeSocket } from "../lib/realtime";
 import { DashboardCard } from "./dashboard-shell";
@@ -11,6 +11,8 @@ type SeatRow = {
   id: string;
   floor_name: string | null;
   floor_id?: string | null;
+  room_id?: string | null;
+  room_name?: string | null;
   section_name?: string | null;
   seat_number: string;
   row_no: number;
@@ -22,6 +24,7 @@ type SeatRow = {
   assignment_id: string | null;
   student_name: string | null;
   student_user_id: string | null;
+  student_code?: string | null;
   plan_name?: string | null;
   payment_status?: string | null;
   ends_at?: string | null;
@@ -34,6 +37,7 @@ type StudentRow = {
   seat_number: string | null;
   plan_name: string;
   payment_status: string;
+  student_code?: string | null;
   ends_at: string;
   admission_status?: "SEAT_UNALLOTTED" | "SEAT_ALLOTTED";
 };
@@ -59,6 +63,17 @@ type FloorRow = {
     sectionColors?: Record<string, string>;
     rooms?: FloorRoomConfig[];
   } | null;
+};
+
+type OwnerRoomRow = {
+  id: string;
+  floor_id: string;
+  floor_name?: string | null;
+  name: string;
+  sort_order: number;
+  status: "ACTIVE" | "INACTIVE";
+  seat_count?: number;
+  available_seats?: number;
 };
 
 type FloorDrafts = Record<string, { name: string; layoutRows: number; layoutColumns: number }>;
@@ -148,9 +163,23 @@ function getPlannerColumnWidth(columns: number) {
 
 function InlineHelp({ title, points }: { title: string; points: string[] }) {
   const [open, setOpen] = useState(false);
+  const helpRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target as Node | null;
+      if (target && helpRef.current && !helpRef.current.contains(target)) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    return () => document.removeEventListener("mousedown", handleDocumentClick);
+  }, [open]);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={helpRef}>
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -220,6 +249,32 @@ const roomTypes: Array<{ value: FloorRoomConfig["type"]; label: string }> = [
 
 function roomIdFromName(name: string) {
   return `room-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section"}`;
+}
+
+function isUuid(value?: string | null) {
+  return Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+}
+
+function isLikelyAutoSeatRoom(room: OwnerRoomRow) {
+  const name = room.name.trim();
+  return /^[A-Z]{1,3}\d{1,4}$/i.test(name) && (room.seat_count ?? 0) <= 1;
+}
+
+function roomRowToConfig(room: OwnerRoomRow): FloorRoomConfig {
+  return {
+    id: room.id,
+    name: room.name,
+    type: "READING_HALL",
+    color: getZoneAccent(room.name.toLowerCase().includes("girl") ? "Girls Zone" : room.name.toLowerCase().includes("boy") ? "Boys Zone" : room.name.toLowerCase().includes("silent") ? "Quiet Zone" : "Open Hall"),
+    capacityTarget: room.seat_count,
+    sortOrder: room.sort_order,
+  };
+}
+
+function upsertOwnerRoomRow(current: OwnerRoomRow[], nextRoom: OwnerRoomRow) {
+  return [...current.filter((room) => room.id !== nextRoom.id), nextRoom].sort(
+    (a, b) => a.floor_id.localeCompare(b.floor_id) || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name.localeCompare(b.name),
+  );
 }
 
 function roomFromSection(section: string, color: string, index: number): FloorRoomConfig {
@@ -332,7 +387,7 @@ function OwnerSeatStepCard({
     <button
       type="button"
       onClick={onClick}
-      className={`grid min-h-[8.5rem] gap-3 rounded-xl border p-4 text-left transition ${
+      className={`grid min-h-[7rem] gap-2 rounded-xl border px-3 py-2.5 text-left transition ${
         active
           ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] shadow-sm"
           : done
@@ -489,6 +544,7 @@ function SeatSilhouette({ shape }: { shape: string }) {
 }
 
 function SeatPodIcon({ status, occupied }: { status: string; occupied: boolean }) {
+  const gradientId = `seat-shell-${status}-${useId().replace(/:/g, "")}`;
   const tone =
     status === "AVAILABLE"
       ? "text-emerald-400"
@@ -501,12 +557,12 @@ function SeatPodIcon({ status, occupied }: { status: string; occupied: boolean }
   return (
     <svg viewBox="0 0 72 72" className={`h-10 w-10 drop-shadow-sm ${tone}`} aria-hidden="true">
       <defs>
-        <linearGradient id={`seat-shell-${status}`} x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
           <stop offset="100%" stopColor="currentColor" stopOpacity="0.38" />
         </linearGradient>
       </defs>
-      <rect x="18" y="10" width="36" height="22" rx="10" fill={`url(#seat-shell-${status})`} />
+      <rect x="18" y="10" width="36" height="22" rx="10" fill={`url(#${gradientId})`} />
       <rect x="22" y="15" width="28" height="12" rx="6" fill="currentColor" opacity="0.22" />
       <rect x="11" y="18" width="8" height="24" rx="4" fill="currentColor" opacity="0.18" />
       <rect x="53" y="18" width="8" height="24" rx="4" fill="currentColor" opacity="0.18" />
@@ -547,6 +603,7 @@ export function OwnerSeatsManager() {
   const searchParams = useSearchParams();
   const [seats, setSeats] = useState<SeatRow[]>([]);
   const [floors, setFloors] = useState<FloorRow[]>([]);
+  const [rooms, setRooms] = useState<OwnerRoomRow[]>([]);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
   const [selectedSeatId, setSelectedSeatId] = useState<string | null>(null);
@@ -567,6 +624,7 @@ export function OwnerSeatsManager() {
   const [columnsPerRow, setColumnsPerRow] = useState(4);
   const [rowStart, setRowStart] = useState(1);
   const [colStart, setColStart] = useState(1);
+  const [selectedRoomId, setSelectedRoomId] = useState("");
   const [seatFilter, setSeatFilter] = useState<"ALL" | "AVAILABLE" | "OCCUPIED" | "RESERVED" | "DUE" | "EXPIRING">("ALL");
   const [drawerSeatCode, setDrawerSeatCode] = useState("");
   const [drawerSectionName, setDrawerSectionName] = useState("");
@@ -587,9 +645,12 @@ export function OwnerSeatsManager() {
   const [roomDraftColor, setRoomDraftColor] = useState("#10b981");
   const [roomDraftCapacity, setRoomDraftCapacity] = useState("");
   const [roomDraftNotes, setRoomDraftNotes] = useState("");
+  const [roomSeatCount, setRoomSeatCount] = useState(12);
+  const [roomSeatPrefix, setRoomSeatPrefix] = useState("R");
   const [ribbonTab, setRibbonTab] = useState<"floor" | "bank" | "single">("floor");
   const [plannerRibbonTab, setPlannerRibbonTab] = useState<"templates" | "rooms" | "layout" | "paint" | "students">("templates");
-  const [layoutDrawerTab, setLayoutDrawerTab] = useState<"floors" | "seats" | "rooms" | "templates" | "move-paint">("seats");
+  const [layoutDrawerTab, setLayoutDrawerTab] = useState<"floors" | "rooms" | "seats" | "move-paint">("floors");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [workspaceMode, setWorkspaceMode] = useState<"setup" | "layout" | "assign">("assign");
   const [plannerToolbarOpen, setPlannerToolbarOpen] = useState(false);
   const [assignmentTrayOpen, setAssignmentTrayOpen] = useState(true);
@@ -606,19 +667,22 @@ export function OwnerSeatsManager() {
   async function loadData() {
     setLoading(true);
     try {
-      const [seatResponse, studentResponse, floorResponse] = await Promise.all([
+      const [seatResponse, studentResponse, floorResponse, roomResponse] = await Promise.all([
         apiFetch<{ success: boolean; data: SeatRow[] }>("/owner/seats"),
         apiFetch<{ success: boolean; data: StudentRow[] }>("/owner/students"),
         apiFetch<{ success: boolean; data: FloorRow[] }>("/owner/floors"),
+        apiFetch<{ success: boolean; data: OwnerRoomRow[] }>("/owner/rooms"),
       ]);
       setSeats(seatResponse.data);
       setStudents(studentResponse.data);
       setFloors(floorResponse.data);
+      setRooms(roomResponse.data.filter((room) => room.status === "ACTIVE" && !isLikelyAutoSeatRoom(room)));
       setError(null);
     } catch (loadError) {
       setSeats([]);
       setStudents([]);
       setFloors([]);
+      setRooms([]);
       setError(loadError instanceof Error ? loadError.message : "Unable to load live seat map.");
     } finally {
       setLoading(false);
@@ -810,6 +874,7 @@ export function OwnerSeatsManager() {
     () => students.find((student) => student.assignment_id === selectedAssignmentId) ?? null,
     [students, selectedAssignmentId],
   );
+  const selectedAssignmentIsPaid = selectedAssignmentStudent?.payment_status === "PAID";
   const existingSeatNumbers = useMemo(() => seats.map((seat) => seat.seat_number), [seats]);
 
   const sectionOptions = useMemo(() => {
@@ -827,6 +892,31 @@ export function OwnerSeatsManager() {
     () => (selectedFloorId ? floorMetaDrafts[selectedFloorId]?.sectionColors ?? {} : {}),
     [floorMetaDrafts, selectedFloorId],
   );
+  const selectedFloorRoomOptions = useMemo(() => {
+    if (!selectedFloorId) return [];
+    return rooms
+      .filter((room) => room.floor_id === selectedFloorId && room.status === "ACTIVE" && !isLikelyAutoSeatRoom(room))
+      .map(roomRowToConfig)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+  }, [rooms, selectedFloorId]);
+
+  useEffect(() => {
+    if (!selectedRoomId) return;
+    if (!selectedFloorRoomOptions.some((room) => room.id === selectedRoomId)) {
+      setSelectedRoomId("");
+    }
+  }, [selectedFloorRoomOptions, selectedRoomId]);
+
+  const selectedFloorFreeSeats = useMemo(() => {
+    return seats
+      .filter((seat) => {
+        if (seat.status !== "AVAILABLE" || seat.assignment_id) return false;
+        if (selectedFloorId && seat.floor_id !== selectedFloorId) return false;
+        if (selectedRoomId && seat.room_id !== selectedRoomId) return false;
+        return true;
+      })
+      .sort((a, b) => (a.room_name ?? a.section_name ?? "").localeCompare(b.room_name ?? b.section_name ?? "") || a.seat_number.localeCompare(b.seat_number));
+  }, [seats, selectedFloorId, selectedRoomId]);
 
   const floorCards = useMemo(() => {
     const seatsByFloor = new Map<string, SeatRow[]>();
@@ -869,6 +959,10 @@ export function OwnerSeatsManager() {
       .map((item) => ({
         ...item,
         seats: item.seats.filter((seat) => {
+          if (selectedRoomId) {
+            const seatRoomKey = seat.room_id ?? roomIdFromName(seat.section_name ?? "");
+            if (seatRoomKey !== selectedRoomId) return false;
+          }
           if (seatFilter === "ALL") return true;
           if (seatFilter === "DUE") return seat.payment_status === "DUE" || seat.payment_status === "PENDING";
           if (seatFilter === "EXPIRING") return isExpiringSoon(seat.ends_at);
@@ -876,7 +970,7 @@ export function OwnerSeatsManager() {
         }),
       }))
       .filter((item) => item.seats.length > 0 || item.floor.id === selectedFloorId);
-  }, [floors, seats, seatFilter, selectedFloorId]);
+  }, [floors, seats, seatFilter, selectedFloorId, selectedRoomId]);
 
   const activeFloorCard = useMemo(() => {
     if (floorCards.length === 0) {
@@ -889,6 +983,18 @@ export function OwnerSeatsManager() {
 
     return floorCards[0];
   }, [floorCards, selectedFloorId]);
+
+  const activeFloorSeatCells = useMemo(() => {
+    if (!activeFloorCard) return [];
+    return seats.filter((seat) => {
+      if (seat.floor_id !== activeFloorCard.floor.id) return false;
+      if (selectedRoomId) {
+        const seatRoomKey = seat.room_id ?? roomIdFromName(seat.section_name ?? "");
+        if (seatRoomKey !== selectedRoomId) return false;
+      }
+      return true;
+    });
+  }, [activeFloorCard, seats, selectedRoomId]);
 
   const visibleFloorCards = useMemo(() => (activeFloorCard ? [activeFloorCard] : []), [activeFloorCard]);
 
@@ -920,9 +1026,15 @@ export function OwnerSeatsManager() {
     );
   }, [seats]);
 
-  async function assignSeat(seatId: string) {
-    if (!selectedAssignmentId) {
+  async function assignSeat(seatId: string, assignmentIdOverride?: string) {
+    const assignmentId = assignmentIdOverride ?? selectedAssignmentId;
+    if (!assignmentId) {
       setError("Select a student first, then choose a seat.");
+      return;
+    }
+    const assignmentStudent = students.find((student) => student.assignment_id === assignmentId);
+    if (assignmentStudent?.payment_status !== "PAID") {
+      setError("Seat allotment ke liye student ka payment status PAID hona chahiye.");
       return;
     }
 
@@ -932,11 +1044,13 @@ export function OwnerSeatsManager() {
       await apiFetch("/owner/seats/assign", {
         method: "POST",
         body: JSON.stringify({
-          assignmentId: selectedAssignmentId,
+          assignmentId,
           seatId,
         }),
       });
       setMessage("Seat assignment saved.");
+      setSelectedAssignmentId("");
+      setSelectedSeatId(null);
       await loadData();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Seat assignment failed.");
@@ -1074,6 +1188,7 @@ export function OwnerSeatsManager() {
         method: "POST",
         body: JSON.stringify({
           floorId: selectedFloorId === "main-floor" ? undefined : selectedFloorId || undefined,
+          roomId: isUuid(selectedRoomId) ? selectedRoomId : undefined,
           sectionName,
           seatPrefix,
           startNumber,
@@ -1087,6 +1202,95 @@ export function OwnerSeatsManager() {
       await loadData();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Seat create failed.");
+    }
+  }
+
+  async function createRoomWithSeats(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setError(null);
+
+    const floor = floors.find((item) => item.id === selectedFloorId);
+    const name = roomDraftName.trim();
+    if (!floor || selectedFloorId === "main-floor") {
+      setError("Select a real floor before creating a room.");
+      return;
+    }
+    if (!name) {
+      setError("Room name is required.");
+      return;
+    }
+
+    try {
+      const currentMeta = floorMetaDrafts[selectedFloorId] ?? normalizeFloorMeta(floor.layout_meta);
+      const result = await apiFetch<{
+        success: boolean;
+        data: {
+          id: string;
+          name: string;
+          sort_order?: number | null;
+          createdCount?: number;
+        };
+      }>("/owner/rooms", {
+        method: "POST",
+        body: JSON.stringify({
+          floorId: selectedFloorId,
+          name,
+          sortOrder: currentMeta.rooms.length,
+          seatCount: roomSeatCount,
+          seatPrefix: roomSeatPrefix.trim() || name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 3).toUpperCase() || "R",
+        }),
+      });
+
+      const nextRoom: FloorRoomConfig = {
+        id: result.data.id,
+        name: result.data.name || name,
+        type: roomDraftType,
+        color: roomDraftColor,
+        capacityTarget: roomDraftCapacity ? Number(roomDraftCapacity) : roomSeatCount || undefined,
+        notes: roomDraftNotes.trim() || undefined,
+        sortOrder: result.data.sort_order ?? currentMeta.rooms.length,
+      };
+      const nextRooms = upsertRoomForSection(
+        currentMeta.rooms.filter((room) => room.id !== nextRoom.id),
+        nextRoom.name,
+        nextRoom.color,
+      ).map((room) => (room.name.trim().toLowerCase() === nextRoom.name.trim().toLowerCase() ? nextRoom : room));
+      const nextMeta = {
+        aisleCells: currentMeta.aisleCells,
+        sectionColors: {
+          ...currentMeta.sectionColors,
+          [nextRoom.name]: nextRoom.color,
+        },
+        rooms: nextRooms,
+      };
+
+      setFloorMetaDrafts((current) => ({
+        ...current,
+        [selectedFloorId]: nextMeta,
+      }));
+      await saveFloorMeta(selectedFloorId, nextMeta);
+      const createdRoom: OwnerRoomRow = {
+        id: result.data.id,
+        floor_id: selectedFloorId,
+        floor_name: floor.name,
+        name: nextRoom.name,
+        sort_order: nextRoom.sortOrder ?? currentMeta.rooms.length,
+        status: "ACTIVE",
+        seat_count: result.data.createdCount ?? roomSeatCount,
+        available_seats: result.data.createdCount ?? roomSeatCount,
+      };
+      setRooms((current) => upsertOwnerRoomRow(current, createdRoom));
+      resetRoomDraft();
+      setSelectedRoomId(createdRoom.id);
+      const nextRoomNumber = nextRooms.length + 1;
+      setRoomDraftName(`Room ${nextRoomNumber}`);
+      setRoomSeatPrefix(`R${nextRoomNumber}`);
+      setRoomSeatCount(12);
+      setSectionName(nextRoom.name);
+      setMessage(`${nextRoom.name} created${result.data.createdCount ? ` with ${result.data.createdCount} seats` : ""}.`);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Room create failed.");
     }
   }
 
@@ -1110,6 +1314,7 @@ export function OwnerSeatsManager() {
         method: "POST",
         body: JSON.stringify({
           floorId: selectedFloorId === "main-floor" ? undefined : selectedFloorId || undefined,
+          roomId: isUuid(selectedRoomId) ? selectedRoomId : undefined,
           sectionName,
           seatPrefix,
           customSeatCode: manualSeatCode.trim(),
@@ -1130,6 +1335,9 @@ export function OwnerSeatsManager() {
 
   async function createSeatAtCell(floorId: string, posX: number, posY: number) {
     const nextSeatCode = buildNextSeatCode(existingSeatNumbers, seatPrefix);
+    const selectedRoom = selectedFloorRoomOptions.find((room) => room.id === selectedRoomId);
+    const roomId = floorId === selectedFloorId && isUuid(selectedRoomId) ? selectedRoomId : undefined;
+    const effectiveSectionName = selectedRoom?.name ?? sectionName;
     setMessage(null);
     setError(null);
 
@@ -1138,7 +1346,8 @@ export function OwnerSeatsManager() {
         method: "POST",
         body: JSON.stringify({
           floorId: floorId === "main-floor" ? undefined : floorId,
-          sectionName,
+          roomId,
+          sectionName: effectiveSectionName,
           seatPrefix,
           customSeatCode: nextSeatCode,
           startNumber: 1,
@@ -1149,6 +1358,10 @@ export function OwnerSeatsManager() {
         }),
       });
       setManualSeatCode(result.data.seatNumbers[0] ?? nextSeatCode);
+      setSelectedFloorId(floorId);
+      if (roomId) {
+        setSelectedRoomId(roomId);
+      }
       setMessage(`New seat ${result.data.seatNumbers[0] ?? nextSeatCode} created at X${posX} Y${posY}.`);
       await loadData();
     } catch (submitError) {
@@ -1518,6 +1731,21 @@ export function OwnerSeatsManager() {
         return acc;
       }, {} as Record<string, number>)
     : {};
+  const selectedLayoutFloor = floors.find((item) => item.id === selectedFloorId);
+  const selectedLayoutRooms = selectedFloorId
+    ? rooms
+        .filter((room) => room.floor_id === selectedFloorId && room.status === "ACTIVE" && !isLikelyAutoSeatRoom(room))
+        .map(roomRowToConfig)
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))
+    : [];
+  const selectedLayoutRoomCounts = selectedFloorId
+    ? rooms
+        .filter((room) => room.floor_id === selectedFloorId && room.status === "ACTIVE" && !isLikelyAutoSeatRoom(room))
+        .reduce((acc, room) => {
+          acc[room.name] = room.seat_count ?? 0;
+          return acc;
+        }, {} as Record<string, number>)
+    : {};
   const hasFloors = floors.length > 0 || seats.length > 0;
   const hasSeats = seats.length > 0;
   const hasLayout = seats.some((seat) => seat.pos_x > 0 && seat.pos_y > 0);
@@ -1582,7 +1810,7 @@ export function OwnerSeatsManager() {
   const activeFloorCells = activeFloorCard
     ? (() => {
         const aisleCells = new Set(floorMetaDrafts[activeFloorCard.floor.id]?.aisleCells ?? activeFloorCard.floor.layout_meta?.aisleCells ?? []);
-        const seatByCell = new Map(activeFloorCard.seats.map((seat) => [`${seat.pos_x}-${seat.pos_y}`, seat]));
+        const seatByCell = new Map(activeFloorSeatCells.map((seat) => [`${seat.pos_x}-${seat.pos_y}`, seat]));
         return Array.from({ length: activeFloorCard.rows * activeFloorCard.columns }, (_, index) => {
           const y = Math.floor(index / activeFloorCard.columns) + 1;
           const x = (index % activeFloorCard.columns) + 1;
@@ -1596,9 +1824,8 @@ export function OwnerSeatsManager() {
     : {};
   const layoutDrawerTabs = [
     ["floors", "Floors"],
-    ["seats", "Seats"],
     ["rooms", "Rooms"],
-    ["templates", "Templates"],
+    ["seats", "Seats"],
     ["move-paint", "Move/Paint"],
   ] as const;
 
@@ -1612,7 +1839,7 @@ export function OwnerSeatsManager() {
           ["Students waiting", unallottedStudents.length],
           ["Live status", liveStatus],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-lg bg-slate-50 px-4 py-3">
+          <div key={label} className="rounded-lg bg-slate-50 px-3 py-2">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
             <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
           </div>
@@ -1635,7 +1862,7 @@ export function OwnerSeatsManager() {
               <button
                 type="button"
                 onClick={() => {
-                  setLayoutDrawerTab(hasFloors ? "seats" : "floors");
+                  setLayoutDrawerTab(hasFloors ? "rooms" : "floors");
                   setRibbonTab(hasFloors ? "bank" : "floor");
                   setPlannerToolbarOpen(true);
                 }}
@@ -1648,7 +1875,7 @@ export function OwnerSeatsManager() {
           <DashboardCard title="Simple flow" subtitle="Setup is intentionally short.">
             <div className="grid gap-3">
               {["Create floor", "Add seats", "Manage rooms if needed", "Allot students daily"].map((item, index) => (
-                <div key={item} className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3">
+                <div key={item} className="flex items-center gap-3 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-sm font-black text-emerald-700">{index + 1}</span>
                   <span className="text-sm font-bold text-slate-700">{item}</span>
                 </div>
@@ -1660,11 +1887,45 @@ export function OwnerSeatsManager() {
         <>
           <section className="rounded-xl border border-[var(--lp-border)] bg-white p-3 shadow-sm">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="grid gap-2 sm:grid-cols-[minmax(14rem,1fr)_12rem]">
+              <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(15rem,1.25fr)_12rem_12rem_11rem]">
                 <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none">
                   <option value="">Select student for allotment</option>
                   {unallottedStudents.map((student) => (
-                    <option key={student.assignment_id} value={student.assignment_id}>{student.student_name} | {student.plan_name} | {student.payment_status}</option>
+                    <option key={student.assignment_id} value={student.assignment_id}>{student.student_name} | ID {student.student_code ?? student.assignment_id.slice(0, 8)} | {student.plan_name} | {student.payment_status}</option>
+                  ))}
+                </select>
+                {floors.length > 0 ? (
+                  <select
+                    value={selectedFloorId || activeFloorCard?.floor.id || ""}
+                    onChange={(event) => {
+                      setSelectedFloorId(event.target.value);
+                      setSelectedRoomId("");
+                    }}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none"
+                  >
+                    {floors.map((floor) => <option key={floor.id} value={floor.id}>{floor.name}</option>)}
+                  </select>
+                ) : (
+                  <select disabled className="rounded-lg border border-[var(--lp-border)] bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-400 outline-none">
+                    <option>Create floor first</option>
+                  </select>
+                )}
+                <select
+                  value={selectedRoomId}
+                  onChange={(event) => {
+                    const nextRoomId = event.target.value;
+                    const room = selectedFloorRoomOptions.find((item) => item.id === nextRoomId);
+                    setSelectedRoomId(nextRoomId);
+                    if (room) {
+                      setSectionName(room.name);
+                    }
+                  }}
+                  disabled={!selectedFloorId || selectedFloorRoomOptions.length === 0}
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                >
+                  <option value="">{selectedFloorId ? "All rooms" : "Choose floor"}</option>
+                  {selectedFloorRoomOptions.map((room) => (
+                    <option key={room.id} value={room.id}>{room.name}</option>
                   ))}
                 </select>
                 <select value={seatFilter} onChange={(event) => setSeatFilter(event.target.value as typeof seatFilter)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none">
@@ -1677,13 +1938,8 @@ export function OwnerSeatsManager() {
                   <option value="EXPIRING">Expiring soon</option>
                 </select>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {floorCards.length > 1 ? (
-                  <select value={activeFloorCard?.floor.id ?? ""} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 outline-none">
-                    {floorCards.map((item) => <option key={item.floor.id} value={item.floor.id}>{item.floor.name}</option>)}
-                  </select>
-                ) : null}
-                <button type="button" onClick={() => { setLayoutDrawerTab("seats"); setPlannerToolbarOpen(true); }} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-[var(--lp-primary)]">Manage layout</button>
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <button type="button" onClick={() => { setLayoutDrawerTab(floors.length ? "rooms" : "floors"); setPlannerToolbarOpen(true); }} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-[var(--lp-primary)]">Manage layout</button>
               </div>
             </div>
           </section>
@@ -1696,8 +1952,9 @@ export function OwnerSeatsManager() {
                     <div className="grid gap-2 rounded-xl bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,242,231,0.92))] p-3" style={{ gridTemplateColumns: `repeat(${activeFloorCard.columns}, minmax(${getPlannerColumnWidth(activeFloorCard.columns)}px, 1fr))` }}>
                       {activeFloorCells.map((cell) => {
                         const seat = cell.seat;
+                        const isSelectedSeat = Boolean(seat && selectedSeatId === seat.id);
                         return (
-                          <div key={cell.key} className={`relative min-h-[5rem] rounded-lg border border-dashed p-1 transition ${cell.isAisleCell ? "border-slate-300 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : seat ? "border-transparent bg-transparent" : "border-slate-200 bg-white/60"}`}>
+                          <div key={cell.key} className={`relative min-h-[4rem] rounded-lg border border-dashed p-1 transition ${cell.isAisleCell ? "border-slate-300 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : seat ? "border-transparent bg-transparent" : "border-slate-200 bg-white/60"}`}>
                             {seat ? (
                               <button
                                 type="button"
@@ -1708,10 +1965,18 @@ export function OwnerSeatsManager() {
                                   }
                                   setSelectedSeatId(seat.id);
                                   setSelectedFloorId(activeFloorCard.floor.id);
+                                  if (seat.room_id) {
+                                    setSelectedRoomId(seat.room_id);
+                                  }
                                 }}
-                                className={`group relative flex h-full w-full min-w-0 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-md ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${selectedSeatId === seat.id ? "z-50 ring-2 ring-[var(--lp-primary)]" : "z-10"}`}
+                                className={`group relative flex h-full w-full min-w-0 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-left transition hover:z-40 hover:-translate-y-0.5 hover:shadow-md ${seatToneClasses[seat.status] ?? seatToneClasses.AVAILABLE} ${isSelectedSeat ? "z-50 scale-[1.02] border-[var(--lp-primary)] ring-4 ring-[var(--lp-accent)]/35 shadow-xl" : "z-10"}`}
                                 style={activeSectionColors[seat.section_name ?? ""] ? { boxShadow: `0 0 0 2px ${activeSectionColors[seat.section_name ?? ""]} inset` } : undefined}
                               >
+                                {isSelectedSeat ? (
+                                  <span className="absolute left-2 top-7 z-20 rounded-full bg-slate-950 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] text-white shadow-lg">
+                                    Selected
+                                  </span>
+                                ) : null}
                                 <div className="flex w-full min-w-0 items-center justify-between gap-1">
                                   <span className="min-w-0 truncate text-[10px] font-black leading-none text-slate-700">{seat.seat_number}</span>
                                   <SeatStatusGlyph status={seat.status} />
@@ -1723,11 +1988,27 @@ export function OwnerSeatsManager() {
                                   <span className="truncate rounded-full bg-white/90 px-1.5 py-0.5 text-[8px] font-black text-slate-500 shadow-sm">{seat.status === "AVAILABLE" ? "Free" : seat.status === "OCCUPIED" ? "Live" : seat.status === "RESERVED" ? "Hold" : "Off"}</span>
                                   {seat.student_name ? <span className="rounded-full bg-[var(--lp-accent-soft)] px-1.5 py-0.5 text-[8px] font-black text-[var(--lp-accent)]">{formatStudentInitials(seat.student_name)}</span> : null}
                                 </div>
+                                {seat.student_code ? (
+                                  <div className="mt-1 w-full truncate rounded-md bg-white/90 px-1.5 py-0.5 text-center text-[8px] font-black text-slate-700 shadow-sm">
+                                    ID {seat.student_code}
+                                  </div>
+                                ) : null}
                               </button>
                             ) : (
                               <div className="flex h-full flex-col items-center justify-center rounded-lg p-1.5 text-center text-[9px] text-slate-400">
                                 <span className="text-[8px] font-semibold uppercase tracking-[0.12em]">{cell.isAisleCell ? "Aisle" : "Empty"}</span>
-                                {layoutMode && !cell.isAisleCell ? <button type="button" onClick={() => void createSeatAtCell(activeFloorCard.floor.id, cell.x, cell.y)} className="mt-1 rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]">Add seat</button> : null}
+                                {layoutMode && !cell.isAisleCell ? (
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      void createSeatAtCell(activeFloorCard.floor.id, cell.x, cell.y);
+                                    }}
+                                    className="mt-1 rounded-full border border-[var(--lp-primary)] bg-white px-2 py-1.5 text-[8px] font-black uppercase tracking-[0.08em] text-[var(--lp-primary)]"
+                                  >
+                                    Add seat
+                                  </button>
+                                ) : null}
                               </div>
                             )}
                           </div>
@@ -1742,17 +2023,90 @@ export function OwnerSeatsManager() {
             <DashboardCard title="Daily seat action" subtitle="Selected student, selected seat, and allotment.">
               <div className="grid gap-3">
                 <div className="rounded-lg border border-[var(--lp-border)] bg-slate-50 p-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Selected student</p>
-                  <p className="mt-1 text-base font-black text-slate-950">{selectedAssignmentStudent?.student_name ?? "Select a student"}</p>
-                  <p className="mt-1 text-xs text-slate-500">{selectedAssignmentStudent ? `${selectedAssignmentStudent.plan_name} | ${selectedAssignmentStudent.payment_status}` : "Waiting students are listed below."}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--lp-accent)]">Allotment flow</p>
+                  <p className="mt-1 text-sm font-bold text-slate-700">1. Student &rarr; 2. Floor &rarr; 3. Room &rarr; 4. Free seat</p>
                 </div>
+                <label className="grid gap-1 text-xs font-black uppercase tracking-[0.08em] text-slate-500">
+                  Student
+                  <select value={selectedAssignmentId} onChange={(event) => setSelectedAssignmentId(event.target.value)} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2.5 text-sm font-semibold normal-case tracking-normal text-slate-800 outline-none">
+                    <option value="">Select waiting student</option>
+                    {unallottedStudents.map((student) => (
+                      <option key={student.assignment_id} value={student.assignment_id}>{student.student_name} | ID {student.student_code ?? student.assignment_id.slice(0, 8)} | {student.plan_name} | {student.payment_status}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-1 text-xs font-black uppercase tracking-[0.08em] text-slate-500">
+                  Floor
+                  <select
+                    value={selectedFloorId || activeFloorCard?.floor.id || ""}
+                    onChange={(event) => {
+                      setSelectedFloorId(event.target.value);
+                      setSelectedRoomId("");
+                      setSelectedSeatId(null);
+                    }}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2.5 text-sm font-semibold normal-case tracking-normal text-slate-800 outline-none"
+                  >
+                    <option value="">Select floor</option>
+                    {floors.map((floor) => <option key={floor.id} value={floor.id}>{floor.name}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-1 text-xs font-black uppercase tracking-[0.08em] text-slate-500">
+                  Room
+                  <select
+                    value={selectedRoomId}
+                    onChange={(event) => {
+                      const nextRoomId = event.target.value;
+                      const room = selectedFloorRoomOptions.find((item) => item.id === nextRoomId);
+                      setSelectedRoomId(nextRoomId);
+                      setSelectedSeatId(null);
+                      if (room) setSectionName(room.name);
+                    }}
+                    disabled={!selectedFloorId || selectedFloorRoomOptions.length === 0}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2.5 text-sm font-semibold normal-case tracking-normal text-slate-800 outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value="">{selectedFloorId ? "All rooms" : "Choose floor first"}</option>
+                    {selectedFloorRoomOptions.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-1 text-xs font-black uppercase tracking-[0.08em] text-slate-500">
+                  Free seat
+                  <select
+                    value={selectedSeatId ?? ""}
+                    onChange={(event) => setSelectedSeatId(event.target.value || null)}
+                    disabled={!selectedFloorId || selectedFloorFreeSeats.length === 0}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2.5 text-sm font-semibold normal-case tracking-normal text-slate-800 outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value="">{selectedFloorFreeSeats.length ? "Select free seat" : "No free seat in filter"}</option>
+                    {selectedFloorFreeSeats.map((seat) => (
+                      <option key={seat.id} value={seat.id}>{seat.seat_number}{seat.room_name ? ` | ${seat.room_name}` : ""}</option>
+                    ))}
+                  </select>
+                </label>
                 <div className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Selected seat</p>
-                  <p className="mt-1 text-base font-black text-slate-950">{selectedSeat?.seat_number ?? "Tap a seat"}</p>
-                  <p className="mt-1 text-xs text-slate-500">{selectedSeat ? describeSeatState(selectedSeat) : "Free seats can be allotted after selecting a student."}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Ready to allot</p>
+                  <p className="mt-1 text-sm font-black text-slate-950">{selectedAssignmentStudent?.student_name ?? "No student"} &rarr; {selectedSeat?.seat_number ?? "No seat"}</p>
+                  <p className="mt-1 text-xs text-slate-500">{selectedSeat ? describeSeatState(selectedSeat) : "Tap a free seat on map or choose it above."}</p>
+                  {selectedAssignmentStudent ? (
+                    <p className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-black ${selectedAssignmentIsPaid ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                      Student ID {selectedAssignmentStudent.student_code ?? selectedAssignmentStudent.assignment_id.slice(0, 8)} · {selectedAssignmentStudent.payment_status}
+                    </p>
+                  ) : null}
+                  {selectedSeat?.student_code ? (
+                    <p className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-700">
+                      Seat occupied by ID {selectedSeat.student_code}
+                    </p>
+                  ) : null}
                 </div>
-                <button type="button" disabled={!selectedAssignmentId || !selectedSeat || selectedSeat.status !== "AVAILABLE"} onClick={() => selectedSeat && void assignSeat(selectedSeat.id)} className="rounded-lg bg-[var(--lp-accent)] px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">Allot seat</button>
+                {!selectedAssignmentIsPaid && selectedAssignmentStudent ? (
+                  <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                    Payment PAID mark karne ke baad hi seat allot hogi.
+                  </p>
+                ) : null}
+                <button type="button" disabled={!selectedAssignmentId || !selectedSeat || selectedSeat.status !== "AVAILABLE" || !selectedAssignmentIsPaid} onClick={() => selectedSeat && void assignSeat(selectedSeat.id)} className="rounded-lg bg-[var(--lp-accent)] px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">Allot seat</button>
                 {selectedSeat ? <button type="button" onClick={() => setInspectorControlsOpen(true)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-[var(--lp-primary)]">Edit seat status</button> : null}
+                <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
+                  Empty cell free seat nahi hota. Empty ko free seat banane ke liye Manage layout &rarr; Rooms me room + seats create karo, ya Move/Paint mode me empty cell par Add seat karo.
+                </div>
                 <div className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-black text-slate-950">Waiting students</p>
@@ -1762,7 +2116,7 @@ export function OwnerSeatsManager() {
                     {unallottedStudents.map((student) => (
                       <button key={student.assignment_id} type="button" onClick={() => setSelectedAssignmentId(student.assignment_id)} className={`rounded-lg border px-3 py-2 text-left ${selectedAssignmentId === student.assignment_id ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]/40" : "border-[var(--lp-border)] bg-white"}`}>
                         <p className="text-sm font-black text-slate-950">{student.student_name}</p>
-                        <p className="text-xs text-slate-500">{student.plan_name} | {student.payment_status}</p>
+                        <p className="text-xs text-slate-500">ID {student.student_code ?? student.assignment_id.slice(0, 8)} | {student.plan_name} | {student.payment_status}</p>
                       </button>
                     ))}
                     {unallottedStudents.length === 0 ? <p className="py-5 text-center text-sm text-slate-500">No unallotted students waiting.</p> : null}
@@ -1782,9 +2136,124 @@ export function OwnerSeatsManager() {
             ))}
           </div>
           {layoutDrawerTab === "floors" ? <form id="seat-create-floor" onSubmit={createFloor} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 md:grid-cols-2"><input value={floorName} onChange={(event) => setFloorName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Floor name" /><input value={floorNumber} onChange={(event) => setFloorNumber(Number(event.target.value) || 0)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Floor no." /><input value={layoutRows} onChange={(event) => setLayoutRows(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Rows" /><input value={layoutColumns} onChange={(event) => setLayoutColumns(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Columns" /><button type="submit" className="rounded-xl bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white md:col-span-2">Create floor</button></form> : null}
-          {layoutDrawerTab === "seats" ? <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 md:grid-cols-2 xl:grid-cols-4"><select value={selectedFloorId} onChange={(event) => setSelectedFloorId(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none">{floorCards.map((item) => <option key={item.floor.id} value={item.floor.id}>{item.floor.name}</option>)}</select><input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Section" /><input value={seatPrefix} onChange={(event) => setSeatPrefix(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Prefix" /><input value={seatCount} onChange={(event) => setSeatCount(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Count" /><input value={startNumber} onChange={(event) => setStartNumber(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Start" /><input value={rowStart} onChange={(event) => setRowStart(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Row" /><input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Column" /><input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Per row" /><button type="submit" disabled={!selectedFloorId} className="rounded-xl bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white disabled:bg-slate-200 md:col-span-2 xl:col-span-4">Add seats</button></form> : null}
-          {layoutDrawerTab === "rooms" ? <div className="grid gap-3"><button type="button" disabled={!activeFloorCard || activeFloorCard.floor.id === "main-floor"} onClick={() => activeFloorCard && setHallSettingsOpen(activeFloorCard.floor.id)} className="rounded-xl bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white disabled:bg-slate-200">Manage rooms</button><p className="text-sm text-slate-500">Room settings open as a focused editor for names, colors, capacity, and notes.</p></div> : null}
-          {layoutDrawerTab === "templates" ? <div className="grid gap-3 xl:grid-cols-3">{roomLayoutPresets.map((preset) => <button key={preset.id} type="button" onClick={() => selectedFloorId && void applyRoomLayoutPreset(selectedFloorId, preset)} disabled={!selectedFloorId} className="rounded-xl border border-[var(--lp-border)] bg-white p-4 text-left disabled:opacity-50"><p className="text-sm font-black text-slate-950">{preset.title}</p><p className="mt-1 text-xs text-slate-500">{preset.subtitle}</p><span className="mt-3 inline-flex rounded-full bg-[var(--lp-accent-soft)] px-3 py-1 text-[11px] font-black text-[var(--lp-accent)]">Apply template</span></button>)}</div> : null}
+          {layoutDrawerTab === "seats" ? (
+            <div className="grid gap-3">
+              <div className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-slate-50 p-3 md:grid-cols-[1fr_auto]">
+                <div>
+                  <p className="text-sm font-black text-slate-950">Seat template</p>
+                  <p className="mt-1 text-xs text-slate-500">Optional template applies a clean arrangement to the selected floor.</p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto]">
+                  <select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none">
+                    <option value="">Choose template</option>
+                    {roomLayoutPresets.map((preset) => <option key={preset.id} value={preset.id}>{preset.title}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={!selectedFloorId || !selectedTemplateId}
+                    onClick={() => {
+                      const preset = roomLayoutPresets.find((item) => item.id === selectedTemplateId);
+                      if (preset && selectedFloorId) void applyRoomLayoutPreset(selectedFloorId, preset);
+                    }}
+                    className="rounded-xl bg-[var(--lp-accent)] px-4 py-3 text-sm font-black text-white disabled:bg-slate-200"
+                  >
+                    Apply template
+                  </button>
+                </div>
+              </div>
+              <form id="seat-create-bank" onSubmit={createSeats} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 md:grid-cols-2 xl:grid-cols-4">
+              <select
+                value={selectedFloorId}
+                onChange={(event) => {
+                  setSelectedFloorId(event.target.value);
+                  setSelectedRoomId("");
+                }}
+                className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none"
+              >
+                {floors.map((floor) => <option key={floor.id} value={floor.id}>{floor.name}</option>)}
+              </select>
+              <select
+                value={selectedRoomId}
+                onChange={(event) => {
+                  const nextRoomId = event.target.value;
+                  const room = selectedFloorRoomOptions.find((item) => item.id === nextRoomId);
+                  setSelectedRoomId(nextRoomId);
+                  if (room) setSectionName(room.name);
+                }}
+                disabled={!selectedFloorId || selectedFloorRoomOptions.length === 0}
+                className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">No room / open hall</option>
+                {selectedFloorRoomOptions.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}
+              </select>
+              <input value={sectionName} onChange={(event) => setSectionName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Room / section" />
+              <input value={seatPrefix} onChange={(event) => setSeatPrefix(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" placeholder="Prefix" />
+              <input value={seatCount} onChange={(event) => setSeatCount(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Count" />
+              <input value={startNumber} onChange={(event) => setStartNumber(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Start" />
+              <input value={rowStart} onChange={(event) => setRowStart(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Row" />
+              <input value={colStart} onChange={(event) => setColStart(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Column" />
+              <input value={columnsPerRow} onChange={(event) => setColumnsPerRow(Number(event.target.value) || 1)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none xl:col-span-2" type="number" placeholder="Per row" />
+              <button type="submit" disabled={!selectedFloorId} className="rounded-xl bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white disabled:bg-slate-200 md:col-span-2 xl:col-span-2">Add seats</button>
+              </form>
+            </div>
+          ) : null}
+          {layoutDrawerTab === "rooms" ? (
+            <div className="grid gap-4">
+              <form onSubmit={createRoomWithSeats} className="grid gap-3 rounded-xl border border-[var(--lp-border)] bg-white p-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="md:col-span-2 xl:col-span-4">
+                  <p className="text-sm font-black text-slate-950">Create room with seats</p>
+                  <p className="mt-1 text-xs text-slate-500">Choose floor, add room name, define seats. Seats are generated inside that room automatically.</p>
+                </div>
+                <select
+                  value={selectedFloorId}
+                  onChange={(event) => {
+                    setSelectedFloorId(event.target.value);
+                    setSelectedRoomId("");
+                  }}
+                  className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none md:col-span-2"
+                >
+                  <option value="">Select floor</option>
+                  {floors.map((floor) => (
+                    <option key={floor.id} value={floor.id}>{floor.name}</option>
+                  ))}
+                </select>
+                <input value={roomDraftName} onChange={(event) => setRoomDraftName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none md:col-span-2" placeholder="Room name, e.g. Reading Hall" />
+                <select value={roomDraftType} onChange={(event) => setRoomDraftType(event.target.value as FloorRoomConfig["type"])} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none">
+                  {roomTypes.map((type) => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+                <input value={roomSeatPrefix} onChange={(event) => setRoomSeatPrefix(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm uppercase outline-none" placeholder="Seat prefix" />
+                <input value={roomSeatCount} onChange={(event) => setRoomSeatCount(Number(event.target.value) || 0)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" min={0} max={300} placeholder="Seats" />
+                <input type="color" value={roomDraftColor} onChange={(event) => setRoomDraftColor(event.target.value)} className="h-12 rounded-xl border border-[var(--lp-border)] bg-white p-1" aria-label="Room color" />
+                <input value={roomDraftCapacity} onChange={(event) => setRoomDraftCapacity(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none" type="number" placeholder="Capacity optional" />
+                <input value={roomDraftNotes} onChange={(event) => setRoomDraftNotes(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-[#f8fcf8] px-3 py-3 text-sm outline-none md:col-span-2 xl:col-span-3" placeholder="Notes optional" />
+                <button type="submit" disabled={!selectedFloorId} className="rounded-xl bg-[var(--lp-accent)] px-5 py-3 text-sm font-black text-white disabled:bg-slate-200 md:col-span-2 xl:col-span-4">Create room</button>
+              </form>
+
+              <div className="rounded-xl border border-[var(--lp-border)] bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-950">Rooms on selected floor</p>
+                    <p className="text-xs text-slate-500">{selectedLayoutFloor ? selectedLayoutFloor.name : "Select a floor to view rooms"}</p>
+                  </div>
+                  <button type="button" disabled={!selectedFloorId} onClick={() => selectedFloorId && setHallSettingsOpen(selectedFloorId)} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-xs font-black text-[var(--lp-primary)] disabled:opacity-50">Edit rooms</button>
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  {selectedLayoutRooms.map((room) => (
+                    <div key={room.id} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="min-w-0 truncate text-sm font-black text-slate-950"><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: room.color }} />{room.name}</p>
+                        <span className="shrink-0 rounded-full bg-[var(--lp-accent-soft)] px-2 py-1 text-[10px] font-black text-[var(--lp-accent)]">{selectedLayoutRoomCounts[room.name] ?? 0} seats</span>
+                      </div>
+                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">{room.type.replace(/_/g, " ")}</p>
+                    </div>
+                  ))}
+                  {selectedLayoutRooms.length === 0 ? <p className="rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-500 md:col-span-2">No rooms yet. Create the first room above.</p> : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
           {layoutDrawerTab === "move-paint" ? <div className="grid gap-4"><button type="button" onClick={() => setLayoutMode((current) => !current)} className={`rounded-lg px-4 py-2.5 text-sm font-black ${layoutMode ? "bg-[var(--lp-accent-soft)] text-[var(--lp-accent)]" : "border border-[var(--lp-border)] bg-white text-slate-700"}`}>{layoutMode ? "Stop moving" : "Move seats"}</button><div className="grid gap-3 md:grid-cols-[1fr_auto]"><input value={paintSectionName} onChange={(event) => setPaintSectionName(event.target.value)} className="rounded-xl border border-[var(--lp-border)] bg-white px-3 py-3 text-sm outline-none" placeholder="Section name" /><input type="color" value={paintSectionColor} onChange={(event) => setPaintSectionColor(event.target.value)} className="h-12 w-20 rounded-xl border border-[var(--lp-border)] bg-white p-1" /></div><button type="button" onClick={() => { setLayoutMode(true); setPlannerTool("paint"); }} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-slate-700">Paint seats</button></div> : null}
         </div>
       </FormDrawer>
@@ -2641,7 +3110,7 @@ export function OwnerSeatsManager() {
                                   }
                                   setSelectedAssignmentId(assignmentId);
                                   setSelectedSeatId(seat.id);
-                                  void assignSeat(seat.id);
+                                  void assignSeat(seat.id, assignmentId);
                                   return;
                                 }
 
@@ -2661,7 +3130,7 @@ export function OwnerSeatsManager() {
                                   void moveSeatToPosition(sourceSeatId, cell.x, cell.y);
                                 }
                               }}
-                              className={`relative min-h-[5rem] rounded-lg border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell && workspaceMode !== "assign" ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "z-20 scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : "z-0"} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
+                              className={`relative min-h-[4rem] rounded-lg border border-dashed p-1 transition ${!seat ? "border-[var(--lp-border)] bg-white/60" : "border-transparent bg-transparent p-0"} ${!seat && !isAisleCell && workspaceMode !== "assign" ? "cursor-pointer hover:border-[var(--lp-primary)] hover:bg-[#fff7ef]" : ""} ${hoverCellKey === cell.key ? "z-20 scale-[1.02] border-[var(--lp-primary)] bg-[#fff1e6]" : "z-0"} ${isAisleCell ? "border-slate-400 bg-[repeating-linear-gradient(45deg,#ece5da,#ece5da_10px,#f8f2ea_10px,#f8f2ea_20px)]" : ""}`}
                             >
                               {seat ? (
                                 <button
@@ -2673,6 +3142,9 @@ export function OwnerSeatsManager() {
                                     }
                                     setSelectedSeatId(seat.id);
                                     setSelectedFloorId(item.floor.id);
+                                    if (seat.room_id) {
+                                      setSelectedRoomId(seat.room_id);
+                                    }
                                   }}
                                   onDragStart={(event) => {
                                     if (!layoutMode) {
@@ -3042,6 +3514,10 @@ export function OwnerSeatsManager() {
                 <span className="font-semibold text-[var(--lp-text)]">{selectedSeat.student_name ?? "Not assigned"}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
+                <span>Student ID</span>
+                <span className="font-semibold text-[var(--lp-text)]">{selectedSeat.student_code ?? "-"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
                 <span>Plan</span>
                 <span className="font-semibold text-[var(--lp-text)]">{selectedSeat.plan_name ?? "Not allotted"}</span>
               </div>
@@ -3064,14 +3540,19 @@ export function OwnerSeatsManager() {
                 <div>
                   <p className="text-sm font-semibold text-[var(--lp-text)]">Place selected student</p>
                   <p className="text-sm text-[var(--lp-muted)]">{selectedAssignmentStudent?.student_name ?? "Selected student"} will be placed on this seat.</p>
+                  {selectedAssignmentStudent ? (
+                    <p className={`mt-1 text-xs font-semibold ${selectedAssignmentIsPaid ? "text-emerald-700" : "text-rose-700"}`}>
+                      ID {selectedAssignmentStudent.student_code ?? selectedAssignmentStudent.assignment_id.slice(0, 8)} · {selectedAssignmentStudent.payment_status}
+                    </p>
+                  ) : null}
                 </div>
                 <button
                   type="button"
-                  disabled={selectedSeat.status !== "AVAILABLE" || selectedAssignmentStudent?.admission_status === "SEAT_ALLOTTED"}
+                  disabled={selectedSeat.status !== "AVAILABLE" || selectedAssignmentStudent?.admission_status === "SEAT_ALLOTTED" || !selectedAssignmentIsPaid}
                   onClick={() => void assignSeat(selectedSeat.id)}
                   className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                 >
-                  {selectedSeat.status === "AVAILABLE" ? "Allot this seat" : "Choose a free seat"}
+                  {!selectedAssignmentIsPaid ? "Payment pending" : selectedSeat.status === "AVAILABLE" ? "Allot this seat" : "Choose a free seat"}
                 </button>
               </div>
             ) : null}

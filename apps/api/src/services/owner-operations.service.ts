@@ -5,6 +5,7 @@ import { AppError } from "../lib/errors";
 import { createOwnerNotificationCampaign } from "./owner-notifications.service";
 import { getLibraryEntryQr } from "./checkin.service";
 import { OwnerOperationsRepository } from "../repositories/owner-operations.repository";
+import { ensureLibraryReferralCode, ensureUserReferralCode, generateUniqueReferralCode } from "../lib/referral-code";
 import crypto from "node:crypto";
 import type { PoolClient } from "pg";
 
@@ -166,6 +167,8 @@ async function createAdmissionRecord(input: {
   libraryId: string;
   actorUserId: string;
   fullName: string;
+  dateOfBirth?: string;
+  gender?: string;
   fatherName?: string;
   address?: string;
   className?: string;
@@ -179,6 +182,7 @@ async function createAdmissionRecord(input: {
   durationMonthsOverride?: number;
   couponCode?: string;
   paymentStatus: "PAID" | "UNPAID" | "DUE";
+  seatId?: string;
   aadhaarDocumentUrl?: string;
   schoolIdDocumentUrl?: string;
   notes?: string;
@@ -202,6 +206,16 @@ async function createAdmissionRecord(input: {
       planAmountOverride: input.planAmountOverride,
       durationMonthsOverride: input.durationMonthsOverride,
     });
+    await ensureLibraryReferralCode(client, input.libraryId);
+    if (input.seatId && input.paymentStatus !== "PAID") {
+      throw new AppError(409, "Seat allotment is allowed only after payment is marked paid.", "SEAT_ASSIGNMENT_REQUIRES_PAID");
+    }
+    const selectedSeat = await validateAdmissionSeat({
+      repo,
+      client,
+      libraryId: input.libraryId,
+      seatId: input.seatId,
+    });
 
     let student =
       input.studentUserId
@@ -211,6 +225,8 @@ async function createAdmissionRecord(input: {
             email: input.email ?? null,
             phone: input.phone ?? null,
             student_code: null,
+            date_of_birth: input.dateOfBirth ?? null,
+            gender: input.gender ?? null,
           }
         : await repo.findStudentByEmailOrPhone(client, input.email, input.phone);
     let isNewStudent = false;
@@ -219,11 +235,15 @@ async function createAdmissionRecord(input: {
     if (!student) {
       const passwordHash = await hashPassword(temporaryPassword);
       const studentCode = buildStudentCode(input.fullName);
+      const referralCode = await generateUniqueReferralCode(client);
       const created = await repo.createStudent(client, {
         fullName: input.fullName,
         email: input.email,
         phone: input.phone,
+        dateOfBirth: input.dateOfBirth,
+        gender: input.gender,
         studentCode,
+        referralCode,
         passwordHash,
       });
       student = {
@@ -232,6 +252,8 @@ async function createAdmissionRecord(input: {
         email: input.email ?? null,
         phone: input.phone ?? null,
         student_code: studentCode,
+        date_of_birth: input.dateOfBirth ?? null,
+        gender: input.gender ?? null,
       };
       isNewStudent = true;
     } else {
@@ -240,20 +262,28 @@ async function createAdmissionRecord(input: {
         fullName: input.fullName,
         email: input.email ?? null,
         phone: input.phone ?? null,
+        dateOfBirth: input.dateOfBirth ?? null,
+        gender: input.gender ?? null,
       });
     }
 
     await repo.ensureStudentRole(client, student.id, input.libraryId);
+    await ensureUserReferralCode(client, student.id);
 
-    const startsAt = new Date().toISOString();
-    const endsAtDate = new Date();
-    endsAtDate.setMonth(endsAtDate.getMonth() + pricing.durationMonths);
+    const startsAtDate = new Date();
+    const startsAt = startsAtDate.toISOString();
+    const endsAtDate = computePlanEndDate({
+      startsAt: startsAtDate,
+      planType: pricing.plan.plan_type,
+      durationMonths: pricing.durationMonths,
+      durationDays: pricing.plan.duration_days,
+    });
     const endsAt = endsAtDate.toISOString();
 
     const assignment = await repo.createAssignment(client, {
       libraryId: input.libraryId,
       studentUserId: student.id,
-      seatId: null,
+      seatId: selectedSeat?.id ?? null,
       fatherName: input.fatherName,
       address: input.address,
       className: input.className,
@@ -278,6 +308,11 @@ async function createAdmissionRecord(input: {
       admissionSource: input.admissionSource ?? "DESK",
       notes: input.notes,
     });
+
+    if (selectedSeat) {
+      await repo.updateSeatStatus(client, selectedSeat.id, "OCCUPIED");
+      await repo.refreshLibrarySeatCounts(client, input.libraryId);
+    }
 
     const payment = await repo.createPayment(client, {
       libraryId: input.libraryId,
@@ -338,7 +373,13 @@ export async function createOwnerStudentPlan(input: {
   name: string;
   targetAudience?: string;
   description?: string;
+  planType?: "MONTHLY" | "DAY_WISE" | "SHIFT_HOURS";
   durationMonths: number;
+  durationDays?: number;
+  shiftStartTime?: string;
+  shiftEndTime?: string;
+  allowedHours?: number;
+  allowedDays?: string[];
   baseAmount: number;
   defaultDiscountType?: "PERCENTAGE" | "FLAT";
   defaultDiscountValue?: number;
@@ -366,7 +407,13 @@ export async function updateOwnerStudentPlan(input: {
   name: string;
   targetAudience?: string;
   description?: string;
+  planType?: "MONTHLY" | "DAY_WISE" | "SHIFT_HOURS";
   durationMonths: number;
+  durationDays?: number;
+  shiftStartTime?: string;
+  shiftEndTime?: string;
+  allowedHours?: number;
+  allowedDays?: string[];
   baseAmount: number;
   defaultDiscountType?: "PERCENTAGE" | "FLAT";
   defaultDiscountValue?: number;
@@ -457,6 +504,8 @@ export async function createOwnerAdmission(input: {
   libraryId: string;
   actorUserId: string;
   fullName: string;
+  dateOfBirth?: string;
+  gender?: string;
   fatherName?: string;
   address?: string;
   className?: string;
@@ -470,6 +519,7 @@ export async function createOwnerAdmission(input: {
   durationMonthsOverride?: number;
   couponCode?: string;
   paymentStatus: "PAID" | "UNPAID" | "DUE";
+  seatId?: string;
   aadhaarDocumentUrl?: string;
   schoolIdDocumentUrl?: string;
   notes?: string;
@@ -484,6 +534,8 @@ export async function createOwnerStudent(input: {
   libraryId: string;
   actorUserId: string;
   fullName: string;
+  dateOfBirth?: string;
+  gender?: string;
   fatherName?: string;
   address?: string;
   className?: string;
@@ -501,6 +553,7 @@ export async function createOwnerStudent(input: {
   aadhaarDocumentUrl?: string;
   schoolIdDocumentUrl?: string;
   notes?: string;
+  seatId?: string;
 }) {
   const status = input.paymentStatus === "PAID" ? "PAID" : input.paymentStatus === "DUE" ? "DUE" : "UNPAID";
   const db = requireDb();
@@ -516,11 +569,15 @@ export async function createOwnerStudent(input: {
     if (!student) {
       const passwordHash = await hashPassword(temporaryPassword);
       const studentCode = buildStudentCode(input.fullName);
+      const referralCode = await generateUniqueReferralCode(client);
       const created = await repo.createStudent(client, {
         fullName: input.fullName,
         email: input.email,
         phone: input.phone,
+        dateOfBirth: input.dateOfBirth,
+        gender: input.gender,
         studentCode,
+        referralCode,
         passwordHash,
       });
       student = {
@@ -529,6 +586,8 @@ export async function createOwnerStudent(input: {
         email: input.email ?? null,
         phone: input.phone ?? null,
         student_code: studentCode,
+        date_of_birth: input.dateOfBirth ?? null,
+        gender: input.gender ?? null,
       };
       isNewStudent = true;
     } else {
@@ -537,10 +596,13 @@ export async function createOwnerStudent(input: {
         fullName: input.fullName,
         email: input.email ?? null,
         phone: input.phone ?? null,
+        dateOfBirth: input.dateOfBirth ?? null,
+        gender: input.gender ?? null,
       });
     }
 
     await repo.ensureStudentRole(client, student.id, input.libraryId);
+    await ensureUserReferralCode(client, student.id);
 
     const assignment = await repo.createAssignment(client, {
       libraryId: input.libraryId,
@@ -586,6 +648,8 @@ export async function updateOwnerStudent(input: {
   libraryId: string;
   assignmentId: string;
   fullName: string;
+  dateOfBirth?: string;
+  gender?: string;
   fatherName?: string;
   address?: string;
   className?: string;
@@ -604,6 +668,7 @@ export async function updateOwnerStudent(input: {
   aadhaarDocumentUrl?: string;
   schoolIdDocumentUrl?: string;
   notes?: string;
+  seatId?: string;
 }) {
   const db = requireDb();
   const repo = repository();
@@ -621,6 +686,8 @@ export async function updateOwnerStudent(input: {
       fullName: input.fullName,
       email: input.email ?? null,
       phone: input.phone ?? null,
+      dateOfBirth: input.dateOfBirth ?? null,
+      gender: input.gender ?? null,
     });
 
     await repo.updateAssignment(client, {
@@ -788,12 +855,101 @@ export async function updateOwnerPayment(input: {
   }
 }
 
-export async function listOwnerSeats(libraryId: string) {
-  return repository().listSeats(libraryId);
+export async function listOwnerSeats(input: {
+  libraryId: string;
+  floorId?: string | null;
+  roomId?: string | null;
+  status?: string | null;
+  availableOnly?: boolean;
+}) {
+  return repository().listSeats(input.libraryId, input);
 }
 
 export async function listOwnerFloors(libraryId: string) {
   return repository().listFloors(libraryId);
+}
+
+export async function listOwnerRooms(input: { libraryId: string; floorId?: string | null }) {
+  return repository().listRooms(input.libraryId, input.floorId);
+}
+
+export async function createOwnerRoom(input: {
+  libraryId: string;
+  floorId: string;
+  name: string;
+  sortOrder?: number;
+  seatCount?: number;
+  seatPrefix?: string;
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+    const room = await repo.createRoom(client, {
+      libraryId: input.libraryId,
+      floorId: input.floorId,
+      name: input.name,
+      sortOrder: input.sortOrder ?? 0,
+      status: "ACTIVE",
+    });
+
+    const createdSeatNumbers: string[] = [];
+    const seatCount = Math.max(0, input.seatCount ?? 0);
+    if (seatCount > 0) {
+      const prefix = input.seatPrefix?.trim() || input.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 3).toUpperCase() || "R";
+      for (let index = 0; index < seatCount; index += 1) {
+        const seat = await repo.createSeat(client, {
+          libraryId: input.libraryId,
+          floorId: input.floorId,
+          roomId: room.id,
+          seatNumber: `${prefix}${index + 1}`,
+          sectionName: input.name,
+          rowNo: Math.floor(index / 6) + 1,
+          colNo: (index % 6) + 1,
+        });
+        createdSeatNumbers.push(seat.seat_number);
+      }
+      await repo.refreshLibrarySeatCounts(client, input.libraryId);
+    }
+
+    await client.query("COMMIT");
+    return { ...room, createdSeatNumbers, createdCount: createdSeatNumbers.length };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    if ((error as { code?: string })?.code === "23505") {
+      throw new AppError(409, "Room or seat number already exists", "ROOM_OR_SEAT_ALREADY_EXISTS");
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateOwnerRoom(input: {
+  libraryId: string;
+  roomId: string;
+  name?: string;
+  sortOrder?: number;
+  status?: "ACTIVE" | "INACTIVE";
+}) {
+  const db = requireDb();
+  const repo = repository();
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+    const room = await repo.updateRoom(client, input);
+    if (!room) throw new AppError(404, "Room not found", "ROOM_NOT_FOUND");
+    await client.query("COMMIT");
+    return room;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function createOwnerFloor(input: {
@@ -867,6 +1023,7 @@ export async function updateOwnerFloor(input: {
 export async function createOwnerSeats(input: {
   libraryId: string;
   floorId?: string | null;
+  roomId?: string | null;
   sectionName: string;
   seatPrefix: string;
   customSeatCode?: string | null;
@@ -883,6 +1040,15 @@ export async function createOwnerSeats(input: {
   try {
     await client.query("BEGIN");
     const createdSeatNumbers: string[] = [];
+    let sectionName = input.sectionName;
+    if (input.roomId) {
+      const room = await repo.findRoomById(client, input.libraryId, input.roomId);
+      if (!room) throw new AppError(404, "Room not found", "ROOM_NOT_FOUND");
+      if (input.floorId && room.floor_id !== input.floorId) {
+        throw new AppError(409, "Room does not belong to selected floor", "ROOM_FLOOR_MISMATCH");
+      }
+      sectionName = room.name;
+    }
 
     for (let index = 0; index < input.seatCount; index += 1) {
       const seatNumber =
@@ -894,8 +1060,9 @@ export async function createOwnerSeats(input: {
       const seat = await repo.createSeat(client, {
         libraryId: input.libraryId,
         floorId: input.floorId ?? null,
+        roomId: input.roomId ?? null,
         seatNumber,
-        sectionName: input.sectionName,
+        sectionName,
         rowNo,
         colNo,
       });
@@ -930,6 +1097,9 @@ export async function assignSeatToStudent(input: {
     const assignment = await repo.findAssignmentById(client, input.libraryId, input.assignmentId);
     if (!assignment) {
       throw new AppError(404, "Student assignment not found", "ASSIGNMENT_NOT_FOUND");
+    }
+    if (assignment.payment_status !== "PAID") {
+      throw new AppError(409, "Seat allotment is allowed only after payment is marked paid.", "SEAT_ASSIGNMENT_REQUIRES_PAID");
     }
 
     const seat = await repo.findSeatById(client, input.libraryId, input.seatId);
@@ -1132,6 +1302,42 @@ export async function getOwnerCheckinRegisterPage(input: {
     page: paged.page,
     limit: paged.limit,
   };
+}
+
+function computePlanEndDate(input: {
+  startsAt: Date;
+  planType?: string | null;
+  durationMonths: number;
+  durationDays?: number | null;
+}) {
+  const endsAtDate = new Date(input.startsAt);
+  if (input.planType === "DAY_WISE" && input.durationDays && input.durationDays > 0) {
+    endsAtDate.setDate(endsAtDate.getDate() + input.durationDays);
+    return endsAtDate;
+  }
+  endsAtDate.setMonth(endsAtDate.getMonth() + input.durationMonths);
+  return endsAtDate;
+}
+
+async function validateAdmissionSeat(input: {
+  repo: OwnerOperationsRepository;
+  client: PoolClient;
+  libraryId: string;
+  seatId?: string | null;
+}) {
+  if (!input.seatId) return null;
+  const seat = await input.repo.findSeatById(input.client, input.libraryId, input.seatId);
+  if (!seat) {
+    throw new AppError(404, "Seat not found", "SEAT_NOT_FOUND");
+  }
+  if (seat.status === "DISABLED") {
+    throw new AppError(409, "Disabled seat cannot be assigned", "SEAT_DISABLED");
+  }
+  const occupant = await input.repo.findActiveAssignmentBySeatId(input.client, input.libraryId, input.seatId);
+  if (occupant) {
+    throw new AppError(409, "Seat is already assigned", "SEAT_ALREADY_OCCUPIED");
+  }
+  return seat;
 }
 
 export async function listOwnerManualAttendanceStudents(libraryId: string) {
@@ -1793,6 +1999,8 @@ export async function listAdminLibraryStudents(libraryId: string) {
       u.full_name,
       u.email,
       u.phone,
+      u.date_of_birth::date::text AS date_of_birth,
+      u.gender,
       u.is_active,
       s.seat_number,
       sa.status::text,
@@ -2222,6 +2430,8 @@ export async function exportOwnerReport(input: {
       student_name: row.student_name,
       student_code: row.student_code ?? "",
       phone: row.student_phone ?? "",
+      date_of_birth: row.date_of_birth ?? "",
+      gender: row.gender ?? "",
       seat_number: row.seat_number ?? "",
       plan_name: row.plan_name,
       valid_till: row.ends_at,
@@ -2818,6 +3028,8 @@ export async function approveOwnerJoinRequest(input: {
   actorUserId: string;
   requestId: string;
   fullName?: string;
+  dateOfBirth?: string;
+  gender?: string;
   fatherName?: string;
   address?: string;
   className?: string;
@@ -2831,6 +3043,7 @@ export async function approveOwnerJoinRequest(input: {
   durationMonthsOverride?: number;
   couponCode?: string;
   paymentStatus: "PAID" | "UNPAID" | "DUE";
+  seatId?: string;
   aadhaarDocumentUrl?: string;
   schoolIdDocumentUrl?: string;
   notes?: string;
@@ -2854,6 +3067,8 @@ export async function approveOwnerJoinRequest(input: {
       studentUserId: request.student_user_id,
       joinRequestId: input.requestId,
       fullName: input.fullName || request.student_name,
+      dateOfBirth: input.dateOfBirth || request.date_of_birth || undefined,
+      gender: input.gender || request.gender || undefined,
       fatherName: input.fatherName,
       address: input.address,
       className: input.className,
@@ -2870,6 +3085,7 @@ export async function approveOwnerJoinRequest(input: {
       aadhaarDocumentUrl: input.aadhaarDocumentUrl,
       schoolIdDocumentUrl: input.schoolIdDocumentUrl,
       notes: input.notes,
+      seatId: input.seatId,
       admissionSource: "JOIN_REQUEST",
     });
   } catch (error) {

@@ -273,6 +273,7 @@ export function OwnerStudentsManager() {
   const [seatDrawerOpen, setSeatDrawerOpen] = useState(false);
   const [form, setForm] = useState(buildInitialForm(null));
   const selectedStudent = rows.find((row) => row.assignment_id === selectedAssignmentId) ?? null;
+  const selectedStudentIsPaid = selectedStudent?.payment_status === "PAID";
 
   async function loadStudents() {
     setLoading(true);
@@ -423,6 +424,10 @@ export function OwnerStudentsManager() {
 
   async function assignSeat() {
     if (!selectedStudent || !selectedSeatId) return;
+    if (selectedStudent.payment_status !== "PAID") {
+      setError("Seat allotment ke liye student ka payment status PAID hona chahiye.");
+      return;
+    }
     setSeatSaving(true);
     setError(null);
     setMessage(null);
@@ -534,6 +539,7 @@ export function OwnerStudentsManager() {
                     </span>
                   </div>
                   <div className="flex min-w-0 flex-wrap gap-x-2 gap-y-1 text-[11px] leading-tight text-[var(--lp-text-soft)]">
+                    <span className="font-semibold text-[var(--lp-accent)]">ID {student.student_code ?? student.student_user_id.slice(0, 8)}</span>
                     <span className="max-w-[9rem] truncate">{student.plan_name}</span>
                     <span className="font-semibold text-[var(--lp-text)]">{student.payment_status}</span>
                     <span>Due Rs. {Number(student.due_amount).toLocaleString("en-IN")}</span>
@@ -555,6 +561,7 @@ export function OwnerStudentsManager() {
             <DashboardCard title="Selected student">
               <div className="grid gap-3">
                 <div className="grid gap-2 md:grid-cols-4">
+                  <div className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2"><p className="text-[10px] font-black uppercase text-slate-400">Student ID</p><p className="mt-1 truncate text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.student_code ?? selectedStudent.student_user_id.slice(0, 8)}</p></div>
                   <div className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2"><p className="text-[10px] font-black uppercase text-slate-400">Current seat</p><p className="mt-1 truncate text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.seat_number ?? "Unallotted"}</p></div>
                   <div className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2"><p className="text-[10px] font-black uppercase text-slate-400">Plan</p><p className="mt-1 truncate text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.plan_name}</p></div>
                   <div className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2"><p className="text-[10px] font-black uppercase text-slate-400">Fee status</p><p className="mt-1 truncate text-sm font-semibold text-[var(--lp-text)]">{selectedStudent.payment_status}</p></div>
@@ -618,7 +625,10 @@ export function OwnerStudentsManager() {
                 <div className="rounded-lg border border-[var(--lp-border)] bg-[var(--lp-surface)] px-4 py-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Student</p>
                   <p className="mt-2 text-lg font-black text-[var(--lp-text)]">{selectedStudent.student_name}</p>
-                  <p className="mt-1 text-sm text-[var(--lp-text-soft)]">Current seat: {selectedStudent.seat_number ?? "Unallotted"}</p>
+                  <p className="mt-1 text-sm text-[var(--lp-text-soft)]">ID {selectedStudent.student_code ?? selectedStudent.student_user_id.slice(0, 8)} · Current seat: {selectedStudent.seat_number ?? "Unallotted"}</p>
+                  <p className={`mt-2 inline-flex rounded-full px-2 py-1 text-xs font-black ${selectedStudentIsPaid ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                    {selectedStudent.payment_status}
+                  </p>
                 </div>
                 <div className="grid gap-2 md:grid-cols-3">
                   <select
@@ -662,7 +672,8 @@ export function OwnerStudentsManager() {
                   </select>
                 </div>
                 {selectedRoomId && availableSeats.length === 0 ? <p className="text-xs font-semibold text-amber-700">Selected room me available seats nahi hain.</p> : null}
-                <button type="button" disabled={seatSaving || !selectedSeatId} onClick={() => void assignSeat()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
+                {!selectedStudentIsPaid ? <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Payment PAID mark karne ke baad hi seat allot hogi.</p> : null}
+                <button type="button" disabled={seatSaving || !selectedSeatId || !selectedStudentIsPaid} onClick={() => void assignSeat()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                   {seatSaving ? "Saving seat..." : selectedStudent.seat_number ? "Change seat" : "Allot seat"}
                 </button>
                 <button type="button" disabled={seatSaving || !selectedStudent.seat_number} onClick={() => void removeSeat()} className="rounded-lg border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-700 disabled:opacity-60">

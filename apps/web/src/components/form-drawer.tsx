@@ -35,7 +35,7 @@ export function FormDrawer({
       <button type="button" aria-label="Close drawer overlay" onClick={onClose} className="absolute inset-0 h-full w-full cursor-default" />
       <aside className={`absolute inset-x-0 bottom-0 top-[50px] w-full overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:relative sm:inset-auto sm:h-full ${widthClassName} ${desktopSideClass}`}>
         <div className="flex h-full flex-col">
-          <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
+          <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-3">
             <div className="min-w-0">
               <h2 className="text-xl font-black tracking-tight text-slate-950">{title}</h2>
               {description ? <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p> : null}
@@ -48,7 +48,7 @@ export function FormDrawer({
               Close form
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto px-5 py-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-5">{children}</div>
+          <div className="flex-1 overflow-y-auto px-5 py-5 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pb-5">{children}</div>
           {footer ? <div className="sticky bottom-0 border-t border-slate-200 bg-white px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4">{footer}</div> : null}
         </div>
       </aside>

@@ -1,4 +1,5 @@
 import { requireDb } from "../lib/db";
+import { ensureLibraryReferralCode, ensureUserReferralCode } from "../lib/referral-code";
 import type { PoolClient } from "pg";
 
 export async function qualifyReferralForLibrary(input: {
@@ -69,12 +70,21 @@ export async function qualifyReferralForPaidPlatformPayment(client: PoolClient, 
 }
 
 export async function getOwnerReferralDashboard(libraryId: string) {
-  const codeResult = await requireDb().query<{ slug: string; name: string }>(
-    `SELECT slug, name FROM libraries WHERE id = $1 LIMIT 1`,
+  const db = requireDb();
+  const client = await db.connect();
+  let referralCode = "";
+  try {
+    referralCode = await ensureLibraryReferralCode(client, libraryId);
+  } finally {
+    client.release();
+  }
+
+  const codeResult = await db.query<{ slug: string; referral_code: string | null; name: string }>(
+    `SELECT slug, referral_code, name FROM libraries WHERE id = $1 LIMIT 1`,
     [libraryId],
   );
 
-  const referrals = await requireDb().query(
+  const referrals = await db.query(
     `
     SELECT
       lr.id::text,
@@ -95,7 +105,7 @@ export async function getOwnerReferralDashboard(libraryId: string) {
     [libraryId],
   );
 
-  const referredBy = await requireDb().query(
+  const referredBy = await db.query(
     `
     SELECT
       lr.id::text,
@@ -128,7 +138,7 @@ export async function getOwnerReferralDashboard(libraryId: string) {
   );
 
   return {
-    referralCode: codeResult.rows[0]?.slug ?? "",
+    referralCode: referralCode || codeResult.rows[0]?.referral_code || codeResult.rows[0]?.slug || "",
     libraryName: codeResult.rows[0]?.name ?? "",
     summary,
     referrals: referrals.rows,
@@ -180,12 +190,21 @@ export async function updateAdminReferralStatus(input: {
 }
 
 export async function getStudentReferralDashboard(studentUserId: string) {
-  const codeResult = await requireDb().query<{ student_code: string | null; full_name: string }>(
-    `SELECT student_code, full_name FROM users WHERE id = $1 LIMIT 1`,
+  const db = requireDb();
+  const client = await db.connect();
+  let referralCode = "";
+  try {
+    referralCode = await ensureUserReferralCode(client, studentUserId);
+  } finally {
+    client.release();
+  }
+
+  const codeResult = await db.query<{ referral_code: string | null; student_code: string | null; full_name: string }>(
+    `SELECT referral_code, student_code, full_name FROM users WHERE id = $1 LIMIT 1`,
     [studentUserId],
   );
 
-  const referrals = await requireDb().query(
+  const referrals = await db.query(
     `
     SELECT
       sr.id::text,
@@ -196,7 +215,7 @@ export async function getStudentReferralDashboard(studentUserId: string) {
       sr.paid_at::text,
       sr.created_at::text,
       referred.full_name AS referred_student_name,
-      referred.student_code AS referred_student_code
+      COALESCE(referred.referral_code, referred.student_code) AS referred_student_code
     FROM student_referrals sr
     INNER JOIN users referred ON referred.id = sr.referred_student_user_id
     WHERE sr.referrer_student_user_id = $1
@@ -206,7 +225,7 @@ export async function getStudentReferralDashboard(studentUserId: string) {
     [studentUserId],
   );
 
-  const referredBy = await requireDb().query(
+  const referredBy = await db.query(
     `
     SELECT
       sr.id::text,
@@ -215,7 +234,7 @@ export async function getStudentReferralDashboard(studentUserId: string) {
       sr.status,
       sr.created_at::text,
       referrer.full_name AS referrer_student_name,
-      referrer.student_code AS referrer_student_code
+      COALESCE(referrer.referral_code, referrer.student_code) AS referrer_student_code
     FROM student_referrals sr
     INNER JOIN users referrer ON referrer.id = sr.referrer_student_user_id
     WHERE sr.referred_student_user_id = $1
@@ -237,7 +256,7 @@ export async function getStudentReferralDashboard(studentUserId: string) {
   );
 
   return {
-    referralCode: codeResult.rows[0]?.student_code ?? "",
+    referralCode: referralCode || codeResult.rows[0]?.referral_code || codeResult.rows[0]?.student_code || "",
     studentName: codeResult.rows[0]?.full_name ?? "",
     summary,
     referrals: referrals.rows,
@@ -257,9 +276,9 @@ export async function listAdminStudentReferrals() {
       sr.paid_at::text,
       sr.created_at::text,
       referrer.full_name AS referrer_student_name,
-      referrer.student_code AS referrer_student_code,
+      COALESCE(referrer.referral_code, referrer.student_code) AS referrer_student_code,
       referred.full_name AS referred_student_name,
-      referred.student_code AS referred_student_code
+      COALESCE(referred.referral_code, referred.student_code) AS referred_student_code
     FROM student_referrals sr
     INNER JOIN users referrer ON referrer.id = sr.referrer_student_user_id
     INNER JOIN users referred ON referred.id = sr.referred_student_user_id

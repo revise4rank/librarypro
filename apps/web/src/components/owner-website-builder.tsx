@@ -124,7 +124,7 @@ export function OwnerWebsiteBuilder({
   defaultEditorOpen?: boolean;
 }) {
   const [values, setValues] = useState(initialValues);
-  const [loadMessage, setLoadMessage] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [requestedAction, setRequestedAction] = useState<"save-draft" | "publish" | null>(null);
   const [activeSection, setActiveSection] = useState<BuilderSection>(defaultEditorOpen ? "identity" : "hero");
   const [activePage, setActivePage] = useState<SitePageKey>("home");
@@ -138,19 +138,19 @@ export function OwnerWebsiteBuilder({
     if (!lowest) return plan;
     return Number(plan.base_amount || "0") < Number(lowest.base_amount || "0") ? plan : lowest;
   }, null);
-  const qualityChecks = [
-    values.brandLogoUrl,
-    values.heroBannerUrl,
-    values.heroTitle,
-    values.heroTagline,
-    values.aboutText,
-    values.contactPhone || values.whatsappPhone,
-    values.addressText,
-    values.galleryImages.length >= 2,
-    activePlans.length > 0,
-    values.highlightOffer,
+  const qualityItems = [
+    { label: "Brand logo", done: Boolean(values.brandLogoUrl), section: "identity" as BuilderSection },
+    { label: "Hero image", done: Boolean(values.heroBannerUrl), section: "hero" as BuilderSection },
+    { label: "Hero headline", done: Boolean(values.heroTitle), section: "hero" as BuilderSection },
+    { label: "Hero tagline", done: Boolean(values.heroTagline), section: "hero" as BuilderSection },
+    { label: "About content", done: Boolean(values.aboutText), section: "pages" as BuilderSection, page: "about" as SitePageKey },
+    { label: "Contact number", done: Boolean(values.contactPhone || values.whatsappPhone), section: "contact" as BuilderSection },
+    { label: "Address", done: Boolean(values.addressText), section: "contact" as BuilderSection },
+    { label: "Gallery photos", done: values.galleryImages.length >= 2, section: "gallery" as BuilderSection },
+    { label: "Public plans", done: activePlans.length > 0, section: "pages" as BuilderSection, page: "pricing" as SitePageKey },
+    { label: "Offer badge", done: Boolean(values.highlightOffer), section: "hero" as BuilderSection },
   ];
-  const qualityScore = Math.round((qualityChecks.filter(Boolean).length / qualityChecks.length) * 100);
+  const qualityScore = Math.round((qualityItems.filter((item) => item.done).length / qualityItems.length) * 100);
   const siteUrl = values.subdomain ? `https://${formatLibraryHost(values.subdomain)}` : "";
   const builderShortcuts: { label: string; section: BuilderSection; page?: SitePageKey }[] = [
     { label: "Brand", section: "identity" },
@@ -159,7 +159,7 @@ export function OwnerWebsiteBuilder({
     { label: "Features", section: "pages", page: "features" },
     { label: "Pricing", section: "pages", page: "pricing" },
     { label: "Gallery", section: "gallery", page: "gallery" },
-    { label: "Pages", section: "pages" },
+    { label: "All Pages", section: "pages" },
     { label: "Theme", section: "theme" },
     { label: "Contact", section: "contact" },
     { label: "SEO", section: "seo" },
@@ -187,14 +187,13 @@ export function OwnerWebsiteBuilder({
       .then((response) => {
         if (response?.[0]?.data) {
           setValues(mapProfileToFormValues(response[0].data));
-          setLoadMessage("Saved website profile loaded from API.");
         }
         if (response?.[1]?.data) {
           setPlans(response[1].data);
         }
       })
       .catch((error) => {
-        setLoadMessage(error instanceof Error ? error.message : "Unable to load saved website profile.");
+        setLoadError(error instanceof Error ? error.message : "Unable to load saved website profile.");
       });
   }, []);
 
@@ -214,7 +213,7 @@ export function OwnerWebsiteBuilder({
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Pages</p>
-                <p className="mt-2 text-2xl font-black text-slate-950">{enabledPages || 6}</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{enabledPages}</p>
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Quality</p>
@@ -239,20 +238,34 @@ export function OwnerWebsiteBuilder({
               </button>
               <button
                 type="button"
-                onClick={() => setRequestedAction("publish")}
+                onClick={() => {
+                  const confirmed = typeof window === "undefined" || window.confirm(`Publish website at ${siteHost}?`);
+                  if (confirmed) {
+                    setRequestedAction("publish");
+                  }
+                }}
                 className="rounded-full bg-[var(--lp-primary)] px-5 py-3 text-sm font-bold text-white"
               >
                 Publish website
               </button>
-              <a
-                href={siteUrl || undefined}
-                target="_blank"
-                rel="noreferrer"
-                aria-disabled={!siteUrl}
-                className={`rounded-full border border-[var(--lp-border)] px-5 py-3 text-sm font-bold ${siteUrl ? "bg-white text-slate-700" : "pointer-events-none bg-slate-100 text-slate-400"}`}
-              >
-                Open website
-              </a>
+              {siteUrl ? (
+                <a
+                  href={siteUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-[var(--lp-border)] bg-white px-5 py-3 text-sm font-bold text-slate-700"
+                >
+                  Open website
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="cursor-not-allowed rounded-full border border-[var(--lp-border)] bg-slate-100 px-5 py-3 text-sm font-bold text-slate-400"
+                >
+                  Open website
+                </button>
+              )}
             </div>
           </div>
 
@@ -269,6 +282,21 @@ export function OwnerWebsiteBuilder({
                 }`}
               >
                 {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid gap-2 rounded-xl border border-[var(--lp-border)] bg-white p-3 sm:grid-cols-2 lg:grid-cols-5">
+            {qualityItems.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => openBuilderSection(item.section, item.page)}
+                className={`rounded-lg px-3 py-2 text-left text-xs font-black transition ${
+                  item.done ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                }`}
+              >
+                {item.done ? "OK" : "Missing"} · {item.label}
               </button>
             ))}
           </div>
@@ -326,7 +354,7 @@ export function OwnerWebsiteBuilder({
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/10 p-3">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">Pages</p>
-                  <p className="mt-2 text-lg font-black">{enabledPages || 6} enabled</p>
+                  <p className="mt-2 text-lg font-black">{enabledPages} enabled</p>
                 </div>
               </div>
               </div>
@@ -334,7 +362,7 @@ export function OwnerWebsiteBuilder({
           </div>
         </div>
       </DashboardCard>
-      {loadMessage ? <p className="text-sm font-semibold text-slate-600">{loadMessage}</p> : null}
+      {loadError ? <p className="text-sm font-semibold text-rose-600">{loadError}</p> : null}
     </div>
   );
 }
