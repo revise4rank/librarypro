@@ -40,7 +40,7 @@ const features = [
     title: "Seat map and allotment",
     text: "Select a student, choose a free seat, and confirm allotment from a clean visual workspace.",
     icon: LayoutDashboard,
-    tone: "bg-emerald-50 text-emerald-600 ring-emerald-100",
+    tone: "bg-[#eef4fb] text-[#5f7fa5] ring-[#c9d8ea]",
   },
   {
     title: "QR attendance",
@@ -76,13 +76,13 @@ const features = [
     title: "Student portal",
     text: "Students get library access, payments, scanner, study zone, syllabus tracker, alerts, and study tools.",
     icon: ClipboardList,
-    tone: "bg-slate-100 text-slate-700 ring-slate-200",
+    tone: "bg-[#f5f8fc] text-[#263955] ring-[#d8e2ee]",
   },
   {
     title: "Owner controls",
     text: "Plans, coupons, offers, referrals, team/admin access, website, listing, and billing stay in owner workspace.",
     icon: ShieldCheck,
-    tone: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    tone: "bg-[#eef4fb] text-[#153967] ring-[#c9d8ea]",
   },
 ];
 
@@ -178,16 +178,16 @@ const footerColumns = [
 function HeroMockup() {
   return (
     <div className="relative mx-auto w-full max-w-[920px]">
-      <div className="rounded-lg border border-slate-200 bg-slate-950 p-3 shadow-xl">
+      <div className="rounded-lg border border-[#c9d8ea] bg-[#07142f] p-3 shadow-xl shadow-[#07142f]/15">
         <div className="overflow-hidden rounded-lg bg-white">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
-              <p className="text-xs font-semibold uppercase text-emerald-600">BookLib owner dashboard</p>
-              <h3 className="text-lg font-bold text-slate-950">Focus Library</h3>
+              <p className="text-xs font-semibold uppercase text-[#5f7fa5]">BookLib owner dashboard</p>
+              <h3 className="text-lg font-bold text-[#07142f]">Focus Library</h3>
             </div>
             <div className="flex gap-2">
-              <span className="rounded-lg bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Live seats</span>
-              <span className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">QR ready</span>
+              <span className="rounded-lg bg-[#eef4fb] px-3 py-1 text-xs font-semibold text-[#153967]">Live seats</span>
+              <span className="rounded-lg bg-[#f6efe9] px-3 py-1 text-xs font-semibold text-[#9a4f2d]">QR ready</span>
             </div>
           </div>
           <div className="grid gap-4 p-5 lg:grid-cols-[0.7fr_1.3fr_0.9fr]">
@@ -198,18 +198,18 @@ function HeroMockup() {
                   className={[
                     "rounded-lg border px-3 py-3 text-sm font-semibold",
                     index === 2
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                      : "border-slate-200 bg-slate-50 text-slate-700",
+                      ? "border-[#c9d8ea] bg-[#eef4fb] text-[#153967]"
+                      : "border-slate-200 bg-[#f8fafc] text-[#263955]",
                   ].join(" ")}
                 >
                   {item}
                 </div>
               ))}
             </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-lg border border-slate-200 bg-[#f8fafc] p-4">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm font-bold text-slate-950">Seat map</p>
-                <p className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-600">32 free</p>
+                <p className="text-sm font-bold text-[#07142f]">Seat map</p>
+                <p className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-[#40516a]">32 free</p>
               </div>
               <div className="grid grid-cols-6 gap-2">
                 {Array.from({ length: 30 }).map((_, index) => (
@@ -218,10 +218,10 @@ function HeroMockup() {
                     className={[
                       "h-9 rounded-lg border",
                       index % 5 === 0
-                        ? "border-amber-200 bg-amber-100"
+                        ? "border-[#e8cbb9] bg-[#f6efe9]"
                         : index % 3 === 0
                           ? "border-slate-200 bg-white"
-                          : "border-emerald-200 bg-emerald-100",
+                          : "border-[#c9d8ea] bg-[#eef4fb]",
                     ].join(" ")}
                   />
                 ))}
@@ -235,7 +235,7 @@ function HeroMockup() {
               ].map(([label, value]) => (
                 <div key={label} className="rounded-lg border border-slate-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase text-slate-400">{label}</p>
-                  <p className="mt-2 text-xl font-bold text-slate-950">{value}</p>
+                  <p className="mt-2 text-xl font-bold text-[#07142f]">{value}</p>
                 </div>
               ))}
             </div>
@@ -244,12 +244,12 @@ function HeroMockup() {
       </div>
       <div className="absolute -bottom-7 left-4 w-[220px] rounded-lg border border-slate-200 bg-white p-3 shadow-lg md:left-10 md:w-[270px]">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#eef4fb] text-[#153967]">
             <QrCode className="h-5 w-5" />
           </div>
           <div>
             <p className="text-xs font-semibold uppercase text-slate-400">Reception QR</p>
-            <p className="text-sm font-bold text-slate-950">Join, check-in, checkout</p>
+            <p className="text-sm font-bold text-[#07142f]">Join, check-in, checkout</p>
           </div>
         </div>
       </div>
@@ -259,34 +259,34 @@ function HeroMockup() {
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-white text-slate-950">
+    <main className="min-h-screen bg-white text-[#07142f]">
       <PublicSiteHeader />
       <FloatingWhatsapp />
 
-      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#f4fbf8_45%,#eefbf5_100%)]">
+      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#f5f8fc_44%,#eef4fb_100%)]">
         <div className="mx-auto w-full max-w-[1200px] px-4 py-10 text-center md:py-16">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-            <BadgeCheck className="h-4 w-4 text-emerald-600" />
+          <div className="mx-auto inline-flex items-center gap-2 rounded-lg border border-[#c9d8ea] bg-white px-4 py-2 text-sm font-semibold text-[#263955] shadow-sm">
+            <BadgeCheck className="h-4 w-4 text-[#5f7fa5]" />
             Trusted by modern reading rooms and study libraries
           </div>
-          <h1 className="mx-auto mt-8 max-w-5xl text-[clamp(2.7rem,6.6vw,6rem)] font-bold leading-[1.04] text-slate-900">
-            One-stop digital solution for your <span className="text-emerald-600">library</span>
+          <h1 className="mx-auto mt-8 max-w-5xl text-[clamp(2.7rem,6.6vw,6rem)] font-bold leading-[1.04] text-[#07142f]">
+            One-stop digital solution for your <span className="text-[#5f7fa5]">library</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-600 md:text-2xl md:leading-9">
+          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-[#40516a] md:text-2xl md:leading-9">
             Manage admissions, seats, QR attendance, dues, reports, public listing, website, and student portal from one simple BookLib dashboard.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/owner/register"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-7 text-base font-bold text-white shadow-sm transition hover:bg-emerald-700"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#07142f] px-7 text-base font-bold text-white shadow-sm transition hover:bg-[#153967]"
             >
               Start free trial
               <ArrowRight className="h-5 w-5" />
             </Link>
-            <BookDemoCta className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-7 text-base font-bold text-emerald-700 transition hover:bg-emerald-50" />
+            <BookDemoCta className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#c9d8ea] bg-white px-7 text-base font-bold text-[#153967] transition hover:bg-[#f3f7fb]" />
             <Link
               href="/marketplace"
-              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-emerald-200 bg-white px-7 text-base font-bold text-emerald-700 transition hover:bg-emerald-50"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#c9d8ea] bg-white px-7 text-base font-bold text-[#153967] transition hover:bg-[#f3f7fb]"
             >
               Explore libraries
             </Link>
@@ -297,13 +297,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-emerald-600 text-white">
+      <section className="bg-[#07142f] text-white">
         <div className="mx-auto w-full max-w-[1200px] px-4 py-12 text-center md:py-16">
           <h2 className="text-[clamp(2rem,4vw,3.2rem)] font-bold">Trusted by libraries nationwide</h2>
-          <p className="mt-3 text-lg text-emerald-50">Built for owners who want operations, students, and growth in one place.</p>
+          <p className="mt-3 text-lg text-[#dbe7f5]">Built for owners who want operations, students, and growth in one place.</p>
           <div className="mt-12 grid gap-8 md:grid-cols-3">
             {stats.map((item) => (
-              <div key={item.label} className="rounded-lg border border-white/15 bg-white/10 p-6">
+              <div key={item.label} className="rounded-lg border border-white/15 bg-white/10 p-6 shadow-sm shadow-black/10">
                 <p className="text-5xl font-bold">{item.value}</p>
                 <p className="mt-3 text-xl font-bold">{item.label}</p>
               </div>
@@ -315,14 +315,14 @@ export default function HomePage() {
       <section id="features" className="bg-white">
         <div className="mx-auto w-full max-w-[1200px] px-4 py-12 md:py-16">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-[#c9d8ea] bg-[#eef4fb] px-4 py-2 text-sm font-bold text-[#153967]">
               <Sparkles className="h-4 w-4" />
               Powerful features
             </div>
-            <h2 className="mt-7 text-[clamp(2.2rem,4.5vw,4.2rem)] font-bold leading-[1.08] text-slate-900">
+            <h2 className="mt-7 text-[clamp(2.2rem,4.5vw,4.2rem)] font-bold leading-[1.08] text-[#07142f]">
               Everything your library needs to run and grow
             </h2>
-            <p className="mt-5 text-lg leading-8 text-slate-600">
+            <p className="mt-5 text-lg leading-8 text-[#40516a]">
               BookLib connects daily operations with student experience and online discovery, so every workflow feels clear.
             </p>
           </div>
@@ -335,8 +335,8 @@ export default function HomePage() {
                   <div className={`flex h-10 w-10 items-center justify-center rounded-lg ring-1 ${item.tone}`}>
                     <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-8 text-2xl font-bold text-slate-900">{item.title}</h3>
-                  <p className="mt-4 text-base leading-7 text-slate-600">{item.text}</p>
+                  <h3 className="mt-8 text-2xl font-bold text-[#07142f]">{item.title}</h3>
+                  <p className="mt-4 text-base leading-7 text-[#40516a]">{item.text}</p>
                 </article>
               );
             })}
@@ -344,14 +344,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="about" className="bg-slate-50">
+      <section id="about" className="bg-[#f5f8fc]">
         <div className="mx-auto w-full max-w-[1200px] px-4 py-12 md:py-16">
           <div className="mx-auto max-w-4xl text-center">
             <div className="inline-flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700">
               <CheckCircle2 className="h-4 w-4" />
               Why choose BookLib
             </div>
-            <h2 className="mt-7 text-[clamp(2.2rem,4.3vw,4rem)] font-bold leading-[1.08] text-slate-900">
+            <h2 className="mt-7 text-[clamp(2.2rem,4.3vw,4rem)] font-bold leading-[1.08] text-[#07142f]">
               Simple for owners. Useful for students. Built for growth.
             </h2>
           </div>
@@ -359,12 +359,12 @@ export default function HomePage() {
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {benefitBlocks.map((item) => (
               <article key={item.title} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 className="text-2xl font-bold text-slate-900">{item.title}</h3>
-                <p className="mt-4 text-base leading-7 text-slate-600">{item.text}</p>
+                <h3 className="text-2xl font-bold text-[#07142f]">{item.title}</h3>
+                <p className="mt-4 text-base leading-7 text-[#40516a]">{item.text}</p>
                 <div className="mt-7 grid gap-3">
                   {item.points.map((point) => (
-                    <div key={point} className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    <div key={point} className="flex items-center gap-3 text-sm font-semibold text-[#263955]">
+                      <CheckCircle2 className="h-5 w-5 text-[#5f7fa5]" />
                       {point}
                     </div>
                   ))}
@@ -378,8 +378,8 @@ export default function HomePage() {
       <section className="bg-white">
         <div className="mx-auto w-full max-w-[1100px] px-4 py-12 md:py-16">
           <div className="text-center">
-            <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-bold text-slate-900">How it works</h2>
-            <p className="mt-4 text-lg text-slate-600">Get your digital library running in four practical steps.</p>
+            <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-bold text-[#07142f]">How it works</h2>
+            <p className="mt-4 text-lg text-[#40516a]">Get your digital library running in four practical steps.</p>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-2">
             {steps.map((step, index) => {
@@ -387,13 +387,13 @@ export default function HomePage() {
               return (
                 <article key={step.title} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-col gap-5 sm:flex-row">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-[#07142f] text-white">
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="inline-flex rounded-lg bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">Step {index + 1}</p>
-                      <h3 className="mt-3 text-2xl font-bold text-slate-900">{step.title}</h3>
-                      <p className="mt-3 text-base leading-7 text-slate-600">{step.text}</p>
+                      <p className="inline-flex rounded-lg bg-[#eef4fb] px-3 py-1 text-sm font-bold text-[#153967]">Step {index + 1}</p>
+                      <h3 className="mt-3 text-2xl font-bold text-[#07142f]">{step.title}</h3>
+                      <p className="mt-3 text-base leading-7 text-[#40516a]">{step.text}</p>
                     </div>
                   </div>
                 </article>
@@ -403,12 +403,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="pricing" className="bg-emerald-600 text-white">
+      <section id="pricing" className="bg-[#07142f] text-white">
         <div className="mx-auto w-full max-w-[1120px] px-4 py-12 text-center md:py-16">
           <h2 className="mx-auto max-w-4xl text-[clamp(2rem,4vw,3.7rem)] font-bold leading-[1.12]">
             Start your digital library journey with a guided trial
           </h2>
-          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-emerald-50">
+          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-[#dbe7f5]">
             Trial access helps owners set up their library, test admissions, and understand the platform before upgrading to full growth features.
           </p>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -419,13 +419,13 @@ export default function HomePage() {
             ].map(([title, text]) => (
               <div key={title} className="rounded-lg border border-white/15 bg-white/10 p-6">
                 <p className="text-2xl font-bold">{title}</p>
-                <p className="mt-3 leading-7 text-emerald-50">{text}</p>
+                <p className="mt-3 leading-7 text-[#dbe7f5]">{text}</p>
               </div>
             ))}
           </div>
           <Link
             href="/owner/register"
-            className="mt-10 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-7 text-base font-bold text-emerald-700 transition hover:bg-emerald-50"
+            className="mt-10 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-7 text-base font-bold text-[#07142f] transition hover:bg-[#eef4fb]"
           >
             Get started free
             <ArrowRight className="h-5 w-5" />
@@ -437,16 +437,16 @@ export default function HomePage() {
         <div className="mx-auto w-full max-w-[1200px] px-4 py-12 md:py-16">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-[#c9d8ea] bg-[#eef4fb] px-4 py-2 text-sm font-bold text-[#153967]">
                 <BookOpenCheck className="h-4 w-4" />
                 Blog
               </div>
-              <h2 className="mt-6 text-[clamp(2rem,4vw,3.6rem)] font-bold text-slate-900">Practical guides for library owners</h2>
-              <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
+              <h2 className="mt-6 text-[clamp(2rem,4vw,3.6rem)] font-bold text-[#07142f]">Practical guides for library owners</h2>
+              <p className="mt-4 max-w-2xl text-lg leading-8 text-[#40516a]">
                 Learn how to manage seats, attendance, fees, public listings, and student retention with better systems.
               </p>
             </div>
-            <Link href="/blog" className="inline-flex items-center gap-2 text-base font-bold text-emerald-700">
+            <Link href="/blog" className="inline-flex items-center gap-2 text-base font-bold text-[#153967]">
               Read all blogs
               <ArrowRight className="h-5 w-5" />
             </Link>
@@ -454,31 +454,31 @@ export default function HomePage() {
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {blogCards.map((post) => (
               <Link key={post.title} href="/blog" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-                <p className="text-sm font-bold text-emerald-700">BookLib guide</p>
-                <h3 className="mt-5 text-2xl font-bold leading-tight text-slate-900">{post.title}</h3>
-                <p className="mt-4 text-base leading-7 text-slate-600">{post.text}</p>
+                <p className="text-sm font-bold text-[#5f7fa5]">BookLib guide</p>
+                <h3 className="mt-5 text-2xl font-bold leading-tight text-[#07142f]">{post.title}</h3>
+                <p className="mt-4 text-base leading-7 text-[#40516a]">{post.text}</p>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-slate-50">
+      <section className="bg-[#f5f8fc]">
         <div className="mx-auto w-full max-w-[980px] px-4 py-12 md:py-16">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700">
               <MessageCircle className="h-4 w-4" />
               Got questions?
             </div>
-            <h2 className="mt-7 text-[clamp(2rem,4vw,3.6rem)] font-bold text-slate-900">
+            <h2 className="mt-7 text-[clamp(2rem,4vw,3.6rem)] font-bold text-[#07142f]">
               Frequently asked questions
             </h2>
           </div>
           <div className="mt-10 grid gap-4">
             {faqItems.map((item, index) => (
               <details key={item.question} open={index === 0} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                <summary className="cursor-pointer list-none text-xl font-bold text-slate-900">{item.question}</summary>
-                <p className="mt-4 border-t border-slate-100 pt-4 text-base leading-7 text-slate-600">{item.answer}</p>
+                <summary className="cursor-pointer list-none text-xl font-bold text-[#07142f]">{item.question}</summary>
+                <p className="mt-4 border-t border-slate-100 pt-4 text-base leading-7 text-[#40516a]">{item.answer}</p>
               </details>
             ))}
           </div>
@@ -497,19 +497,19 @@ export default function HomePage() {
                   height={44}
                   className="h-12 w-14 rounded-lg border border-slate-200 object-contain p-1"
                 />
-                <span className="text-3xl font-bold text-emerald-600">BookLib</span>
+                <span className="text-3xl font-bold text-[#07142f]">BookLib</span>
               </Link>
-              <p className="mt-5 max-w-md text-base leading-7 text-slate-600">
+              <p className="mt-5 max-w-md text-base leading-7 text-[#40516a]">
                 Modern library management made simple for Indian reading rooms, study halls, and coaching library operators.
               </p>
             </div>
             <div className="grid gap-8 sm:grid-cols-3">
               {footerColumns.map((column) => (
                 <div key={column.title}>
-                  <p className="text-lg font-bold text-slate-900">{column.title}</p>
+                  <p className="text-lg font-bold text-[#07142f]">{column.title}</p>
                   <div className="mt-5 grid gap-3">
                     {column.links.map((link) => (
-                      <Link key={link.label} href={link.href} className="text-base text-slate-600 transition hover:text-emerald-700">
+                      <Link key={link.label} href={link.href} className="text-base text-[#40516a] transition hover:text-[#153967]">
                         {link.label}
                       </Link>
                     ))}

@@ -29,13 +29,13 @@ export function PublicSiteHeader({
   showDemo = true,
 }: PublicSiteHeaderProps) {
   const baseLinkClass = "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition md:text-sm";
-  const activeLinkClass = "bg-emerald-50 !text-emerald-700 ring-1 ring-emerald-100";
-  const inactiveLinkClass = "!text-slate-700 hover:bg-slate-50 hover:!text-emerald-700";
+  const activeLinkClass = "bg-[#eef4fb] !text-[#07142f] ring-1 ring-[#c9d8ea]";
+  const inactiveLinkClass = "!text-[#263955] hover:bg-[#f3f7fb] hover:!text-[#07142f]";
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
       <div className="mx-auto flex min-h-[72px] w-full max-w-[1200px] items-center justify-between gap-4 px-4">
-        <Link href="/" className="flex min-w-0 items-center gap-3 text-slate-950">
+        <Link href="/" className="flex min-w-0 items-center gap-3 text-[#07142f]">
           <Image
             src="/icons/booklib-mark.png"
             alt="BookLib"
@@ -44,7 +44,7 @@ export function PublicSiteHeader({
             priority
             className="h-11 w-14 shrink-0 rounded-lg bg-white object-contain p-1 ring-1 ring-slate-200"
           />
-          <p className="hidden truncate text-2xl font-bold text-emerald-600 sm:block">
+          <p className="hidden truncate text-2xl font-bold text-[#07142f] sm:block">
             BookLib
           </p>
         </Link>
@@ -67,7 +67,7 @@ export function PublicSiteHeader({
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/marketplace"
-            className="hidden items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold !text-emerald-700 transition hover:bg-emerald-50 lg:inline-flex"
+            className="hidden items-center justify-center rounded-lg border border-[#c9d8ea] bg-white px-4 py-2 text-sm font-semibold !text-[#153967] transition hover:bg-[#f3f7fb] lg:inline-flex"
           >
             Explore Libraries
           </Link>
@@ -77,19 +77,19 @@ export function PublicSiteHeader({
               href={demoHref}
               target="_blank"
               rel="noreferrer"
-              className="hidden items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold !text-emerald-700 transition hover:bg-emerald-50 sm:inline-flex"
+              className="hidden items-center justify-center rounded-lg border border-[#c9d8ea] bg-white px-4 py-2 text-sm font-semibold !text-[#153967] transition hover:bg-[#f3f7fb] sm:inline-flex"
             >
               Book Demo
             </a>
           ) : showDemo ? (
-            <BookDemoCta className="hidden items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold !text-emerald-700 transition hover:bg-emerald-50 sm:inline-flex">
+            <BookDemoCta className="hidden items-center justify-center rounded-lg border border-[#c9d8ea] bg-white px-4 py-2 text-sm font-semibold !text-[#153967] transition hover:bg-[#f3f7fb] sm:inline-flex">
               Book Demo
             </BookDemoCta>
           ) : null}
 
           <Link
             href={ctaHref}
-            className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-emerald-700 sm:px-4 sm:text-sm"
+            className="inline-flex items-center justify-center rounded-lg bg-[#07142f] px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#153967] sm:px-4 sm:text-sm"
           >
             <span className="sm:hidden">Start</span>
             <span className="hidden sm:inline">{ctaLabel}</span>
@@ -107,7 +107,7 @@ export function PublicSiteHeader({
                     href={item.href}
                     className={[
                       "rounded-lg px-3 py-2 text-sm font-medium",
-                      activeLabel === item.label ? activeLinkClass : "text-slate-700 hover:bg-slate-50",
+                      activeLabel === item.label ? activeLinkClass : "text-[#263955] hover:bg-[#f3f7fb]",
                     ].join(" ")}
                   >
                     {item.label}
@@ -115,7 +115,7 @@ export function PublicSiteHeader({
                 ))}
                 <Link
                   href="/marketplace"
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-[#263955] hover:bg-[#f3f7fb]"
                 >
                   Explore Libraries
                 </Link>
@@ -124,12 +124,12 @@ export function PublicSiteHeader({
                     href={demoHref}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-[#263955] hover:bg-[#f3f7fb]"
                   >
                     Book Demo
                   </a>
                 ) : showDemo ? (
-                  <BookDemoCta className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <BookDemoCta className="rounded-lg px-3 py-2 text-sm font-medium text-[#263955] hover:bg-[#f3f7fb]">
                     Book Demo
                   </BookDemoCta>
                 ) : null}
