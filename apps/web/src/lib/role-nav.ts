@@ -14,7 +14,6 @@ export const ownerNav = [
   { href: "/owner/marketing", label: "Marketing", shortLabel: "MKT", group: "Growth" },
   { href: "/owner/referrals", label: "Referrals", shortLabel: "REF", group: "Growth" },
   { href: "/owner/notifications", label: "Notices", shortLabel: "NTC", group: "Growth" },
-  { href: "/owner/analytics", label: "Analytics", shortLabel: "ANL", group: "Insights" },
   { href: "/owner/reports", label: "Reports", shortLabel: "RPT", group: "Insights" },
   { href: "/owner/migration", label: "Migration", shortLabel: "MIG", group: "Setup" },
   { href: "/owner/admins", label: "Team", shortLabel: "TEM", group: "Setup" },
