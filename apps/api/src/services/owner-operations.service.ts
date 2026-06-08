@@ -2302,10 +2302,17 @@ export async function updatePlatformMarketplaceSettings(input: {
     cta: string;
     href: string;
     tone: "slate" | "emerald" | "amber" | "blue";
+    imageUrl?: string;
   }>;
   updatedByUserId: string;
 }) {
-  return repository().updatePlatformMarketplaceSettings(input);
+  return repository().updatePlatformMarketplaceSettings({
+    ...input,
+    bannerSlides: input.bannerSlides.map((slide) => ({
+      ...slide,
+      imageUrl: slide.imageUrl ?? "",
+    })),
+  });
 }
 
 export async function getAdminDataOverview() {

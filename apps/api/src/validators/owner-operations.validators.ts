@@ -98,6 +98,7 @@ export const updatePlatformMarketplaceSettingsBodySchema = z.object({
       cta: z.string().trim().min(2).max(40),
       href: marketplaceBannerHrefSchema,
       tone: z.enum(["slate", "emerald", "amber", "blue"]).default("slate"),
+      imageUrl: z.string().trim().max(2000).optional().or(z.literal("")),
     }),
   ).min(1).max(4),
 });

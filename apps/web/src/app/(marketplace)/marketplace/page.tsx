@@ -60,20 +60,50 @@ export default async function MarketplacePage() {
             </div>
           </div>
 
-          <div className="lp-marketplace-banner relative min-h-[180px] overflow-hidden rounded-lg border border-slate-200 bg-slate-950 shadow-xl">
+          <div className="lp-marketplace-banner relative min-h-[360px] overflow-hidden rounded-2xl border border-emerald-100 bg-slate-950 shadow-2xl md:min-h-[420px]">
             {bannerSlides.map((slide, index) => (
               <article
                 key={slide.title}
-                className={`lp-marketplace-slide absolute inset-0 grid content-center bg-gradient-to-br px-6 py-8 text-white sm:px-8 ${slideToneClass[slide.tone] ?? slideToneClass.slate}`}
-                style={{ animationDelay: `${index * 4}s` }}
+                className={`lp-marketplace-slide absolute inset-0 overflow-hidden bg-gradient-to-br text-white ${slideToneClass[slide.tone] ?? slideToneClass.slate}`}
+                style={{
+                  animationDelay: `${index * 4}s`,
+                  backgroundImage: slide.imageUrl ? `linear-gradient(90deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.62)), url(${slide.imageUrl})` : undefined,
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                }}
               >
-                <p className="text-sm font-bold text-emerald-300">{slide.eyebrow}</p>
-                <h2 className="mt-3 max-w-3xl text-[clamp(1.9rem,4vw,3.25rem)] font-bold leading-tight">
-                  {slide.title}
-                </h2>
-                <Link href={slide.href} className="mt-6 w-fit rounded-lg border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/15">
-                  {slide.cta}
-                </Link>
+                {!slide.imageUrl ? (
+                  <div className="absolute inset-y-8 right-6 hidden w-[48%] rounded-2xl border border-white/15 bg-white/12 p-4 shadow-2xl backdrop-blur-sm md:block">
+                    <div className="rounded-xl bg-white p-4 text-slate-900 shadow-xl">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span className="text-sm font-black">BookLib live marketplace</span>
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">Live</span>
+                      </div>
+                      <div className="mt-4 grid gap-3">
+                        {["Seats visible", "Plans synced", "WhatsApp leads"].map((label, itemIndex) => (
+                          <div key={label} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                            <div className="h-2 w-28 rounded-full bg-emerald-300" />
+                            <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                              <span className="text-xs font-bold text-slate-500">{label}</span>
+                              <span className="rounded-full bg-white px-2 py-1 text-xs font-black text-slate-800">{itemIndex + 4}+</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                <div className="relative z-10 grid h-full content-center px-6 py-8 sm:px-8 md:max-w-[58%]">
+                  <p className="w-fit rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-bold text-emerald-100 shadow-sm backdrop-blur">
+                    {slide.eyebrow}
+                  </p>
+                  <h2 className="mt-4 max-w-2xl text-[clamp(2.1rem,4.7vw,4rem)] font-black leading-[1.02] text-white drop-shadow-sm">
+                    {slide.title}
+                  </h2>
+                  <Link href={slide.href} className="mt-6 w-fit rounded-lg bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-lg transition hover:bg-emerald-50">
+                    {slide.cta}
+                  </Link>
+                </div>
               </article>
             ))}
           </div>

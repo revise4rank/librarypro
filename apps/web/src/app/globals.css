@@ -339,18 +339,12 @@ button:disabled {
 
 @keyframes marketplaceSlide {
   0%,
-  7% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  11%,
-  24% {
+  22% {
     opacity: 1;
     transform: translateY(0);
   }
 
-  29%,
+  28%,
   100% {
     opacity: 0;
     transform: translateY(-10px);

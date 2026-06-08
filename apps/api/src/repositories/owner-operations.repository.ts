@@ -77,6 +77,7 @@ export type MarketplaceBannerSlideRow = {
   cta: string;
   href: string;
   tone: MarketplaceBannerTone;
+  imageUrl: string;
 };
 
 export type PlatformMarketplaceSettingsRow = {
@@ -95,6 +96,7 @@ const defaultMarketplaceBannerSlides: MarketplaceBannerSlideRow[] = [
     cta: "Start search",
     href: "#marketplace-search",
     tone: "slate",
+    imageUrl: "",
   },
   {
     eyebrow: "Top picks",
@@ -102,6 +104,7 @@ const defaultMarketplaceBannerSlides: MarketplaceBannerSlideRow[] = [
     cta: "See top libraries",
     href: "#marketplace-search",
     tone: "emerald",
+    imageUrl: "",
   },
   {
     eyebrow: "Offers live",
@@ -109,6 +112,7 @@ const defaultMarketplaceBannerSlides: MarketplaceBannerSlideRow[] = [
     cta: "View offers",
     href: "#marketplace-search",
     tone: "amber",
+    imageUrl: "",
   },
   {
     eyebrow: "For owners",
@@ -116,6 +120,7 @@ const defaultMarketplaceBannerSlides: MarketplaceBannerSlideRow[] = [
     cta: "List library",
     href: "/owner/register",
     tone: "blue",
+    imageUrl: "",
   },
 ];
 
@@ -141,6 +146,7 @@ function normalizeMarketplaceBannerSlides(value: unknown): MarketplaceBannerSlid
         cta: String(candidate.cta),
         href: String(candidate.href),
         tone,
+        imageUrl: candidate.imageUrl ? String(candidate.imageUrl) : "",
       } satisfies MarketplaceBannerSlideRow;
     })
     .filter((item): item is MarketplaceBannerSlideRow => Boolean(item));

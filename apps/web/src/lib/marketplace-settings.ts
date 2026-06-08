@@ -6,6 +6,7 @@ export type MarketplaceBannerSlide = {
   cta: string;
   href: string;
   tone: MarketplaceBannerTone;
+  imageUrl?: string;
 };
 
 export type PlatformMarketplaceSettings = {

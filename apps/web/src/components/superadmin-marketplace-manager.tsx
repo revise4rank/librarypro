@@ -15,6 +15,7 @@ function emptySlide(index: number): MarketplaceBannerSlide {
     cta: "Open",
     href: "#marketplace-search",
     tone: "slate",
+    imageUrl: "",
   };
 }
 
@@ -164,6 +165,12 @@ export function SuperadminMarketplaceManager() {
                   <input value={slide.href} onChange={(event) => updateSlide(index, { href: event.target.value })} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="/owner/register or #marketplace-search" />
                 </div>
                 <textarea value={slide.title} onChange={(event) => updateSlide(index, { title: event.target.value })} className="mt-2 min-h-16 w-full rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Short slide title" />
+                <input
+                  value={slide.imageUrl ?? ""}
+                  onChange={(event) => updateSlide(index, { imageUrl: event.target.value })}
+                  className="mt-2 w-full rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none"
+                  placeholder="Optional banner image URL"
+                />
               </div>
             ))}
           </div>
