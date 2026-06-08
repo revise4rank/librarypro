@@ -168,7 +168,7 @@ export async function downloadBrandedQrPng(options: BrandedQrDownloadOptions) {
 
     ctx.fillStyle = "#64748b";
     ctx.font = "700 22px Arial";
-    ctx.fillText(`QR Key: ${options.qrKeyId || "-"}`, 600, 1510);
+    ctx.fillText("Powered by BookLib", 600, 1510);
 
     const blob = await canvasToBlob(canvas);
     triggerDownload(blob, options.filename || buildQrFileName(options.libraryName));

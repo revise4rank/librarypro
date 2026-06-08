@@ -200,7 +200,7 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
   async function regenerateQr() {
     try {
       await apiFetch("/owner/settings/regenerate-qr", { method: "POST" });
-      setMessage("Library QR key regenerated.");
+      setMessage("Library QR regenerated.");
       await loadSettings();
     } catch (regenerateError) {
       setError(regenerateError instanceof Error ? regenerateError.message : "Unable to regenerate QR.");
@@ -416,10 +416,9 @@ export function OwnerSettingsManager({ initialTab = "profile" }: { initialTab?: 
                   />
                   <p className="mt-3 text-xs font-bold text-slate-500">Download branded poster from Attendance.</p>
                 </div>
-                <p>Active QR key: <span className="font-semibold text-[var(--lp-text)]">{data.qr_key_id}</span></p>
                 <p>Offline check-in: <span className="font-semibold text-[var(--lp-text)]">{data.allow_offline_checkin ? "Enabled" : "Disabled"}</span></p>
                 <button onClick={() => void regenerateQr()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--lp-accent)]">
-                  Regenerate QR key
+                  Regenerate QR
                 </button>
               </div>
             </DashboardCard>

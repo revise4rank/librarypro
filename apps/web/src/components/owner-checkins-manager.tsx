@@ -231,7 +231,6 @@ export function OwnerCheckinsManager() {
     const qrUrl = buildQrImageUrl(qrSettings.qr_payload, 720);
     const safeLibraryName = escapeHtml(qrSettings.library_name);
     const safeLocation = escapeHtml([qrSettings.area, qrSettings.city].filter(Boolean).join(", "));
-    const safeQrKey = escapeHtml(qrSettings.qr_key_id);
     printWindow.document.write(`
       <!doctype html>
       <html>
@@ -246,7 +245,6 @@ export function OwnerCheckinsManager() {
             p { margin: 0; color: #475569; font-size: 18px; }
             .qr-wrap { margin: 30px auto 24px; display: inline-block; border-radius: 28px; border: 10px solid #d1fae5; background: #fff; padding: 18px; }
             .qr-wrap img { width: min(72vw, 520px); height: min(72vw, 520px); margin: 0; display: block; }
-            .key { margin-top: 12px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #64748b; }
             .hint { font-weight: 900; color: #0f766e; }
             .powered { margin-top: 24px; font-size: 14px; font-weight: 800; color: #64748b; }
           </style>
@@ -262,7 +260,6 @@ export function OwnerCheckinsManager() {
               <p>${safeLocation}</p>
               <div class="qr-wrap"><img src="${qrUrl}" alt="Library QR" /></div>
               <p class="hint">Students scan this QR from their BookLib app for check-in and check-out.</p>
-              <p class="key">QR Key: ${safeQrKey}</p>
               <p class="powered">Powered by BookLib</p>
             </section>
           </main>
@@ -412,7 +409,7 @@ export function OwnerCheckinsManager() {
               </p>
             </div>
             <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-              <p className="rounded-xl bg-slate-50 px-3 py-2">QR key: <span className="font-black text-slate-950">{qrSettings?.qr_key_id ?? "-"}</span></p>
+              <p className="rounded-xl bg-slate-50 px-3 py-2">Use: <span className="font-black text-slate-950">Reception scan</span></p>
               <p className="rounded-xl bg-slate-50 px-3 py-2">Offline sync: <span className="font-black text-slate-950">{qrSettings?.allow_offline_checkin ? "Allowed" : "Disabled"}</span></p>
             </div>
             <div className="flex flex-wrap gap-3">

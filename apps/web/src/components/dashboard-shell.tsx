@@ -351,9 +351,7 @@ export function DashboardShell({
                               <p className="mt-1 truncate text-xs font-semibold text-slate-500">
                                 {[ownerQrSettings.area, ownerQrSettings.city].filter(Boolean).join(", ") || "Library location"}
                               </p>
-                              <p className="mt-2 truncate text-xs font-bold text-slate-500">
-                                QR key: <span className="text-slate-800">{ownerQrSettings.qr_key_id}</span>
-                              </p>
+                              <p className="mt-2 truncate text-xs font-bold text-slate-500">Students scan this at reception.</p>
                             </div>
                           ) : null}
 
