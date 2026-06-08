@@ -19,8 +19,19 @@ export type PlatformIntegrationSettings = {
   demoWhatsappMessage: string;
   enableFloatingWhatsapp: boolean;
   enableBookDemoCta: boolean;
+  landingBanners: LandingBanner[];
   updatedAt: string | null;
   updatedByName: string | null;
+};
+
+export type LandingBanner = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  ctaLabel: string;
+  ctaHref: string;
+  tone: "navy" | "steel" | "copper";
 };
 
 type IntegrationRow = {
@@ -41,9 +52,73 @@ type IntegrationRow = {
   demo_whatsapp_message: string;
   enable_floating_whatsapp: boolean;
   enable_book_demo_cta: boolean;
+  landing_banners: unknown;
   updated_at: string | null;
   updated_by_name: string | null;
 };
+
+export const defaultLandingBanners: LandingBanner[] = [
+  {
+    eyebrow: "Owner workspace",
+    title: "Admissions, seats, dues, and QR attendance in one dashboard",
+    subtitle: "Run your reading room without scattered registers. BookLib keeps daily operations clean, fast, and visible.",
+    imageUrl: "",
+    ctaLabel: "Start free trial",
+    ctaHref: "/owner/register",
+    tone: "navy",
+  },
+  {
+    eyebrow: "Student portal",
+    title: "Students scan, check in, pay dues, and keep their study flow clear",
+    subtitle: "Give every student a simple portal for library access, alerts, study planner, syllabus tracker, and payments.",
+    imageUrl: "",
+    ctaLabel: "Explore libraries",
+    ctaHref: "/marketplace",
+    tone: "steel",
+  },
+  {
+    eyebrow: "Library growth",
+    title: "Publish offers, plans, gallery, and website pages that convert leads",
+    subtitle: "BookLib connects your marketplace listing and subdomain website so students can discover and contact you faster.",
+    imageUrl: "",
+    ctaLabel: "Book demo",
+    ctaHref: "/owner/register?demo=1",
+    tone: "copper",
+  },
+];
+
+function normalizeLandingBanners(value: unknown): LandingBanner[] {
+  const raw = typeof value === "string" ? safeJsonParse(value) : value;
+  if (!Array.isArray(raw)) return defaultLandingBanners;
+  const cleaned = raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const banner = item as Partial<LandingBanner>;
+      const title = String(banner.title ?? "").trim();
+      if (!title) return null;
+      const tone = banner.tone === "steel" || banner.tone === "copper" || banner.tone === "navy" ? banner.tone : "navy";
+      return {
+        eyebrow: String(banner.eyebrow ?? "BookLib").trim().slice(0, 64),
+        title: title.slice(0, 180),
+        subtitle: String(banner.subtitle ?? "").trim().slice(0, 260),
+        imageUrl: String(banner.imageUrl ?? "").trim().slice(0, 1000),
+        ctaLabel: String(banner.ctaLabel ?? "Learn more").trim().slice(0, 40),
+        ctaHref: String(banner.ctaHref ?? "/owner/register").trim().slice(0, 240),
+        tone,
+      } satisfies LandingBanner;
+    })
+    .filter((item): item is LandingBanner => Boolean(item))
+    .slice(0, 6);
+  return cleaned.length > 0 ? cleaned : defaultLandingBanners;
+}
+
+function safeJsonParse(value: string) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
 
 function envSettings(): PlatformIntegrationSettings {
   return {
@@ -64,6 +139,7 @@ function envSettings(): PlatformIntegrationSettings {
     demoWhatsappMessage: "Hi BookLib, I want a demo for my library.",
     enableFloatingWhatsapp: true,
     enableBookDemoCta: true,
+    landingBanners: defaultLandingBanners,
     updatedAt: null,
     updatedByName: null,
   };
@@ -90,6 +166,7 @@ function rowToSettings(row: IntegrationRow | undefined): PlatformIntegrationSett
     demoWhatsappMessage: row.demo_whatsapp_message || fallback.demoWhatsappMessage,
     enableFloatingWhatsapp: row.enable_floating_whatsapp ?? fallback.enableFloatingWhatsapp,
     enableBookDemoCta: row.enable_book_demo_cta ?? fallback.enableBookDemoCta,
+    landingBanners: normalizeLandingBanners(row.landing_banners ?? fallback.landingBanners),
     updatedAt: row.updated_at,
     updatedByName: row.updated_by_name,
   };
@@ -117,6 +194,7 @@ export async function getPlatformIntegrationSettings() {
         s.demo_whatsapp_message,
         s.enable_floating_whatsapp,
         s.enable_book_demo_cta,
+        s.landing_banners,
         s.updated_at::text,
         u.full_name AS updated_by_name
       FROM platform_integration_settings s
@@ -152,6 +230,7 @@ export function redactPlatformIntegrationSettings(settings: PlatformIntegrationS
     demoWhatsappMessage: settings.demoWhatsappMessage,
     enableFloatingWhatsapp: settings.enableFloatingWhatsapp,
     enableBookDemoCta: settings.enableBookDemoCta,
+    landingBanners: settings.landingBanners,
     updatedAt: settings.updatedAt,
     updatedByName: settings.updatedByName,
   };
@@ -165,6 +244,7 @@ export function publicPlatformSiteSettings(settings: PlatformIntegrationSettings
     demoWhatsappMessage: settings.demoWhatsappMessage,
     enableFloatingWhatsapp: settings.enableFloatingWhatsapp,
     enableBookDemoCta: settings.enableBookDemoCta,
+    landingBanners: settings.landingBanners,
   };
 }
 
@@ -186,6 +266,7 @@ export async function updatePlatformIntegrationSettings(input: {
   demoWhatsappMessage?: string;
   enableFloatingWhatsapp?: boolean;
   enableBookDemoCta?: boolean;
+  landingBanners?: unknown;
   updatedByUserId: string;
 }) {
   const result = await requireDb().query<IntegrationRow>(
@@ -209,9 +290,10 @@ export async function updatePlatformIntegrationSettings(input: {
       demo_whatsapp_message,
       enable_floating_whatsapp,
       enable_book_demo_cta,
+      landing_banners,
       updated_by
     )
-    VALUES ('default', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+    VALUES ('default', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::jsonb, $19)
     ON CONFLICT (singleton_key) DO UPDATE
     SET
       google_oauth_client_id = EXCLUDED.google_oauth_client_id,
@@ -231,6 +313,7 @@ export async function updatePlatformIntegrationSettings(input: {
       demo_whatsapp_message = EXCLUDED.demo_whatsapp_message,
       enable_floating_whatsapp = EXCLUDED.enable_floating_whatsapp,
       enable_book_demo_cta = EXCLUDED.enable_book_demo_cta,
+      landing_banners = EXCLUDED.landing_banners,
       updated_by = EXCLUDED.updated_by,
       updated_at = NOW()
     RETURNING
@@ -251,8 +334,9 @@ export async function updatePlatformIntegrationSettings(input: {
       demo_whatsapp_message,
       enable_floating_whatsapp,
       enable_book_demo_cta,
+      landing_banners,
       updated_at::text,
-      (SELECT full_name FROM users WHERE id = $18) AS updated_by_name
+      (SELECT full_name FROM users WHERE id = $19) AS updated_by_name
     `,
     [
       input.googleOAuthClientId ?? "",
@@ -272,6 +356,7 @@ export async function updatePlatformIntegrationSettings(input: {
       input.demoWhatsappMessage ?? "Hi BookLib, I want a demo for my library.",
       input.enableFloatingWhatsapp ?? true,
       input.enableBookDemoCta ?? true,
+      JSON.stringify(normalizeLandingBanners(input.landingBanners ?? defaultLandingBanners)),
       input.updatedByUserId,
     ],
   );

@@ -120,6 +120,29 @@ export const updatePlatformIntegrationSettingsBodySchema = z.object({
   demoWhatsappMessage: z.string().trim().max(500).optional().or(z.literal("")),
   enableFloatingWhatsapp: z.boolean().optional(),
   enableBookDemoCta: z.boolean().optional(),
+  landingBanners: z
+    .array(
+      z.object({
+        eyebrow: z.string().trim().min(1).max(64),
+        title: z.string().trim().min(4).max(180),
+        subtitle: z.string().trim().max(260).optional().or(z.literal("")),
+        imageUrl: z.string().trim().max(1000).optional().or(z.literal("")),
+        ctaLabel: z.string().trim().min(1).max(40),
+        ctaHref: z
+          .string()
+          .trim()
+          .min(1)
+          .max(240)
+          .refine(
+            (value) => value.startsWith("/") || value.startsWith("#") || value.startsWith("http://") || value.startsWith("https://"),
+            "CTA link must be an internal path, anchor, or full URL",
+          ),
+        tone: z.enum(["navy", "steel", "copper"]).default("navy"),
+      }),
+    )
+    .min(1)
+    .max(6)
+    .optional(),
 });
 
 export const updatePlatformPlanBodySchema = z.object({

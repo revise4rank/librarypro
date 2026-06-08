@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
+import { defaultLandingBanners, type LandingBanner } from "../lib/public-site-settings";
 import { DashboardCard } from "./dashboard-shell";
 import { FormDrawer } from "./form-drawer";
 
@@ -23,6 +24,7 @@ type IntegrationSettings = {
   demoWhatsappMessage: string;
   enableFloatingWhatsapp: boolean;
   enableBookDemoCta: boolean;
+  landingBanners: LandingBanner[];
   updatedAt: string | null;
   updatedByName: string | null;
 };
@@ -45,6 +47,7 @@ type IntegrationForm = {
   demoWhatsappMessage: string;
   enableFloatingWhatsapp: boolean;
   enableBookDemoCta: boolean;
+  landingBanners: LandingBanner[];
 };
 
 function formFromSettings(settings: IntegrationSettings): IntegrationForm {
@@ -66,6 +69,7 @@ function formFromSettings(settings: IntegrationSettings): IntegrationForm {
     demoWhatsappMessage: settings.demoWhatsappMessage ?? "",
     enableFloatingWhatsapp: settings.enableFloatingWhatsapp ?? true,
     enableBookDemoCta: settings.enableBookDemoCta ?? true,
+    landingBanners: settings.landingBanners?.length ? settings.landingBanners : defaultLandingBanners,
   };
 }
 
@@ -106,6 +110,45 @@ export function SuperadminIntegrationsManager() {
 
   function update(patch: Partial<IntegrationForm>) {
     setForm((current) => (current ? { ...current, ...patch } : current));
+  }
+
+  function updateBanner(index: number, patch: Partial<LandingBanner>) {
+    setForm((current) => {
+      if (!current) return current;
+      const landingBanners = current.landingBanners.map((banner, bannerIndex) =>
+        bannerIndex === index ? { ...banner, ...patch } : banner,
+      );
+      return { ...current, landingBanners };
+    });
+  }
+
+  function addBanner() {
+    setForm((current) => {
+      if (!current) return current;
+      if (current.landingBanners.length >= 6) return current;
+      return {
+        ...current,
+        landingBanners: [
+          ...current.landingBanners,
+          {
+            eyebrow: "New banner",
+            title: "Add your BookLib campaign headline",
+            subtitle: "Use this slide for offers, new features, demos, or owner announcements.",
+            imageUrl: "",
+            ctaLabel: "Learn more",
+            ctaHref: "/owner/register",
+            tone: "navy",
+          },
+        ],
+      };
+    });
+  }
+
+  function removeBanner(index: number) {
+    setForm((current) => {
+      if (!current || current.landingBanners.length <= 1) return current;
+      return { ...current, landingBanners: current.landingBanners.filter((_, bannerIndex) => bannerIndex !== index) };
+    });
   }
 
   async function saveSettings() {
@@ -172,6 +215,15 @@ export function SuperadminIntegrationsManager() {
             <ReadinessPill ready={whatsappReady} />
           </div>
           <p className="mt-2 text-xs leading-5 text-[var(--lp-muted)]">Landing support and demo buttons use these public-safe numbers.</p>
+        </div>
+        <div className="rounded-lg bg-slate-50 p-3 md:col-span-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-black text-[var(--lp-text)]">Landing banners</p>
+            <ReadinessPill ready={settings.landingBanners.length > 0} />
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[var(--lp-muted)]">
+            {settings.landingBanners.length} active hero slide(s). Admin can update text, image URLs, CTA, and color tone anytime.
+          </p>
         </div>
       </section>
 
@@ -249,6 +301,84 @@ export function SuperadminIntegrationsManager() {
             <textarea value={form.supportWhatsappMessage} onChange={(event) => update({ supportWhatsappMessage: event.target.value })} className="min-h-20 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Support WhatsApp default message" />
             <input value={form.demoWhatsappNumber} onChange={(event) => update({ demoWhatsappNumber: event.target.value })} className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Demo WhatsApp number. Empty uses support number." />
             <textarea value={form.demoWhatsappMessage} onChange={(event) => update({ demoWhatsappMessage: event.target.value })} className="min-h-20 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none" placeholder="Book demo WhatsApp default message" />
+          </div>
+        </DashboardCard>
+
+        <DashboardCard title="Landing banner carousel" subtitle="These large hero slides appear on the landing page. Add image URLs now or keep the built-in app illustrations.">
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-bold text-[var(--lp-muted)]">Slides auto-rotate on the public landing page.</p>
+              <button
+                type="button"
+                onClick={addBanner}
+                disabled={form.landingBanners.length >= 6}
+                className="rounded-full border border-[var(--lp-border)] px-3 py-2 text-xs font-black text-[var(--lp-primary)] disabled:opacity-50"
+              >
+                Add slide
+              </button>
+            </div>
+            {form.landingBanners.map((banner, index) => (
+              <div key={`${banner.title}-${index}`} className="grid gap-2 rounded-lg border border-[var(--lp-border)] bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-black text-[var(--lp-text)]">Slide {index + 1}</p>
+                  <button
+                    type="button"
+                    onClick={() => removeBanner(index)}
+                    disabled={form.landingBanners.length <= 1}
+                    className="rounded-full bg-rose-50 px-3 py-1.5 text-xs font-black text-rose-700 disabled:opacity-40"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <input
+                  value={banner.eyebrow}
+                  onChange={(event) => updateBanner(index, { eyebrow: event.target.value })}
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none"
+                  placeholder="Eyebrow, e.g. Owner workspace"
+                />
+                <input
+                  value={banner.title}
+                  onChange={(event) => updateBanner(index, { title: event.target.value })}
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none"
+                  placeholder="Banner headline"
+                />
+                <textarea
+                  value={banner.subtitle}
+                  onChange={(event) => updateBanner(index, { subtitle: event.target.value })}
+                  className="min-h-16 rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none"
+                  placeholder="Short supporting copy"
+                />
+                <input
+                  value={banner.imageUrl}
+                  onChange={(event) => updateBanner(index, { imageUrl: event.target.value })}
+                  className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none"
+                  placeholder="Optional banner image URL. Empty uses BookLib app illustration."
+                />
+                <div className="grid gap-2 sm:grid-cols-[1fr_1.5fr_0.8fr]">
+                  <input
+                    value={banner.ctaLabel}
+                    onChange={(event) => updateBanner(index, { ctaLabel: event.target.value })}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none"
+                    placeholder="CTA label"
+                  />
+                  <input
+                    value={banner.ctaHref}
+                    onChange={(event) => updateBanner(index, { ctaHref: event.target.value })}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm outline-none"
+                    placeholder="/owner/register"
+                  />
+                  <select
+                    value={banner.tone}
+                    onChange={(event) => updateBanner(index, { tone: event.target.value as LandingBanner["tone"] })}
+                    className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm font-bold outline-none"
+                  >
+                    <option value="navy">Navy</option>
+                    <option value="steel">Steel</option>
+                    <option value="copper">Copper</option>
+                  </select>
+                </div>
+              </div>
+            ))}
           </div>
         </DashboardCard>
       </section>

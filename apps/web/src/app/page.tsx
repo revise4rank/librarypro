@@ -21,6 +21,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BookDemoCta } from "../components/book-demo-cta";
 import { FloatingWhatsapp } from "../components/floating-whatsapp";
+import { LandingBannerCarousel } from "../components/landing-banner-carousel";
 import { PublicSiteHeader } from "../components/public-site-header";
 
 const stats = [
@@ -175,88 +176,6 @@ const footerColumns = [
   },
 ];
 
-function HeroMockup() {
-  return (
-    <div className="relative mx-auto w-full max-w-[920px]">
-      <div className="rounded-lg border border-[#c9d8ea] bg-[#07142f] p-3 shadow-xl shadow-[#07142f]/15">
-        <div className="overflow-hidden rounded-lg bg-white">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <div>
-              <p className="text-xs font-semibold uppercase text-[#5f7fa5]">BookLib owner dashboard</p>
-              <h3 className="text-lg font-bold text-[#07142f]">Focus Library</h3>
-            </div>
-            <div className="flex gap-2">
-              <span className="rounded-lg bg-[#eef4fb] px-3 py-1 text-xs font-semibold text-[#153967]">Live seats</span>
-              <span className="rounded-lg bg-[#f6efe9] px-3 py-1 text-xs font-semibold text-[#9a4f2d]">QR ready</span>
-            </div>
-          </div>
-          <div className="grid gap-4 p-5 lg:grid-cols-[0.7fr_1.3fr_0.9fr]">
-            <div className="grid gap-3">
-              {["Admissions", "Roster", "Seats", "Payments"].map((item, index) => (
-                <div
-                  key={item}
-                  className={[
-                    "rounded-lg border px-3 py-3 text-sm font-semibold",
-                    index === 2
-                      ? "border-[#c9d8ea] bg-[#eef4fb] text-[#153967]"
-                      : "border-slate-200 bg-[#f8fafc] text-[#263955]",
-                  ].join(" ")}
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-[#f8fafc] p-4">
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm font-bold text-[#07142f]">Seat map</p>
-                <p className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-[#40516a]">32 free</p>
-              </div>
-              <div className="grid grid-cols-6 gap-2">
-                {Array.from({ length: 30 }).map((_, index) => (
-                  <span
-                    key={index}
-                    className={[
-                      "h-9 rounded-lg border",
-                      index % 5 === 0
-                        ? "border-[#e8cbb9] bg-[#f6efe9]"
-                        : index % 3 === 0
-                          ? "border-slate-200 bg-white"
-                          : "border-[#c9d8ea] bg-[#eef4fb]",
-                    ].join(" ")}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="grid gap-3">
-              {[
-                ["Pending joins", "18"],
-                ["Dues today", "Rs. 12,400"],
-                ["Check-ins", "86"],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-lg border border-slate-200 bg-white p-4">
-                  <p className="text-xs font-semibold uppercase text-slate-400">{label}</p>
-                  <p className="mt-2 text-xl font-bold text-[#07142f]">{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="absolute -bottom-7 left-4 w-[220px] rounded-lg border border-slate-200 bg-white p-3 shadow-lg md:left-10 md:w-[270px]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#eef4fb] text-[#153967]">
-            <QrCode className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-slate-400">Reception QR</p>
-            <p className="text-sm font-bold text-[#07142f]">Join, check-in, checkout</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-white text-[#07142f]">
@@ -292,7 +211,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="mt-8">
-            <HeroMockup />
+            <LandingBannerCarousel />
           </div>
         </div>
       </section>

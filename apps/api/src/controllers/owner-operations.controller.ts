@@ -1759,6 +1759,7 @@ export async function updateAdminIntegrationSettingsController(req: Request, res
       demoWhatsappNumber: Boolean(data.demoWhatsappNumber),
       enableFloatingWhatsapp: data.enableFloatingWhatsapp,
       enableBookDemoCta: data.enableBookDemoCta,
+      landingBanners: data.landingBanners.length,
     },
     ipAddress: req.ip,
     userAgent: req.header("user-agent") ?? null,
