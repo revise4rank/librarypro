@@ -547,16 +547,6 @@ export function OwnerAdmissionsManager() {
           <button
             type="button"
             onClick={() => {
-              setMode("desk");
-              setFormOpen(true);
-            }}
-            className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--lp-accent)]"
-          >
-            Create desk admission
-          </button>
-          <button
-            type="button"
-            onClick={() => {
               setMode("requests");
               setFormOpen(true);
             }}
