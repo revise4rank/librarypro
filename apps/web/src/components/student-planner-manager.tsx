@@ -282,7 +282,7 @@ export function StudentPlannerManager() {
       await Promise.all([loadWeek(), loadMonth(), loadExtras()]);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Planner data load nahi hua.");
+      setError(e instanceof Error ? e.message : "Planner data could not be loaded.");
     }
   }
 
@@ -294,7 +294,7 @@ export function StudentPlannerManager() {
     }
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       setOfflineQueueCount(queue.length);
-      setMessage(`${queue.length} planner change(s) offline queue me saved hain.`);
+      setMessage(`${queue.length} planner change(s) saved in the offline queue.`);
       return;
     }
     const remaining: QueuedPlannerMutation[] = [];
@@ -311,7 +311,7 @@ export function StudentPlannerManager() {
     writePlannerQueue(remaining);
     setOfflineQueueCount(remaining.length);
     if (remaining.length) {
-      setMessage(`${remaining.length} planner change(s) abhi sync nahi hue. Sync retry hoga.`);
+      setMessage(`${remaining.length} planner change(s) are not synced yet. Sync will retry automatically.`);
       return;
     }
     setMessage("Offline planner changes synced.");
@@ -323,7 +323,7 @@ export function StudentPlannerManager() {
       queuePlannerMutation({ url, ...options });
       const count = readPlannerQueue().length;
       setOfflineQueueCount(count);
-      setMessage(`Offline saved. ${count} planner change(s) internet aate hi sync honge.`);
+      setMessage(`Saved offline. ${count} planner change(s) will sync when the internet is available.`);
       return false;
     }
     try {
@@ -491,7 +491,7 @@ export function StudentPlannerManager() {
   async function addEntry(planDate = selectedDate) {
     const hasTaskText = Boolean(quickForm.title.trim() || quickForm.subject.trim() || quickForm.chapterTopic.trim());
     if (!hasTaskText) {
-      setError("Subject ya topic add karo, phir task save hoga.");
+      setError("Add a subject or topic before saving the task.");
       return;
     }
     const actionKey = `add-entry-${planDate}`;
@@ -528,7 +528,7 @@ export function StudentPlannerManager() {
       window.localStorage.removeItem("booklib-planner-draft");
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Task add nahi hua.");
+      setError(e instanceof Error ? e.message : "Task could not be added.");
     } finally {
       setPendingAction(null);
     }
@@ -548,7 +548,7 @@ export function StudentPlannerManager() {
       const synced = await plannerMutation(`/student/planner/${entryId}`, { method: "PATCH", body: JSON.stringify(body) });
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Task update nahi hua.");
+      setError(e instanceof Error ? e.message : "Task could not be updated.");
     } finally {
       setPendingAction(null);
     }
@@ -569,7 +569,7 @@ export function StudentPlannerManager() {
       const synced = await plannerMutation(`/student/planner/${entryId}`, { method: "DELETE" });
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Task delete nahi hua.");
+      setError(e instanceof Error ? e.message : "Task could not be deleted.");
     } finally {
       setPendingAction(null);
     }
@@ -583,10 +583,10 @@ export function StudentPlannerManager() {
         method: "POST",
         body: JSON.stringify({ nextDate: addDays(selectedDate, 1) }),
       });
-      setMessage("Task next day me move ho gaya.");
+      setMessage("Task moved to the next day.");
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Carry forward nahi hua.");
+      setError(e instanceof Error ? e.message : "Task could not be carried forward.");
     } finally {
       setPendingAction(null);
     }
@@ -602,7 +602,7 @@ export function StudentPlannerManager() {
       });
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Revision mark nahi hua.");
+      setError(e instanceof Error ? e.message : "Revision could not be marked.");
     } finally {
       setPendingAction(null);
     }
@@ -615,12 +615,12 @@ export function StudentPlannerManager() {
 
   async function enableNotifications() {
     if (typeof Notification === "undefined") {
-      setError("Browser notifications available nahi hain.");
+      setError("Browser notifications are not available.");
       return;
     }
     const permission = await Notification.requestPermission();
     setNotificationsEnabled(permission === "granted");
-    setMessage(permission === "granted" ? "Planner reminders enabled." : "Notifications allow nahi hua.");
+    setMessage(permission === "granted" ? "Planner reminders enabled." : "Notifications were not allowed.");
   }
 
   function notifyNow(title: string, body: string) {
@@ -656,7 +656,7 @@ export function StudentPlannerManager() {
       setMessage(syncedCount === count ? `${count} daily tasks created from weekly goal.` : `${count - syncedCount} task(s) saved offline for sync.`);
       if (syncedCount) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Goal breakdown nahi hua.");
+      setError(e instanceof Error ? e.message : "Goal could not be broken down.");
     } finally {
       setPendingAction(null);
     }
@@ -697,11 +697,11 @@ export function StudentPlannerManager() {
       }
       setMessage(
         syncedCount === 4
-          ? `Monthly goal split ho gaya. Weekly board ${readableDate(firstWeekStart)} par open hai.`
-          : `${4 - syncedCount} weekly goal(s) offline saved hain. Online hote hi sync honge.`,
+          ? `Monthly goal split successfully. Weekly board is open for ${readableDate(firstWeekStart)}.`
+          : `${4 - syncedCount} weekly goal(s) saved offline. They will sync when you are online.`,
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Monthly goal breakdown nahi hua.");
+      setError(e instanceof Error ? e.message : "Monthly goal could not be broken down.");
     } finally {
       setPendingAction(null);
     }
@@ -724,7 +724,7 @@ export function StudentPlannerManager() {
       setMessage(`Logged ${formatMinutes(minutes)} focus time.`);
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Timer log nahi hua.");
+      setError(e instanceof Error ? e.message : "Timer session could not be logged.");
     } finally {
       setPendingAction(null);
     }
@@ -749,7 +749,7 @@ export function StudentPlannerManager() {
       setGoalForm({ title: "", subject: "", targetMinutes: "600", targetTasks: "8" });
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Goal save nahi hua.");
+      setError(e instanceof Error ? e.message : "Goal could not be saved.");
     } finally {
       setPendingAction(null);
     }
@@ -762,7 +762,7 @@ export function StudentPlannerManager() {
       const synced = await plannerMutation(`/student/planner/goals/${goalId}`, { method: "DELETE" });
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Goal delete nahi hua.");
+      setError(e instanceof Error ? e.message : "Goal could not be deleted.");
     } finally {
       setPendingAction(null);
     }
@@ -780,7 +780,7 @@ export function StudentPlannerManager() {
       setNoteText("");
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Note save nahi hua.");
+      setError(e instanceof Error ? e.message : "Note could not be saved.");
     } finally {
       setPendingAction(null);
     }
@@ -807,7 +807,7 @@ export function StudentPlannerManager() {
       if (synced) await loadAll();
     } catch (e) {
       setNotes(previousNotes);
-      setError(e instanceof Error ? e.message : "Note update nahi hua.");
+      setError(e instanceof Error ? e.message : "Note could not be updated.");
     } finally {
       setPendingAction(null);
     }
@@ -823,7 +823,7 @@ export function StudentPlannerManager() {
       if (synced) await loadAll();
     } catch (e) {
       setNotes(previousNotes);
-      setError(e instanceof Error ? e.message : "Note delete nahi hua.");
+      setError(e instanceof Error ? e.message : "Note could not be deleted.");
     } finally {
       setPendingAction(null);
     }
@@ -831,7 +831,7 @@ export function StudentPlannerManager() {
 
   async function addExam() {
     if (!examForm.title || !examForm.examAt) {
-      setError("Exam title aur date dono chahiye.");
+      setError("Exam title and date are required.");
       return;
     }
     try {
@@ -850,7 +850,7 @@ export function StudentPlannerManager() {
       setExamForm({ title: "", subject: "", examAt: "", notes: "" });
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Exam save nahi hua.");
+      setError(e instanceof Error ? e.message : "Exam could not be saved.");
     } finally {
       setPendingAction(null);
     }
@@ -863,7 +863,7 @@ export function StudentPlannerManager() {
       const synced = await plannerMutation(`/student/planner/exams/${examId}`, { method: "DELETE" });
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Exam delete nahi hua.");
+      setError(e instanceof Error ? e.message : "Exam could not be deleted.");
     } finally {
       setPendingAction(null);
     }
@@ -886,7 +886,7 @@ export function StudentPlannerManager() {
       });
       if (synced) await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Habit update nahi hua.");
+      setError(e instanceof Error ? e.message : "Habit could not be updated.");
     } finally {
       setPendingAction(null);
     }
@@ -1041,7 +1041,7 @@ export function StudentPlannerManager() {
       <ApiMessage message={message} error={error} />
       {offlineQueueCount ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800">
-          <span>{offlineQueueCount} planner change(s) offline saved hain. Internet aate hi auto-sync hoga.</span>
+          <span>{offlineQueueCount} planner change(s) saved offline. They will auto-sync when the internet is available.</span>
           <button type="button" onClick={() => void flushPlannerQueue()} className="rounded-md bg-amber-700 px-3 py-1.5 text-xs font-black text-white">
             Sync now
           </button>
@@ -1129,7 +1129,7 @@ export function StudentPlannerManager() {
             <div className="grid gap-2">
               {sortedTodayEntries.length ? sortedTodayEntries.map(renderTaskCard) : (
                 <div className="rounded-lg border border-dashed border-[var(--lp-border)] p-4 text-sm font-semibold text-[var(--lp-muted)]">
-                  Aaj ka plan empty hai. Upar se pehla task add karo.
+                  Today&apos;s plan is empty. Add your first task above.
                 </div>
               )}
             </div>
@@ -1415,7 +1415,7 @@ export function StudentPlannerManager() {
                   <div key={goal.id} className="rounded-lg border border-[var(--lp-border)] px-3 py-2">
                     <p className="text-sm font-black text-[var(--lp-text)]">{goal.title}</p>
                     <p className="text-xs font-semibold text-[var(--lp-muted)]">{formatMinutes(goal.target_minutes)} target</p>
-                    <p className="mt-1 text-xs font-semibold text-[var(--lp-muted)]">Split karne par 4 weekly goals banenge aur Weekly board open hoga.</p>
+                    <p className="mt-1 text-xs font-semibold text-[var(--lp-muted)]">Splitting creates 4 weekly goals and opens the Weekly board.</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button type="button" onClick={() => void splitMonthlyGoalIntoWeeks(goal)} disabled={pendingAction === `split-goal-${goal.id}`} className="rounded-lg border border-[var(--lp-border)] px-3 py-1.5 text-xs font-black text-slate-700 disabled:opacity-60">
                         {pendingAction === `split-goal-${goal.id}` ? "Splitting..." : "Split into weekly goals"}

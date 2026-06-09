@@ -326,7 +326,7 @@ export function OwnerAdmissionsManager() {
 
     try {
       if (form.seatId && form.paymentStatus !== "PAID") {
-        throw new Error("Seat allotment ke liye admission payment status PAID hona chahiye.");
+        throw new Error("Seat allotment requires the admission payment status to be PAID.");
       }
       const payload = {
         fullName: form.fullName,
@@ -540,7 +540,7 @@ export function OwnerAdmissionsManager() {
                 </div>
               </div>
               <p className="mt-3 text-xs leading-5 text-emerald-800">
-                Student Login kholo: <span className="font-semibold">{studentLoginUrl}</span>. New student ko yahi code aur password dena hai.
+                Open Student Login: <span className="font-semibold">{studentLoginUrl}</span>. Share this code and password with the new student.
               </p>
             </div>
           ) : null}
@@ -597,7 +597,7 @@ export function OwnerAdmissionsManager() {
             <div>
               <p className="text-sm font-black text-emerald-950">Student login setup</p>
               <p className="mt-1 text-xs leading-5 text-emerald-800">
-                Student code admission ke baad auto-generate hoga. Password blank chhodoge to system temporary password bana kar save ke baad dikha dega.
+                The student code is generated after admission. Leave the password blank to let the system create and show a temporary password after saving.
               </p>
             </div>
             <input
@@ -613,7 +613,7 @@ export function OwnerAdmissionsManager() {
             <select value={form.studentPlanId} onChange={(event) => setForm((current) => ({ ...current, studentPlanId: event.target.value }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none">
               <option value="">Select plan</option>
               {plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>{plan.name} • Rs. {Number(plan.base_amount).toLocaleString("en-IN")}</option>
+                <option key={plan.id} value={plan.id}>{plan.name} - Rs. {Number(plan.base_amount).toLocaleString("en-IN")}</option>
               ))}
             </select>
             <input value={form.couponCode} onChange={(event) => setForm((current) => ({ ...current, couponCode: event.target.value.toUpperCase() }))} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2 outline-none" placeholder="Coupon code (optional)" />
@@ -624,7 +624,7 @@ export function OwnerAdmissionsManager() {
           <div className="grid gap-3 rounded-lg border border-emerald-100 bg-white p-3">
             <div>
               <p className="text-sm font-black text-[var(--lp-text)]">Optional seat allotment</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--lp-text-soft)]">Floor choose karo, uske rooms aayenge, phir selected room ki available seats.</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--lp-text-soft)]">Choose a floor, then a room, then an available seat in that room.</p>
             </div>
             <div className="grid gap-2 md:grid-cols-3">
               <select
@@ -673,8 +673,8 @@ export function OwnerAdmissionsManager() {
                 ))}
               </select>
             </div>
-            {form.paymentStatus !== "PAID" ? <p className="text-xs font-semibold text-rose-700">Seat allotment sirf PAID admission ke saath allowed hai.</p> : null}
-            {form.roomId && roomSeats.length === 0 ? <p className="text-xs font-semibold text-amber-700">Selected room me available seats nahi hain.</p> : null}
+            {form.paymentStatus !== "PAID" ? <p className="text-xs font-semibold text-rose-700">Seat allotment is allowed only for PAID admissions.</p> : null}
+            {form.roomId && roomSeats.length === 0 ? <p className="text-xs font-semibold text-amber-700">The selected room has no available seats.</p> : null}
           </div>
 
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
@@ -739,7 +739,7 @@ export function OwnerAdmissionsManager() {
                   </div>
                 </div>
                 <p className="mt-2 text-xs leading-5 text-emerald-800">
-                  Student opens Student Login, selects this library, then enters these details. Existing student apna old password ya Forgot password use karega.
+                  Student opens Student Login, selects this library, then enters these details. Existing students can use their current password or forgot password.
                 </p>
               </div>
             </div>

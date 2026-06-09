@@ -1034,7 +1034,7 @@ export function OwnerSeatsManager() {
     }
     const assignmentStudent = students.find((student) => student.assignment_id === assignmentId);
     if (assignmentStudent?.payment_status !== "PAID") {
-      setError("Seat allotment ke liye student ka payment status PAID hona chahiye.");
+      setError("Seat allotment requires the student's payment status to be PAID.");
       return;
     }
 
@@ -2099,13 +2099,13 @@ export function OwnerSeatsManager() {
                 </div>
                 {!selectedAssignmentIsPaid && selectedAssignmentStudent ? (
                   <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-                    Payment PAID mark karne ke baad hi seat allot hogi.
+                    Mark the payment as PAID before allotting a seat.
                   </p>
                 ) : null}
                 <button type="button" disabled={!selectedAssignmentId || !selectedSeat || selectedSeat.status !== "AVAILABLE" || !selectedAssignmentIsPaid} onClick={() => selectedSeat && void assignSeat(selectedSeat.id)} className="rounded-lg bg-[var(--lp-accent)] px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">Allot seat</button>
                 {selectedSeat ? <button type="button" onClick={() => setInspectorControlsOpen(true)} className="rounded-lg border border-[var(--lp-border)] bg-white px-4 py-2.5 text-sm font-black text-[var(--lp-primary)]">Edit seat status</button> : null}
                 <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
-                  Empty cell free seat nahi hota. Empty ko free seat banane ke liye Manage layout &rarr; Rooms me room + seats create karo, ya Move/Paint mode me empty cell par Add seat karo.
+                  An empty cell is not a free seat. To create free seats, use Manage layout &rarr; Rooms to create a room with seats, or use Move/Paint mode and add a seat in an empty cell.
                 </div>
                 <div className="rounded-lg border border-[var(--lp-border)] bg-white p-3">
                   <div className="flex items-center justify-between">

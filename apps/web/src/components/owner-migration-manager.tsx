@@ -152,7 +152,7 @@ export function OwnerMigrationManager() {
 
   async function previewFile() {
     if (!file) {
-      setError("CSV ya XLSX file choose karo.");
+      setError("Choose a CSV or XLSX file.");
       return;
     }
     setLoading(true);
@@ -177,7 +177,7 @@ export function OwnerMigrationManager() {
       });
       setPreviewRows(response.data.rows);
       setError(null);
-      setMessage("Preview ready. Errors fix karke re-upload karo, ya valid rows commit karo.");
+      setMessage("Preview is ready. Fix errors and re-upload, or commit the valid rows.");
       await loadJobs();
     } catch (previewError) {
       setError(displayApiError(previewError, "Unable to preview import."));
@@ -282,7 +282,7 @@ export function OwnerMigrationManager() {
                   onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                   className="rounded-lg border border-[var(--lp-border)] bg-white px-3 py-2 text-sm"
                 />
-                <span className="text-xs font-medium text-slate-500">Legacy .xls reject hoga. Template se import safest rahega.</span>
+                <span className="text-xs font-medium text-slate-500">Legacy .xls files are not supported. Use the template for the safest import.</span>
               </label>
               <button
                 type="button"
@@ -311,12 +311,12 @@ export function OwnerMigrationManager() {
                 </a>
               ) : null}
               <p className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-                PDF me new students ke login ID/temp password aayenge. Existing students ke liye password expose nahi hoga; woh existing password ya forgot password use karenge.
+                The PDF includes login IDs and temporary passwords for new students. Existing student passwords are not exposed; they can use their current password or forgot password.
               </p>
             </div>
           </DashboardCard>
 
-          <DashboardCard title="Preview & validation" subtitle={currentJob ? `${currentJob.file_name ?? "Uploaded file"} - ${currentJob.status}` : "Upload ke baad row-level result yaha dikhega."}>
+          <DashboardCard title="Preview & validation" subtitle={currentJob ? `${currentJob.file_name ?? "Uploaded file"} - ${currentJob.status}` : "Row-level results will appear here after upload."}>
             <div className="grid gap-3">
               <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
                 <StatCard label="Students create" value={summary.studentsToCreate ?? 0} />
@@ -395,7 +395,7 @@ export function OwnerMigrationManager() {
       ) : null}
 
       {activeTab === "login" ? (
-        <DashboardCard title="Student login adoption" subtitle="Imported/onboarded students me kaun login kar chuka hai aur kaun pending hai.">
+        <DashboardCard title="Student login adoption" subtitle="Track which imported or onboarded students have logged in and which are still pending.">
           <div className="grid gap-3">
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
               <StatCard label="Logged in" value={loginSummary.loggedIn} />

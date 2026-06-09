@@ -425,7 +425,7 @@ export function OwnerStudentsManager() {
   async function assignSeat() {
     if (!selectedStudent || !selectedSeatId) return;
     if (selectedStudent.payment_status !== "PAID") {
-      setError("Seat allotment ke liye student ka payment status PAID hona chahiye.");
+      setError("Seat allotment requires the student's payment status to be PAID.");
       return;
     }
     setSeatSaving(true);
@@ -671,8 +671,8 @@ export function OwnerStudentsManager() {
                     ))}
                   </select>
                 </div>
-                {selectedRoomId && availableSeats.length === 0 ? <p className="text-xs font-semibold text-amber-700">Selected room me available seats nahi hain.</p> : null}
-                {!selectedStudentIsPaid ? <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Payment PAID mark karne ke baad hi seat allot hogi.</p> : null}
+                {selectedRoomId && availableSeats.length === 0 ? <p className="text-xs font-semibold text-amber-700">The selected room has no available seats.</p> : null}
+                {!selectedStudentIsPaid ? <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Mark the payment as PAID before allotting a seat.</p> : null}
                 <button type="button" disabled={seatSaving || !selectedSeatId || !selectedStudentIsPaid} onClick={() => void assignSeat()} className="rounded-lg border border-[var(--lp-accent)] bg-[var(--lp-accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--lp-accent)] disabled:opacity-60">
                   {seatSaving ? "Saving seat..." : selectedStudent.seat_number ? "Change seat" : "Allot seat"}
                 </button>
